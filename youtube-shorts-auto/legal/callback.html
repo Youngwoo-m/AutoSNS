@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TikTok 인증 코드</title>
+<style>
+  body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;max-width:720px;
+       margin:0 auto;padding:48px 20px;line-height:1.7;color:#222;text-align:center}
+  h1{font-size:1.4rem;color:#12284c}
+  .code{font-family:monospace;font-size:1.05rem;word-break:break-all;background:#f3f5f9;
+        border:2px solid #12284c;border-radius:10px;padding:18px;margin:18px 0;user-select:all}
+  button{font-size:1rem;padding:12px 22px;border:0;border-radius:8px;background:#12284c;
+         color:#fff;cursor:pointer}
+  .ok{color:#137a2b;font-weight:700}
+  .err{color:#c0392b;font-weight:700}
+  small{color:#666}
+</style>
+</head>
+<body>
+<h1>TikTok 인증 코드</h1>
+<p id="msg">코드를 확인하는 중...</p>
+<div class="code" id="code">-</div>
+<button onclick="copyCode()">코드 복사</button>
+<p><small id="state"></small></p>
+<p><small>이 코드를 담당자(Claude)에게 붙여넣어 주세요. 코드는 짧은 시간만 유효합니다.</small></p>
+<script>
+  var p = new URLSearchParams(location.search);
+  var code = p.get('code') || '';
+  var state = p.get('state') || '';
+  var error = p.get('error') || p.get('error_description') || '';
+  var codeEl = document.getElementById('code');
+  var msgEl = document.getElementById('msg');
+  if (code) {
+    codeEl.textContent = code;
+    msgEl.innerHTML = '<span class="ok">인증 성공!</span> 아래 코드를 복사해 전달하세요.';
+    document.getElementById('state').textContent = 'state: ' + state;
+  } else {
+    codeEl.textContent = '(코드 없음)';
+    msgEl.innerHTML = '<span class="err">인증 실패</span> ' + (error || '');
+  }
+  function copyCode(){
+    navigator.clipboard.writeText(code).then(function(){
+      msgEl.innerHTML = '<span class="ok">복사됨!</span> 담당자에게 붙여넣어 주세요.';
+    });
+  }
+</script>
+</body>
+</html>

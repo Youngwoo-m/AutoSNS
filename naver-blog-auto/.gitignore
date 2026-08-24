@@ -1,0 +1,8 @@
+config.json
+chrome-profile/
+posts/
+logs/
+.venv/
+__pycache__/
+title_history.json
+*.png

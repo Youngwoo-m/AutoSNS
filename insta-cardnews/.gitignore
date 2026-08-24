@@ -1,0 +1,7 @@
+config.json
+chrome-profile-insta/
+posts/
+logs/
+title_history.json
+.venv/
+__pycache__/

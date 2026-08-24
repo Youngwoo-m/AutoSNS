@@ -1,0 +1,174 @@
+"""네이버 검색 API 로 블로그/웹 문서를 검색해 뉴스와 같은 형태로 돌려준다.
+
+무료 '네이버 검색 API'(developers.naver.com) 사용. 키는 config.news.naver_search 에.
+블로그 검색은 postdate(작성일)가 있어 최근 글만 거를 수 있다.
+
+fetch_news 가 이 결과를 뉴스 항목과 같은 형태(title/link/source/published)로 받아
+소스 풀에 합친다. 키가 없거나 호출 실패면 빈 목록을 돌려준다(뉴스 수집엔 지장 없음).
+"""
+import json
+import re
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone, timedelta
+
+from common import log
+
+KST = timezone(timedelta(hours=9))
+
+
+def _clean(t):
+    t = re.sub(r"<[^>]+>", "", t or "")
+    for a, b in [("&quot;", '"'), ("&amp;", "&"), ("&lt;", "<"),
+                 ("&gt;", ">"), ("&#39;", "'"), ("&nbsp;", " ")]:
+        t = t.replace(a, b)
+    return t.strip()
+
+
+def _query_keywords(queries):
+    """검색어 문자열들에서 핵심 키워드 토큰을 뽑는다(제목 필터용).
+
+    'GeoAI OR 지오AI OR 공간정보 AI' → {GeoAI, 지오AI, 공간정보, AI}
+    'AI' 처럼 너무 흔한 2글자 영문 단독어는 오탐이 많아 제외한다.
+    """
+    kws = set()
+    for q in queries:
+        for tok in re.split(r"\s+|OR|\||,", q):
+            tok = tok.strip()
+            if len(tok) < 2:
+                continue
+            if tok.isascii() and len(tok) <= 2:   # 'AI' 같은 2글자 영문 단독 제외
+                continue
+            kws.add(tok)
+    return kws
+
+
+def naver_blog_search(queries, cid, secret, within_days=7, per_query=10, total=8,
+                      exclude_links=()):
+    """네이버 블로그 검색 결과를 뉴스 형태 항목 리스트로 돌려준다.
+
+    노이즈가 많아, 제목에 검색어 핵심 키워드가 실제로 든 글만 남긴다(오염 방지).
+    """
+    if not cid or not secret:
+        return []
+    keywords = _query_keywords(queries)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+    seen, items = set(), []
+    for q in queries:
+        url = "https://openapi.naver.com/v1/search/blog.json?" + urllib.parse.urlencode(
+            {"query": q, "display": per_query, "sort": "date"})
+        req = urllib.request.Request(url, headers={
+            "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
+            "User-Agent": "smuds/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                data = json.loads(r.read().decode("utf-8"))
+        except Exception as e:
+            log(f"네이버 블로그 검색 실패(q='{q}': {type(e).__name__})")
+            continue
+        for it in data.get("items", []):
+            link = it.get("link", "")
+            if not link or link in seen:
+                continue
+            # 우리 블로그 글이 다시 소스로 잡히는 '자기 인용'을 막는다
+            if any(x and x in link for x in exclude_links):
+                continue
+            try:
+                pub = datetime.strptime(it.get("postdate", ""), "%Y%m%d") \
+                    .replace(tzinfo=KST).astimezone(timezone.utc)
+            except Exception:
+                continue
+            if pub < cutoff:
+                continue
+            title = _clean(it.get("title", ""))
+            # 제목에 검색어 핵심 키워드가 실제로 들어야 채택(느슨한 오탐 제거)
+            if keywords and not any(k in title for k in keywords):
+                continue
+            seen.add(link)
+            blogger = it.get("bloggername", "")
+            items.append({
+                "title": f"{title} - {blogger} (네이버블로그)",
+                "link": link,
+                "source": "네이버블로그",
+                "published": pub,
+                "published_str": pub.astimezone().strftime("%Y-%m-%d"),
+            })
+    items.sort(key=lambda x: x["published"], reverse=True)
+    return items[:total]
+
+
+def _news_source_name(link):
+    """기사 원문 링크의 도메인으로 언론사 힌트를 만든다(예: yna.co.kr)."""
+    try:
+        host = urllib.parse.urlparse(link).netloc.replace("www.", "")
+        return host or "뉴스"
+    except Exception:
+        return "뉴스"
+
+
+def naver_news_search(queries, cid, secret, within_days=7, per_query=10, total=10,
+                      exclude_links=()):
+    """네이버 뉴스 검색(구글뉴스 외 국내 언론) 결과를 뉴스 항목 리스트로 돌려준다.
+
+    구글 뉴스 RSS 를 보완한다(연합·KBS·중앙·지역신문 등 네이버 제휴 매체 폭넓게 포함).
+    link 는 네이버 리다이렉트 대신 기사 원문 주소(originallink)를 우선 사용하고,
+    제목에 검색어 핵심 키워드가 실제로 든 기사만 남긴다(오염 방지).
+    """
+    if not cid or not secret:
+        return []
+    from email.utils import parsedate_to_datetime
+    keywords = _query_keywords(queries)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+    seen, items = set(), []
+    for q in queries:
+        url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
+            {"query": q, "display": per_query, "sort": "date"})
+        req = urllib.request.Request(url, headers={
+            "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
+            "User-Agent": "smuds/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                data = json.loads(r.read().decode("utf-8"))
+        except Exception as e:
+            log(f"네이버 뉴스 검색 실패(q='{q}': {type(e).__name__})")
+            continue
+        for it in data.get("items", []):
+            link = (it.get("originallink") or it.get("link") or "").strip()
+            if not link or link in seen:
+                continue
+            if any(x and x in link for x in exclude_links):
+                continue
+            try:
+                pub = parsedate_to_datetime(it.get("pubDate", ""))
+                if pub.tzinfo is None:
+                    pub = pub.replace(tzinfo=KST)
+                pub = pub.astimezone(timezone.utc)
+            except Exception:
+                continue
+            if pub < cutoff:
+                continue
+            title = _clean(it.get("title", ""))
+            if keywords and not any(k in title for k in keywords):
+                continue
+            seen.add(link)
+            items.append({
+                "title": f"{title} - {_news_source_name(link)}",
+                "link": link,
+                "source": "네이버뉴스",
+                "published": pub,
+                "published_str": pub.astimezone().strftime("%Y-%m-%d"),
+            })
+    items.sort(key=lambda x: x["published"], reverse=True)
+    return items[:total]
+
+
+if __name__ == "__main__":
+    from common import load_config
+    ns = load_config().get("news", {}).get("naver_search", {})
+    qs = load_config().get("news", {}).get("queries", ["재난안전"])[:3]
+    print("[블로그]")
+    for it in naver_blog_search(qs, ns.get("client_id"), ns.get("client_secret")):
+        print(f"  [{it['published_str']}] {it['title'][:56]}")
+    print("[뉴스]")
+    for it in naver_news_search(qs, ns.get("client_id"), ns.get("client_secret")):
+        print(f"  [{it['published_str']}] {it['title'][:56]}")

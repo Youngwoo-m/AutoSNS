@@ -1,0 +1,230 @@
+"""저장된 토큰(token.json)으로 YouTube Data API v3 에 Shorts mp4 를 업로드한다.
+
+Shorts 로 인식되는 조건: 세로(9:16) + 3분 이내 (여기서는 ~1분) + 제목/설명에 #Shorts.
+category_id 기본 25(News & Politics). privacy 는 config.youtube.privacy(기본 public).
+
+★ 안전장치(다른 프로젝트와 동일 철학):
+  - 수동 실행(python youtube_upload.py)은 기본 dry_run → 업로드하지 않고 메타데이터만 출력.
+  - 실제 발행은 스케줄 엔트리(run_weekly.py)에서 dry_run=False 로만 일어난다.
+  - 실제 업로드를 '비공개(private)'로 미리 테스트하려면:  python youtube_upload.py --private
+"""
+import json
+import os
+import re
+import sys
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+from common import POSTS_DIR, TOKEN_PATH, load_config, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.keyword_terms import TAG_DISASTER_TERMS, TAG_REGION_TERMS  # noqa: E402
+
+# 업로드 + 읽기(검색·통계) + 애널리틱스. 업로드만 넣으면 토큰 재저장 시 나머지
+# 스코프가 날아가 web_search / 애널리틱스가 403(insufficient scopes)이 된다.
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly",
+    "https://www.googleapis.com/auth/yt-analytics.readonly",
+]
+
+# 검색 최적화(SEO) 기본값 — config.youtube.seo_footer / seo_keywords 로 덮어쓸 수 있다.
+DEFAULT_SEO_FOOTER = (
+    "세명대학교 재난안전학과가 전하는 주간 재난안전 뉴스입니다. "
+    "지진·태풍·호우·산사태·폭염 등 재난 대비와 대응 정보를 매주 정리합니다.")
+DEFAULT_SEO_KEYWORDS = [
+    "재난안전", "재난안전뉴스", "안전정보", "재난대비", "재난대응", "안전수칙",
+    "세명대학교", "세명대", "재난안전학과",
+]
+# 태그 자동 보강 키워드 — 공통 목록은 shared/keyword_terms.py 에 있다.
+EXTRA_TAG_TERMS = []          # 유튜브에만 붙일 추가 재난 태그(현재 없음)
+DISASTER_TERMS = TAG_DISASTER_TERMS + EXTRA_TAG_TERMS
+REGION_TERMS = TAG_REGION_TERMS
+
+
+def _detected_keywords(data):
+    """제목 + 출처 제목에서 지역·재난 키워드를 뽑아 검색 태그로 쓴다.
+
+    출처 제목 끝의 ' - 언론사'는 제거한 뒤 매칭한다. (예: '서울경제TV' 때문에
+    '서울'이 잘못 잡히는 것을 막는다.)
+    """
+    def _strip_outlet(t):
+        return re.sub(r"\s*-\s*[^-]+$", "", t)
+    hay = (data.get("title", "") + " " +
+           " ".join(_strip_outlet(s.get("title", ""))
+                    for s in (data.get("sources") or [])))
+    # 학과별 키워드는 config.keywords 로 덮어쓸 수 있다(없으면 아래 기본값=재난안전).
+    kw = load_config().get("keywords", {})
+    terms = (kw.get("tag_terms") or DISASTER_TERMS) + (kw.get("region_terms") or REGION_TERMS)
+    found = []
+    for term in terms:
+        if term in hay and term not in found:
+            found.append(term)
+    return found
+
+
+def _creds():
+    if not os.path.exists(TOKEN_PATH):
+        raise RuntimeError(
+            "token.json 이 없습니다. 먼저 youtube_login_setup.py 로 1회 로그인하세요.")
+    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    if not creds.valid:
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            with open(TOKEN_PATH, "w", encoding="utf-8") as f:
+                f.write(creds.to_json())
+            log("토큰 자동 갱신됨.")
+        else:
+            raise RuntimeError(
+                "토큰이 만료되어 갱신할 수 없습니다. youtube_login_setup.py 를 다시 실행하세요.")
+    return creds
+
+
+def _build_title(data, ycfg):
+    """제목 앞에 [SMU 재난안전뉴스] 등 접두사를 붙인다(중복/100자 초과 방지)."""
+    title = (data.get("title") or "재난안전 Shorts").strip()
+    prefix = ycfg.get("title_prefix", "").strip()
+    if prefix and not title.startswith(prefix):
+        title = f"{prefix} {title}"
+    return title[:100]
+
+
+def _build_description(data, cfg):
+    ycfg = cfg.get("youtube", {})
+    parts = [data.get("description", "").strip()]
+
+    # 검색용 고정 키워드 문장(채널 일관성 → 검색 랭킹). 첫 문단 바로 아래에 둔다.
+    seo = ycfg.get("seo_footer", DEFAULT_SEO_FOOTER).strip()
+    if seo:
+        parts.append("")
+        parts.append(seo)
+
+    homepage = ycfg.get("homepage_url", "").strip()
+    if homepage:
+        parts.append("")
+        parts.append(f"🏫 세명대학교 재난안전학과: {homepage}")
+
+    # AI 아나운서 영상이면 합성 콘텐츠 고지를 자동 삽입(YouTube 정책 준수)
+    if data.get("ai_disclosure"):
+        parts.append("")
+        parts.append("※ 이 영상의 진행자는 AI로 생성된 가상 아나운서(합성 음성·영상)입니다.")
+
+    sources = data.get("sources") or []
+    if sources and ycfg.get("include_sources", True):
+        parts.append("")
+        parts.append("📰 참고 뉴스 출처")
+        for s in sources[:6]:
+            parts.append(f"· [{s.get('published_str','')}] {s.get('title','')}")
+            link = (s.get("real_link") or s.get("link") or "").strip()
+            if link:
+                parts.append(f"  {link}")
+    # 채널 지역 브랜딩: config.hashtags + local_tags(제천·충북 등)를 모든 영상에 항상 포함.
+    # local_tags 는 에디션(토요일 GeoAI판)이 hashtags 를 덮어써도 유지된다(지역태그 규칙 보장).
+    base_tags = cfg.get("hashtags", []) + cfg.get("local_tags", [])
+    tags = list(dict.fromkeys((data.get("hashtags") or []) + base_tags))
+    # #Shorts 는 항상 포함되도록 보장
+    tag_line_src = tags if any(t.lower() == "shorts" for t in tags) else (["Shorts"] + tags)
+    parts.append("")
+    parts.append(" ".join("#" + t for t in tag_line_src))
+    return "\n".join(p for p in parts if p is not None).strip()
+
+
+def upload(data, dry_run=None, privacy=None):
+    cfg = load_config()
+    ycfg = cfg.get("youtube", {})
+    if dry_run is None:
+        dry_run = ycfg.get("dry_run", True)
+    if privacy is None:
+        privacy = ycfg.get("privacy", "public")
+
+    video_path = data.get("video")
+    if not video_path or not os.path.exists(video_path):
+        raise RuntimeError("업로드할 mp4 가 없습니다. 먼저 make_video.py 를 실행하세요.")
+
+    title = _build_title(data, ycfg)
+    description = _build_description(data, cfg)
+    # 검색 태그: 감지된 지역·재난 키워드 + 해시태그 + 지역 브랜딩(local_tags) + 기본 SEO 키워드
+    base_kw = ycfg.get("seo_keywords", DEFAULT_SEO_KEYWORDS)
+    hashtag_kw = [t for t in (data.get("hashtags") or []) if t.lower() != "shorts"]
+    local_kw = cfg.get("local_tags", [])
+    keywords = list(dict.fromkeys(_detected_keywords(data) + hashtag_kw + local_kw + base_kw))
+    # YouTube tags 총합 500자 제한 → 안전하게 자른다
+    trimmed, total = [], 0
+    for k in keywords:
+        total += len(k) + 1
+        if total > 460:
+            break
+        trimmed.append(k)
+    keywords = trimmed
+
+    status = {
+        "privacyStatus": privacy,
+        "selfDeclaredMadeForKids": False,
+    }
+    # AI 아나운서 영상은 유튜브의 공식 '변경·합성 콘텐츠' 라벨까지 신고한다.
+    # (설명문 고지는 우리가 쓰는 안내문일 뿐, 정책상 요구되는 신고는 이 플래그다.)
+    if data.get("ai_disclosure"):
+        status["containsSyntheticMedia"] = True
+
+    if dry_run:
+        log("DRY_RUN: 업로드하지 않습니다. 아래 메타데이터/영상 경로를 확인하세요.")
+        log(f"  제목: {title}")
+        log(f"  영상: {video_path} ({data.get('video_seconds','?')}s)")
+        log(f"  태그: {', '.join(keywords)}")
+        log(f"  status: {json.dumps(status, ensure_ascii=False)}")
+        log("  설명 미리보기:\n" + "\n".join("    " + ln for ln in description.splitlines()))
+        log("실제 업로드는 run_weekly.py(스케줄)에서, 비공개 테스트는 "
+            "'python youtube_upload.py --private' 로 하세요.")
+        return {"status": "dry_run", "video": video_path}
+
+    creds = _creds()
+    youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
+    body = {
+        "snippet": {
+            "title": title,
+            "description": description,
+            "tags": keywords,
+            "categoryId": str(ycfg.get("category_id", "25")),
+            "defaultLanguage": "ko",
+            "defaultAudioLanguage": "ko",
+        },
+        "status": status,
+    }
+    media = MediaFileUpload(video_path, chunksize=-1, resumable=True,
+                            mimetype="video/mp4")
+    req = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+
+    log(f"업로드 시작(privacy={privacy}"
+        f"{', 합성콘텐츠 신고' if status.get('containsSyntheticMedia') else ''}): {title}")
+    response = None
+    while response is None:
+        status, response = req.next_chunk()
+        if status:
+            log(f"  업로드 {int(status.progress()*100)}%")
+    vid = response.get("id")
+    url = f"https://youtu.be/{vid}" if vid else "(id 없음)"
+    log(f"업로드 완료: {url}  (privacy={privacy})")
+    return {"status": "uploaded", "video_id": vid, "url": url, "privacy": privacy}
+
+
+def _latest_data():
+    files = sorted(f for f in os.listdir(POSTS_DIR) if f.endswith(".json"))
+    if not files:
+        raise SystemExit("먼저 파이프라인(generate_script→render_frames→tts→make_video)을 실행하세요.")
+    with open(os.path.join(POSTS_DIR, files[-1]), "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+if __name__ == "__main__":
+    data = _latest_data()
+    if "--private" in sys.argv:
+        # 실제 업로드하되 비공개로(안전 테스트)
+        print(upload(data, dry_run=False, privacy="private"))
+    elif "--public" in sys.argv:
+        print(upload(data, dry_run=False, privacy="public"))
+    else:
+        # 기본: 업로드 안 함(안전)
+        print(upload(data, dry_run=True))

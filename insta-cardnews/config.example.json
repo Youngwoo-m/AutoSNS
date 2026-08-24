@@ -1,0 +1,70 @@
+{
+  "anthropic_api_key": "sk-ant-...여기에-API-키-입력...",
+  "model": "claude-sonnet-4-6",
+  "gamma_api_key": "sk-gamma-...여기에-Gamma-API-키-입력...",
+  "topic": "재난안전 관련 뉴스와 안전 정보 (지진, 태풍, 화재, 호우, 산사태 등 재난 대비·대응)",
+  "card_renderer": "local",
+  "local_render": {
+    "font_dir": ""
+  },
+  "hashtags": [
+    "재난안전",
+    "안전정보",
+    "세명대학교",
+    "재난안전학과",
+    "안전수칙"
+  ],
+  "gamma": {
+    "dimensions": "1x1",
+    "theme_id": "default-light",
+    "random_theme": true,
+    "footer_text": "세명대학교 재난안전학과",
+    "style_instructions": "한국 재난안전 공공정보 카드뉴스. 깔끔한 고딕(산세리프) 글꼴 느낌, 매우 또렷한 고가독성. 신뢰감 있는 남색/적색 포인트, 큰 제목, 카드마다 주제에 어울리는 아이콘. 차분하고 공신력 있게. 텍스트가 길어 한 줄을 넘기면 글자 크기를 자동으로 줄여 카드 안에 깔끔하게 맞추고, 단어 중간에서 줄바꿈되지 않게 한다. 글자가 카드 영역 밖으로 넘치지 않게 한다. 한 글자나 한 음절만 다음 줄로 넘어갈 상황이면 자간(글자 간격)을 살짝 좁히거나 글자 크기를 조금 줄여서 반드시 한 줄에 들어가게 하고, 한 글자만 홀로 다음 줄로 떨어지지 않게 한다.",
+    "footer_center": "customImage",
+    "footer_logo_size": "lg",
+    "footer_logo_url": "https://smuds.netlify.app/SMUDS_LOGO.png"
+  },
+  "news": {
+    "queries": [
+      "제천 재난 OR 안전 OR 사고 OR 호우",
+      "충북 OR 충청북도 재난안전",
+      "강원 재난 OR 산불 OR 산사태 OR 호우",
+      "경기 재난안전",
+      "재난안전",
+      "행정안전부 OR 소방청 OR 기상청 재난",
+      "지진 OR 태풍 OR 호우 OR 산사태 OR 폭염 대비 특보"
+    ],
+    "max_items": 8,
+    "within_days": 3,
+    "block_sources": [
+      "vietnam",
+      ".vn",
+      "english",
+      "xinhua",
+      "中国"
+    ],
+    "region_priority": [
+      "제천",
+      "충북",
+      "강원",
+      "경기"
+    ],
+    "region_exclude": [
+      "평택제천고속도로"
+    ],
+    "dedup_similarity": 0.6
+  },
+  "instagram": {
+    "dry_run": true,
+    "headless": false,
+    "include_sources": true,
+    "first_comment": true,
+    "username": "smu_ds_official"
+  },
+  "reel": {
+    "enabled": true,
+    "audio_file": "assets/bgm.mp3",
+    "seconds_per_card": 3.5,
+    "bg_color": "0x0f2038"
+  }
+}

@@ -1,0 +1,22 @@
+# ── 민감정보 (API 키·인증 토큰) — 절대 커밋 금지 ──
+config.json
+client_secret.json
+token.json
+tiktok_token.json
+token_manage.json
+token*.bak.json
+
+# ── 실행 중 생성되는 상태/기록 ──
+trigger_state.json
+title_history.json
+
+# ── 가상환경 ──
+.venv/
+.venv-windows/
+__pycache__/
+
+# ── 생성 산출물(대본·프레임·음성·영상 등) / 로그 ──
+posts/
+logs/
+*.mp4
+*.png

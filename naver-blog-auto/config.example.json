@@ -1,0 +1,19 @@
+{
+  "anthropic_api_key": "sk-ant-...여기에-API-키-입력...",
+  "model": "claude-sonnet-4-6",
+
+  "naver_id": "내네이버아이디",
+
+  "blog": {
+    "topic": "여기에 블로그 주제를 적으세요 (예: 30대 직장인을 위한 실전 재테크)",
+    "tone": "친근하고 정보 전달이 명확한 한국어 블로그 말투",
+    "min_chars": 1200,
+    "tags": ["재테크", "투자", "자기계발"],
+    "category": ""
+  },
+
+  "publish": {
+    "dry_run": true,
+    "headless": false
+  }
+}

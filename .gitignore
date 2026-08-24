@@ -1,0 +1,49 @@
+# 주의: .gitignore 는 줄 끝 인라인 주석을 지원하지 않는다.
+# (`api.txt  # 메모` 처럼 쓰면 주석까지 파일명으로 취급되어 무시가 안 된다)
+# 주석은 반드시 별도 줄에 쓸 것.
+
+# ── 자격증명·비밀정보 — 절대 커밋 금지 ──────────────────────────
+# api.txt: 계정 ID/비밀번호 평문 메모
+api.txt
+# config.json: Anthropic·Gamma·네이버 검색 API 키 포함
+**/config.json
+# Google OAuth 클라이언트 / 각종 토큰
+**/client_secret.json
+**/token.json
+**/tiktok_token.json
+**/token_manage.json
+**/token*.bak.json
+*.bak.*
+
+# ── 로그인 세션(쿠키·프로필) ────────────────────────────────
+chrome-profile/
+chrome-profile-insta/
+_profile_backup_*/
+
+# ── 가상환경 / 캐시 ────────────────────────────────────────
+.venv/
+.venv-windows/
+__pycache__/
+*.pyc
+
+# ── 생성 산출물(대본·프레임·음성·영상·카드) / 로그 ──────────────
+posts/
+logs/
+netlify_deploy/
+TikTok_업로드/
+*.mp4
+*.png
+*.jpg
+*.zip
+
+# ── 실행 상태 파일(머신마다 다름) ────────────────────────────
+trigger_state.json
+title_history.json
+
+# ── 폰트 ──────────────────────────────────────────────────
+# 렌더링에 필요하지만 용량이 크고(22MB) 재배포 라이선스 제약이 있어 제외.
+# 새 환경에서는 KoPubWorld 폰트를 내려받아 FONTS/ 에 넣을 것.
+FONTS/
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store

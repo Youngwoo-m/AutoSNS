@@ -1,0 +1,282 @@
+"""실제 뉴스(Google News RSS)를 바탕으로 이번 주 재난안전 블로그 글을 생성한다.
+
+반환: dict(title, body, tags) + posts/ 폴더에 저장.
+사실성 원칙: 제공된 뉴스 목록에 없는 구체적 사실(사망자 수, 날짜, 지명 등)은
+지어내지 않는다. 안전 수칙 등 일반 정보는 일반론으로 명확히 구분해 작성한다.
+글 하단에는 실제 기사 출처 링크를 붙여 독자가 검증할 수 있게 한다.
+"""
+import sys
+import json
+import os
+import re
+from datetime import datetime
+
+from anthropic import Anthropic
+
+from common import POSTS_DIR, load_config, load_history, save_history, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.keyword_terms import GEO_TERMS, TAG_DISASTER_TERMS, TAG_REGION_TERMS  # noqa: E402
+from fetch_news import fetch_news
+
+SYSTEM = """너는 한국의 __DOMAIN__ 분야 블로그를 운영하는 신뢰감 있는 작가다.
+지켜야 할 원칙:
+- '제공된 뉴스 목록'에 있는 내용만 사실로 다룬다. 목록에 없는 구체적 수치,
+  사망/부상자 수, 날짜, 장소, 인용문을 절대 지어내지 않는다.
+- 뉴스 제목만으로 단정하기 어려운 세부사항은 단정하지 말고 "~로 알려졌다",
+  "자세한 내용은 원문 참고" 식으로 신중하게 표현한다.
+- __TIPSLABEL__ 관련 일반 정보는 보편적으로 알려진 내용만 쓰고,
+  '일반 정보'임을 자연스럽게 드러낸다.
+- 과장/공포 조장/낚시성 표현을 쓰지 않는다.
+- 마크다운 기호(#, *, - 등) 없이 네이버 블로그에 붙여넣을 순수 텍스트로 쓴다.
+- 출력은 반드시 지정된 구분자(===) 형식만 반환한다. (JSON 아님)"""
+
+USER_TEMPLATE = """블로그 주제: {topic}
+말투: {tone}
+오늘 날짜: {today}
+
+[이번 주 실제 재난안전 뉴스 목록] (각 줄 맨 앞 번호가 '출처 번호')
+{news_block}
+
+위 '실제 뉴스 목록'으로 '주간 브리핑' 블로그 글을 작성해줘.
+- 주요 뉴스 4~5건을 골라 각각 한 블록으로 정리(사실 위주, 목록 밖 날조 금지).
+  현장 뉴스 + '정책·제도' 뉴스 + '산업·신기술' 뉴스를 가능한 한 고루 포함.
+- ★ 분량(중요): 블로그 글로 읽을 만하게 충실히 쓴다.
+  · 각 뉴스 블록 본문은 한글 250~350자(무슨 일인지 + 왜 중요한지 + 참고할 점).
+  · 인사 단락 250자 이상, 마무리 150자 이상.
+  · 전체 본문 합계가 최소 1,800자 이상이 되게 한다. 문장을 늘리려 같은 말을
+    반복하지 말고, 배경·영향·대응 관점을 더해 내용을 채운다.
+- 각 뉴스 블록의 첫 줄은 반드시 '@출처:<번호>' (위 목록의 정확한 번호)로 시작.
+- 각 소제목 맨 앞에 어울리는 이모지 1개.
+- 단정하기 어려운 세부는 "~로 알려졌다" 식으로 신중하게.
+
+최근에 이미 쓴 부제(중복 회피):
+{recent}
+
+반드시 아래 형식 그대로 응답해. 마커(===, @출처:)는 글자 그대로. 그 외 설명 금지.
+
+===부제===
+검색이 잘 되도록 __SUBKW__ 키워드를 앞에 넣은 한 줄 부제(25~35자).
+사람들이 실제로 검색할 말로 시작한다. (예: __SUBEX__)
+===태그===
+검색에 걸릴 만한 핵심 태그 10~13개를 쉼표로. 지명·재난유형·기관·주제어 등
+사람들이 실제로 검색할 말로. (예: 재난안전, 집중호우, 제천, 드론재난, 세명대학교)
+===인사===
+짧은 인사 + 이번 주 핵심 요약 (1~2단락).
+★ 첫 문장에 이 글의 핵심 검색 키워드(__SUBKW__·'__DOMAIN__')를 자연스럽게 넣는다.
+(네이버는 첫 문단을 검색에 크게 반영한다. 단, 키워드 나열이 아니라 문장으로 녹인다.)
+===뉴스===
+@출처:3
+🌧️ 소제목
+사실 위주 본문 단락
+@출처:1
+🤝 소제목
+본문 단락
+(이런 식으로 4~5개 블록. 각 블록 첫 줄은 반드시 @출처:번호)
+===안전수칙===
+🧰 소제목(섹션 이름은 __TIPSLABEL__)
+__TIPSDESC__
+===마무리===
+마무리 한마디"""
+
+
+# 태그 자동 보강 키워드 — 공통 목록은 shared/keyword_terms.py 에 있다.
+# 블로그는 글이 길어 본문에 걸리는 표현이 많으므로 아래를 더 붙인다.
+EXTRA_TAG_TERMS = ["열사병", "붕괴", "실종", "대피", "재난문자", "특보", "경보"]
+DISASTER_TERMS = TAG_DISASTER_TERMS + EXTRA_TAG_TERMS
+REGION_TERMS = TAG_REGION_TERMS
+
+
+def _detected_tags(subtitle, blocks, news):
+    """부제·본문 소제목·뉴스 제목에서 지역/재난 키워드를 뽑아 검색 태그로 쓴다.
+
+    뉴스 제목 끝의 ' - 언론사'는 제거해 출처명 오탐(예: '서울경제TV'→'서울')을 막는다.
+    """
+    strip = lambda t: re.sub(r"\s*-\s*[^-]+$", "", t or "")
+    hay = subtitle + " " + " ".join(b.get("heading", "") for b in blocks)
+    hay += " " + " ".join(strip(n.get("title", "")) for n in news)
+    # 학과별 키워드는 config.keywords 로 덮어쓸 수 있다(없으면 아래 기본값=재난안전).
+    kw = load_config().get("keywords", {})
+    terms = (kw.get("tag_terms") or (DISASTER_TERMS + GEO_TERMS)) \
+        + (kw.get("region_terms") or REGION_TERMS)
+    return [term for term in terms if term in hay]
+
+
+def _news_block(news):
+    if not news:
+        return "(이번 주 수집된 뉴스가 없습니다. 일반적인 재난안전 정보 글로 작성하세요.)"
+    lines = []
+    for i, n in enumerate(news, 1):
+        src = f" / {n['source']}" if n["source"] else ""
+        lines.append(f"{i}. [{n['published_str']}{src}] {n['title']}")
+    return "\n".join(lines)
+
+
+def _sources_footer(news):
+    if not news:
+        return ""
+    lines = ["", "─────────────", "📰 참고한 뉴스 출처 (검색어로 확인 가능)"]
+    for n in news:
+        # 제목 끝에 이미 ' - 언론사' 가 붙어 있어 출처를 중복 표기하지 않는다
+        lines.append(f"· [{n['published_str']}] {n['title']}")
+    return "\n".join(lines)
+
+
+def _section(text, start, end):
+    i = text.find(start)
+    if i < 0:
+        return ""
+    i += len(start)
+    j = text.find(end, i) if end else -1
+    return (text[i:j] if j >= 0 else text[i:]).strip()
+
+
+def _parse_structured(text, news):
+    """부제/태그/인사/뉴스(@출처:N)/안전수칙/마무리 구조를 파싱한다."""
+    subtitle = _section(text, "===부제===", "===태그===")
+    tags_raw = _section(text, "===태그===", "===인사===")
+    intro = _section(text, "===인사===", "===뉴스===")
+    news_raw = _section(text, "===뉴스===", "===안전수칙===")
+    tips = _section(text, "===안전수칙===", "===마무리===")
+    outro = _section(text, "===마무리===", "")
+    tags = [t.strip() for t in tags_raw.replace("\n", ",").split(",") if t.strip()]
+
+    blocks = []
+    parts = re.split(r"@출처:\s*(\d+)", news_raw)  # [pre, idx, chunk, idx, chunk, ...]
+    for k in range(1, len(parts), 2):
+        try:
+            idx = int(parts[k])
+        except ValueError:
+            continue
+        chunk = parts[k + 1].strip() if k + 1 < len(parts) else ""
+        if not chunk or not (1 <= idx <= len(news)):
+            continue
+        lines = chunk.split("\n")
+        heading, rest = "", []
+        for li, ln in enumerate(lines):
+            if ln.strip():
+                heading = ln.strip()
+                rest = lines[li + 1:]
+                break
+        src = news[idx - 1]
+        blocks.append({
+            "index": idx, "heading": heading,
+            "paragraph": "\n".join(rest).strip(),
+            "source": {"title": src["title"], "link": src["link"],
+                       "published_str": src["published_str"]},
+        })
+    return subtitle, tags, intro, blocks, tips, outro
+
+
+def generate():
+    cfg = load_config()
+    blog = cfg["blog"]
+    history = load_history()
+    recent = "\n".join(f"- {t}" for t in history[-12:]) or "- (아직 없음)"
+
+    # 도메인/팁/키워드 라벨(에디션별). 기본=재난안전. 토요일 AI판은 editions.ai 로 덮임.
+    domain = cfg.get("domain", "재난안전")
+    tips_label = cfg.get("tips_label", "안전수칙")
+    tips_desc = cfg.get("tips_desc", "일반적으로 알려진 안전 수칙 1~2가지")
+    sub_kw = cfg.get("subtitle_keyword_hint", "'지명 + 재난유형'")
+    sub_ex = cfg.get("subtitle_example",
+                     '"제천·충북 집중호우 대비, 재난대책본부 가동", '
+                     '"강원 산사태 위기경보, 여름철 안전수칙 총정리"')
+
+    def _fill(t):
+        return (t.replace("__DOMAIN__", domain)
+                 .replace("__TIPSLABEL__", tips_label)
+                 .replace("__TIPSDESC__", tips_desc)
+                 .replace("__SUBKW__", sub_kw)
+                 .replace("__SUBEX__", sub_ex))
+
+    system = _fill(SYSTEM)
+    news = fetch_news()
+    user_msg = _fill(USER_TEMPLATE).format(
+        topic=blog["topic"],
+        tone=blog.get("tone", "친근한 블로그 말투"),
+        today=f"{datetime.now():%Y-%m-%d (%A)}",
+        news_block=_news_block(news),
+        recent=recent,
+    )
+
+    min_chars = int(blog.get("min_chars", 1200))
+    min_blocks = int(blog.get("min_blocks", 4))
+
+    def _body_len(intro, blocks, tips, outro):
+        return len(intro) + len(tips) + len(outro) + sum(
+            len(b.get("heading", "")) + len(b.get("paragraph", "")) for b in blocks)
+
+    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    subtitle = intro = tips = outro = ""
+    tags, blocks = [], []
+    best = None
+    for attempt in range(1, 4):
+        msg = client.messages.create(
+            model=cfg.get("model", "claude-sonnet-4-6"),
+            max_tokens=4000,
+            system=system,
+            messages=[{"role": "user", "content": user_msg}],
+        )
+        text = msg.content[0].text.strip()
+        subtitle, tags, intro, blocks, tips, outro = _parse_structured(text, news)
+        ok_form = bool(subtitle and intro) and len(blocks) >= 2
+        length = _body_len(intro, blocks, tips, outro)
+        # 가장 잘 나온 결과를 보관(전부 미달이면 이걸 쓴다)
+        if ok_form and (best is None or length > best[-1]):
+            best = (subtitle, tags, intro, blocks, tips, outro, length)
+        if ok_form and length >= min_chars and len(blocks) >= min_blocks:
+            break
+        log(f"분량/형식 미달(시도 {attempt}/3: 본문 {length}자 / 기준 {min_chars}자, "
+            f"블록 {len(blocks)}개 / 기준 {min_blocks}개) → 재시도")
+    else:
+        if best is None:
+            raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
+        subtitle, tags, intro, blocks, tips, outro, _ = best
+        log("3회 시도 후 기준 미달 → 그중 가장 긴 결과로 진행합니다.")
+    if not (subtitle and intro and len(blocks) >= 2):
+        raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
+    log(f"본문 분량 {_body_len(intro, blocks, tips, outro)}자 (기준 {min_chars}자), "
+        f"뉴스 {len(blocks)}블록")
+
+    # 제목: 검색 키워드가 든 부제를 앞에 두고, 뒤에 고정 브랜드/날짜(네이버 검색 최적화).
+    # ('세명대 재난안전학과'는 실제로 많이 검색되는 키워드라 제목에 넣는다.)
+    suffix = cfg.get("title_suffix", "세명대 재난안전학과 주간 재난안전뉴스")
+    title = f'{subtitle} | {suffix} {datetime.now():%Y.%m.%d}'
+    # 태그: 감지된 지역·재난 키워드 + Claude 태그 + 고정 태그 + 지역 브랜딩(local_tags).
+    # local_tags 는 에디션(ai/impact/biz)이 blog.tags 를 덮어써도 항상 유지된다
+    # → "모든 게시물에 지역 태그 항상 추가" 규칙 보장(제천·충북 등).
+    tags = list(dict.fromkeys(
+        _detected_tags(subtitle, blocks, news) + (tags or [])
+        + blog.get("tags", []) + cfg.get("local_tags", [])
+    ))[:30]
+    data = {
+        "title": title, "subtitle": subtitle, "intro": intro,
+        "news_blocks": blocks, "tips": tips, "outro": outro, "tags": tags,
+    }
+
+    stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
+    with open(os.path.join(POSTS_DIR, f"{stamp}.json"), "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    with open(os.path.join(POSTS_DIR, f"{stamp}.txt"), "w", encoding="utf-8") as f:
+        parts = [title, "", intro, ""]
+        for b in blocks:
+            parts += [b["heading"], b["paragraph"],
+                      f"출처: {b['source']['title']}\n{b['source']['link']}", ""]
+        parts += [tips, "", outro]
+        f.write("\n".join(parts))
+
+    history.append(subtitle)
+    save_history(history)
+    log(f"글 생성 완료: {title}  (뉴스 {len(blocks)}블록)")
+    return data
+
+
+if __name__ == "__main__":
+    d = generate()
+    print("\n제목:", d["title"])
+    print("인사:", d["intro"][:60], "...")
+    for b in d["news_blocks"]:
+        print(f"\n[{b['index']}] {b['heading']}")
+        print("  ", b["paragraph"][:50], "...")
+        print("   출처:", b["source"]["link"][:60])
