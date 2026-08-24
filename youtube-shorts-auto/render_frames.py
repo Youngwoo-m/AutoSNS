@@ -10,6 +10,7 @@
 """
 import json
 import os
+import sys
 import time
 
 from selenium import webdriver
@@ -17,6 +18,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 from common import BASE_DIR, POSTS_DIR, load_config, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import require_fonts  # noqa: E402
 
 W, H = 1080, 1920  # Shorts 9:16
 
@@ -33,6 +37,8 @@ def _file_url(path):
 
 
 def _font_face(font_dir):
+    # 폰트가 없으면 크롬이 조용히 다른 글꼴로 렌더하므로 여기서 막는다.
+    require_fonts(font_dir)
     d = font_dir.replace("\\", "/")
     return f"""
     @font-face {{ font-family:'KoPub'; font-weight:300; font-style:normal;

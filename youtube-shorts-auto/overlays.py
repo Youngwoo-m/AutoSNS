@@ -10,11 +10,15 @@
 주의: KoPub 폰트에 이모지 글리프가 없어 이모지는 쓰지 않는다(두부문자 방지).
 """
 import os
+import sys
 import subprocess
 
 import imageio_ffmpeg
 
 from common import BASE_DIR, POSTS_DIR, load_config, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import DOTUM_BOLD, default_font_dir, require_fonts  # noqa: E402
 
 DEFAULTS = {
     "hook": True,
@@ -31,8 +35,8 @@ def _font():
     import shutil
     f = os.path.join(POSTS_DIR, "_kopub_bold.otf")
     if not os.path.exists(f):
-        shutil.copy(os.path.join(os.path.dirname(BASE_DIR), "FONTS",
-                                 "KoPubWorld Dotum_Pro Bold.otf"), f)
+        d = require_fonts(default_font_dir(BASE_DIR), (DOTUM_BOLD,))
+        shutil.copy(os.path.join(d, DOTUM_BOLD), f)
     return f
 
 

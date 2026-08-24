@@ -18,6 +18,9 @@ import urllib.request
 
 from common import BASE_DIR, POSTS_DIR, load_config, log
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import DOTUM_BOLD, default_font_dir, require_fonts  # noqa: E402
+
 API = "https://api.heygen.com"
 UPLOAD = "https://upload.heygen.com/v1/talking_photo"
 W, H = 1080, 1920   # 9:16 세로(인스타 릴스·쇼츠 권장 해상도)
@@ -134,8 +137,8 @@ def _font():
     import shutil
     f = os.path.join(POSTS_DIR, "_kopub_bold.otf")
     if not os.path.exists(f):
-        shutil.copy(os.path.join(os.path.dirname(BASE_DIR), "FONTS",
-                                 "KoPubWorld Dotum_Pro Bold.otf"), f)
+        d = require_fonts(default_font_dir(BASE_DIR), (DOTUM_BOLD,))
+        shutil.copy(os.path.join(d, DOTUM_BOLD), f)
     return f
 
 
