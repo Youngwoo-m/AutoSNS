@@ -435,12 +435,23 @@ def publish(data, dry_run=None):
     structured = bool(data.get("news_blocks"))
 
     if structured:
-        # 뉴스별 이미지 준비(기사 og:image, 없으면 Gamma). 상단 요약 이미지는 만들지 않음.
+        # 뉴스별 이미지 준비(기사 og:image, 없으면 Gamma).
         try:
             from article_image import prepare_images
             prepare_images(data["news_blocks"])
         except Exception as e:
             log(f"뉴스 이미지 준비 실패(이미지 없이 진행): {e}")
+        # 상단 배너(제목·날짜 헤더). config.blog.banner 로 끌 수 있다.
+        # 여기서는 Gamma 를 쓰지 않는다 — 헤더는 제목/날짜를 넣는 고정 서식이고,
+        # Gamma 는 유료 크레딧을 쓰므로 뉴스별 삽화(article_image)에만 남긴다.
+        want_banner = (not data.get("no_banner")
+                       and cfg.get("blog", {}).get("banner", True))
+        if want_banner and not data.get("banner"):
+            try:
+                data["banner"] = make_banner(
+                    data["title"], f"{datetime.now():%Y년 %m월 %d일}")
+            except Exception as e:
+                log(f"배너 생성 실패, 배너 없이 진행: {e}")
     else:
         # (구버전 글) 상단 이미지 생성: image.source=gamma 면 Gamma, 아니면 배너. 폴백 보장.
         want_image = not data.get("no_banner") and cfg.get("blog", {}).get("banner", True)
@@ -500,7 +511,10 @@ def publish(data, dry_run=None):
         time.sleep(0.5)
 
         if structured:
-            # 뉴스별 구조: 인사 → [소제목·본문·기사이미지·출처링크]×N → 안전수칙 → 마무리
+            # 상단 배너 → 뉴스별 구조: 인사 → [소제목·본문·기사이미지·출처링크]×N
+            #             → 안전수칙 → 마무리
+            if data.get("banner"):
+                insert_image_top(driver, data["banner"])
             type_structured_post(driver, data)
             time.sleep(1)
         else:
