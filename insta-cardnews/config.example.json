@@ -66,5 +66,13 @@
     "audio_file": "assets/bgm.mp3",
     "seconds_per_card": 3.5,
     "bg_color": "0x0f2038"
+  },
+  "threads": {
+    "_주석": "Meta 개발자 포털에서 Threads API 앱 생성 후 채우세요. redirect_uri 는 포털의 Redirect Callback URL 과 정확히 같아야 합니다.",
+    "app_id": "",
+    "app_secret": "",
+    "redirect_uri": "https://smuds.netlify.app/callback.html",
+    "dry_run": true,
+    "image_url": ""
   }
 }

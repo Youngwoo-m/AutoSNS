@@ -13,6 +13,7 @@ api.txt
 **/tiktok_token.json
 **/token_manage.json
 **/token*.bak.json
+*_token.json
 *.bak.*
 
 # ── 로그인 세션(쿠키·프로필) ────────────────────────────────
