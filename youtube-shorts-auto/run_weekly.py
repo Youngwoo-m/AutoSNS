@@ -97,6 +97,18 @@ def main():
             log(f"틱톡: {tr.get('status')} (privacy={tr.get('privacy','')})")
         except Exception as e:
             log(f"틱톡 발행 실패(유튜브는 정상): {e}")
+
+    # 카카오톡 '나에게 보내기' 발행 알림(실패해도 발행에는 영향 없음)
+    try:
+        from kakao_notify import notify
+        kind = "AI 아나운서 뉴스" if made_anchor else "카드뉴스"
+        url = result.get("url", "") if isinstance(result, dict) else ""
+        msg = (f"[SMUDS 발행완료] 유튜브 {kind}\n{data.get('title','재난안전 뉴스')}\n{url}\n"
+               f"+ 네이버 동영상뉴스" + ("\n+ 인스타 릴" if made_anchor else ""))
+        r = notify(msg, url or None)
+        log(f"카톡 알림: {r}")
+    except Exception as e:
+        log(f"카톡 알림 건너뜀: {type(e).__name__}: {e}")
     log("===== 종료 =====")
 
 

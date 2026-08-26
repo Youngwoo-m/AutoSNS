@@ -5,3 +5,4 @@ logs/
 title_history.json
 .venv/
 __pycache__/
+kakao_token.json

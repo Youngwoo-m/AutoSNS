@@ -39,6 +39,12 @@ def _run_one(edition):
     data = generate()
     result = publish(data, dry_run=False)   # 스케줄은 항상 실제 발행
     log(f"----- [{label}] 종료: {result.get('status')} -----")
+    try:                        # 카카오톡 발행 알림(실패 무시)
+        from kakao_notify import notify
+        notify(f"[SMUDS 발행완료] 네이버 블로그 [{label}]\n{data.get('title','')}\n"
+               f"상태: {result.get('status')}", "https://blog.naver.com")
+    except Exception as e:
+        log(f"카톡 알림 건너뜀: {type(e).__name__}")
 
 
 def main():

@@ -44,6 +44,13 @@ def main():
         else:
             result = post_carousel(data, dry_run=False)  # 캐러셀 게시
         log(f"===== 종료: {result.get('status')} (카드 {result.get('images')}장) =====")
+        try:                    # 카카오톡 발행 알림(실패 무시)
+            from kakao_notify import notify
+            fmt = "릴" if cfg.get("reel", {}).get("enabled") else "카드뉴스"
+            notify(f"[SMUDS 발행완료] 인스타 {fmt}\n{data.get('title','재난안전 카드뉴스')}\n"
+                   f"상태: {result.get('status')}", "https://instagram.com/smu_ds_official")
+        except Exception as e:
+            log(f"카톡 알림 건너뜀: {type(e).__name__}")
     except Exception as e:
         log(f"===== 실패: {e} =====")
         raise

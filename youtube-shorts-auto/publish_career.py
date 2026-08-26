@@ -158,6 +158,12 @@ def main(argv):
     }
     _save(sched)
     log(f"[{ep.get('label', ep['no'])}] 발행 완료 — YT:{url}  IG:{ig_status}")
+    try:                        # 카카오톡 발행 알림(실패 무시)
+        from kakao_notify import notify
+        notify(f"[SMUDS 발행완료] 진로/퀴즈 {ep.get('label', ep['no'])}\n"
+               f"{ep.get('title','')}\n{url}\n인스타: {ig_status}", url)
+    except Exception as e:
+        log(f"카톡 알림 건너뜀: {type(e).__name__}")
     if ig_status not in ("published", "shared_unconfirmed", "skipped"):
         log(f"  ⚠ 인스타 재시도(수동): cd {IG_DIR} && echo '<payload>' | ./.venv/bin/python post_reel_cli.py")
     print("PUBLISHED:", ep["no"], "YT", url, "IG", ig_status)
