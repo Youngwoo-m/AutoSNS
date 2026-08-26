@@ -92,7 +92,11 @@
       "입시",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/iCB8xvR7W-8",
+      "instagram": "published",
+      "at": "2026-08-25T19:02:14"
+    },
     "series": "career",
     "label": "진로 5/8"
   },
