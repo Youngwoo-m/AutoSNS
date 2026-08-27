@@ -13,4 +13,14 @@ python3 collect_web.py "$SINCE"                                 || echo "!! 블�
 "$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
 
 echo "== 리포트 생성 =="
-python3 build_report.py "$TODAY"
+REPORT="$(python3 build_report.py "$TODAY" | tail -1)"
+echo "$REPORT"
+
+# mail_config.json 이 있으면 그 계정으로 바로 발송한다. 없으면 파일만 남긴다.
+if [[ -f mail_config.json && -f "$REPORT" ]]; then
+  echo "== 메일 발송 =="
+  SUBJECT="$(cat "${REPORT%.html}.subject.txt" 2>/dev/null || echo '[재난안전학과] SNS 주간 리포트')"
+  python3 send_mail.py "$REPORT" "$SUBJECT" || echo "!! 메일 발송 실패"
+else
+  echo "메일 설정(mail_config.json) 없음 — 리포트 파일만 생성했습니다."
+fi

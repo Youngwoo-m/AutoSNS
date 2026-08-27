@@ -2,3 +2,4 @@ snapshots/
 out/
 logs/
 __pycache__/
+mail_config.json

@@ -157,7 +157,12 @@ def build(rows, channel, profile, skipped, today, since="2026-03-01"):
              f'font-size:11px;color:#888">누적 {len(cum)}건 · {today} 자동 집계 · '
              f'유튜브 Data API, 인스타 계정 조회, 블로그·홈페이지 공개 목록</p></div>')
 
-    snap = {"date": today, "week_count": len(week), "cum_count": len(cum),
+    subject = (f"[재난안전학과] SNS 주간 리포트 "
+               f"({int(wk_start[5:7])}월 {int(wk_start[8:10])}일~"
+               f"{int((d0 - timedelta(days=1)).strftime('%m'))}월 "
+               f"{int((d0 - timedelta(days=1)).strftime('%d'))}일)")
+    snap = {"date": today, "subject": subject,
+            "week_count": len(week), "cum_count": len(cum),
             "subscribers": subs, "followers": fol,
             "total_views": channel.get("total_views"),
             "by_media": {m: sum(1 for r in week if r["media"] == m) for m in MED}}
@@ -173,5 +178,7 @@ if __name__ == "__main__":
         f.write(html)
     with open(os.path.join(SNAP_DIR, f"{today}.json"), "w", encoding="utf-8") as f:
         json.dump(snap, f, ensure_ascii=False, indent=1)
+    with open(os.path.join(OUT_DIR, f"weekly_{today}.subject.txt"), "w", encoding="utf-8") as f:
+        f.write(snap["subject"])
     log(f"리포트 생성: {out} (이번 주 {snap['week_count']}건, 누적 {snap['cum_count']}건)")
     print(out)
