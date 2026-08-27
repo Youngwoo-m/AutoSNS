@@ -12,7 +12,7 @@ mail_config.json (git 에 올라가지 않음):
   "sender_name": "세명대 재난안전학과"
 }
 
-사용:  python3 send_mail.py out/weekly_2026-08-31.html "[재난안전학과] SNS 주간 리포트 (8월 25일~8월 31일)"
+사용:  python3 send_mail.py out/weekly_2026-08-31.html "제목" [첨부.hwpx 첨부.xlsx ...]
 """
 import json
 import os
@@ -20,6 +20,7 @@ import re
 import smtplib
 import sys
 from email.header import Header
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
@@ -55,27 +56,51 @@ def to_plain(html):
     return re.sub(r"[ \t]+", " ", re.sub(r"\n\s*\n+", "\n", t)).strip()
 
 
-def send(html_path, subject, cfg=None):
-    cfg = cfg or load_config()
+def build_message(html_path, subject, cfg, attachments=None):
+    """보낼 메시지를 조립한다. (발송 전에 내용을 확인할 수 있도록 분리)"""
     with open(html_path, "r", encoding="utf-8") as f:
         html = f.read()
 
-    msg = MIMEMultipart("alternative")
+    body = MIMEMultipart("alternative")
+    body.attach(MIMEText(to_plain(html), "plain", "utf-8"))
+    body.attach(MIMEText(html, "html", "utf-8"))
+
+    files = [p for p in (attachments or []) if p and os.path.exists(p)]
+    if files:
+        msg = MIMEMultipart("mixed")
+        msg.attach(body)
+        for path in files:
+            with open(path, "rb") as f:
+                part = MIMEApplication(f.read(), Name=os.path.basename(path))
+            # 한글 파일명은 RFC2231 로 인코딩해야 클라이언트에서 깨지지 않는다.
+            part.set_param("name", os.path.basename(path), charset="utf-8", language="ko")
+            part.add_header("Content-Disposition", "attachment")
+            part.set_param("filename", os.path.basename(path), header="Content-Disposition",
+                           charset="utf-8", language="ko")
+            msg.attach(part)
+    else:
+        msg = body
+
     msg["Subject"] = Header(subject, "utf-8")
     msg["From"] = formataddr((str(Header(cfg.get("sender_name", "재난안전학과"), "utf-8")),
                               cfg["sender"]))
     msg["To"] = ", ".join(cfg["to"])
-    msg.attach(MIMEText(to_plain(html), "plain", "utf-8"))
-    msg.attach(MIMEText(html, "html", "utf-8"))
+    return msg, files
 
+
+def send(html_path, subject, cfg=None, attachments=None):
+    """attachments: 첨부할 파일 경로 목록(없는 파일은 건너뛴다)."""
+    cfg = cfg or load_config()
+    msg, files = build_message(html_path, subject, cfg, attachments)
     with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as s:
         s.login(cfg["sender"], cfg["app_password"])
         s.sendmail(cfg["sender"], cfg["to"], msg.as_string())
-    log(f"메일 발송: {cfg['sender']} → {', '.join(cfg['to'])} / {subject}")
-    return {"status": "sent", "to": cfg["to"], "from": cfg["sender"]}
+    log(f"메일 발송: {cfg['sender']} → {', '.join(cfg['to'])} / {subject}"
+        + (f" (첨부 {len(files)}개)" if files else ""))
+    return {"status": "sent", "to": cfg["to"], "from": cfg["sender"], "attachments": len(files)}
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        raise SystemExit("사용: python3 send_mail.py <리포트.html> <제목>")
-    send(sys.argv[1], sys.argv[2])
+        raise SystemExit("사용: python3 send_mail.py <리포트.html> <제목> [첨부파일 ...]")
+    send(sys.argv[1], sys.argv[2], attachments=sys.argv[3:])
