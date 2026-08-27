@@ -125,8 +125,8 @@ def _parse(text):
     if last:
         cards.append(last)
 
-    tags = [t.strip().lstrip("#") for t in tags_raw.replace("\n", ",").split(",")
-            if t.strip()]
+    # 해시태그 정규화: '#'·공백·쉼표·줄바꿈 모두로 쪼개 한 뭉치로 뭉치는 것을 방지.
+    tags = [t for t in tags_raw.replace("#", " ").replace(",", " ").split() if t]
     return title, cards, caption, tags
 
 

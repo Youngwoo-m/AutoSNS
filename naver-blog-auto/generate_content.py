@@ -139,7 +139,8 @@ def _parse_structured(text, news):
     news_raw = _section(text, "===뉴스===", "===안전수칙===")
     tips = _section(text, "===안전수칙===", "===마무리===")
     outro = _section(text, "===마무리===", "")
-    tags = [t.strip() for t in tags_raw.replace("\n", ",").split(",") if t.strip()]
+    # 태그 정규화: '#'·공백·쉼표·줄바꿈 모두로 쪼개 한 뭉치로 뭉치는 것을 방지.
+    tags = [t for t in tags_raw.replace("#", " ").replace(",", " ").split() if t]
 
     blocks = []
     parts = re.split(r"@출처:\s*(\d+)", news_raw)  # [pre, idx, chunk, idx, chunk, ...]

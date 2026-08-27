@@ -180,8 +180,10 @@ def _parse(text):
         scenes.append(_parse_scene(last))
     scenes = [s for s in scenes if s["narration"]]
 
-    tags = [t.strip().lstrip("#") for t in tags_raw.replace("\n", ",").split(",")
-            if t.strip()]
+    # 해시태그 정규화: 쉼표·줄바꿈뿐 아니라 '#'·공백으로도 쪼갠다.
+    # (LLM이 "Shorts #a #b #c" 처럼 공백으로 붙여 반환하면 한 뭉치가 하나의 태그로
+    #  잘못 들어가던 버그 방지. '#Shorts #Shorts' 중복도 이후 dedup 으로 정리됨.)
+    tags = [t for t in tags_raw.replace("#", " ").replace(",", " ").split() if t]
     return title, scenes, description, tags
 
 
