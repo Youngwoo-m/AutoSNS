@@ -34,7 +34,8 @@ def _post_instagram_reel(data, ai_label=False):
     headline = (data.get("scenes") or [{}])[0].get("heading", "재난안전 뉴스")
     caption = f"{headline}\n\n세명대학교 재난안전학과가 전하는 재난안전 뉴스입니다."
     if ai_label:
-        caption += "\n※ 진행자는 AI로 생성된 가상 아나운서입니다."
+        caption += "\n" + load_config().get("heygen", {}).get("disclosure_text_short",
+            "※ 재난안전학과 학과장 아바타를 AI로 자동 생성한 영상입니다.")
     caption += "\n\n팔로우하고 제천·충북 재난안전 소식 받기 👉 @smu_ds_official"
     payload = {"reel": os.path.abspath(video), "caption": caption,
                "hashtags": data.get("hashtags", []), "ai_label": ai_label}

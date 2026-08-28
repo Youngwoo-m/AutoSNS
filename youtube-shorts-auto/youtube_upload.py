@@ -112,7 +112,9 @@ def _build_description(data, cfg):
     # AI 아나운서 영상이면 합성 콘텐츠 고지를 자동 삽입(YouTube 정책 준수)
     if data.get("ai_disclosure"):
         parts.append("")
-        parts.append("※ 이 영상의 진행자는 AI로 생성된 가상 아나운서(합성 음성·영상)입니다.")
+        parts.append(cfg.get("heygen", {}).get("disclosure_text",
+            "※ 이 영상은 세명대학교 재난안전학과 학과장의 모습을 바탕으로 "
+            "AI로 자동 생성한 아바타 영상입니다(합성 음성·영상)."))
 
     sources = data.get("sources") or []
     if sources and ycfg.get("include_sources", True):
