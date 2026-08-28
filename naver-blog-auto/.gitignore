@@ -7,3 +7,4 @@ __pycache__/
 title_history.json
 *.png
 kakao_token.json
+neighbor_state.json
