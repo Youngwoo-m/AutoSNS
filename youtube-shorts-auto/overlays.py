@@ -26,8 +26,10 @@ DEFAULTS = {
     "hook_text": "지금 꼭 알아야 할 재난안전",
     "cta": True,
     "cta_seconds": 3.2,
-    "cta_text": "구독과 좋아요는 큰 힘이 됩니다!",
-    "cta_sub": "세명대학교 재난안전학과 · 구독하고 안전정보 받기",
+    "cta_text": "지금 구독하기",
+    "cta_sub": "매주 제천·충북 재난안전 정보 · 좋아요·알림도 힘이 됩니다",
+    "cta_mid": True,
+    "cta_mid_text": "구독",
 }
 
 
@@ -87,19 +89,35 @@ def apply(video_in, out=None, dur=None):
             f"drawtext=fontfile='{fnt}':text='{_esc(cfg['hook_text'])}':fontcolor=white:"
             f"fontsize={px(46)}:box=1:boxcolor=0xE63946:boxborderw={px(18)}:"
             f"x=(w-text_w)/2:y=h*0.235:enable='between(t,0,{hs:.2f})'")
-    # ---- CTA: 후반 N초, 화면 중앙 상단 네이비 배너 2줄 — 구독/좋아요 유도 ----
+    # ---- CTA: 후반 N초, 빨간 '구독' 버튼 + 깜빡이는 밑줄 + 서브. 완주 전 이탈자를 위한
+    #      중반 미리보기 칩(우상단)도 함께 띄워 구독 노출 기회를 늘린다. ----
     if cfg.get("cta") and cfg.get("cta_text"):
         cs = float(cfg.get("cta_seconds", 3.2))
         t0 = max(dur - cs, 0.0)
+        en = f"between(t,{t0:.2f},{dur:.2f})"
+        # (1) 빨간 유튜브식 '구독' 버튼 — 크고 눈에 띄게(구독 전환 최우선)
         parts.append(
-            f"drawtext=fontfile='{fnt}':text='{_esc(cfg['cta_text'])}':fontcolor=0xFFD24A:"
-            f"fontsize={px(48)}:box=1:boxcolor=0x0B1C3A@0.92:boxborderw={px(20)}:"
-            f"x=(w-text_w)/2:y=h*0.40:enable='between(t,{t0:.2f},{dur:.2f})'")
+            f"drawtext=fontfile='{fnt}':text='{_esc(cfg['cta_text'])}':fontcolor=white:"
+            f"fontsize={px(56)}:box=1:boxcolor=0xE60000:boxborderw={px(26)}:"
+            f"x=(w-text_w)/2:y=h*0.37:enable='{en}'")
+        # (2) 깜빡이는 노란 밑줄 — 시선 유도(0.7s 주기 점멸).
+        #     drawbox 좌표식은 입력크기 변수 iw/ih 를 쓴다(w/h 는 박스 자신이라 순환참조 에러).
+        parts.append(
+            f"drawbox=x=iw*0.17:y=ih*0.37+{px(108)}:w=iw*0.66:h={px(9)}:color=0xFFD24A:t=fill:"
+            f"enable='{en}*lt(mod(t,0.7),0.35)'")
+        # (3) 서브 라인(네이비) — 좋아요/알림 등 보조 유도
         if cfg.get("cta_sub"):
             parts.append(
                 f"drawtext=fontfile='{fnt}':text='{_esc(cfg['cta_sub'])}':fontcolor=white:"
                 f"fontsize={px(30)}:box=1:boxcolor=0x0B1C3A@0.92:boxborderw={px(14)}:"
-                f"x=(w-text_w)/2:y=h*0.40+{px(78)}:enable='between(t,{t0:.2f},{dur:.2f})'")
+                f"x=(w-text_w)/2:y=h*0.37+{px(132)}:enable='{en}'")
+        # (4) 중반 미리보기 칩 — 끝까지 안 보고 이탈하는 시청자에게도 구독 노출
+        if cfg.get("cta_mid", True) and dur > 12:
+            m0 = dur * 0.42
+            parts.append(
+                f"drawtext=fontfile='{fnt}':text='{_esc(cfg.get('cta_mid_text','구독'))}':"
+                f"fontcolor=white:fontsize={px(28)}:box=1:boxcolor=0xE60000:boxborderw={px(13)}:"
+                f"x=w-text_w-{px(22)}:y={px(214)}:enable='between(t,{m0:.2f},{m0 + 1.6:.2f})'")
     if not parts:
         return video_in
 
