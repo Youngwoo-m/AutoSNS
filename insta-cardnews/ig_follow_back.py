@@ -20,15 +20,19 @@ import sys
 import time
 
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 from common import load_config, log
 from post_instagram import build_driver, shot
 
 STATE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "follow_back_state.json")
-# 이 문구가 페이지에 뜨면 계정 보호를 위해 즉시 멈춘다.
-BLOCK_HINTS = ["작업이 차단", "나중에 다시 시도", "일시적으로 차단", "행동이 차단",
-               "제한되었습니다", "챌린지", "challenge", "Try Again Later",
-               "Action Blocked", "temporarily blocked"]
+# 계정 보호용 중단 신호. page_source(스크립트 포함)가 아니라 '화면에 보이는 본문 텍스트'에서만
+# 찾는다. 스크립트에 흔한 'challenge/제한' 같은 단어로 오탐하지 않도록 구체적 문구만 쓴다.
+BLOCK_HINTS = ["작업이 차단되었습니다", "나중에 다시 시도", "이 작업을 완료할 수 없",
+               "행동이 차단", "잠시 후 다시 시도", "Action Blocked", "Try Again Later",
+               "We restrict certain activity", "Please wait a few minutes"]
 
 
 def _load_state():
@@ -49,11 +53,34 @@ def _today():
 
 
 def _blocked(driver):
+    # page_source 가 아니라 '화면에 보이는 본문 텍스트'만 검사(스크립트 오탐 방지).
     try:
-        src = driver.page_source
+        body = driver.find_element(By.TAG_NAME, "body").text
     except Exception:
         return False
-    return any(h in src for h in BLOCK_HINTS)
+    return any(h in body for h in BLOCK_HINTS)
+
+
+def _open_followers(driver, user):
+    """프로필의 '팔로워' 링크를 눌러 팔로워 모달을 연다(/followers/ URL 단독으론 안 열림)."""
+    driver.get(f"https://www.instagram.com/{user}/")
+    time.sleep(random.uniform(3.5, 5.0))
+    shot(driver, "followback_profile")
+    # 인스타 개편으로 팔로워 카운트가 <a href=.../followers/> 가 아니라 클릭 가능한 텍스트다.
+    # '팔로워' 글자를 포함한 요소를 클릭하면 팔로워 모달(dialog)이 열린다.
+    opened = False
+    for e in driver.find_elements(By.XPATH, "//*[contains(text(),'팔로워')]"):
+        try:
+            ActionChains(driver).move_to_element(e).click().perform()
+            WebDriverWait(driver, 6).until(
+                EC.presence_of_element_located((By.XPATH, "//div[@role='dialog']")))
+            opened = True
+            break
+        except Exception:
+            continue
+    if not opened:
+        log("팔로워 모달을 열지 못했습니다(로그인/DOM 확인 필요).")
+    time.sleep(random.uniform(2.0, 3.5))
 
 
 def _scroll_dialog(driver, times=1):
@@ -103,14 +130,21 @@ def run(dry_run=None):
     driver = build_driver(headless=False)   # supervised: 화면을 보며 진행
     done = 0
     try:
-        driver.get(f"https://www.instagram.com/{user}/followers/")
-        time.sleep(random.uniform(3.5, 5.5))
+        _open_followers(driver, user)
         shot(driver, "followback_open")
         if _blocked(driver):
             shot(driver, "followback_blocked"); log("⚠ 차단/챌린지 감지 → 중단")
             return {"status": "blocked", "done": 0}
 
         _scroll_dialog(driver, times=3)      # 초기 몇 명 로드
+        if dry_run:                          # 진단: 모달·버튼 라벨 분포 확인
+            dlgs = driver.find_elements(By.XPATH, "//div[@role='dialog']")
+            labels = {}
+            for bt in driver.find_elements(By.XPATH, "//div[@role='dialog']//button"):
+                t = (bt.text or "").strip()
+                if t:
+                    labels[t] = labels.get(t, 0) + 1
+            log(f"[진단] dialog {len(dlgs)}개, 모달 내 버튼 라벨: {labels}")
         target = remaining
         while done < target:
             btns = _follow_buttons(driver)
