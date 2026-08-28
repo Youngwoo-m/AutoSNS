@@ -388,6 +388,18 @@ def _caption_extras(data, cfg):
     return "\n".join(parts).strip()
 
 
+def _first_comment_text(data, cfg):
+    """첫 댓글 = 질문형 참여 유도 한 줄 + (출처·해시태그).
+
+    댓글은 인스타 알고리즘의 참여 신호라, 맨 앞에 답하기 쉬운 질문을 던져 댓글을
+    유도한다. 문구는 config.instagram.first_comment_question 으로 바꿀 수 있다.
+    """
+    q = (cfg.get("instagram", {}).get("first_comment_question") or
+         "여러분 지역은 안전한가요? 겪은 일이나 궁금한 점을 댓글로 남겨주세요! 👇").strip()
+    extras = _caption_extras(data, cfg)
+    return "\n\n".join(p for p in (q, extras) if p).strip()
+
+
 def _build_caption(data, cfg):
     """캡션 전체(본문+부속). first_comment 를 쓰면 부속은 댓글로 분리된다."""
     body, extras = _caption_body(data, cfg), _caption_extras(data, cfg)
@@ -610,10 +622,10 @@ def post_reel(data, dry_run=None):
             return {"status": "shared_unconfirmed"}
         log("릴 게시 완료(추정).")
 
-        # 릴은 캡션 노출이 약해 출처·해시태그를 첫 댓글로 옮긴다
+        # 릴은 캡션 노출이 약해 질문형 참여유도 + 출처·해시태그를 첫 댓글로 옮긴다
         if ig.get("first_comment", False):
-            extras = _caption_extras(data, cfg)
-            _post_first_comment(driver, ig.get("username", ""), extras)
+            _post_first_comment(driver, ig.get("username", ""),
+                                _first_comment_text(data, cfg))
         return {"status": "published"}
 
     except Exception as e:
