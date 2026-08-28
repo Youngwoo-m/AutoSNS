@@ -148,6 +148,12 @@ def main(argv):
 
     # 1) 유튜브(기준 채널) — 성공해야 published 기록 → 중복 발행 방지
     url = _upload(ep)
+    # 1-1) 자동 첫 댓글(구독 유도·참여 마중물) — force-ssl 스코프 필요, 실패해도 발행 유지
+    try:
+        from youtube_upload import post_top_comment
+        post_top_comment(url.rsplit("/", 1)[-1], data={"title": ep.get("title", "")})
+    except Exception as e:
+        log(f"자동 댓글 건너뜀(유튜브는 정상): {type(e).__name__}")
     # 2) 인스타(부가 채널) — 실패해도 유튜브 발행은 유지
     ig_status = "skipped" if no_ig else _post_instagram(ep)
 

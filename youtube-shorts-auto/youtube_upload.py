@@ -23,12 +23,14 @@ from common import POSTS_DIR, TOKEN_PATH, load_config, log
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.keyword_terms import TAG_DISASTER_TERMS, TAG_REGION_TERMS  # noqa: E402
 
-# 업로드 + 읽기(검색·통계) + 애널리틱스. 업로드만 넣으면 토큰 재저장 시 나머지
-# 스코프가 날아가 web_search / 애널리틱스가 403(insufficient scopes)이 된다.
+# 업로드 + 읽기(검색·통계) + 애널리틱스 + 댓글쓰기(force-ssl). 업로드만 넣으면 토큰
+# 재저장 시 나머지 스코프가 날아가 web_search / 애널리틱스 / 자동댓글이 403 이 된다.
+# force-ssl 추가 후에는 youtube_login_setup.py 로 1회 재인증(재동의)해야 댓글이 붙는다.
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload",
     "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
 ]
 
 # 검색 최적화(SEO) 기본값 — config.youtube.seo_footer / seo_keywords 로 덮어쓸 수 있다.
@@ -208,6 +210,50 @@ def upload(data, dry_run=None, privacy=None):
     url = f"https://youtu.be/{vid}" if vid else "(id 없음)"
     log(f"업로드 완료: {url}  (privacy={privacy})")
     return {"status": "uploaded", "video_id": vid, "url": url, "privacy": privacy}
+
+
+def comment_text(data, cfg=None):
+    """자동 첫 댓글 문구. config.youtube.auto_comment.text 로 덮어쓸 수 있고,
+    {title} 플레이스홀더를 영상 제목으로 치환한다."""
+    cfg = cfg or load_config()
+    ac = cfg.get("youtube", {}).get("auto_comment", {})
+    tmpl = ac.get("text") or (
+        "이 소식이 도움이 되셨다면 구독 부탁드려요 🙏\n"
+        "여러분 지역은 안전한가요? 댓글로 알려주세요! "
+        "세명대학교 재난안전학과가 매주 재난안전 정보를 전합니다.")
+    try:
+        return tmpl.format(title=(data or {}).get("title", ""))
+    except Exception:
+        return tmpl
+
+
+def post_top_comment(video_id, text=None, data=None, dry_run=False):
+    """업로드한 영상에 최상위 댓글을 자동 작성(구독 유도·참여 마중물).
+
+    youtube.force-ssl 스코프 필요 → 없으면 403(재인증 안내). 실패해도 예외를 삼켜
+    발행을 막지 않는다. (참고: 댓글 '상단 고정'은 YouTube API 미지원 — 작성까지만 자동화.)
+    """
+    if not video_id:
+        return {"skipped": "no video_id"}
+    text = text or comment_text(data)
+    if dry_run:
+        log(f"DRY_RUN 자동댓글: {text[:60]}...")
+        return {"dry_run": text}
+    try:
+        yt = build("youtube", "v3", credentials=_creds(), cache_discovery=False)
+        body = {"snippet": {"videoId": video_id,
+                            "topLevelComment": {"snippet": {"textOriginal": text}}}}
+        res = yt.commentThreads().insert(part="snippet", body=body).execute()
+        log(f"자동 댓글 작성 완료: {res.get('id')}")
+        return {"status": "commented", "id": res.get("id")}
+    except Exception as e:
+        m = str(e)
+        if any(k in m.lower() for k in ("insufficient", "forbidden", "403", "scope")):
+            log("⚠ 자동 댓글 실패(권한): force-ssl 스코프 없음 → "
+                "youtube_login_setup.py 로 1회 재인증(재동의) 필요")
+        else:
+            log(f"자동 댓글 실패(발행은 정상): {type(e).__name__}: {m[:120]}")
+        return {"error": m[:200]}
 
 
 def _latest_data():

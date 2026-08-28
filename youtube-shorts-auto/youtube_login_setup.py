@@ -16,8 +16,7 @@ import os
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 from common import CLIENT_SECRET_PATH, TOKEN_PATH, log
-
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+from youtube_upload import SCOPES  # 업로드+읽기+애널리틱스+댓글(force-ssl) 단일 정의 재사용
 
 
 def main():

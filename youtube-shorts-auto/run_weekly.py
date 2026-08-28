@@ -73,6 +73,13 @@ def main():
         privacy = cfg.get("youtube", {}).get("privacy", "public")
         result = upload(data, dry_run=False, privacy=privacy)  # 6) 유튜브 실제 발행
         log(f"유튜브: {result.get('status')} {result.get('url','')}")
+        # 6-0) 자동 첫 댓글(구독 유도·참여 마중물). enabled 이고 업로드 성공 시에만.
+        if cfg.get("youtube", {}).get("auto_comment", {}).get("enabled", True):
+            try:
+                from youtube_upload import post_top_comment
+                post_top_comment(result.get("video_id"), data=data)
+            except Exception as e:
+                log(f"자동 댓글 건너뜀(유튜브는 정상): {type(e).__name__}: {e}")
         # 6-1) 같은 영상을 네이버 '동영상뉴스' 카테고리에도 발행(설정 시)
         try:
             from crosspost import crosspost_naver_video
