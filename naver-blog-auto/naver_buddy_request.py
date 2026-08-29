@@ -6,7 +6,8 @@
   - 하루 한도(작게, 기본 5)·요청 간 긴 랜덤 딜레이(기본 60~150초).
   - 이미 신청한 대상·내 블로그·제외목록은 건너뜀(상태파일 누적).
   - '하루 신청 한도/제한/스팸' 문구 감지 즉시 중단.
-  - launchd 금지 — 사람이 지켜보는 supervised 수동 실행 전제.
+  - 스케줄은 저빈도만 허용: 매주 금 21:00 launchd(com.smuds.naverbuddy.weekly),
+    1회 5명 이하(=주 5명). 빈도를 올리면 계정 제한 위험이 급격히 커진다.
 
 사용:
   python naver_buddy_request.py        # dry-run(대상 목록 + 폼 화면 확인, 신청 안 함)
@@ -240,7 +241,7 @@ def run(dry_run=None):
     pick = targets[:remaining]
     if dry_run:
         log(f"[DRY-RUN] 신청 예정 {len(pick)}명: {', '.join(pick)}")
-        driver = build_driver(headless=False)
+        driver = build_driver(headless=br.get("headless", False))
         try:
             _send_one(driver, pick[0], message, dry=True)   # 첫 대상 폼만 열어 확인
             log(f"[DRY-RUN] 첫 대상({pick[0]}) 신청 폼 화면 확인 — 제출 안 함")
@@ -248,7 +249,7 @@ def run(dry_run=None):
             driver.quit()
         return {"status": "ok", "done": 0, "targets": pick}
 
-    driver = build_driver(headless=False)
+    driver = build_driver(headless=br.get("headless", False))
     done = 0
     try:
         for tid in pick:
