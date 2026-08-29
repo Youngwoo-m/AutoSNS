@@ -48,12 +48,35 @@ def _today():
     return time.strftime("%Y-%m-%d")
 
 
-def _accept_buttons(driver):
-    """'수락' 텍스트를 가진 버튼/링크(서로이웃 신청 수락)."""
-    return driver.find_elements(
-        By.XPATH,
-        "//a[normalize-space()='수락'] | //button[normalize-space()='수락'] "
-        "| //*[@value='수락'] | //input[@value='수락']")
+def _enter_content_frame(driver):
+    """관리 콘텐츠 iframe 으로 전환(서로이웃 신청 표가 그 안에 있다). 실패 시 최상위 유지."""
+    driver.switch_to.default_content()
+    for fr in driver.find_elements(By.TAG_NAME, "iframe"):
+        try:
+            driver.switch_to.frame(fr)
+            if "받은신청" in driver.page_source or "이웃신청" in driver.page_source:
+                return True
+        except Exception:
+            pass
+        driver.switch_to.default_content()
+    return False
+
+
+def _accept_button(driver):
+    """'수락' 버튼/링크(체크한 신청을 일괄 수락)."""
+    els = driver.find_elements(
+        By.XPATH, "//a[normalize-space()='수락'] | //button[normalize-space()='수락'] "
+        "| //input[@value='수락'] | //*[@value='수락']")
+    return els[0] if els else None
+
+
+def _request_checkboxes(driver):
+    """받은신청 각 행의 체크박스(전체선택 제외 추정). 신청이 없으면 빈 리스트."""
+    if "이웃신청이 없습니다" in driver.page_source:
+        return []
+    boxes = driver.find_elements(
+        By.XPATH, "//tbody//input[@type='checkbox'] | //td//input[@type='checkbox']")
+    return boxes
 
 
 def run(dry_run=None):
@@ -79,48 +102,55 @@ def run(dry_run=None):
     done = 0
     try:
         driver.get(manage_url)
-        time.sleep(random.uniform(3.0, 5.0))
+        time.sleep(random.uniform(4.0, 6.0))
+        # 콘텐츠가 iframe 안에 있어 전환 필요. '받은신청' 표가 그 안에 있다.
+        if not _enter_content_frame(driver):
+            log("관리 콘텐츠(iframe)를 찾지 못함 — URL/로그인 확인 필요.")
         shot(driver, "neighbor_manage")
-        src = driver.page_source
-        if "로그인" in src and "서로이웃" not in src:
+        if "로그인" in driver.page_source and "서로이웃" not in driver.page_source:
             log("⚠ 로그인 세션 만료로 보입니다 → login_setup.py 로 재로그인 필요")
             return {"status": "login_required", "done": 0}
 
-        while done < remaining:
-            btns = _accept_buttons(driver)
-            if not btns:
-                log("수락할 서로이웃 신청이 없습니다."); break
-            if dry_run:
-                log(f"[DRY-RUN] 수락 대상 {len(btns)}건 감지 — 실제 클릭하지 않음.")
-                shot(driver, "neighbor_dryrun")
-                break
-            b = btns[0]
+        boxes = _request_checkboxes(driver)
+        n = len(boxes)
+        log(f"받은 서로이웃 신청 {n}건 감지")
+        if n == 0:
+            log("수락할 신청이 없습니다."); return {"status": "ok", "done": 0, "pending": 0}
+        pick = min(n, remaining)
+        if dry_run:
+            log(f"[DRY-RUN] 수락 대상 {pick}건 — 실제 클릭하지 않음.")
+            shot(driver, "neighbor_dryrun")
+            return {"status": "ok", "done": 0, "pending": n}
+        # 실제 수락: 한도만큼 체크박스 선택 후 '수락' 버튼 1회(일괄).
+        for b in boxes[:pick]:
             try:
-                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", b)
-                time.sleep(random.uniform(0.6, 1.4))
-                b.click()
-                time.sleep(random.uniform(1.5, 3.0))
-                # 확인 팝업이 뜨면 확인(있을 때만)
-                for lbl in ("확인", "예", "수락"):
-                    els = driver.find_elements(
-                        By.XPATH, f"//button[normalize-space()='{lbl}'] | //a[normalize-space()='{lbl}']")
-                    if els:
-                        try:
-                            els[0].click(); time.sleep(1.0)
-                        except Exception:
-                            pass
-                        break
-            except Exception as e:
-                log(f"수락 클릭 실패(건너뜀): {type(e).__name__}")
-                time.sleep(1.0)
-                continue
-            if any(h in driver.page_source for h in ("이용이 제한", "비정상", "스팸")):
-                shot(driver, "neighbor_blocked"); log("⚠ 제한 감지 → 즉시 중단"); break
-            done += 1
-            st[_today()] = used + done
-            _save_state(st)
-            log(f"  서로이웃 수락 {done}/{remaining}")
-            time.sleep(random.uniform(lo, hi))
+                if not b.is_selected():
+                    driver.execute_script("arguments[0].click();", b)
+                time.sleep(random.uniform(0.4, 1.0))
+            except Exception:
+                pass
+        btn = _accept_button(driver)
+        if btn is None:
+            log("수락 버튼을 찾지 못했습니다."); return {"status": "no_button", "done": 0}
+        try:
+            btn.click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", btn)
+        time.sleep(random.uniform(1.5, 3.0))
+        driver.switch_to.default_content()          # 확인 팝업은 최상위에 뜰 수 있음
+        for lbl in ("확인", "예"):
+            els = driver.find_elements(
+                By.XPATH, f"//button[normalize-space()='{lbl}'] | //a[normalize-space()='{lbl}']")
+            if els:
+                try:
+                    els[0].click()
+                except Exception:
+                    pass
+                break
+        done = pick
+        st[_today()] = used + done
+        _save_state(st)
+        log(f"  서로이웃 {done}건 일괄 수락")
         shot(driver, "neighbor_done")
     finally:
         driver.quit()
