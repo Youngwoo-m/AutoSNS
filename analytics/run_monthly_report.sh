@@ -1,6 +1,7 @@
 #!/bin/zsh
 # 월간 리포트 수집·생성·발송. 매월 1일에 '방금 끝난 달'을 다룬다.
 # 사용: ./run_monthly_report.sh [기준일 YYYY-MM-DD] [대상월 YYYY-MM]
+#      SMUDS_REPORT_DRYRUN=1 을 주면 수집·생성만 하고 메일은 보내지 않는다(점검용).
 set -u
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
@@ -33,7 +34,9 @@ fi
 XLSX="out/재난안전학과_${YM}_활동목록.xlsx"
 cp "out/monthly_${YM}.xlsx" "$XLSX" 2>/dev/null
 
-if [[ -f mail_config.json ]]; then
+if [[ "${SMUDS_REPORT_DRYRUN:-0}" == "1" ]]; then
+  echo "== 드라이런: 메일 발송 건너뜀 =="
+elif [[ -f mail_config.json ]]; then
   echo "== 메일 발송 =="
   SUBJECT="$(cat "out/monthly_${YM}.subject.txt" 2>/dev/null || echo '[재난안전학과] 월간 콘텐츠 활동 리포트')"
   python3 send_mail.py "$HTML" "$SUBJECT" "$HWPX" "$XLSX" || echo "!! 메일 발송 실패"

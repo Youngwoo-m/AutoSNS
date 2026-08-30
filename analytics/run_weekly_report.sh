@@ -1,6 +1,7 @@
 #!/bin/zsh
 # 주간 리포트 수집·생성. 소스마다 필요한 라이브러리가 달라 인터프리터를 나눠 부른다.
 # 사용: ./run_weekly_report.sh [기준일 YYYY-MM-DD]
+#      SMUDS_REPORT_DRYRUN=1 을 주면 수집·생성만 하고 메일은 보내지 않는다(점검용).
 set -u
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
@@ -17,7 +18,9 @@ REPORT="$(python3 build_report.py "$TODAY" | tail -1)"
 echo "$REPORT"
 
 # mail_config.json 이 있으면 그 계정으로 바로 발송한다. 없으면 파일만 남긴다.
-if [[ -f mail_config.json && -f "$REPORT" ]]; then
+if [[ "${SMUDS_REPORT_DRYRUN:-0}" == "1" ]]; then
+  echo "== 드라이런: 메일 발송 건너뜀 =="
+elif [[ -f mail_config.json && -f "$REPORT" ]]; then
   echo "== 메일 발송 =="
   SUBJECT="$(cat "${REPORT%.html}.subject.txt" 2>/dev/null || echo '[재난안전학과] SNS 주간 리포트')"
   python3 send_mail.py "$REPORT" "$SUBJECT" || echo "!! 메일 발송 실패"
