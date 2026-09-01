@@ -1,139 +1,135 @@
-"""스레드(Threads) 게시. 카드뉴스 결과물을 요약 텍스트로 바꿔 올린다.
+"""쓰레드(Threads) 텍스트 글쓰기 — 인스타와 같은 로그인 세션(chrome-profile-insta) 재사용.
 
-공식 Threads API 를 쓴다(셀레늄 아님). 발행은 2단계다.
-  1) POST /{user_id}/threads          → 미디어 컨테이너 생성
-  2) POST /{user_id}/threads_publish  → 컨테이너 게시
-문서 권고대로 두 단계 사이를 잠깐 기다린다.
+쓰레드는 인스타(Meta) 계정으로 로그인되며, 최초 1회 사용자가 쓰레드를 활성화해 두면
+이 크롬 프로필로 바로 글을 쓸 수 있다. (별도 API/토큰 불필요)
 
-이미지를 붙이려면 image_url 이 '공개 URL' 이어야 한다. 스레드 API 는 파일
-업로드를 받지 않으므로 로컬 카드 PNG 를 그대로 올릴 수 없다. 공개 URL 이
-없으면 자동으로 텍스트 전용(TEXT)으로 게시한다.
+발행 파이프라인에서 뉴스 헤드라인+요약+링크+해시태그를 텍스트 스레드로 크로스포스트한다.
 
-사용법:
-  python post_threads.py                 # 최신 카드뉴스로 게시(설정의 dry_run 따름)
-  python post_threads.py --dry-run       # 올릴 문구만 출력하고 게시하지 않음
+★ 안전장치(다른 프로젝트와 동일): 수동 실행은 항상 dry_run(작성 화면까지만, 게시 안 함).
+  실제 게시는 --go 또는 파이프라인에서 dry_run=False 로만.
+
+사용:
+  python post_threads.py "본문"        # dry-run(작성창까지, 게시 안 함)
+  python post_threads.py --go "본문"    # 실제 게시
 """
-import glob
-import json
-import os
 import sys
 import time
 
-import requests
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-from common import POSTS_DIR, load_config, log
-from threads_token import valid_token
+from common import load_config, log
+from post_instagram import build_driver, shot, _set_clip, MOD_KEY
 
-API = "https://graph.threads.net/v1.0"
-LIMIT = 500          # 게시글당 500자
-WAIT_SEC = 30        # 컨테이너 생성 후 권고 대기(문서 기준 평균 30초)
-
-
-def _latest_post():
-    # 파일명 역순이 아니라 수정 시각 기준으로 골라야 한다.
-    # (FESTIVAL_HEAT.json 같은 이름이 날짜 스탬프보다 뒤로 정렬돼 최신을 가린다)
-    files = sorted(glob.glob(os.path.join(POSTS_DIR, "*.json")),
-                   key=os.path.getmtime, reverse=True)
-    for f in files:
-        with open(f, encoding="utf-8") as fp:
-            d = json.load(fp)
-        if d.get("cards"):
-            return d, f
-    raise RuntimeError("게시할 카드뉴스 데이터를 posts/ 에서 찾지 못했습니다.")
+MAX_LEN = 500   # 쓰레드 글자 제한
 
 
-def build_text(data, cfg=None):
-    """캡션을 스레드용 500자 이내 문구로 줄이고 태그를 붙인다.
-
-    지역 태그(local_tags)는 에디션과 무관하게 항상 들어가야 하므로 먼저 확보한 뒤
-    남는 공간에만 일반 해시태그를 채운다.
-    """
-    cfg = cfg or load_config()
-    body = (data.get("caption") or data.get("title") or "").strip()
-
-    local = [t for t in (cfg.get("local_tags") or []) if t]
-    # hashtags[0] 은 여러 태그가 한 줄에 붙어 있는 형태라 쪼개 쓴다.
-    raw = []
-    for h in (data.get("hashtags") or []):
-        raw.extend(str(h).replace("#", " ").split())
-    # 순서를 지키며 중복 제거(hashtags[0] 묶음과 개별 항목이 서로 겹친다)
-    seen, general = set(local), []
-    for t in raw:
-        if t and t not in seen:
-            seen.add(t)
-            general.append(t)
-
-    def tagline(tags):
-        return " ".join("#" + t for t in tags)
-
-    must = tagline(local)
-    # 본문 + 줄바꿈 2 + 지역태그 가 500 안에 들어가도록 본문을 줄인다.
-    room = LIMIT - len(must) - 2
-    if room < 40:                       # 지역태그만으로 꽉 차는 비정상 상황
-        return (body[:LIMIT]).strip()
-    if len(body) > room:
-        body = body[:room - 1].rstrip() + "…"
-
-    text = f"{body}\n\n{must}" if must else body
-    # 남는 자리에 일반 태그를 하나씩 더한다.
-    for t in general:
-        cand = f"{text} #{t}"
-        if len(cand) > LIMIT:
-            break
-        text = cand
-    return text
+def _compose(data, cfg=None):
+    """뉴스 data → 쓰레드 텍스트(헤드라인 + 한 줄 요약 + 링크 + 해시태그, 500자 이내)."""
+    scenes = data.get("scenes") or data.get("cards") or []
+    headline = data.get("title") or (
+        scenes[0].get("heading") if scenes and isinstance(scenes[0], dict) else "재난안전 소식")
+    summary = ""
+    if scenes and isinstance(scenes[0], dict):
+        summary = (scenes[0].get("narration") or scenes[0].get("heading") or "").strip()
+    url = (data.get("_yt", {}) or {}).get("url", "") or data.get("url", "")
+    tags = data.get("hashtags") or []
+    tags = [t for t in tags if t.lower() != "shorts"][:6]
+    tagline = " ".join("#" + t for t in tags)
+    parts = [headline]
+    if summary and summary[:20] not in headline:
+        parts.append(summary)
+    if url:
+        parts.append("▶ " + url)
+    if tagline:
+        parts.append(tagline)
+    text = "\n\n".join(parts).strip()
+    return text[:MAX_LEN]
 
 
-def _create_container(user_id, token, text, image_url=None):
-    params = {"access_token": token, "text": text}
-    if image_url:
-        params["media_type"] = "IMAGE"
-        params["image_url"] = image_url
-    else:
-        params["media_type"] = "TEXT"
-    r = requests.post(f"{API}/{user_id}/threads", data=params, timeout=60)
-    if r.status_code != 200:
-        raise RuntimeError(f"컨테이너 생성 실패({r.status_code}): {r.text[:300]}")
-    return r.json()["id"]
+def _open_composer(driver):
+    driver.get("https://www.threads.com/")
+    time.sleep(4)
+    for xp in ("//*[@aria-label='만들기']", "//*[@aria-label='새 스레드']",
+               "//div[@role='button'][contains(.,'새로운 스레드')]",
+               "//div[contains(@role,'button')][contains(.,'새로운 소식이 있나요')]"):
+        els = driver.find_elements(By.XPATH, xp)
+        if els:
+            try:
+                driver.execute_script("arguments[0].click();", els[0])
+                break
+            except Exception:
+                pass
+    time.sleep(2.5)
 
 
-def _publish(user_id, token, container_id):
-    r = requests.post(f"{API}/{user_id}/threads_publish",
-                      data={"access_token": token, "creation_id": container_id},
-                      timeout=60)
-    if r.status_code != 200:
-        raise RuntimeError(f"게시 실패({r.status_code}): {r.text[:300]}")
-    return r.json().get("id")
+def _textbox(driver):
+    for xp in ("//div[@role='dialog']//div[@contenteditable='true']",
+               "//div[@contenteditable='true']",
+               "//div[@role='textbox']"):
+        els = driver.find_elements(By.XPATH, xp)
+        if els:
+            return els[-1]
+    return None
 
 
-def post(data=None, dry_run=None, image_url=None):
+def _post_button(driver):
+    # 작성창의 '게시' 버튼(비활성 아닌 것 우선, 대개 마지막에 렌더된 것).
+    els = driver.find_elements(
+        By.XPATH, "//div[@role='button'][normalize-space()='게시'] "
+        "| //div[@role='button'][normalize-space()='Post']")
+    for e in reversed(els):
+        if (e.get_attribute("aria-disabled") or "").lower() != "true":
+            return e
+    return els[-1] if els else None
+
+
+def post(text=None, data=None, dry_run=None, image=None):
     cfg = load_config()
-    tcfg = cfg.get("threads") or {}
+    tcfg = cfg.get("threads", {})
     if dry_run is None:
         dry_run = tcfg.get("dry_run", True)
-    if data is None:
-        data, src = _latest_post()
-        log(f"게시 원본: {os.path.basename(src)}")
+    if not dry_run and not tcfg.get("enabled", False):
+        log("threads.enabled=false → 실제 게시 중단, dry-run 으로만 진행합니다.")
+        dry_run = True
+    if text is None:
+        text = _compose(data or {}, cfg)
+    if not text.strip():
+        log("쓰레드 본문이 비어 게시 생략."); return {"status": "empty"}
 
-    text = build_text(data, cfg)
-    image_url = image_url or tcfg.get("image_url") or None
-
-    log(f"스레드 문구 {len(text)}자 / 이미지 {'있음' if image_url else '없음(텍스트 전용)'}")
-    print("\n" + "─" * 56 + f"\n{text}\n" + "─" * 56 + "\n")
-
-    if dry_run:
-        log("DRY_RUN: 실제 게시하지 않고 문구만 출력했습니다. "
-            "게시하려면 config 의 threads.dry_run 을 false 로.")
-        return {"status": "dry_run", "text": text}
-
-    token, user_id = valid_token()
-    cid = _create_container(user_id, token, text, image_url)
-    log(f"컨테이너 생성됨({cid}). {WAIT_SEC}초 대기 후 게시합니다.")
-    time.sleep(WAIT_SEC)
-    pid = _publish(user_id, token, cid)
-    log(f"스레드 게시 완료: {pid}")
-    return {"status": "published", "id": pid, "text": text}
+    driver = build_driver(headless=tcfg.get("headless", False))
+    try:
+        _open_composer(driver)
+        shot(driver, "threads_open")
+        box = _textbox(driver)
+        if box is None:
+            shot(driver, "threads_nobox")
+            log("쓰레드 작성창을 못 찾음(활성화/로그인 확인)."); return {"status": "no_box"}
+        box.click()
+        time.sleep(0.8)
+        _set_clip(text)
+        ActionChains(driver).key_down(MOD_KEY).send_keys("v").key_up(MOD_KEY).perform()
+        time.sleep(1.2)
+        shot(driver, "threads_typed")
+        if dry_run:
+            log(f"[DRY-RUN] 쓰레드 작성 완료(게시 안 함): {text[:40]}...")
+            return {"status": "dry_run", "text": text}
+        btn = _post_button(driver)
+        if btn is None:
+            shot(driver, "threads_nopost"); log("게시 버튼 못 찾음."); return {"status": "no_button"}
+        driver.execute_script("arguments[0].click();", btn)
+        time.sleep(4)
+        shot(driver, "threads_done")
+        log("쓰레드 게시 완료(추정).")
+        return {"status": "published", "text": text}
+    finally:
+        driver.quit()
 
 
 if __name__ == "__main__":
-    post(dry_run=True if "--dry-run" in sys.argv else None)
+    args = [a for a in sys.argv[1:] if a != "--go"]
+    go = "--go" in sys.argv
+    txt = args[0] if args else "세명대학교 재난안전학과 쓰레드 테스트입니다. 재난안전 소식을 전합니다."
+    print(post(text=txt, dry_run=not go))

@@ -106,6 +106,27 @@ def main():
         except Exception as e:
             log(f"틱톡 발행 실패(유튜브는 정상): {e}")
 
+    # 쓰레드 텍스트 크로스포스트(설정 시). 헤드라인+요약+유튜브 링크+해시태그.
+    try:
+        ig_dir = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
+        ig_py = os.path.join(ig_dir, ".venv", "bin", "python")
+        url = result.get("url", "") if isinstance(result, dict) else ""
+        if os.path.exists(os.path.join(ig_dir, "threads_cli.py")) and os.path.exists(ig_py):
+            headline = data.get("title", "재난안전 소식")
+            summary = (data.get("scenes") or [{}])[0].get("narration", "")
+            tags = [t for t in (data.get("hashtags") or []) if t.lower() != "shorts"][:5]
+            text = "\n\n".join(x for x in [
+                headline, summary, ("▶ " + url if url else ""),
+                " ".join("#" + t for t in tags)] if x)[:500]
+            env = {k: v for k, v in os.environ.items() if k != "SMUDS_EDITION"}
+            p = subprocess.run([ig_py, "threads_cli.py"], cwd=ig_dir,
+                               input=json.dumps({"text": text}), text=True,
+                               capture_output=True, timeout=300, env=env)
+            out = (p.stdout or p.stderr or "").strip().splitlines()
+            log(f"쓰레드: {out[-1] if out else '(무응답)'}")
+    except Exception as e:
+        log(f"쓰레드 크로스포스트 건너뜀(유튜브는 정상): {type(e).__name__}: {e}")
+
     # 카카오톡 '나에게 보내기' 발행 알림(실패해도 발행에는 영향 없음)
     try:
         from kakao_notify import notify
