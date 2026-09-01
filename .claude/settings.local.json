@@ -4,7 +4,8 @@
       "Bash(awk '/^2026-08-22 20:/{f=1} f' logs/2026-08.log)",
       "Bash(awk '/^\\\\[2026-08-22 20:/{f=1} /^\\\\[2026-08-22 2[1-9]:/{f=0} /^\\\\[2026-08-23/{f=0} f' logs/2026-08.log)",
       "Bash(.venv/bin/python -c ' *)",
-      "Bash(/Users/youngwoo/devAPP/AutoSNS/analytics/run_weekly_report.sh)"
+      "Bash(/Users/youngwoo/devAPP/AutoSNS/analytics/run_weekly_report.sh)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
