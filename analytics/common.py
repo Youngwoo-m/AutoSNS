@@ -29,10 +29,19 @@ def log(msg):
 
 
 def save_part(name, data):
-    """수집기 하나의 결과를 snapshots/parts/<name>.json 에 쓴다."""
+    """수집기 하나의 결과를 snapshots/parts/<name>.json 에 쓴다.
+
+    수집이 빈손으로 끝났는데 직전 결과가 남아 있으면 덮어쓰지 않는다. 세션 만료나
+    일시적 오류로 0건이 나올 때 멀쩡한 과거 수집분이 날아가는 걸 막는다.
+    """
     d = os.path.join(SNAP_DIR, "parts")
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, f"{name}.json")
+    if not data.get("items"):
+        old = load_part(name)
+        if old and old.get("items"):
+            log(f"{name}: 수집 0건 — 직전 결과({len(old['items'])}건)를 유지한다")
+            return path
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
     log(f"{name}: {len(data.get('items', []))}건 저장 → {os.path.relpath(path, ROOT_DIR)}")
