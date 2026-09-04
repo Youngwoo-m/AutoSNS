@@ -92,6 +92,13 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
         if not voice_id:
             raise SystemExit("voice_id 또는 audio_asset_id 가 필요합니다.")
         voice = {"type": "text", "input_text": script, "voice_id": voice_id}
+        # 말 속도(0.5~1.5, 기본 1.0). 낮을수록 천천히 — 뉴스 전달력·자막 가독성↑
+        try:
+            spd = float(cfg.get("voice_speed", 1.0))
+        except (TypeError, ValueError):
+            spd = 1.0
+        if spd and abs(spd - 1.0) > 1e-6:
+            voice["speed"] = max(0.5, min(1.5, spd))
     vin = {
         "character": {"type": "talking_photo", "talking_photo_id": talking_photo_id},
         "voice": voice,
