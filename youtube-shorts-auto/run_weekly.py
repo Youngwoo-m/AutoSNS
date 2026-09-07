@@ -74,6 +74,12 @@ def main():
         privacy = cfg.get("youtube", {}).get("privacy", "public")
         result = upload(data, dry_run=False, privacy=privacy)  # 6) 유튜브 실제 발행
         log(f"유튜브: {result.get('status')} {result.get('url','')}")
+        # 6-0') 뉴스 재생목록 편입(연속 시청·구독 전환)
+        try:
+            from youtube_upload import add_to_playlist
+            add_to_playlist(result.get("video_id"), kind="news", cfg=cfg)
+        except Exception as e:
+            log(f"재생목록 편입 건너뜀: {type(e).__name__}")
         # 6-0) 자동 첫 댓글(구독 유도·참여 마중물). enabled 이고 업로드 성공 시에만.
         if cfg.get("youtube", {}).get("auto_comment", {}).get("enabled", True):
             try:

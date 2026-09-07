@@ -148,6 +148,13 @@ def main(argv):
 
     # 1) 유튜브(기준 채널) — 성공해야 published 기록 → 중복 발행 방지
     url = _upload(ep)
+    # 1-0) 재생목록 편입(진로/퀴즈 시리즈별)
+    try:
+        from youtube_upload import add_to_playlist
+        add_to_playlist(url.rsplit("/", 1)[-1],
+                        kind=("quiz" if ep.get("series") == "quiz" else "career"))
+    except Exception as e:
+        log(f"재생목록 편입 건너뜀: {type(e).__name__}")
     # 1-1) 자동 첫 댓글(구독 유도·참여 마중물) — force-ssl 스코프 필요, 실패해도 발행 유지
     try:
         from youtube_upload import post_top_comment

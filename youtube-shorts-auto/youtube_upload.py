@@ -258,6 +258,28 @@ def post_top_comment(video_id, text=None, data=None, dry_run=False):
         return {"error": m[:200]}
 
 
+def add_to_playlist(video_id, kind="news", cfg=None):
+    """발행한 영상을 유형별 재생목록에 담는다(연속 시청·구독 전환용).
+
+    kind: news|career|quiz — config.youtube.playlists 에서 id 를 찾는다.
+    force-ssl 스코프 필요. 실패해도 발행에는 영향 없도록 예외를 삼킨다.
+    """
+    cfg = cfg or load_config()
+    pid = (cfg.get("youtube", {}).get("playlists", {}) or {}).get(kind)
+    if not (pid and video_id):
+        return {"skipped": "no playlist id"}
+    try:
+        yt = build("youtube", "v3", credentials=_creds(), cache_discovery=False)
+        yt.playlistItems().insert(part="snippet", body={"snippet": {
+            "playlistId": pid,
+            "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
+        log(f"재생목록 편입 완료({kind})")
+        return {"status": "added", "playlist": pid}
+    except Exception as e:
+        log(f"재생목록 편입 실패(발행은 정상): {type(e).__name__}: {str(e)[:100]}")
+        return {"error": str(e)[:200]}
+
+
 def _latest_data():
     files = sorted(f for f in os.listdir(POSTS_DIR) if f.endswith(".json"))
     if not files:
