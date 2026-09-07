@@ -201,6 +201,35 @@ def fetch_news():
         except Exception as e:
             log(f"Esri 블로그 건너뜀({type(e).__name__})")
 
+
+    # 커넥트데일리(i-eumnews) 공간정보 기사 추가 (config.news.ieum=true)
+
+    # GeoAI 판에서 공간정보 업계 소식은 구글/네이버 검색에 잘 안 잡혀 전문지로 보완한다.
+
+    if cfg.get("ieum", False):
+
+        try:
+
+            from ieum_feed import fetch_ieum_news
+
+            ie = fetch_ieum_news(sections=cfg.get("ieum_sections", ["공간정보"]),
+
+                                 within_days=cfg.get("ieum_within_days", 30),
+
+                                 limit=cfg.get("ieum_max", 3))
+
+            links = {r.get("link") for r in results}
+
+            new = [it for it in ie if it["link"] not in links]
+
+            results.extend(new)
+
+            log(f"커넥트데일리 공간정보 {len(new)}건 추가")
+
+        except Exception as e:
+
+            log(f"커넥트데일리 건너뜀({type(e).__name__})")
+
     # 웹(네이버 블로그) 검색 결과를 소스 풀에 추가 (config.news.web_naver=true + 키)
     ns = cfg.get("naver_search", {})
     if cfg.get("web_naver", False) and ns.get("client_id"):
