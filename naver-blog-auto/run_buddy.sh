@@ -3,5 +3,7 @@
 # 신청 후 지난 신청분의 수락 현황을 집계해 카카오톡으로 알린다(집계 실패해도 신청은 유지).
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
+# 신청 전에 누적 기록부터 백업(파일 유실 시 같은 사람에게 재신청되는 것을 막는다)
+../backup_state.sh >> "logs/buddy.out.log" 2>&1
 ./.venv/bin/python naver_buddy_request.py --go >> "logs/buddy.out.log" 2>&1
 ./.venv/bin/python buddy_report.py          >> "logs/buddy.out.log" 2>&1
