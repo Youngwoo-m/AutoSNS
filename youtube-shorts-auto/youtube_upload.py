@@ -270,6 +270,12 @@ def add_to_playlist(video_id, kind="news", cfg=None):
         return {"skipped": "no playlist id"}
     try:
         yt = build("youtube", "v3", credentials=_creds(), cache_discovery=False)
+        # 이미 담긴 영상이면 건너뛴다(재실행·수동 재발행 시 중복 방지).
+        dup = yt.playlistItems().list(part="id", playlistId=pid, videoId=video_id,
+                                      maxResults=1).execute().get("items", [])
+        if dup:
+            log(f"재생목록 이미 포함({kind}) — 편입 생략")
+            return {"status": "already", "playlist": pid}
         yt.playlistItems().insert(part="snippet", body={"snippet": {
             "playlistId": pid,
             "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
