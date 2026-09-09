@@ -49,3 +49,4 @@ FONTS/
 # ── OS ────────────────────────────────────────────────────
 .DS_Store
 .state-backups/
+caption_boost_state.json

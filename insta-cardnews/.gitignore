@@ -7,3 +7,4 @@ title_history.json
 __pycache__/
 kakao_token.json
 follow_back_state.json
+caption_boost_state.json
