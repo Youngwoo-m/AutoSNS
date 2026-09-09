@@ -361,7 +361,12 @@ def _caption_body(data, cfg):
     """피드에 보이는 본문(훅·요약) + 팔로우 CTA."""
     body = (data.get("caption", "") or "").strip()
     # 캡션 끝에 팔로우 유도(도달·재방문↑). config.instagram.follow_cta 로 문구 지정.
-    cta = (cfg.get("instagram", {}).get("follow_cta") or "").strip()
+    ig = cfg.get("instagram", {})
+    # 저장(북마크) 유도 — 인스타에서 저장은 팔로우보다 강한 도달 신호라 CTA 앞에 둔다.
+    save = (ig.get("save_cta") or "").strip()
+    if save and save not in body:
+        body = (body + "\n\n" + save).strip()
+    cta = (ig.get("follow_cta") or "").strip()
     if cta and cta not in body:
         body = (body + "\n\n" + cta).strip()
     return body
@@ -396,8 +401,10 @@ def _first_comment_text(data, cfg):
     """
     q = (cfg.get("instagram", {}).get("first_comment_question") or
          "여러분 지역은 안전한가요? 겪은 일이나 궁금한 점을 댓글로 남겨주세요! 👇").strip()
+    # 유튜브로 넘기는 한 줄(채널 간 순환). 인스타 댓글의 링크는 클릭되지 않으므로 채널명으로 안내.
+    yt = (cfg.get("instagram", {}).get("youtube_cta") or "").strip()
     extras = _caption_extras(data, cfg)
-    return "\n\n".join(p for p in (q, extras) if p).strip()
+    return "\n\n".join(p for p in (q, yt, extras) if p).strip()
 
 
 def _build_caption(data, cfg):

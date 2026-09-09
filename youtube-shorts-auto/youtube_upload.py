@@ -104,6 +104,16 @@ def _build_description(data, cfg):
         parts.append("")
         parts.append(seo)
 
+    # 시리즈 몰아보기 링크 — 한 편만 보고 나가지 않게 연속 시청을 유도한다.
+    # (최근 28일 조회 1.1만 대비 구독 +4 로 전환이 약해, 세션 시청을 늘리는 쪽으로 보강)
+    pls = ycfg.get("playlists", {}) or {}
+    pl_labels = ycfg.get("playlist_labels", {}) or {}
+    kind = data.get("playlist_kind", "news")
+    if pls.get(kind):
+        parts.append("")
+        parts.append(f"▶ {pl_labels.get(kind, '지난 편 몰아보기')}: "
+                     f"https://www.youtube.com/playlist?list={pls[kind]}")
+
     homepage = ycfg.get("homepage_url", "").strip()
     if homepage:
         parts.append("")

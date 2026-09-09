@@ -63,10 +63,22 @@ def _upload(ep):
     video = os.path.join(BASE_DIR, ep["video"])
     if not os.path.exists(video):
         raise FileNotFoundError(f"영상 없음: {video}")
+    # 시리즈 몰아보기 링크를 설명 첫 부분에 붙여 연속 시청을 유도한다.
+    desc = ep["description"]
+    try:
+        from common import load_config
+        yc = load_config().get("youtube", {})
+        kind = "quiz" if ep.get("series") == "quiz" else "career"
+        pid = (yc.get("playlists", {}) or {}).get(kind)
+        label = (yc.get("playlist_labels", {}) or {}).get(kind, "시리즈 전편 보기")
+        if pid:
+            desc = f"{desc}\n\n▶ {label}: https://www.youtube.com/playlist?list={pid}"
+    except Exception:
+        pass
     body = {
         "snippet": {
             "title": ep["title"][:100],
-            "description": ep["description"],
+            "description": desc,
             "tags": ep["tags"],
             "categoryId": CATEGORY_EDU,
         },
