@@ -50,3 +50,7 @@ FONTS/
 .DS_Store
 .state-backups/
 caption_boost_state.json
+
+# 외부에서 받은 배경음악 원본(용량 큼, 재다운로드 가능) — 출처는 assets/music/SOURCES.md
+assets/music/*.mp3
+assets/music/preview/

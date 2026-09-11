@@ -12,6 +12,7 @@ import json
 import os
 import subprocess
 import sys
+import re
 import time
 from datetime import datetime
 
@@ -336,7 +337,43 @@ def post_carousel(data, dry_run=None):
         driver.quit()
 
 
+def _norm_caption(s):
+    """비교용 정규화 — 입력칸은 줄바꿈·공백을 살짝 다르게 돌려준다."""
+    return re.sub(r"\s+", " ", s or "").strip()
+
+
+def _refill_caption(driver, box, caption):
+    """입력칸을 비우고 캡션을 다시 넣는다(타이핑이 먹지 않았을 때의 복구 경로).
+
+    contenteditable 이라 Cmd+A 가 먹지 않으므로 Selection API 로 전체 선택 후
+    BACK_SPACE 로 비운다. 본문은 execCommand, 줄바꿈만 ENTER 로 넣는다
+    (execCommand 는 '\n' 을 버리고, 전부 타이핑하면 '@'·'#' 자동완성이 끼어든다)."""
+    ActionChains(driver).move_to_element(box).pause(0.3).click().perform()
+    time.sleep(0.5)
+    driver.execute_script(
+        "const el=arguments[0]; el.focus();"
+        "const r=document.createRange(); r.selectNodeContents(el);"
+        "const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);", box)
+    time.sleep(0.3)
+    ActionChains(driver).send_keys(Keys.BACK_SPACE).perform()
+    time.sleep(0.8)
+    for i, para in enumerate(caption.split("\n")):
+        if i:
+            ActionChains(driver).send_keys(Keys.ENTER).perform()
+            time.sleep(0.2)
+        if para:
+            driver.execute_script(
+                "arguments[0].focus(); document.execCommand('insertText', false, arguments[1]);",
+                box, para)
+            time.sleep(0.3)
+    time.sleep(0.8)
+
+
 def _type_caption(driver, caption):
+    """캡션을 입력하고 '실제로 들어갔는지' 확인한다.
+
+    예전에 입력이 조용히 실패해 캡션 없는 게시물이 30건 넘게 쌓인 적이 있다.
+    그래서 입력 후 입력칸 내용을 대조하고, 어긋나면 한 번 더 채워 넣는다."""
     box = _caption_box(driver)
     if box is None:
         return False
@@ -352,9 +389,26 @@ def _type_caption(driver, caption):
                 ActionChains(driver).key_down(Keys.SHIFT)\
                     .send_keys(Keys.ENTER).key_up(Keys.SHIFT).perform()
             time.sleep(0.02)
-        return True
     except Exception:
         return False
+    # 입력 검증 — 비어 있거나 내용이 다르면 다른 방식으로 한 번 더 시도한다.
+    for attempt in (1, 2):
+        try:
+            got = box.text
+        except Exception:
+            return False
+        if _norm_caption(got) == _norm_caption(caption):
+            return True
+        log(f"캡션 입력 검증 실패({len(got)}자/{len(caption)}자) → 재입력 {attempt}회차")
+        try:
+            _refill_caption(driver, box, caption)
+        except Exception as e:
+            log(f"캡션 재입력 중 오류: {type(e).__name__}")
+            return False
+    ok = _norm_caption(box.text) == _norm_caption(caption)
+    if not ok:
+        log("⚠ 캡션이 끝내 들어가지 않았습니다 — 게시 후 ig_caption_boost 로 보완 필요")
+    return ok
 
 
 def _caption_body(data, cfg):
@@ -596,7 +650,8 @@ def post_reel(data, dry_run=None):
 
         # 4) 캡션 입력
         if not _type_caption(driver, caption):
-            log("릴 캡션 입력란을 찾지 못함(캡션 없이 진행 가능).")
+            shot(driver, "reel_caption_failed")
+            log("⚠ 릴 캡션 입력 실패 — 캡션 없이 게시됩니다. 게시 후 확인하세요.")
         time.sleep(1)
         # 4-1) AI 레이블(사실적 AI 콘텐츠) — 아나운서 릴 등. best-effort(실패해도 게시 진행).
         if data.get("ai_label"):
