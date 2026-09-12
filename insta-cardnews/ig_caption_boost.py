@@ -23,8 +23,12 @@
   - 기본 dry_run=True, 1회 한도(기본 12건), 편집 간 랜덤 지연(기본 25~60초)
   - 처리한 코드는 상태파일에 누적, '차단' 문구 감지 시 즉시 중단
 
-사용: python ig_caption_boost.py            # dry-run(대상만 출력)
-      python ig_caption_boost.py --go [N]   # 실제 편집(N건까지)
+사용: python ig_caption_boost.py                   # dry-run(대상만 출력)
+      python ig_caption_boost.py --go [N]          # 실제 편집(N건까지)
+      python ig_caption_boost.py --go 140 --recheck  # 상태파일 무시하고 전수 재확인
+
+인스타가 편집을 되돌리는 경우가 있다(2026-09-12: 140건 중 3건에서 문구 유실 확인,
+모두 연속 편집으로 처리했던 배치 맨 앞 건들). 그래서 --recheck 로 실물을 다시 본다.
 """
 import json
 import os
@@ -189,14 +193,19 @@ def _boost_one(d, code, add_lines):
     return "added" if ok else "error"
 
 
-def run(go=False, limit=None, headless=None):
+def run(go=False, limit=None, headless=None, recheck=False):
+    """recheck=True 면 상태파일을 무시하고 전체를 다시 확인한다.
+
+    인스타가 편집을 되돌리는 일이 있어(2026-09-12 확인), '처리함' 기록만 믿지 않고
+    실물을 다시 보는 경로가 필요하다. 이미 문구가 있으면 편집창만 열어보고 취소하므로
+    덧붙임이 중복되지 않는다."""
     cfg = load_config()
     ig = cfg.get("instagram", {})
     add = [x for x in (ig.get("save_cta"), ig.get("follow_cta")) if x]
     limit = int(limit or ig.get("caption_boost_limit", 12))
     lo, hi = ig.get("caption_boost_delay", [25, 60])
     st = _state()
-    seen = set(st.get("done", [])) | set(st.get("failed", []))
+    seen = set() if recheck else (set(st.get("done", [])) | set(st.get("failed", [])))
     d = build_driver(headless=ig.get("headless", False) if headless is None else headless)
     added = errors = 0
     try:
@@ -232,9 +241,10 @@ def run(go=False, limit=None, headless=None):
 
 if __name__ == "__main__":
     go = "--go" in sys.argv
+    recheck = "--recheck" in sys.argv
     n = None
     if go:
         i = sys.argv.index("--go")
         if len(sys.argv) > i + 1 and sys.argv[i + 1].isdigit():
             n = int(sys.argv[i + 1])
-    print(json.dumps(run(go=go, limit=n), ensure_ascii=False))
+    print(json.dumps(run(go=go, limit=n, recheck=recheck), ensure_ascii=False))
