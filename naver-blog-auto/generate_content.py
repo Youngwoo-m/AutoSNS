@@ -48,6 +48,11 @@ USER_TEMPLATE = """블로그 주제: {topic}
     반복하지 말고, 배경·영향·대응 관점을 더해 내용을 채운다.
 - 각 뉴스 블록의 첫 줄은 반드시 '@출처:<번호>' (위 목록의 정확한 번호)로 시작.
 - 각 소제목 맨 앞에 어울리는 이모지 1개.
+- ★ 소제목은 사람들이 검색창에 칠 법한 '질문형'으로 쓴다(답변형 검색·AI 요약에 인용되기
+  쉬운 형태). 예: "제천 호우 때 대피는 어떻게 하나요?", "드론은 재난 현장에서 무엇을 하나요?"
+- ★ 각 뉴스 블록에 '기관·지역·날짜·수치'가 한 문장에 담긴 문장을 최소 1개 넣는다.
+  (예: "행정안전부는 2026년 9월 10일 강원 지역에 드론 22대를 투입했다.")
+  생성형 AI·검색 스니펫이 인용할 수 있는 형태라 노출에 유리하다. 없는 수치는 지어내지 않는다.
 - 단정하기 어려운 세부는 "~로 알려졌다" 식으로 신중하게.
 
 최근에 이미 쓴 부제(중복 회피):
@@ -61,6 +66,9 @@ USER_TEMPLATE = """블로그 주제: {topic}
 ===태그===
 검색에 걸릴 만한 핵심 태그 10~13개를 쉼표로. 지명·재난유형·기관·주제어 등
 사람들이 실제로 검색할 말로. (예: 재난안전, 집중호우, 제천, 드론재난, 세명대학교)
+===요약===
+이 글의 핵심을 3줄로. 각 줄은 '· '로 시작하고 40자 내외, 한 줄에 하나의 사실만.
+수치·지역·기관이 들어가면 더 좋다. (검색 스니펫·AI 요약이 이 부분을 가져간다)
 ===인사===
 짧은 인사 + 이번 주 핵심 요약 (1~2단락).
 ★ 첫 문장에 이 글의 핵심 검색 키워드(__SUBKW__·'__DOMAIN__')를 자연스럽게 넣는다.
@@ -76,6 +84,9 @@ USER_TEMPLATE = """블로그 주제: {topic}
 ===안전수칙===
 🧰 소제목(섹션 이름은 __TIPSLABEL__)
 __TIPSDESC__
+===자주묻는질문===
+이번 주 내용과 관련해 사람들이 실제로 검색할 법한 질문 3개와 답을 쓴다.
+형식은 'Q. 질문' 다음 줄에 'A. 답변(2~3문장, 사실 위주)'. 질문은 지역·상황을 구체적으로.
 ===마무리===
 마무리 한마디"""
 
@@ -135,9 +146,11 @@ def _parse_structured(text, news):
     """부제/태그/인사/뉴스(@출처:N)/안전수칙/마무리 구조를 파싱한다."""
     subtitle = _section(text, "===부제===", "===태그===")
     tags_raw = _section(text, "===태그===", "===인사===")
+    summary = _section(text, "===요약===", "===인사===")
     intro = _section(text, "===인사===", "===뉴스===")
     news_raw = _section(text, "===뉴스===", "===안전수칙===")
-    tips = _section(text, "===안전수칙===", "===마무리===")
+    tips = _section(text, "===안전수칙===", "===자주묻는질문===")
+    faq = _section(text, "===자주묻는질문===", "===마무리===")
     outro = _section(text, "===마무리===", "")
     # 태그 정규화: '#'·공백·쉼표·줄바꿈 모두로 쪼개 한 뭉치로 뭉치는 것을 방지.
     tags = [t for t in tags_raw.replace("#", " ").replace(",", " ").split() if t]
@@ -166,7 +179,7 @@ def _parse_structured(text, news):
             "source": {"title": src["title"], "link": src["link"],
                        "published_str": src["published_str"]},
         })
-    return subtitle, tags, intro, blocks, tips, outro
+    return subtitle, tags, summary, intro, blocks, tips, faq, outro
 
 
 def generate():
@@ -209,7 +222,7 @@ def generate():
             len(b.get("heading", "")) + len(b.get("paragraph", "")) for b in blocks)
 
     client = Anthropic(api_key=cfg["anthropic_api_key"])
-    subtitle = intro = tips = outro = ""
+    subtitle = intro = tips = outro = summary = faq = ""
     tags, blocks = [], []
     best = None
     for attempt in range(1, 4):
@@ -220,12 +233,13 @@ def generate():
             messages=[{"role": "user", "content": user_msg}],
         )
         text = msg.content[0].text.strip()
-        subtitle, tags, intro, blocks, tips, outro = _parse_structured(text, news)
+        (subtitle, tags, summary, intro, blocks,
+         tips, faq, outro) = _parse_structured(text, news)
         ok_form = bool(subtitle and intro) and len(blocks) >= 2
         length = _body_len(intro, blocks, tips, outro)
         # 가장 잘 나온 결과를 보관(전부 미달이면 이걸 쓴다)
         if ok_form and (best is None or length > best[-1]):
-            best = (subtitle, tags, intro, blocks, tips, outro, length)
+            best = (subtitle, tags, summary, intro, blocks, tips, faq, outro, length)
         if ok_form and length >= min_chars and len(blocks) >= min_blocks:
             break
         log(f"분량/형식 미달(시도 {attempt}/3: 본문 {length}자 / 기준 {min_chars}자, "
@@ -233,7 +247,8 @@ def generate():
     else:
         if best is None:
             raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
-        subtitle, tags, intro, blocks, tips, outro, _ = best
+        (subtitle, tags, summary, intro, blocks,
+         tips, faq, outro, _) = best
         log("3회 시도 후 기준 미달 → 그중 가장 긴 결과로 진행합니다.")
     if not (subtitle and intro and len(blocks) >= 2):
         raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
@@ -254,6 +269,8 @@ def generate():
     data = {
         "title": title, "subtitle": subtitle, "intro": intro,
         "news_blocks": blocks, "tips": tips, "outro": outro, "tags": tags,
+        # 검색 스니펫·AI 요약이 가져가기 좋은 블록(글 맨 위 3줄 요약 / 맨 아래 FAQ)
+        "summary": summary, "faq": faq,
     }
 
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"

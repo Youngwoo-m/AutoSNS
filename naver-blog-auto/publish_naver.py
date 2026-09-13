@@ -299,6 +299,13 @@ def type_structured_post(driver, data):
     ActionChains(driver).move_to_element(body_el).click().perform()
     time.sleep(0.4)
 
+    # 글 맨 위 3줄 요약 — 네이버 지식스니펫·AI 검색 요약이 이 부분을 그대로 가져간다.
+    if data.get("summary"):
+        _type_text(driver, "📌 3줄 요약")
+        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        _type_text(driver, data["summary"])
+        ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
+
     _type_text(driver, data.get("intro", ""))
     for blk in data.get("news_blocks", []):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
@@ -318,6 +325,12 @@ def type_structured_post(driver, data):
     if data.get("tips"):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
         _type_text(driver, data["tips"])
+    # 자주 묻는 질문 — 질문-답변 쌍은 검색 답변·생성형 AI 인용에 가장 잘 걸리는 형식이다.
+    if data.get("faq"):
+        ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
+        _type_text(driver, "❓ 자주 묻는 질문")
+        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        _type_text(driver, data["faq"])
     if data.get("outro"):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
         _type_text(driver, data["outro"])
