@@ -411,6 +411,62 @@ def _type_caption(driver, caption):
     return ok
 
 
+def _fix_caption_after_publish(driver, username, caption):
+    """게시 직후 실제 캡션을 확인하고, 비어 있으면 편집으로 채운다.
+
+    공유 화면에서 캡션 입력이 확인됐는데도 게시물에는 캡션이 없는 사례가 반복됐다
+    (2026-09-12 카드뉴스 릴). 그래서 '게시된 결과'를 한 번 더 보고 비었을 때만 채운다.
+    이미 캡션이 있으면 손대지 않는다(사용자가 직접 쓴 내용을 덮지 않기 위해)."""
+    try:
+        driver.get(f"https://www.instagram.com/{username}/")
+        time.sleep(5)
+        links = driver.find_elements(By.CSS_SELECTOR, "main a[href*='/p/'], main a[href*='/reel/']")
+        m = re.search(r"/(?:p|reel)/([A-Za-z0-9_-]+)/", links[0].get_attribute("href") or "") if links else None
+        if not m:
+            log("게시 후 캡션 확인 생략(최근 게시물을 찾지 못함)")
+            return
+        code = m.group(1)
+        driver.get(f"https://www.instagram.com/p/{code}/")
+        time.sleep(4)
+        if not _click_dialog_button(driver, ["옵션 더 보기", "옵션", "More options"]):
+            return
+        time.sleep(1.5)
+        if not _click_dialog_button(driver, ["수정", "Edit"]):
+            return
+        time.sleep(4)
+        boxes = [b for b in driver.find_elements(
+            By.CSS_SELECTOR, "div[role='textbox'][contenteditable='true']") if b.is_displayed()]
+        if not boxes:
+            return
+        box = boxes[0]
+        if box.text.strip():
+            log("게시 후 캡션 확인: 정상")
+            _click_dialog_button(driver, ["취소", "Cancel"])
+            return
+        log(f"⚠ 게시된 캡션이 비어 있음({code}) → 편집으로 채웁니다")
+        ActionChains(driver).move_to_element(box).pause(0.3).click().perform()
+        time.sleep(0.5)
+        for i, para in enumerate(caption.split("\n")):
+            if i:
+                ActionChains(driver).send_keys(Keys.ENTER).perform()
+                time.sleep(0.2)
+            if para:
+                driver.execute_script(
+                    "arguments[0].focus(); document.execCommand('insertText', false, arguments[1]);",
+                    box, para)
+                time.sleep(0.3)
+        time.sleep(1)
+        if _norm_caption(box.text) == _norm_caption(caption):
+            _click_dialog_button(driver, ["완료", "Done"])
+            time.sleep(5)
+            log("게시 후 캡션 보완 완료")
+        else:
+            _click_dialog_button(driver, ["취소", "Cancel"])
+            log("게시 후 캡션 보완 실패(저장하지 않음) — ig_caption_boost 로 보완하세요")
+    except Exception as e:
+        log(f"게시 후 캡션 확인 건너뜀: {type(e).__name__}")
+
+
 def _caption_body(data, cfg):
     """피드에 보이는 본문(훅·요약) + 팔로우 CTA."""
     body = (data.get("caption", "") or "").strip()
@@ -683,6 +739,9 @@ def post_reel(data, dry_run=None):
             log("릴 공유 완료 문구를 감지하지 못했습니다. 프로필에서 확인하세요.")
             return {"status": "shared_unconfirmed"}
         log("릴 게시 완료(추정).")
+
+        # 게시 결과의 캡션을 확인하고 비어 있으면 채운다(캡션 누락 재발 방지)
+        _fix_caption_after_publish(driver, ig.get("username", ""), caption)
 
         # 릴은 캡션 노출이 약해 질문형 참여유도 + 출처·해시태그를 첫 댓글로 옮긴다
         if ig.get("first_comment", False):
