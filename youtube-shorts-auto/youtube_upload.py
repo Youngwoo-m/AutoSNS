@@ -91,7 +91,7 @@ def _build_title(data, ycfg):
     prefix = ycfg.get("title_prefix", "").strip()
     if prefix and not title.startswith(prefix):
         title = f"{prefix} {title}"
-    return title[:100]
+    return _sanitize(title)[:100]
 
 
 def _build_description(data, cfg):
@@ -143,7 +143,17 @@ def _build_description(data, cfg):
     tag_line_src = tags if any(t.lower() == "shorts" for t in tags) else (["Shorts"] + tags)
     parts.append("")
     parts.append(" ".join("#" + t for t in tag_line_src))
-    return "\n".join(p for p in parts if p is not None).strip()
+    desc = "\n".join(p for p in parts if p is not None).strip()
+    return _sanitize(desc)
+
+
+def _sanitize(text):
+    """유튜브가 거부하는 꺾쇠(< >)를 제거한다.
+
+    2026-09-12 토요일 발행이 'invalidDescription' 으로 실패했다. 뉴스 제목에 섞여 온
+    '… 스마트 안전망 > 뉴스데스크' 의 꺾쇠가 원인이었다(출처 목록을 설명에 넣기 때문).
+    비슷하게 생긴 전각 기호로 바꿔 의미는 살리고 거부는 피한다."""
+    return (text or "").replace("<", "〈").replace(">", "〉")
 
 
 def upload(data, dry_run=None, privacy=None):
