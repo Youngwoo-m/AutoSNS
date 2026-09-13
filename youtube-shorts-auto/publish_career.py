@@ -160,6 +160,14 @@ def main(argv):
 
     # 1) 유튜브(기준 채널) — 성공해야 published 기록 → 중복 발행 방지
     url = _upload(ep)
+    # 1-0') 자막 업로드 — 편 정보에 대본(scenes)이 있으면 그대로 자막으로 만든다.
+    try:
+        if ep.get("scenes"):
+            from make_captions import attach as attach_caption
+            attach_caption({"scenes": ep["scenes"], "video": os.path.join(BASE_DIR, ep["video"])},
+                           video_id=url.rsplit("/", 1)[-1])
+    except Exception as e:
+        log(f"자막 업로드 건너뜀: {type(e).__name__}")
     # 1-0) 재생목록 편입(진로/퀴즈 시리즈별)
     try:
         from youtube_upload import add_to_playlist

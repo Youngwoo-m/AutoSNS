@@ -74,6 +74,12 @@ def main():
         privacy = cfg.get("youtube", {}).get("privacy", "public")
         result = upload(data, dry_run=False, privacy=privacy)  # 6) 유튜브 실제 발행
         log(f"유튜브: {result.get('status')} {result.get('url','')}")
+        # 6-0'') 대본 자막 업로드(검색 색인·AI 요약이 내용을 읽는 통로)
+        try:
+            from make_captions import attach as attach_caption
+            attach_caption(data, video_id=result.get("video_id"))
+        except Exception as e:
+            log(f"자막 업로드 건너뜀: {type(e).__name__}")
         # 6-0') 뉴스 재생목록 편입(연속 시청·구독 전환)
         try:
             from youtube_upload import add_to_playlist
