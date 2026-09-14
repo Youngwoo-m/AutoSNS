@@ -98,7 +98,7 @@ def analyze(rows, ym):
     return a
 
 
-def build_html(a, channel, profile):
+def build_html(a, channel, profile, warn=None):
     ym = a["ym"]
     H = ['<div style="font-family:-apple-system,\'Apple SD Gothic Neo\',sans-serif;'
          'max-width:720px;margin:0 auto;color:#1C1D1F;line-height:1.6">']
@@ -108,6 +108,9 @@ def build_html(a, channel, profile):
     H.append(f'<p style="color:#555;font-size:14px;margin:0 0 20px">'
              f'{ym} 발행 <b>{len(a["cur"])}건</b> '
              f'(제작 콘텐츠 {a["made_cur"]}건) · 전월 {len(a["pre"])}건</p>')
+    for w in (warn or []):
+        H.append('<p style="background:#FBEDE6;padding:10px 12px;border-radius:4px;font-size:13px;'
+                 f'margin:0 0 10px">⚠ {w}</p>')
 
     H.append('<h2 style="font-size:15px;margin:22px 0 0">매체 × 유형</h2>')
     body = []
@@ -246,14 +249,14 @@ def build_xlsx(a, path):
 if __name__ == "__main__":
     today = sys.argv[1] if len(sys.argv) > 1 else datetime.now().strftime("%Y-%m-%d")
     ym = sys.argv[2] if len(sys.argv) > 2 else prev_month(today)
-    rows, channel, profile, skipped = merge()
+    rows, channel, profile, warn = merge()
     a = analyze(rows, ym)
 
     html_path = os.path.join(OUT_DIR, f"monthly_{ym}.html")
     md_path = os.path.join(OUT_DIR, f"monthly_{ym}.md")
     xlsx_path = os.path.join(OUT_DIR, f"monthly_{ym}.xlsx")
     with open(html_path, "w", encoding="utf-8") as f:
-        f.write(build_html(a, channel, profile))
+        f.write(build_html(a, channel, profile, warn))
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(build_md(a, channel, profile))
     build_xlsx(a, xlsx_path)

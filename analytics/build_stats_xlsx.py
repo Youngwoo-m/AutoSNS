@@ -271,7 +271,7 @@ def build(rows, channel, profile, path):
 
 
 if __name__ == "__main__":
-    rows, channel, profile, skipped = merge()
+    rows, channel, profile, warn = merge()
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
         OUT_DIR, f"재난안전학과_콘텐츠활동_통계_{datetime.now():%Y%m%d}.xlsx")
     info = build(rows, channel, profile, out)

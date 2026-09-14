@@ -20,11 +20,19 @@ COLOR = {"유튜브": "#B0402F", "인스타그램": "#6B4E9E",
 
 
 def merge():
+    """수집 결과를 합친다. 일부 소스가 대체 경로로 받아졌으면 경고 문구를 함께 돌려준다."""
     rows = []
     yt = load_part("youtube") or {"items": [], "channel": {}}
     ig = load_part("instagram") or {"items": [], "profile": {}}
     bl = load_part("blog") or {"items": []}
     sm = load_part("smds") or {"items": []}
+    warn = []
+    if yt.get("degraded") == "quota":
+        warn.append("유튜브 Data API 하루 할당량이 바닥나 RSS 로 받았습니다. "
+                    "발행 목록은 정확하지만 조회수·구독자는 지난 집계 값입니다.")
+    if ig.get("skipped"):
+        warn.append("인스타그램 세션이 만료되어 이번 수치가 빠져 있습니다. "
+                    "크롬 프로필로 다시 로그인해 주세요.")
     for x in yt["items"]:
         rows.append({**x, "media": "유튜브"})
     for x in ig["items"]:
@@ -34,7 +42,7 @@ def merge():
     for x in sm["items"]:
         rows.append({**x, "media": "학과 홈페이지"})
     rows.sort(key=lambda r: r["date"], reverse=True)
-    return rows, yt.get("channel", {}), ig.get("profile", {}), ig.get("skipped")
+    return rows, yt.get("channel", {}), ig.get("profile", {}), warn
 
 
 def prev_snapshot(today):
@@ -60,7 +68,7 @@ def _table(headers, body_rows, aligns=None):
             f"<thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table>")
 
 
-def build(rows, channel, profile, skipped, today, since="2026-03-01"):
+def build(rows, channel, profile, warn, today, since="2026-03-01"):
     d0 = datetime.strptime(today, "%Y-%m-%d")
     wk_start = (d0 - timedelta(days=7)).strftime("%Y-%m-%d")
     pw_start = (d0 - timedelta(days=14)).strftime("%Y-%m-%d")
@@ -88,10 +96,9 @@ def build(rows, channel, profile, skipped, today, since="2026-03-01"):
              f'이번 주 <b>{len(week)}건</b> 발행'
              f'{delta(len(week), len(prev_week) if prev_week else None)}</p>')
 
-    if skipped:
+    for w in (warn or []):
         H.append('<p style="background:#FBEDE6;padding:10px 12px;border-radius:4px;font-size:13px;'
-                 'margin:0 0 18px">인스타그램 세션이 만료되어 이번 주 인스타 수치는 빠져 있습니다. '
-                 '크롬 프로필로 다시 로그인해 주세요.</p>')
+                 f'margin:0 0 10px">⚠ {w}</p>')
 
     H.append('<h2 style="font-size:15px;margin:22px 0 0">이번 주 매체별 발행</h2>')
     body = []
@@ -171,8 +178,8 @@ def build(rows, channel, profile, skipped, today, since="2026-03-01"):
 
 if __name__ == "__main__":
     today = sys.argv[1] if len(sys.argv) > 1 else datetime.now().strftime("%Y-%m-%d")
-    rows, channel, profile, skipped = merge()
-    html, snap = build(rows, channel, profile, skipped, today)
+    rows, channel, profile, warn = merge()
+    html, snap = build(rows, channel, profile, warn, today)
     out = os.path.join(OUT_DIR, f"weekly_{today}.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
