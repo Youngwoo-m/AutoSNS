@@ -211,6 +211,8 @@ def generate():
     tips_label = cfg.get("tips_label", "안전수칙")
     tips_desc = cfg.get("tips_desc", "일반적으로 알려진 안전 수칙 1~2가지")
     sub_kw = cfg.get("subtitle_keyword_hint", "'지명 + 재난유형'")
+    # 매일 발행이라 '주간 브리핑'은 맞지 않는다. 에디션마다 그날의 성격을 붙인다.
+    brief_label = cfg.get("brief_label", "오늘의 재난안전 브리핑")
     sub_ex = cfg.get("subtitle_example",
                      '"제천·충북 집중호우 대비, 재난대책본부 가동", '
                      '"강원 산사태 위기경보, 여름철 안전수칙 총정리"')
@@ -220,7 +222,8 @@ def generate():
                  .replace("__TIPSLABEL__", tips_label)
                  .replace("__TIPSDESC__", tips_desc)
                  .replace("__SUBKW__", sub_kw)
-                 .replace("__SUBEX__", sub_ex))
+                 .replace("__SUBEX__", sub_ex)
+                 .replace("__BRIEF_LABEL__", brief_label))
 
     system = _fill(SYSTEM)
     news = fetch_news()
@@ -278,7 +281,7 @@ def generate():
 
     # 제목: 검색 키워드가 든 부제를 앞에 두고, 뒤에 고정 브랜드/날짜(네이버 검색 최적화).
     # ('세명대 재난안전학과'는 실제로 많이 검색되는 키워드라 제목에 넣는다.)
-    suffix = cfg.get("title_suffix", "세명대 재난안전학과 주간 재난안전뉴스")
+    suffix = cfg.get("title_suffix", "세명대 재난안전학과")
     title = f'{subtitle} | {suffix} {datetime.now():%Y.%m.%d}'
     # 태그: 감지된 지역·재난 키워드 + Claude 태그 + 고정 태그 + 지역 브랜딩(local_tags).
     # local_tags 는 에디션(ai/impact/biz)이 blog.tags 를 덮어써도 항상 유지된다

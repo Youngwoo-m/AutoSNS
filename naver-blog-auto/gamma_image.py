@@ -78,7 +78,9 @@ def make_gamma_image(data):
     themes = _themes(data.get("body", ""))
     date_kr = f"{datetime.now():%Y년 %m월 %d일}"
     # 제목/날짜를 내가 직접 명시하고 preserve 로 그대로 쓰게 해 날짜 오류·텍스트 깨짐을 줄인다
-    head = f"재난안전 주간 뉴스 브리핑\n{date_kr}"
+    # 배너 제목은 그날 에디션 라벨을 따른다(매일 발행이라 '주간'은 맞지 않는다).
+    label = (cfg.get("blog", {}) or {}).get("brief_label", "재난안전 뉴스 브리핑")
+    head = f"{label}\n{date_kr}"
     input_text = head + "\n\n" + "\n".join(themes) if themes else head
 
     req_body = {
@@ -91,7 +93,7 @@ def make_gamma_image(data):
         "textOptions": {"language": "ko"},
         "additionalInstructions": icfg.get(
             "style_instructions",
-            "한국 재난안전 주간 뉴스 브리핑 대표 이미지. 신뢰감 있는 남색·적색 톤, "
+            "한국 재난안전 뉴스 브리핑 대표 이미지. 신뢰감 있는 남색·적색 톤, "
             "또렷한 가독성, 깔끔한 카드 레이아웃, 주제별 단순 아이콘. "
             "로고·엠블럼·영문 워드마크는 만들지 말고 제공된 한글 텍스트만 사용."),
     }
