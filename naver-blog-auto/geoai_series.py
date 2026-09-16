@@ -11,6 +11,7 @@ career_series.py 는 본문까지 손으로 써 두었지만, 여기는 주제 �
 """
 import json
 import os
+import random
 import re
 import sys
 from datetime import datetime
@@ -129,31 +130,97 @@ GENAI_TOPICS = [
      ["생성형AI", "안전훈련", "재난대응훈련"]),
 ]
 
-def _interleave(head=2):
-    """GeoAI 편과 생성형 AI 편을 번갈아 배치한다.
+# 안전한국훈련 문서 실무 계열 — 생성형 AI 로 초안을 잡고 hwpx 스킬로 한글 문서를 만든다.
+SAFETYDOC_TOPICS = [
+    ("safetydoc-basic", "안전한국훈련 기본계획서, 생성형 AI로 쓰는 법",
+     "기본계획서가 무엇을 담는 문서인지(훈련 목적·대상 재난·참여기관·일정·훈련 유형·평가 방향), "
+     "AI 에게 반드시 함께 줘야 할 맥락(기관 성격·규모·지역 위험요소·전년도 훈련 결과), "
+     "막연한 요청과 맥락을 준 요청의 결과 차이, 프롬프트 예시 한 개, "
+     "AI 가 지어내기 쉬운 항목(근거 법령·지침 번호·기관명·연도)은 원문으로 확인해야 한다는 점, "
+     "마지막에 hwpx 스킬로 한글 문서(.hwpx) 형태로 내려받아 결재선에 올리는 흐름.",
+     ["안전한국훈련", "생성형AI", "기본계획서", "HWPX"]),
+    ("safetydoc-plan", "안전한국훈련 실시계획서, AI로 초안 잡고 검토하기",
+     "실시계획서가 기본계획서와 무엇이 다른지(누가·언제·어디서·무엇을 하는지까지 구체화), "
+     "시간대별 진행표·역할분담·안전관리·평가항목을 AI 에게 표 형태로 받는 요령, "
+     "기본계획서 내용을 그대로 물려주는 방법(문서를 통째로 붙여 넣고 '이 범위 안에서' 라고 제한), "
+     "현장에서 지켜지지 않을 계획을 걸러내는 검토 질문들, hwpx 로 표까지 살려 한글 문서로 만드는 순서.",
+     ["안전한국훈련", "생성형AI", "실시계획서", "HWPX"]),
+    ("safetydoc-scenario", "훈련 시나리오 쓰기 | 생성형 AI로 상황 부여와 진행표 만들기",
+     "시나리오가 계획서와 다른 점(상황 부여와 대응 흐름), 상황 부여 카드의 구성(시각·상황·전달 대상·기대 조치), "
+     "지역 위험요소와 실제 매뉴얼을 넣어야 현실적인 시나리오가 나오는 이유, "
+     "돌발 상황(통신 두절·부상자 발생)을 추가해 난이도를 올리는 프롬프트, "
+     "AI 시나리오를 그대로 쓰면 안 되는 이유와 전문가 검토 지점, hwpx 로 진행표를 한글 문서로 만드는 마무리.",
+     ["안전한국훈련", "생성형AI", "훈련시나리오", "재난대응훈련"]),
+]
 
-    head: 이미 발행된 앞쪽 편은 자리를 그대로 둔다(제목의 회차 번호가 흔들리지 않게).
-    생성형 AI 편이 먼저 떨어지면 나머지는 GeoAI 편으로 이어진다."""
-    out = list(GEO_TOPICS[:head])
-    geo, gen = list(GEO_TOPICS[head:]), list(GENAI_TOPICS)
-    while geo or gen:
-        if geo:
-            out.append(geo.pop(0))
-        if gen:
-            out.append(gen.pop(0))
-    return out
+# 순서를 섞되 매 실행 같은 결과가 나오게 하는 씨앗. 57 은 임의로 고른 값이 아니라,
+# 안전한국훈련 3편(시기성이 있다)과 생성형 AI 편이 앞쪽에 고루 들어오는 배치를 주는
+# 값이다 — 씨앗을 바꾸면 배치가 통째로 달라진다.
+SHUFFLE_SEED = 57
 
 
-TOPICS = _interleave()
+def _publish_order(head=2, seed=SHUFFLE_SEED):
+    """발행 순서를 만든다 — 계열이 섞이되 계열 안 순서는 지킨다.
+
+    섞는 것은 '어느 계열을 낼 차례인가' 뿐이다. 계열 안에서는 정의한 순서대로 나간다
+    — 기본계획서 → 실시계획서 → 시나리오처럼 순서가 곧 내용인 편들이 뒤집히면 안 된다.
+    head: 이미 발행된 앞쪽 편은 자리를 그대로 둔다.
+    씨앗을 고정했으므로 목록은 매번 같다(실행마다 순서가 바뀌면 '다음 편' 예고와
+    중복 판단이 어긋난다). 다르게 섞고 싶으면 씨앗만 바꾸면 된다."""
+    queues = [list(GEO_TOPICS[head:]), list(GENAI_TOPICS), list(SAFETYDOC_TOPICS)]
+    slots = [i for i, q in enumerate(queues) for _ in q]
+    random.Random(seed).shuffle(slots)
+    return list(GEO_TOPICS[:head]) + [queues[i].pop(0) for i in slots]
+
+
+TOPICS = _publish_order()
 
 # 계열 안에서의 회차 번호. 배치 순서를 바꿔도 번호가 흔들리지 않게 계열별로 센다
 # (GeoAI 기초 1·2편은 이미 발행돼 있어 번호가 바뀌면 안 된다).
-SERIES_NO = {t[0]: i for i, t in enumerate(GEO_TOPICS, start=1)}
-SERIES_NO.update({t[0]: i for i, t in enumerate(GENAI_TOPICS, start=1)})
+SERIES_NO = {}
+for _fam in (GEO_TOPICS, GENAI_TOPICS, SAFETYDOC_TOPICS):
+    SERIES_NO.update({t[0]: i for i, t in enumerate(_fam, start=1)})
+
+FAMILIES = {                       # slug 접두사 → (표시 이름, 그 계열 목록)
+    "genai-": ("생성형AI 사용법", GENAI_TOPICS),
+    "safetydoc-": ("안전한국훈련 실무", SAFETYDOC_TOPICS),
+}
 
 
-def is_genai(topic):
-    return topic[0].startswith("genai-")
+def family_of(slug):
+    for pre, (label, topics) in FAMILIES.items():
+        if slug.startswith(pre):
+            return label, topics
+    return "GeoAI 기초", GEO_TOPICS
+
+
+
+# 계열별 추가 지침 — 글 성격이 달라 본문 요구사항을 조금 다르게 준다.
+FAMILY_HINT = {
+    "safetydoc-": (
+        "\n[이 글의 추가 요구사항]\n"
+        "- 실무자가 그대로 따라 할 수 있게 '순서'로 쓴다: 무엇을 준비하고, AI 에게 무엇을 주고,\n"
+        "  받은 초안에서 무엇을 고치고, 어떤 형식으로 마무리하는지.\n"
+        "- 프롬프트 예시를 최소 1개는 통째로 보여 준다(따옴표 없이 줄바꿈으로 구분).\n"
+        "- 법령 이름·지침 번호·연도·기관명은 지어내지 말고, '소관 부처 공고와 최신 지침을\n"
+        "  확인하라'는 식으로 쓴다. 훈련 일정·규모도 해마다 달라진다는 점을 밝힌다.\n"
+        "- AI 초안을 그대로 결재에 올리면 안 되는 이유와, 사람이 반드시 확인할 항목을 넣는다.\n"
+        "- 마지막에 초안을 한글 문서(.hwpx)로 만드는 방법을 한 단락 넣는다. 복사해 붙여 넣는\n"
+        "  방법과, 문서 변환 기능(예: Claude 의 hwpx 스킬)으로 바로 받는 방법을 함께 적는다.\n"
+    ),
+    "genai-": (
+        "\n[이 글의 추가 요구사항]\n"
+        "- 도구 이름을 특정해 단정하지 말고(서비스·요금·기능은 자주 바뀐다) 방법 중심으로 쓴다.\n"
+        "- 프롬프트 예시를 최소 1개 보여 준다.\n"
+    ),
+}
+
+
+def family_hint(slug):
+    for pre, text in FAMILY_HINT.items():
+        if slug.startswith(pre):
+            return text
+    return ""
 
 
 SYSTEM = """너는 공간정보(GIS)와 인공지능을 처음 배우는 사람에게 쉽게 설명하는 한국어 기술 블로그 작가다.
@@ -226,7 +293,8 @@ def post_title(topic):
     slug, title = topic[0], topic[1]
     if slug.startswith("genai-"):
         return title
-    return f"{title} | GeoAI 기초 {SERIES_NO.get(slug, 0)}편"
+    label, _ = family_of(slug)
+    return f"{title} | {label} {SERIES_NO.get(slug, 0)}편"
 
 
 def next_topic(done_titles=()):
@@ -298,6 +366,7 @@ def generate(idx, topic, cfg=None, recent=()):
     user = USER.format(n=idx, title=title, angle=angle,
                        today=f"{datetime.now():%Y-%m-%d}",
                        recent="\n".join(f"- {t}" for t in list(recent)[-12:]) or "(없음)")
+    user += family_hint(slug)
     min_chars = int((cfg.get("geoai") or {}).get("min_chars", 1800))
     best = None
     for attempt in range(1, 4):
@@ -310,8 +379,7 @@ def generate(idx, topic, cfg=None, recent=()):
         secs = _sections(S.get("본문", ""))
         data = {
             "slug": slug, "title": post_title(topic), "index": SERIES_NO.get(slug, idx),
-            "family": "생성형AI 사용법" if slug.startswith("genai-") else "GeoAI 기초",
-            "family_total": len(GENAI_TOPICS) if slug.startswith("genai-") else len(GEO_TOPICS),
+            "family": family_of(slug)[0], "family_total": len(family_of(slug)[1]),
             "summary": _lines(S.get("요약", ""))[:3],
             "intro": S.get("도입", ""), "sections": secs,
             "practice": _lines(S.get("해보기", "")),

@@ -78,7 +78,7 @@
 |------|------|
 | `geoai_auth_setup.py` | **최초 1회** — 블로그 소유 계정으로 인증(쓰기 권한까지 확인) |
 | `geoai_blogger.py` | GeoAI 블로그 발행 계층(토큰·중복확인·라벨 상한·오늘 발행 여부) |
-| `geoai_series.py` | 개념 시리즈 32편 — GeoAI 26편(`GEO_TOPICS`)과 생성형 AI 사용법 6편(`GENAI_TOPICS`)을 번갈아 발행. 본문은 Claude 가 작성 |
+| `geoai_series.py` | 시리즈 35편 — GeoAI 26편(`GEO_TOPICS`) · 생성형 AI 사용법 6편(`GENAI_TOPICS`) · 안전한국훈련 문서 실무 3편(`SAFETYDOC_TOPICS`). 본문은 Claude 가 작성 |
 | `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) + 카드뉴스·영상 합성 |
 | `geoai_banner.py` | 글 머리에 넣을 가로 3:1 배너 PNG(헤드리스 Chrome, Gamma 크레딧 없음) |
 | `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로(`media_style: cards` 일 때) |
@@ -141,6 +141,10 @@ bash setup_geoai_schedule.sh               # 매일 07:40 등록
   블로그에 오늘 날짜 글이 이미 있으면 그날은 아무것도 하지 않는다.
 - 시리즈 진행 상황은 `geoai_state.json` + 블로그의 실제 제목 목록 둘 다로 판단한다.
   (상태 파일이 없어져도 같은 글이 두 번 나가지 않는다)
-- 주제가 떨어지면 `geoai_series.py` 의 `GEO_TOPICS` / `GENAI_TOPICS` 에 더 넣으면 된다.
-  발행 순서는 `_interleave()` 가 두 계열을 번갈아 배치해 만든다(한쪽이 먼저 떨어지면
-  나머지가 이어진다). 회차 번호는 계열 안에서 세므로 순서를 바꿔도 흔들리지 않는다.
+- 주제가 떨어지면 `geoai_series.py` 의 계열 목록에 더 넣으면 된다.
+  발행 순서는 `_publish_order()` 가 만든다 — 계열을 무작위로 섞되(고정 씨앗
+  `SHUFFLE_SEED`) 계열 안 순서는 지킨다(기본계획서 → 실시계획서 → 시나리오처럼
+  순서가 곧 내용인 편이 뒤집히지 않게). 씨앗을 바꾸면 배치가 통째로 달라진다.
+  회차 번호는 계열 안에서 세므로 배치를 바꿔도 흔들리지 않는다.
+- 계열마다 본문 지침이 조금 다르다(`FAMILY_HINT`) — 실무 문서 편은 순서·프롬프트
+  예시·사람이 확인할 항목·.hwpx 변환 단락을 반드시 넣게 한다.
