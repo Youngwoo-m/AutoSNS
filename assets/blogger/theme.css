@@ -1,0 +1,73 @@
+/* ───────────────────────────────────────────────────────────
+   세명대 재난안전학과 블로그 — 돋움 계열 본문 + 카드형 목록
+   넣는 곳: Blogger → 테마 → 맞춤설정 → 고급 → CSS 추가
+   (테마 HTML 을 건드리지 않아 테마를 바꿔도 이 CSS 만 다시 붙이면 된다)
+   ─────────────────────────────────────────────────────────── */
+
+/* 1) 글꼴 — 돋움 계열 산세리프. 웹폰트(Gothic A1)를 먼저 쓰고,
+      없으면 기기의 돋움/맑은 고딕/애플 SD 고딕으로 내려간다. */
+@import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;900&display=swap');
+
+body, .post-body, .widget, .post-title, h1, h2, h3, h4 {
+  font-family: 'Gothic A1', 'Apple SD Gothic Neo', 'Malgun Gothic', Dotum, 돋움, sans-serif !important;
+}
+
+/* 본문 가독성 — 글자 크기·줄간격·자간 */
+.post-body, .post-body p {
+  font-size: 17px !important;
+  line-height: 1.85 !important;
+  letter-spacing: -0.01em;
+  color: #1f2937;
+  word-break: keep-all;          /* 한글 단어가 줄 끝에서 쪼개지지 않게 */
+}
+.post-body h3 {
+  font-size: 21px !important;
+  font-weight: 700;
+  margin: 34px 0 12px;
+  padding-left: 12px;
+  border-left: 5px solid #E63946;   /* 학과 포인트 컬러 */
+  color: #0B1C3A;
+}
+.post-body a { color: #12509b; text-decoration: underline; }
+.post-body img { border-radius: 10px; }
+
+/* 2) 목록을 카드형으로 — 글 하나하나를 흰 카드로 띄운다 */
+.blog-posts { display: flex; flex-wrap: wrap; gap: 22px; }
+.blog-posts .post-outer {
+  flex: 1 1 320px;
+  background: #fff;
+  border: 1px solid #e6e8ec;
+  border-radius: 14px;
+  padding: 26px 28px;
+  box-shadow: 0 2px 10px rgba(11, 28, 58, .06);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.blog-posts .post-outer:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(11, 28, 58, .12);
+}
+.post-title, .post-title a { font-size: 20px !important; font-weight: 700; color: #0B1C3A; }
+.post-title { margin-bottom: 10px !important; line-height: 1.4; }
+
+/* 카드 안에서는 본문을 접어 보여준다(목록이 길어지지 않게) */
+.blog-posts .post-outer .post-body {
+  font-size: 15px !important; line-height: 1.7 !important; color: #4b5563;
+  max-height: 7.5em; overflow: hidden;
+}
+
+/* 라벨(태그)을 알약 모양으로 */
+.post-labels a, .Label li a {
+  display: inline-block; margin: 3px 4px 0 0; padding: 4px 11px;
+  background: #eef2f8; color: #12509b; border-radius: 999px;
+  font-size: 13px; text-decoration: none;
+}
+.post-labels a:hover, .Label li a:hover { background: #12509b; color: #fff; }
+
+/* 3) 헤더 이미지가 잘리지 않게 */
+#header img, .header img { width: 100%; height: auto; display: block; }
+
+/* 4) 모바일 — 카드 한 줄에 하나 */
+@media (max-width: 720px) {
+  .blog-posts .post-outer { flex: 1 1 100%; padding: 20px 18px; }
+  .post-body, .post-body p { font-size: 16px !important; }
+}
