@@ -1,4 +1,4 @@
-"""블로그 글 → 60~80초 뉴스브리핑 영상 대본(장면별 나레이션)을 만든다.
+"""블로그 글 → 40초 이내 뉴스브리핑 영상 대본(장면별 나레이션)을 만든다.
 
 영상은 글과 같은 내용을 다뤄야 하므로, 뉴스를 다시 모으지 않고 이미 만든 글에서 뽑는다.
 결과는 youtube-shorts-auto/geoai_video.py 가 그대로 받아 쓰는 payload 다.
@@ -17,7 +17,7 @@ SYSTEM = """너는 짧은 뉴스 브리핑 영상의 대본을 쓰는 한국어 
 - 과장이나 공포 조장 없이 담백하게, 아나운서 말투(존댓말)로 쓴다.
 - 출력은 지정된 구분자(===) 형식만 반환한다."""
 
-USER = """아래 블로그 글을 60~80초 뉴스 브리핑 영상 대본으로 바꿔줘.
+USER = """아래 블로그 글을 40초 이내 뉴스 브리핑 영상 대본으로 바꿔줘.
 
 제목: {title}
 요약:
@@ -27,8 +27,9 @@ USER = """아래 블로그 글을 60~80초 뉴스 브리핑 영상 대본으로 
 {body}
 
 요구사항
-- 장면 4~5개. 각 장면은 '## 장면제목' 한 줄과 나레이션 한 단락.
-- 나레이션 전체 합계 330~400자(한국어 기준, 430자를 절대 넘기지 말 것). 장면마다 70~100자.
+- 장면 3~4개. 각 장면은 '## 장면제목' 한 줄과 나레이션 한 단락.
+- 나레이션 전체 합계 {budget}자 안팎(한국어 기준). {hard}자를 절대 넘기지 말 것.
+  짧은 영상이라 곁가지를 빼고 핵심만 남긴다. 장면마다 60~80자.
 - 첫 장면 첫 문장은 시청자를 붙잡는 질문이나 상황 제시로 시작한다.
 - 마지막 장면은 "자세한 내용은 블로그 지오에이아이와 생성형에이아이에서 확인하실 수 있습니다"
   처럼, 블로그에서 더 볼 수 있다는 안내로 끝낸다(영문 약어는 소리 나는 대로 쓴다).
@@ -71,15 +72,43 @@ def _body_digest(data, limit=5):
     return "\n".join(rows)
 
 
+def _fit_budget(scenes, hard):
+    """나레이션 합계를 상한 안으로 줄인다(문장 단위로 뒤에서 덜어낸다).
+
+    모델이 글자 수 지시를 넘기는 일이 잦은데, 길이가 곧 영상 길이이자 HeyGen 비용이다.
+    마지막 장면(블로그 안내)은 남겨 둔다 — CTA 가 빠지면 영상의 목적이 사라진다."""
+    total = sum(len(s["narration"]) for s in scenes)
+    if total <= hard or len(scenes) < 2:
+        return scenes
+    keep, last = scenes[:-1], scenes[-1]
+    budget = hard - len(last["narration"])
+    out, used = [], 0
+    for sc in keep:
+        sents = re.split(r"(?<=[.!?])\s+", sc["narration"].strip())
+        picked = []
+        for sent in sents:
+            if used + len(sent) > budget:
+                break
+            picked.append(sent)
+            used += len(sent) + 1
+        if picked:
+            out.append({**sc, "narration": " ".join(picked)})
+    out.append(last)
+    log(f"대본이 상한을 넘겨 {total}자 → {sum(len(s['narration']) for s in out)}자로 줄였습니다")
+    return out
+
+
 def make_payload(data, cfg=None):
     """영상 제작 payload(headline/title/description/scenes/hashtags/sources)."""
     cfg = cfg or load_config()
     client = Anthropic(api_key=cfg["anthropic_api_key"])
     summary = "\n".join(f"- {s}" for s in (data.get("summary") or [])) or "- (없음)"
+    hard = int((cfg.get("geoai") or {}).get("video_max_chars", 290))
     msg = client.messages.create(
         model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=2000, system=SYSTEM,
         messages=[{"role": "user", "content": USER.format(
-            title=data.get("title", ""), summary=summary, body=_body_digest(data))}],
+            title=data.get("title", ""), summary=summary, body=_body_digest(data),
+            budget=f"{max(hard - 60, 120)}~{hard - 20}", hard=hard)}],
     )
     S = _split(msg.content[0].text.strip())
     scenes = []
@@ -93,8 +122,9 @@ def make_payload(data, cfg=None):
             scenes.append({"heading": head.strip(), "narration": narration})
     if not scenes:
         raise RuntimeError("영상 대본 장면을 파싱하지 못했습니다.")
+    scenes = _fit_budget(scenes, hard)
     chars = sum(len(s["narration"]) for s in scenes)
-    log(f"영상 대본 {len(scenes)}장면 / 나레이션 {chars}자")
+    log(f"영상 대본 {len(scenes)}장면 / 나레이션 {chars}자 (상한 {hard}자 ≈ 40초)")
     sources = []
     for blk in (data.get("news_blocks") or []):
         src = blk.get("source") or {}
