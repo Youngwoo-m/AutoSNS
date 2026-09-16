@@ -83,7 +83,7 @@
 | `geoai_banner.py` | 글 머리에 넣을 가로 3:1 배너 PNG(헤드리스 Chrome, Gamma 크레딧 없음) |
 | `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로(`media_style: cards` 일 때) |
 | `geoai_assets.py` | 카드 PNG 를 공개 GitHub 저장소에 올려 CDN 주소로(Blogger 는 이미지 업로드 미지원) |
-| `geoai_script.py` | 글 → 60~80초 뉴스브리핑 영상 대본(장면별 나레이션) |
+| `geoai_script.py` | 글 → 40초 이내 쇼츠 대본(화면 제목·화면 문구·나레이션) |
 | `run_geoai.sh` | launchd 래퍼(인자 거부 — 실행 즉시 실제 발행) |
 | `setup_geoai_schedule.sh` | 매일 07:40 launchd 등록 |
 
@@ -109,6 +109,20 @@
   책상에 '재난안전과 GeoAI' 명패를 그려 넣는다(`heygen.dept`). 학과 채널 아바타는 그대로다.
 - 카드·영상이 실패해도 글은 그대로 발행된다(있으면 더 좋은 것이지 발행 조건이 아니다).
 - `--dry` 는 HeyGen 을 호출하지 않는다(크레딧이 나가므로 대본만 보여준다).
+
+### 유튜브 게시물(커뮤니티)
+그날 글을 채널 '게시물' 탭에도 올린다 — 제목 + 한 줄 요약 + 링크 + 배너 이미지.
+YouTube Data API 에는 게시물 작성 기능이 없어 **로그인 프로필을 쓴 브라우저 자동화**다
+(네이버 발행과 같은 방식·같은 약점 — 화면이 바뀌면 셀렉터를 고쳐야 한다).
+
+```bash
+cd ~/devAPP/AutoSNS/youtube-shorts-auto
+./.venv/bin/python geoai_community_login.py     # 최초 1회: 채널 계정으로 직접 로그인
+echo '{"title":"글 제목","url":"https://..."}' | ./.venv/bin/python geoai_community.py
+```
+설정은 `youtube-shorts-auto/config.json` 의 `editions.geoai.community_post`
+(`enabled`·`handle`·`headless`·`tail`). 실패하면 `logs/community_*.png` 에 화면이 남고,
+블로그·영상 발행에는 영향을 주지 않는다.
 
 ### 설정 (`config.json`)
 - `geoai.blog_id` / `geoai.url` — 대상 블로그

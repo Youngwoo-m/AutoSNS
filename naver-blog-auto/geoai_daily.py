@@ -8,6 +8,7 @@
 글에 함께 붙는 것:
   · 이미지(기본: 가로 배너 1장, 설정에 따라 Gamma 카드뉴스) → 공개 GitHub 저장소에
     올리고 CDN 으로 건다(Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
+  · 그날 글을 유튜브 '게시물'(커뮤니티)에도 올린다 — 제목·한 줄 요약·링크·배너
   · 매일 쇼츠 영상 1편을 개인 유튜브 채널(@geoai-safety)에 올리고 글에 임베드한다.
     보통은 카드 영상(무료 TTS)이고, config.geoai.video_weekdays 인 날만 HeyGen
     아바타 아나운서 영상이다(크레딧이 들어 주 1회)
@@ -87,6 +88,7 @@ def make_images(data, cfg, dry_run=False):
     if dry_run:
         log(f"[DRY] 이미지 {len(paths)}장 생성됨(업로드 안 함): {paths[0] if paths else ''}")
         return []
+    data["_local_images"] = paths        # 유튜브 게시물에 붙일 원본 파일 경로
     try:
         from geoai_assets import upload
         prefix = f"{datetime.now():%Y/%m/%Y%m%d_%H%M%S}"
@@ -138,6 +140,30 @@ def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
         return out
     except Exception as e:
         log(f"영상 제작 실패(글은 정상): {type(e).__name__}: {str(e)[:150]}")
+        return {}
+
+
+def post_community(data, post_url, cfg, dry_run=False):
+    """그날 글을 유튜브 '게시물'(커뮤니티)에도 올린다.
+
+    공개 API 가 없어 로그인 프로필을 쓴 브라우저 자동화다(youtube-shorts-auto 쪽).
+    실패해도 삼킨다 — 블로그·영상은 이미 나간 뒤다."""
+    py = os.path.join(YT_DIR, ".venv", "bin", "python")
+    if not os.path.exists(py):
+        return {}
+    imgs = data.get("_local_images") or []
+    payload = {"title": data.get("title", ""), "summary": data.get("summary"),
+               "url": post_url, "image": imgs[0] if imgs else None}
+    try:
+        cmd = [py, "geoai_community.py"] + ([] if dry_run else ["--go"])
+        p = subprocess.run(cmd, cwd=YT_DIR, input=json.dumps(payload),
+                           text=True, capture_output=True, timeout=600)
+        lines = [l for l in (p.stdout or "").strip().splitlines() if l.startswith("{")]
+        out = json.loads(lines[-1]) if lines else {}
+        log(f"유튜브 게시물: {out.get('status') or out.get('error') or '응답 없음'}")
+        return out
+    except Exception as e:
+        log(f"유튜브 게시물 건너뜀: {type(e).__name__}: {str(e)[:120]}")
         return {}
 
 
@@ -222,6 +248,9 @@ def main():
         mark_posted(topic, data, r.get("url", ""))
     log(f"===== GeoAI 종료: {r.get('status') or r.get('error')} "
         f"(이미지 {len(images)}장, 영상 {video.get('style', '없음') if video.get('video_id') else 'X'}) =====")
+
+    if r.get("status") == "published" or dry:      # 유튜브 게시물(커뮤니티)
+        post_community(data, r.get("url", ""), cfg, dry_run=dry)
 
     if not dry and r.get("status") == "published":
         try:                                          # 카톡 알림(실패 무시)
