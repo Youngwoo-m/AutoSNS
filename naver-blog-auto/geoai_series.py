@@ -26,7 +26,7 @@ STATE_PATH = os.path.join(BASE_DIR, "geoai_state.json")
 # (slug, 제목, 글의 관점/꼭 다룰 것, 태그) — 순서대로 하루 1편씩 나간다.
 # 앞쪽은 GeoAI 개념, 뒤쪽(genai-*)은 생성형 AI 사용법이다(블로그 이름의 나머지 절반).
 # 제목은 사람들이 실제로 검색할 말로 짓는다(개념어 + '무엇/어떻게').
-TOPICS = [
+GEO_TOPICS = [
     ("what-is-geoai", "GeoAI란 무엇인가? 공간정보와 인공지능이 만나면",
      "GeoAI 의 정의, 기존 GIS 분석과 무엇이 다른지, 어디에 쓰이는지(재난·도시·농업·환경). 첫 편이므로 시리즈 전체 지도를 간단히 보여준다.",
      ["GeoAI", "공간정보", "GIS", "인공지능"]),
@@ -105,6 +105,10 @@ TOPICS = [
     ("geoai-career", "GeoAI로 진로를 잡으려면 | 배울 것과 포트폴리오",
      "필요한 역량 묶음(GIS·프로그래밍·도메인), 단계별 학습 순서, 포트폴리오로 쓸 만한 프로젝트 예시와 공개 데이터.",
      ["GeoAI진로", "포트폴리오", "공간정보"]),
+]
+
+# 생성형 AI 사용법 계열 — 위 GeoAI 계열과 번갈아 나간다.
+GENAI_TOPICS = [
     ("genai-prompt", "생성형 AI 사용법 1 | 프롬프트는 이렇게 쓴다",
      "좋은 프롬프트의 구성(역할·맥락·형식·제약), 막연한 질문과 구체적 요청의 결과 차이, 되묻게 만드는 요령. 공간정보·재난안전 업무 예시로 설명한다.",
      ["생성형AI", "프롬프트", "AI활용"]),
@@ -124,6 +128,33 @@ TOPICS = [
      "재난 대응 훈련 시나리오·체크리스트 초안을 AI로 만드는 절차, 지역 특성과 실제 매뉴얼을 함께 넣어야 하는 이유, 전문가 검토가 반드시 필요한 지점.",
      ["생성형AI", "안전훈련", "재난대응훈련"]),
 ]
+
+def _interleave(head=2):
+    """GeoAI 편과 생성형 AI 편을 번갈아 배치한다.
+
+    head: 이미 발행된 앞쪽 편은 자리를 그대로 둔다(제목의 회차 번호가 흔들리지 않게).
+    생성형 AI 편이 먼저 떨어지면 나머지는 GeoAI 편으로 이어진다."""
+    out = list(GEO_TOPICS[:head])
+    geo, gen = list(GEO_TOPICS[head:]), list(GENAI_TOPICS)
+    while geo or gen:
+        if geo:
+            out.append(geo.pop(0))
+        if gen:
+            out.append(gen.pop(0))
+    return out
+
+
+TOPICS = _interleave()
+
+# 계열 안에서의 회차 번호. 배치 순서를 바꿔도 번호가 흔들리지 않게 계열별로 센다
+# (GeoAI 기초 1·2편은 이미 발행돼 있어 번호가 바뀌면 안 된다).
+SERIES_NO = {t[0]: i for i, t in enumerate(GEO_TOPICS, start=1)}
+SERIES_NO.update({t[0]: i for i, t in enumerate(GENAI_TOPICS, start=1)})
+
+
+def is_genai(topic):
+    return topic[0].startswith("genai-")
+
 
 SYSTEM = """너는 공간정보(GIS)와 인공지능을 처음 배우는 사람에게 쉽게 설명하는 한국어 기술 블로그 작가다.
 지켜야 할 원칙:
@@ -190,8 +221,12 @@ def save_state(s):
         json.dump(s, f, ensure_ascii=False, indent=2)
 
 
-def post_title(idx, title):
-    return f"{title} | GeoAI 기초 {idx}편"
+def post_title(topic):
+    """발행 제목. 생성형 AI 편은 제목에 이미 '사용법 N' 이 들어 있어 덧붙이지 않는다."""
+    slug, title = topic[0], topic[1]
+    if slug.startswith("genai-"):
+        return title
+    return f"{title} | GeoAI 기초 {SERIES_NO.get(slug, 0)}편"
 
 
 def next_topic(done_titles=()):
@@ -202,7 +237,7 @@ def next_topic(done_titles=()):
     for i, t in enumerate(TOPICS, start=1):
         if t[0] in done:
             continue
-        if post_title(i, t[1]) in done_titles:
+        if post_title(t) in done_titles:
             continue
         return i, t
     return None, None
@@ -274,7 +309,9 @@ def generate(idx, topic, cfg=None, recent=()):
         S = _split(msg.content[0].text.strip())
         secs = _sections(S.get("본문", ""))
         data = {
-            "slug": slug, "title": post_title(idx, title), "index": idx,
+            "slug": slug, "title": post_title(topic), "index": SERIES_NO.get(slug, idx),
+            "family": "생성형AI 사용법" if slug.startswith("genai-") else "GeoAI 기초",
+            "family_total": len(GENAI_TOPICS) if slug.startswith("genai-") else len(GEO_TOPICS),
             "summary": _lines(S.get("요약", ""))[:3],
             "intro": S.get("도입", ""), "sections": secs,
             "practice": _lines(S.get("해보기", "")),
@@ -315,7 +352,8 @@ def build_html(data, cfg=None, with_links=True):
         P.append("<h3>❓ 자주 묻는 질문</h3>" + _prose_html(data["faq"]))
     if data.get("outro"):
         P.append(_prose_html(data["outro"]))
-    P.append(f'<p><em>GeoAI 기초 시리즈 {data.get("index","")}편 · 전체 {len(TOPICS)}편</em></p>')
+    P.append(f'<p><em>{data.get("family", "GeoAI 기초")} 시리즈 '
+             f'{data.get("index", "")}편 · 전체 {data.get("family_total", len(TOPICS))}편</em></p>')
     if with_links:
         P.append(channel_links_html(cfg))
     return "\n".join(p for p in P if p)
@@ -369,7 +407,7 @@ if __name__ == "__main__":
         for i, t in enumerate(TOPICS, start=1):
             print(("[완료] " if t[0] in done else "[대기] ") + f"{i:2d}. {t[1]}")
         idx, topic = next_topic()
-        print("\n다음 발행 예정:", post_title(idx, topic[1]) if topic else "없음")
+        print("\n다음 발행 예정:", post_title(topic) if topic else "없음")
         raise SystemExit(0)
     go = "--go" in sys.argv
     print(json.dumps(run(dry_run=not go), ensure_ascii=False, indent=2))

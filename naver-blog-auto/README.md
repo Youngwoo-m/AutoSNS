@@ -78,7 +78,7 @@
 |------|------|
 | `geoai_auth_setup.py` | **최초 1회** — 블로그 소유 계정으로 인증(쓰기 권한까지 확인) |
 | `geoai_blogger.py` | GeoAI 블로그 발행 계층(토큰·중복확인·라벨 상한·오늘 발행 여부) |
-| `geoai_series.py` | GeoAI 개념 시리즈 26편(주제 목록은 코드 안 `TOPICS`) — 본문은 Claude 가 작성 |
+| `geoai_series.py` | 개념 시리즈 32편 — GeoAI 26편(`GEO_TOPICS`)과 생성형 AI 사용법 6편(`GENAI_TOPICS`)을 번갈아 발행. 본문은 Claude 가 작성 |
 | `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) + 카드뉴스·영상 합성 |
 | `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로 |
 | `geoai_assets.py` | 카드 PNG 를 공개 GitHub 저장소에 올려 CDN 주소로(Blogger 는 이미지 업로드 미지원) |
@@ -134,4 +134,6 @@ bash setup_geoai_schedule.sh               # 매일 07:40 등록
   블로그에 오늘 날짜 글이 이미 있으면 그날은 아무것도 하지 않는다.
 - 시리즈 진행 상황은 `geoai_state.json` + 블로그의 실제 제목 목록 둘 다로 판단한다.
   (상태 파일이 없어져도 같은 글이 두 번 나가지 않는다)
-- 26편이 끝나면 `geoai_series.py` 의 `TOPICS` 에 주제를 더 넣으면 된다.
+- 주제가 떨어지면 `geoai_series.py` 의 `GEO_TOPICS` / `GENAI_TOPICS` 에 더 넣으면 된다.
+  발행 순서는 `_interleave()` 가 두 계열을 번갈아 배치해 만든다(한쪽이 먼저 떨어지면
+  나머지가 이어진다). 회차 번호는 계열 안에서 세므로 순서를 바꿔도 흔들리지 않는다.
