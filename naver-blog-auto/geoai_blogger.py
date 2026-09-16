@@ -6,7 +6,7 @@
 나머지(HTML 이스케이프·URL 인코딩·라벨 상한)는 post_blogger 에서 겪은 제약을 그대로 따른다.
 """
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -65,16 +65,30 @@ def posted_titles(svc, bid, pages=4):
     return titles
 
 
+def _local_date(ts):
+    """Blogger 의 RFC3339 시각을 이 맥의 날짜(KST)로 바꾼다.
+
+    블로그 시간대가 KST 가 아니어서(2026-09-16 13:30 KST 발행분이 published 에는
+    2026-09-15T21:30 로 기록됐다) 문자열 앞 10자리를 그대로 쓰면 날짜가 하루 어긋난다.
+    → 오프셋까지 읽어 현지 시각으로 바꾼 뒤 비교한다."""
+    try:
+        d = datetime.fromisoformat((ts or "").replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return f"{d.astimezone():%Y-%m-%d}"
+
+
 def posted_today(svc, bid):
     """오늘 이미 글이 올라갔으면 그 제목을 준다(하루 1편 원칙).
 
-    launchd 가 밀린 실행을 몰아서 돌리거나 손으로 한 번 더 돌려도 두 편이 되지 않게 한다.
-    published 는 블로그 시간대 기준 RFC3339 라 앞 10자리가 곧 날짜다."""
+    launchd 가 밀린 실행을 몰아서 돌리거나 손으로 한 번 더 돌려도 두 편이 되지 않게 한다."""
     r = svc.posts().list(blogId=bid, maxResults=5, fetchBodies=False,
                          fields="items(title,published)").execute()
     today = f"{datetime.now():%Y-%m-%d}"
     for i in r.get("items", []):
-        if (i.get("published") or "")[:10] == today:
+        if _local_date(i.get("published")) == today:
             return (i.get("title") or "").strip() or "(제목 없음)"
     return ""
 
