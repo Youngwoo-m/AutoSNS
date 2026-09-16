@@ -94,9 +94,13 @@
   · `cards` — Gamma 카드뉴스 `geoai.cards.count` 장(표지 → 핵심 → 블로그 안내).
     첫 장은 글 맨 위, 나머지는 본문 아래 '카드뉴스로 한눈에' 섹션에.
   · `none` — 이미지 없이 글만. 원본이 장당 4~5MB 라 폭 1400px JPEG 로 줄여 올린다.
-- **영상**: `geoai.video_weekdays`(화요일 브리핑, **주 1회**)에만 만들고, 길이는
+- **영상**: **매일 쇼츠 1편**을 올린다(`geoai.daily_video`). 평소에는 카드 영상
+  (카드 프레임 + 무료 edge-tts, 추가 비용 없음)이고, `geoai.video_weekdays`(화요일)
+  에만 HeyGen 아바타 아나운서 영상이다. 길이는
   **40초 이내**로 짧게 간다(`geoai.video_max_chars`, 말속도 1.05 기준 290자 ≈ 40초).
-  모델이 길이 지시를 넘기면 문장 단위로 잘라 상한을 맞춘다. 나머지 날은
+  모델이 길이 지시를 넘기면 문장 단위로 잘라 상한을 맞춘다.
+  대본에는 나레이션과 함께 화면에 띄울 문구(`lines`)와 화면 제목이 들어간다 —
+  카드 영상은 그 문구를 그대로 프레임에 그린다. 나머지 날은
   영상 없이 카드뉴스만 붙인다 — 아바타 영상은 크레딧이 들고, 매일 올리면 새 채널이
   스팸처럼 보이기도 한다. 글 내용을 대본으로 바꿔
   HeyGen AI 아나운서 영상을 만들고, 개인 채널 **@geoai-safety** 에 올린 뒤 글에 임베드한다.
@@ -115,7 +119,10 @@
 - `geoai.banner` — 배너 문구(브랜드·킥커)
 - `geoai.cards` — 카드뉴스 장수·비율·테마(`media_style: cards` 일 때)
 - `geoai.assets` — 이미지 저장소(`SMUDS-m/geoai-assets`, 공개)와 축소 폭
-- `geoai.video_weekdays` / `video_privacy` — 영상 만드는 요일(0=월)과 공개 범위
+- `geoai.daily_video` — 매일 카드 쇼츠 올리기(기본 true)
+- `geoai.video_weekdays` / `video_privacy` — 아바타 영상 요일(0=월)과 공개 범위
+- 카드 영상의 상단·하단 문구는 `youtube-shorts-auto/config.json` 의
+  `editions.geoai.video.header_text` / `footer_text`
 - 유튜브 쪽 문구는 `youtube-shorts-auto/config.json` 의 `editions.geoai`
   (제목 접두사·설명 꼬리말·AI 고지문·킥커·캐릭터 끄기)
 
