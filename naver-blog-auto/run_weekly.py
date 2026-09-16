@@ -1,9 +1,10 @@
 """주간 실행 엔트리포인트: 글 생성 -> 발행. 작업 스케줄러가 이걸 호출한다.
 
-요일별 에디션(카테고리):
-  수 → 재난안전판(재난안전뉴스)
-  목 → 재해영향평가판(재해영향평가) + 기업재난관리판(기업재난관리)  ※ 두 글
-  토 → GeoAI판(GeoAI재난관리)
+요일별 에디션(카테고리) — 매일 1편씩. 요일마다 주제가 달라야 같은 뉴스가
+반복되지 않는다(하루 걸러 같은 기사를 다루면 글도 검색도 손해다).
+  월 → 정책·제도판      화 → 산업·신기술판    수 → 재난안전판(지역 뉴스)
+  목 → 재해영향평가판    금 → 기업재난관리판    토 → GeoAI판
+  일 → 생활안전판
 
 스케줄 실행은 '실제 발행'한다(dry_run=False 고정). config 의 dry_run 은 수동 테스트용
 안전장치로 남겨두어, 실수로 publish_naver.py 를 직접 돌려도 발행되지 않게 한다.
@@ -14,14 +15,21 @@ from datetime import datetime
 from common import log
 
 
+# 월=0 … 일=6. None = 기본(재난안전판).
+WEEKDAY_EDITIONS = {
+    0: ["policy"],      # 월 정책·제도
+    1: ["industry"],    # 화 산업·신기술
+    2: [None],          # 수 재난안전(제천·충북 지역 뉴스)
+    3: ["impact"],      # 목 재해영향평가
+    4: ["biz"],         # 금 기업재난관리
+    5: ["ai"],          # 토 GeoAI
+    6: ["living"],      # 일 생활안전
+}
+
+
 def _editions_for_today():
-    """오늘 발행할 에디션 목록. None = 기본(재난안전판)."""
-    wd = datetime.now().weekday()   # 월=0 … 목=3, 토=5
-    if wd == 5:
-        return ["ai"]
-    if wd == 3:
-        return ["impact", "biz"]    # 목요일: 두 글(각자 카테고리)
-    return [None]
+    """오늘 발행할 에디션 목록(요일 고정 배치)."""
+    return WEEKDAY_EDITIONS.get(datetime.now().weekday(), [None])
 
 
 def _run_one(edition):
