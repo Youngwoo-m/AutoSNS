@@ -5,6 +5,7 @@
 그래서 토큰 파일을 따로 둔다(token_blogger_geoai.json ← geoai_auth_setup.py 로 1회 인증).
 나머지(HTML 이스케이프·URL 인코딩·라벨 상한)는 post_blogger 에서 겪은 제약을 그대로 따른다.
 """
+import json
 import os
 from datetime import datetime, timezone
 
@@ -12,7 +13,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
-from common import BASE_DIR, load_config, log
+from common import BASE_DIR, POSTS_DIR, load_config, log
 from post_blogger import SCOPES, _esc, _url
 
 TOKEN_PATH = os.path.join(BASE_DIR, "token_blogger_geoai.json")
@@ -187,12 +188,21 @@ def publish(title, html_body, labels, dry_run=False, cfg=None):
         log(f"GeoAI 발행 완료: {r.get('url','')}")
         return {"status": "published", "url": r.get("url", "")}
     except Exception as e:
-        msg = str(e)[:200]
-        if "403" in msg:
+        msg = str(e)
+        if "403" in msg[:200]:
             msg += (" | 이 토큰 계정에 geoaina 블로그 쓰기 권한이 없습니다 — "
                     "블로그 소유 계정으로 geoai_auth_setup.py 를 다시 실행하세요.")
-        log(f"GeoAI 발행 실패: {type(e).__name__}: {msg}")
-        return {"error": msg}
+        # 실패한 본문을 남긴다 — 글 생성에 든 API 호출을 버리지 않고 원인을 찾거나
+        # 고쳐서 다시 올릴 수 있다(2026-09-16 400 invalid argument 를 놓친 적이 있다).
+        dump = os.path.join(POSTS_DIR, f"failed_geoai_{datetime.now():%Y%m%d_%H%M%S}.json")
+        try:
+            with open(dump, "w", encoding="utf-8") as f:
+                json.dump(body, f, ensure_ascii=False, indent=2)
+        except Exception:
+            dump = "(본문 저장 실패)"
+        log(f"GeoAI 발행 실패: {type(e).__name__}: {msg[:600]}")
+        log(f"  실패한 본문 저장: {dump}")
+        return {"error": msg[:300], "dump": dump}
 
 
 if __name__ == "__main__":     # 연결·권한 점검용(발행하지 않는다)

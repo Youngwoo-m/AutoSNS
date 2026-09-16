@@ -18,6 +18,11 @@
     python geoai_daily.py --plan   # 오늘 무엇을 올릴지만 확인(API 호출 없음)
     python geoai_daily.py --dry    # 글·카드·대본까지 만들어 보고 발행/업로드는 안 함
     python geoai_daily.py --go     # 실제 발행 (run_geoai.sh 가 호출)
+
+손으로 돌릴 때 쓰는 덧붙임 플래그:
+    --force        오늘 이미 글이 있어도 한 편 더 올린다(하루 1편 가드 무시)
+    --video        오늘이 영상 요일이 아니어도 영상을 만든다
+    --no-video     영상 요일이어도 영상을 만들지 않는다
 """
 import json
 import os
@@ -39,7 +44,12 @@ def _brief_day(cfg):
     return int(_gcfg(cfg).get("brief_weekday", 1))
 
 
-def _video_today(cfg):
+def _video_today(cfg, argv=()):
+    """오늘 영상을 만드는 날인가. --video / --no-video 로 직접 정할 수 있다."""
+    if "--no-video" in argv:
+        return False
+    if "--video" in argv:
+        return True
     return datetime.now().weekday() in (_gcfg(cfg).get("video_weekdays") or [])
 
 
@@ -138,10 +148,10 @@ def main():
                 else f"시리즈 {idx}/{len(TOPICS)}편 — {topic[1] if topic else '남은 주제 없음'}")
         print(f"오늘({WEEKDAY_KR[wd]}요일) 예정: {what}")
         print(f"  카드뉴스: {'만듦' if (cfg.get('geoai',{}).get('cards',{}) or {}).get('enabled', True) else '안 함'}"
-              f" / 영상: {'만들어 유튜브 업로드' if _video_today(cfg) else '없음'}")
+              f" / 영상: {'만들어 유튜브 업로드' if _video_today(cfg, sys.argv) else '없음'}")
         return
 
-    if not dry:        # 오늘 이미 올라간 글이 있으면 멈춘다(밀린 실행·수동 재실행 대비)
+    if not dry and "--force" not in sys.argv:   # 오늘 이미 올라간 글이 있으면 멈춘다
         try:
             from geoai_blogger import service, blog_id, posted_today
             t = posted_today(service(), blog_id(cfg))
@@ -175,7 +185,7 @@ def main():
         body = series_html(data, cfg, with_links=False)
 
     images = make_cards(data, cfg, dry_run=dry)
-    video = make_video(data, cfg, dry_run=dry) if _video_today(cfg) else {}
+    video = make_video(data, cfg, dry_run=dry) if _video_today(cfg, sys.argv) else {}
     html = compose(body, images, video.get("video_id", ""), cfg, data.get("title", ""))
     labels = data.get("tags", []) + (list(topic[3]) if topic else [])
     r = publish(data["title"], html, labels, dry_run=dry, cfg=cfg)

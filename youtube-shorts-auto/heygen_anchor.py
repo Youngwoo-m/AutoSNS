@@ -114,7 +114,13 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
         return {"video_id": vid}
     # 완료 폴링
     url = None
-    for _ in range(120):   # 최대 ~10분
+    # 대기 한도는 대본 길이에 따라 다르다 — 500자 넘는 브리핑은 10분을 넘긴 적이 있다
+    # (2026-09-16 GeoAI 2편, 525자에서 시간 초과). config.heygen.wait_minutes 로 늘린다.
+    try:
+        waits = int(float(cfg.get("wait_minutes", 10)) * 12)
+    except (TypeError, ValueError):
+        waits = 120
+    for _ in range(waits):
         time.sleep(5)
         st = _req("GET", f"{API}/v1/video_status.get?video_id={vid}")
         d = st.get("data", {})
@@ -126,7 +132,8 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
             raise SystemExit(f"생성 실패: {d.get('error')}")
         log(f"  상태: {status}...")
     if not url:
-        raise SystemExit("시간 초과 — 나중에 video_status 로 다시 확인하세요.")
+        raise SystemExit(f"시간 초과({waits*5//60}분) — video_id={vid} 로 나중에 "
+                         "video_status 를 확인하면 완성본을 받을 수 있습니다.")
     out = os.path.join(POSTS_DIR, f"anchor_{vid}.mp4")
     urllib.request.urlretrieve(url, out)
     log(f"다운로드 완료: {out}")
