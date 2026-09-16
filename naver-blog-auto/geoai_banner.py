@@ -76,13 +76,16 @@ def _short_title(title):
     return out
 
 
-def make_banner(data, cfg=None):
-    """글 데이터 → 배너 PNG 경로. 실패하면 예외(호출부에서 이미지 없이 진행)."""
+def make_banner(data, cfg=None, size=None):
+    """글 데이터 → 배너 PNG 경로. 실패하면 예외(호출부에서 이미지 없이 진행).
+
+    size 로 비율을 바꿀 수 있다 — 유튜브 게시물은 2:5~5:2 만 받아 3:1 배너가 거부된다."""
     cfg = cfg or load_config()
     b = ((cfg.get("geoai") or {}).get("banner") or {})
+    w, h = size or (W, H)
     title = _short_title(data.get("title", ""))
     kicker = data.get("family") or ("GeoAI 브리핑" if data.get("news_blocks") else "GeoAI 기초")
-    html = HTML.format(w=W, h=H, title=title, size=_title_size(title),
+    html = HTML.format(w=w, h=h, title=title, size=_title_size(title),
                        kicker=b.get("kicker", kicker),
                        brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")
@@ -92,14 +95,14 @@ def make_banner(data, cfg=None):
         f.write(html)
     o = Options()
     o.add_argument("--headless=new")
-    o.add_argument(f"--window-size={W + 100},{H + 160}")
+    o.add_argument(f"--window-size={w + 100},{h + 160}")
     o.add_argument("--force-device-scale-factor=2")     # 2배로 찍어 선명하게
     o.add_argument("--hide-scrollbars")
     d = webdriver.Chrome(options=o)
     try:
         d.get("file:///" + html_path.replace("\\", "/"))
         time.sleep(1.0)
-        out = os.path.join(POSTS_DIR, f"geoai_banner_{stamp}.png")
+        out = os.path.join(POSTS_DIR, f"geoai_banner_{stamp}_{w}x{h}.png")
         d.find_element(By.ID, "banner").screenshot(out)
         log(f"배너 생성: {out}")
         return out

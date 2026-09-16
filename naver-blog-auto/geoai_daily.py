@@ -8,7 +8,7 @@
 글에 함께 붙는 것:
   · 이미지(기본: 가로 배너 1장, 설정에 따라 Gamma 카드뉴스) → 공개 GitHub 저장소에
     올리고 CDN 으로 건다(Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
-  · 그날 글을 유튜브 '게시물'(커뮤니티)에도 올린다 — 제목·한 줄 요약·글 링크·쇼츠 링크
+  · 그날 글을 유튜브 '게시물'(커뮤니티)에도 올린다 — 제목·요약·글 링크·쇼츠 링크·배너
   · 매일 쇼츠 영상 1편을 개인 유튜브 채널(@geoai-safety)에 올리고 글에 임베드한다.
     보통은 카드 영상(무료 TTS)이고, config.geoai.video_weekdays 인 날만 HeyGen
     아바타 아나운서 영상이다(크레딧이 들어 주 1회)
@@ -143,6 +143,18 @@ def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
         return {}
 
 
+def _post_image(data, cfg):
+    """게시물에 붙일 이미지. 글머리 배너를 2:1 비율로 다시 그린다.
+
+    유튜브 게시물은 가로세로 2:5~5:2 만 받는다 — 3:1 배너는 그대로 올리면 거부된다."""
+    try:
+        from geoai_banner import make_banner
+        return make_banner(data, cfg, size=(1200, 600))
+    except Exception as e:
+        log(f"게시물 이미지 생성 건너뜀({type(e).__name__}) — 글만 올립니다")
+        return None
+
+
 def post_community(data, post_url, cfg, dry_run=False, video_url=""):
     """그날 글을 유튜브 '게시물'(커뮤니티)에도 올린다.
 
@@ -151,10 +163,9 @@ def post_community(data, post_url, cfg, dry_run=False, video_url=""):
     py = os.path.join(YT_DIR, ".venv", "bin", "python")
     if not os.path.exists(py):
         return {}
-    # 이미지는 붙이지 못한다(유튜브가 파일 선택을 OS 로 넘긴다). 대신 그날 쇼츠 주소를
-    # 함께 넣어 유튜브가 영상 카드를 펼치게 한다.
     payload = {"title": data.get("title", ""), "summary": data.get("summary"),
-               "url": post_url, "video_url": video_url}
+               "url": post_url, "video_url": video_url,
+               "image": _post_image(data, cfg)}
     try:
         cmd = [py, "geoai_community.py"] + ([] if dry_run else ["--go"])
         p = subprocess.run(cmd, cwd=YT_DIR, input=json.dumps(payload),

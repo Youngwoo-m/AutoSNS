@@ -7,16 +7,18 @@
 작성기 구조(2026-09-16 확인):
   · 접힌 작성기 : #placeholder-area 를 '진짜 마우스 클릭'으로 눌러야 펼쳐진다
   · 본문       : 펼친 뒤의 #contenteditable-root 에 CDP Input.insertText 로 넣는다
-  · 게시       : shadow DOM 안 button[aria-label='게시']
+  · 게시       : shadow DOM 안 button[aria-label='게시'] 을 **JS click** 으로 누른다
 
-이미지는 붙이지 못한다. '이미지' 버튼이 OS 파일 선택창을 열고, input.click()/showPicker()
-가로채기도 드래그&드롭도 먹지 않았다(2026-09-16 확인). 대신 그날 쇼츠 링크를 본문에
-넣으면 유튜브가 영상 카드를 붙여 준다.
+  · 이미지     : '이미지' 버튼(보이는 것)을 눌러 대화상자를 연 뒤, 그 안의
+                 input[type=file] 에 파일 경로를 넣는다.
+                 붙고 나면 유튜브가 화면을 다시 그려 그 input 은 사라진다(stale).
+                 유튜브가 가로세로 2:5~5:2 만 받으므로 3:1 배너는 2:1 로 맞춰 보낸다.
 셀렉터가 깨지면 실패 화면을 logs/ 에 남기고 조용히 포기한다(글 발행은 이미 끝난 뒤다).
 
 입력은 표준입력 JSON 이다(발행 파이프라인이 subprocess 로 부른다):
     {"title": "글 제목", "summary": "첫 줄 요약", "url": "글 주소",
-     "video_url": "그날 쇼츠 주소(선택)", "dry_run": true}
+     "video_url": "그날 쇼츠 주소(선택)", "image": "붙일 이미지 경로(2:5~5:2)",
+     "dry_run": true}
 
 사용:
     echo '{"title":"...","url":"..."}' | python geoai_community.py        # 게시 안 함
@@ -54,15 +56,20 @@ def chrome_options(headless=True):
     return o
 
 
-# shadow DOM 까지 훑어 버튼을 찾는다(스튜디오·유튜브는 대부분 shadow DOM 안에 있다).
+# shadow DOM 까지 훑어 버튼을 찾는다(유튜브는 대부분 shadow DOM 안에 있다).
+# **크기가 0 인 사본을 거른다** — 같은 aria-label 을 가진 숨은 사본이 먼저 잡히면
+# 좌표 클릭이 (0,0) 으로 빗나가고 아무 일도 일어나지 않는다(2026-09-17 확인).
 DEEP_FIND = """
 const label = arguments[0];
 const walk = (root, depth=0) => {
-  if (depth > 12) return null;
+  if (depth > 14) return null;
   for (const el of root.querySelectorAll('*')) {
     const l = el.getAttribute && el.getAttribute('aria-label');
-    if (l === label && !el.disabled) return el;
-    if (el.shadowRoot) { const r = walk(el.shadowRoot, depth+1); if (r) return r; }
+    if (l === label && !el.disabled) {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return el;
+    }
+    if (el.shadowRoot) { const r2 = walk(el.shadowRoot, depth+1); if (r2) return r2; }
   }
   return null;
 };
@@ -82,6 +89,42 @@ const walk = (root, depth=0) => {
 };
 return walk(document);
 """
+
+DEEP_FILE_INPUT = """
+// 작성기(backstage) 대화상자 안의 파일 입력란. 페이지에는 검색창의 '이미지로 검색'
+// input 도 있어서(accept 에 image/jpeg) 그걸 잡으면 엉뚱하게 검색이 열린다.
+const walk = (root, depth=0) => {
+  if (depth > 14) return null;
+  for (const el of root.querySelectorAll('*')) {
+    if (el.tagName === 'INPUT' && el.type === 'file') {
+      let h = el, hops = 0;
+      while (h && hops < 8) {
+        if ((h.tagName||'').toLowerCase().includes('backstage')) return el;
+        h = h.parentElement || h.getRootNode().host; hops++;
+      }
+    }
+    if (el.shadowRoot) { const r = walk(el.shadowRoot, depth+1); if (r) return r; }
+  }
+  return null;
+};
+return walk(document);
+"""
+
+HAS_PREVIEW = """
+const walk = (root, depth=0) => {
+  if (depth > 14) return false;
+  for (const el of root.querySelectorAll('*')) {
+    if (el.id === 'image-preview-container' ||
+        el.tagName === 'YTD-BACKSTAGE-MULTI-IMAGE-THUMBNAIL-RENDERER') {
+      const r = el.getBoundingClientRect(); if (r.height > 10) return true;
+    }
+    if (el.shadowRoot && walk(el.shadowRoot, depth+1)) return true;
+  }
+  return false;
+};
+return walk(document);
+"""
+
 
 def _click_at(driver, el):
     """요소 한가운데를 '진짜 마우스 클릭'으로 누른다.
@@ -111,7 +154,7 @@ def _ccfg(cfg=None):
     return (cfg or load_config()).get("community_post") or {}
 
 
-def post(text, dry_run=True, cfg=None):
+def post(text, image_path=None, dry_run=True, cfg=None):
     """게시물 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다."""
     cfg = cfg or load_config()
     c = _ccfg(cfg)
@@ -158,6 +201,25 @@ def post(text, dry_run=True, cfg=None):
             return {"error": f"본문이 입력되지 않았습니다(입력된 글자 {len(typed)}자)."}
         log(f"  본문 입력 {len(typed)}자")
 
+        if image_path and os.path.exists(image_path):
+            btn = driver.execute_script(DEEP_FIND, "이미지 추가")
+            if btn is None:
+                log("  이미지 버튼을 찾지 못해 글만 올립니다")
+            else:
+                _click_at(driver, btn)
+                time.sleep(3)
+                inp = driver.execute_script(DEEP_FILE_INPUT)
+                if inp is None:
+                    log("  이미지 입력란을 찾지 못해 글만 올립니다")
+                else:
+                    inp.send_keys(os.path.abspath(image_path))
+                    time.sleep(9)        # 첨부되면 화면이 다시 그려진다(요소는 stale)
+                    if driver.execute_script(HAS_PREVIEW):
+                        log("  이미지 첨부 완료")
+                    else:
+                        _shot(driver, "image_failed")
+                        log("  이미지가 붙지 않았습니다(비율 2:5~5:2 인지 확인) — 글만 올립니다")
+
         if dry_run:
             _shot(driver, "dry")
             log("[DRY] 작성기까지만 채웠습니다(게시하지 않음).")
@@ -167,7 +229,9 @@ def post(text, dry_run=True, cfg=None):
         if btn is None:
             _shot(driver, "no_post_button")
             return {"error": "게시 버튼을 찾지 못했습니다."}
-        _click_at(driver, btn)
+        # 이미지를 붙이면 편집 대화상자가 떠서 좌표 클릭을 가로챈다(닫기 버튼은 이미지를
+        # 지워 버린다). JS 클릭은 그 위로 그대로 전달된다.
+        driver.execute_script("arguments[0].click();", btn)
         time.sleep(8)
         # 게시 직후 화면은 아직 목록을 다시 그리지 않는다 — 새로고침해서 확인한다.
         driver.get(f"https://www.youtube.com/@{handle}/posts")
@@ -211,6 +275,6 @@ if __name__ == "__main__":
             payload = json.loads(raw)
     dry = "--go" not in sys.argv
     text = payload.get("text") or text_for(payload)
-    result = post(text, dry_run=dry)
+    result = post(text, payload.get("image"), dry_run=dry)
     result["text"] = text
     print(json.dumps(result, ensure_ascii=False))
