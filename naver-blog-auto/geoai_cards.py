@@ -45,22 +45,35 @@ def _summary_lines(data):
 
 
 def _card_texts(data, cfg):
-    """글 데이터 → 카드별 문구. 마커(---)로 나눠 Gamma 에 넘긴다."""
+    """글 데이터 → 카드별 문구. 마커(---)로 나눠 Gamma 에 넘긴다.
+
+    구성은 표지(제목+날짜) → 핵심(요약·소제목) → 마무리(블로그 안내) 순이고,
+    장수(config.geoai.cards.count)가 줄어도 표지와 마무리 자리는 먼저 확보한다
+    (요약으로 앞을 다 채우면 마무리 카드가 잘려 나간다)."""
+    n = max(int(_ccfg(cfg).get("count", 5)), 1)
     date_kr = f"{datetime.now():%Y년 %m월 %d일}"
     title = re.sub(r"\s*\|\s*.*$", "", data.get("title", "")).strip()
-    cards = [f"{title}\n{date_kr}"]
-    cards += _summary_lines(data)[:3]
+    cover = f"{title}\n{date_kr}"
+    closing = "전체 내용은 블로그에서\nGeoAI와 생성형AI"
+    if n == 1:
+        return [cover]
+    if n == 2:
+        return [cover, closing]
+    middle = []
+    for s in _summary_lines(data)[:3]:
+        if len(middle) >= n - 2:
+            break
+        middle.append(s)
     # 요약이 모자라면 소제목으로 채운다(시리즈 글·브리핑 모두 대응)
     heads = [h for h, _ in (data.get("sections") or [])] or \
             [b.get("heading", "") for b in (data.get("news_blocks") or [])]
     for h in heads:
-        if len(cards) >= int(_ccfg(cfg).get("count", 5)) - 1:
+        if len(middle) >= n - 2:
             break
         h = re.sub(r"^[^\w가-힣]+", "", h).strip()
         if h:
-            cards.append(h)
-    cards.append("전체 내용은 블로그에서\nGeoAI와 생성형AI")
-    return cards[:int(_ccfg(cfg).get("count", 5))]
+            middle.append(h)
+    return [cover] + middle + [closing]
 
 
 def make_cards(data, cfg=None):
