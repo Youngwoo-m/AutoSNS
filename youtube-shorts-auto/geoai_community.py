@@ -82,6 +82,21 @@ return el;
 """
 
 
+def _click_at(driver, el):
+    """요소 한가운데를 '진짜 마우스 클릭'으로 누른다.
+
+    유튜브 작성기는 Selenium 클릭이 막히고(element not interactable) JS focus() 로는
+    입력이 먹지 않는다. CDP 로 신뢰된 마우스 이벤트를 보내야 작성기가 펼쳐진다."""
+    r = driver.execute_script(
+        "const b=arguments[0].getBoundingClientRect();"
+        "return {x:b.x+b.width/2, y:b.y+b.height/2};", el)
+    for ev in ("mousePressed", "mouseReleased"):
+        driver.execute_cdp_cmd("Input.dispatchMouseEvent", {
+            "type": ev, "x": r["x"], "y": r["y"], "button": "left",
+            "clickCount": 1, "buttons": 1 if ev == "mousePressed" else 0})
+    time.sleep(1)
+
+
 def _shot(driver, name):
     path = os.path.join(LOGS_DIR, f"community_{name}_{time.strftime('%Y%m%d_%H%M%S')}.png")
     try:
@@ -109,19 +124,30 @@ def post(text, image_path=None, dry_run=True, cfg=None):
         driver.execute_cdp_cmd(
             "Page.addScriptToEvaluateOnNewDocument",
             {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
-        driver.get(f"https://www.youtube.com/@{handle}/community")
-        time.sleep(6)
-        box = driver.execute_script("return document.querySelector('#contenteditable-root');")
+        # 커뮤니티 탭 주소가 /community 에서 /posts 로 바뀌었다(2026-09 확인). 둘 다 시도한다.
+        box = None
+        for path in ("posts", "community"):
+            driver.get(f"https://www.youtube.com/@{handle}/{path}")
+            time.sleep(6)
+            box = driver.execute_script("return document.querySelector('#contenteditable-root');")
+            if box is not None:
+                log(f"  작성기 찾음: /@{handle}/{path}")
+                break
         if box is None:
             _shot(driver, "no_composer")
             return {"error": "작성기를 찾지 못했습니다(로그인이 풀렸거나 화면이 바뀜)."}
-        box.click()
+        # 작성기는 접힌 상태라 Selenium 클릭이 막힌다(element not interactable).
+        # 화면 안으로 올린 뒤 JS 로 펼치고, 글자는 CDP 로 직접 넣는다.
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", box)
         time.sleep(1)
-        for i, line in enumerate(text.split("\n")):
-            if i:
-                box.send_keys("\n")
-            box.send_keys(line)
+        _click_at(driver, box)
+        driver.execute_cdp_cmd("Input.insertText", {"text": text})
         time.sleep(1)
+        typed = driver.execute_script("return arguments[0].innerText || '';", box)
+        if text.strip()[:VERIFY_CHARS] not in typed:
+            _shot(driver, "typing_failed")
+            return {"error": f"본문이 입력되지 않았습니다(입력된 글자 {len(typed)}자)."}
+        log(f"  본문 입력 {len(typed)}자")
 
         if image_path and os.path.exists(image_path):
             inp = driver.execute_script(DEEP_FILE_INPUT)
