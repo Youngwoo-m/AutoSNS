@@ -56,3 +56,7 @@ assets/music/*.mp3
 assets/music/preview/
 naver-blog-auto/token_blogger.json
 analytics/token_searchconsole.json
+
+# GeoAI 블로그(geoaina) 토큰·발행 상태
+naver-blog-auto/token_blogger_geoai.json
+naver-blog-auto/geoai_state.json

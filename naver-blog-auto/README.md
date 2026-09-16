@@ -66,3 +66,47 @@
 - 실행 로그: `logs/YYYY-MM.log`
 - 디버그 스크린샷: `logs/*.png`
 - 생성된 글 보관: `posts/`
+
+---
+
+## GeoAI 블로그 하루 1편 자동 발행 (geoaina.blogspot.com)
+
+학과 블로그(smusafety)와 별개로, **GeoAI·생성형AI 전용 블로그**에 매일 1편을 올린다.
+구글 계정이 달라 **토큰을 따로 쓴다**(`token_blogger_geoai.json`).
+
+| 파일 | 역할 |
+|------|------|
+| `geoai_auth_setup.py` | **최초 1회** — 블로그 소유 계정으로 인증(쓰기 권한까지 확인) |
+| `geoai_blogger.py` | GeoAI 블로그 발행 계층(토큰·중복확인·라벨 상한·오늘 발행 여부) |
+| `geoai_series.py` | GeoAI 개념 시리즈 26편(주제 목록은 코드 안 `TOPICS`) — 본문은 Claude 가 작성 |
+| `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) |
+| `run_geoai.sh` | launchd 래퍼(인자 거부 — 실행 즉시 실제 발행) |
+| `setup_geoai_schedule.sh` | 매일 07:40 launchd 등록 |
+
+### 설정 (`config.json`)
+- `geoai.blog_id` / `geoai.url` — 대상 블로그
+- `geoai.brief_weekday` — 뉴스 브리핑 요일(0=월, 기본 1=화)
+- `geoai.local_tags` — 항상 붙는 지역·브랜드 라벨(15개 상한 안에서 자리 보장)
+- `editions.geoai` — 브리핑용 뉴스 질의·태그·제목(기존 에디션과 같은 방식)
+
+### 처음 한 번
+```bash
+cd ~/devAPP/AutoSNS/naver-blog-auto
+./.venv/bin/python geoai_auth_setup.py     # 브라우저에서 geoaina 소유 계정으로 로그인
+./.venv/bin/python geoai_blogger.py        # 연결·쓰기 권한 확인(발행 안 함)
+bash setup_geoai_schedule.sh               # 매일 07:40 등록
+```
+
+### 확인 방법(발행 없이)
+```bash
+./.venv/bin/python geoai_daily.py --plan    # 오늘 무엇을 올릴지
+./.venv/bin/python geoai_series.py --plan   # 시리즈 진행 상황(완료/대기)
+./.venv/bin/python geoai_daily.py --dry     # 글까지 만들어 보고 발행은 안 함
+```
+
+### 주의
+- Blogger 는 하루에 글을 몰아 올리면 403(남용 차단)을 낸다. 그래서 **하루 1편**이고,
+  블로그에 오늘 날짜 글이 이미 있으면 그날은 아무것도 하지 않는다.
+- 시리즈 진행 상황은 `geoai_state.json` + 블로그의 실제 제목 목록 둘 다로 판단한다.
+  (상태 파일이 없어져도 같은 글이 두 번 나가지 않는다)
+- 26편이 끝나면 `geoai_series.py` 의 `TOPICS` 에 주제를 더 넣으면 된다.
