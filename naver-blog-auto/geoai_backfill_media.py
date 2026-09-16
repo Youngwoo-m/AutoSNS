@@ -8,6 +8,8 @@
     python geoai_backfill_media.py --cards --video --go  # 카드뉴스 + 영상까지
 
 --post <URL> 로 특정 글을 지정할 수 있다(생략하면 최신 글).
+--resume <HeyGen video_id> 를 주면 영상을 새로 만들지 않고 앞서 요청해 둔 것을 이어받는다
+(HeyGen 은 요청 시점에 크레딧이 나가므로, 대기 시간 초과로 놓친 영상은 이렇게 회수한다).
 """
 import html as _html
 import json
@@ -84,6 +86,10 @@ def main():
     url = None
     if "--post" in sys.argv:
         url = sys.argv[sys.argv.index("--post") + 1]
+    resume = None
+    if "--resume" in sys.argv:
+        resume = sys.argv[sys.argv.index("--resume") + 1]
+        want_video = True
 
     cfg = load_config()
     svc = service()
@@ -103,7 +109,7 @@ def main():
         images = make_cards(data, cfg, dry_run=False)
     if want_video:
         from geoai_daily import make_video
-        video = make_video(data, cfg, dry_run=False)
+        video = make_video(data, cfg, dry_run=False, heygen_video_id=resume)
     if not images and not video.get("video_id"):
         log("붙일 미디어가 없습니다(생성 실패). 글은 그대로 둡니다.")
         return

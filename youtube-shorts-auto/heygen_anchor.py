@@ -112,16 +112,21 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
     log(f"video_id = {vid} (생성 요청됨)")
     if not wait:
         return {"video_id": vid}
-    # 완료 폴링
-    url = None
-    # 대기 한도는 대본 길이에 따라 다르다 — 500자 넘는 브리핑은 10분을 넘긴 적이 있다
-    # (2026-09-16 GeoAI 2편, 525자에서 시간 초과). config.heygen.wait_minutes 로 늘린다.
+    return await_video(vid, cfg)
+
+
+def await_video(vid, cfg=None):
+    """이미 요청된 HeyGen 영상을 기다렸다가 내려받는다.
+
+    시간 초과로 놓친 건도 이 함수로 이어받을 수 있다(크레딧은 요청 시점에 나가므로,
+    다시 만들지 말고 완성본을 받아 쓴다). 2026-09-16 큐가 밀려 20분을 넘긴 적이 있다."""
+    cfg = cfg if cfg is not None else load_config().get("heygen", {})
     try:
         waits = int(float(cfg.get("wait_minutes", 10)) * 12)
     except (TypeError, ValueError):
         waits = 120
+    url = None
     for _ in range(waits):
-        time.sleep(5)
         st = _req("GET", f"{API}/v1/video_status.get?video_id={vid}")
         d = st.get("data", {})
         status = d.get("status")
@@ -131,9 +136,10 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
         if status == "failed":
             raise SystemExit(f"생성 실패: {d.get('error')}")
         log(f"  상태: {status}...")
+        time.sleep(5)
     if not url:
         raise SystemExit(f"시간 초과({waits*5//60}분) — video_id={vid} 로 나중에 "
-                         "video_status 를 확인하면 완성본을 받을 수 있습니다.")
+                         "이어받을 수 있습니다(geoai_video.py 의 heygen_video_id).")
     out = os.path.join(POSTS_DIR, f"anchor_{vid}.mp4")
     urllib.request.urlretrieve(url, out)
     log(f"다운로드 완료: {out}")
@@ -369,7 +375,7 @@ def compose_news_layout(video_in, out, title, ots_image=None, script=None, dur=N
     return out
 
 
-def make_news_anchor(data, title=None):
+def make_news_anchor(data, title=None, heygen_video_id=None):
     """뉴스 data → 아나운서 영상 + 제목 + 우측 관련화면 + 자막 → data['video'] 세팅.
 
     실패하면 예외를 올린다(호출부에서 카드 영상으로 폴백)."""
@@ -391,8 +397,12 @@ def make_news_anchor(data, title=None):
         log(f"관련화면 이미지: {'선택 '+os.path.basename(ots) if ots else '적합 사진 없음 → 생략'}")
     except Exception as e:
         log(f"관련화면 이미지 수집 건너뜀: {type(e).__name__}")
-    log(f"아나운서 영상 생성 시작(대본 {len(script)}자)...")
-    r = generate(tp, script)                      # HeyGen 생성 + 다운로드
+    if heygen_video_id:                           # 앞서 요청해 둔 영상을 이어받는다
+        log(f"기존 HeyGen 영상 이어받기: {heygen_video_id}")
+        r = await_video(heygen_video_id)
+    else:
+        log(f"아나운서 영상 생성 시작(대본 {len(script)}자)...")
+        r = generate(tp, script)                  # HeyGen 생성 + 다운로드
     dur = _duration(r["path"])
     stamp = data.get("stamp") or "anchor"
     out = os.path.join(POSTS_DIR, f"short_{stamp}.mp4")

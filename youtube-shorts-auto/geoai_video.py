@@ -8,7 +8,8 @@ naver-blog-auto 의 GeoAI 발행 파이프라인이 이 파일을 subprocess 로
   {"headline": "위성 AI로 산사태 예측", "title": "...유튜브 제목...",
    "scenes": [{"heading": "...", "narration": "..."}, ...],
    "hashtags": ["GeoAI", ...], "sources": [{"title": "...", "link": "..."}],
-   "description": "설명 첫 문단", "dry_run": true, "privacy": "public"}
+   "description": "설명 첫 문단", "dry_run": true, "privacy": "public",
+   "heygen_video_id": "(선택) 앞서 요청해 둔 HeyGen 영상 id — 다시 만들지 않고 이어받는다"}
 
 채널·문구는 config.json 의 editions.geoai 가 정한다(제목 접두사·설명 꼬리말·고지문).
 학과 채널 토큰(token.json)이 아니라 token_youtube_geoai.json 을 쓴다.
@@ -44,7 +45,9 @@ def run(payload):
         "sources": payload.get("sources", []),
         "stamp": f"geoai_{datetime.now():%Y%m%d_%H%M%S}",
     }
-    make_news_anchor(data, title=payload.get("headline"))   # data['video'] 채움
+    # heygen_video_id 를 주면 앞서 요청해 둔 영상을 이어받는다(시간 초과로 놓친 건 복구).
+    make_news_anchor(data, title=payload.get("headline"),
+                     heygen_video_id=payload.get("heygen_video_id"))   # data['video'] 채움
     privacy = payload.get("privacy") or cfg.get("youtube", {}).get("privacy", "public")
     r = upload(data, dry_run=payload.get("dry_run", True), privacy=privacy,
                token_path=TOKEN_PATH)

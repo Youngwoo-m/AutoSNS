@@ -75,7 +75,7 @@ def make_cards(data, cfg, dry_run=False):
         return []
 
 
-def make_video(data, cfg, dry_run=False):
+def make_video(data, cfg, dry_run=False, heygen_video_id=None):
     """AI 아나운서 영상을 만들어 유튜브에 올리고 video_id 를 돌려준다.
 
     영상 제작은 youtube-shorts-auto 프로젝트(별도 venv)에서 돈다 — HeyGen·ffmpeg·
@@ -98,6 +98,8 @@ def make_video(data, cfg, dry_run=False):
         return {"status": "dry_run", "script": payload}
     payload["dry_run"] = False
     payload["privacy"] = _gcfg(cfg).get("video_privacy", "public")
+    if heygen_video_id:
+        payload["heygen_video_id"] = heygen_video_id
     try:
         # HeyGen 생성이 수 분 걸린다 — 넉넉히 기다린다.
         p = subprocess.run([py, "geoai_video.py"], cwd=YT_DIR, input=json.dumps(payload),
@@ -105,7 +107,10 @@ def make_video(data, cfg, dry_run=False):
         lines = [l for l in (p.stdout or "").strip().splitlines() if l.strip()]
         out = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
         if not out:
-            log(f"영상 결과를 읽지 못했습니다: {(p.stderr or p.stdout or '')[-200:]}")
+            # 자식 로그를 넉넉히 남긴다 — 시간 초과 때 HeyGen video_id 가 여기 들어 있고,
+            # 그 id 로 이어받으면 이미 나간 크레딧을 버리지 않는다.
+            log(f"영상 결과를 읽지 못했습니다:\n{(p.stdout or '')[-600:]}\n"
+                f"{(p.stderr or '')[-400:]}")
         else:
             log(f"영상: {out.get('status')} {out.get('url','')} ({out.get('seconds','?')}s)")
         return out
