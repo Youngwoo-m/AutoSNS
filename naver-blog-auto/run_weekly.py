@@ -38,11 +38,22 @@ def _run_one(edition):
     log(f"----- [{label}] 생성·발행 시작 -----")
     data = generate()
     result = publish(data, dry_run=False)   # 스케줄은 항상 실제 발행
+    # 같은 글을 Blogger(구글 검색 색인용)에도 올린다 — 실패해도 네이버 발행에는 영향 없음
+    blogger_url = ""
+    try:
+        from post_blogger import publish as blogger_publish
+        br = blogger_publish(data, dry_run=False)
+        blogger_url = br.get("url", "")
+        log(f"Blogger: {br.get('status')} {blogger_url}")
+    except Exception as e:
+        log(f"Blogger 발행 건너뜀(네이버는 정상): {type(e).__name__}: {e}")
     log(f"----- [{label}] 종료: {result.get('status')} -----")
     try:                        # 카카오톡 발행 알림(실패 무시)
         from kakao_notify import notify
         notify(f"[SMUDS 발행완료] 네이버 블로그 [{label}]\n{data.get('title','')}\n"
-               f"상태: {result.get('status')}", "https://blog.naver.com")
+               f"상태: {result.get('status')}"
+               + (f"\n+ Blogger: {blogger_url}" if blogger_url else ""),
+               "https://blog.naver.com")
     except Exception as e:
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
 
