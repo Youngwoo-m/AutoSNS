@@ -159,7 +159,9 @@ def _section(text, start, end):
 def _parse_structured(text, news):
     """부제/태그/인사/뉴스(@출처:N)/안전수칙/마무리 구조를 파싱한다."""
     subtitle = _section(text, "===부제===", "===태그===")
-    tags_raw = _section(text, "===태그===", "===인사===")
+    # 태그 구간 끝은 바로 다음 섹션(===요약===)이다. '===인사===' 로 두면 그 사이의
+    # 요약 본문까지 태그로 빨려 들어간다(2026-09-16 '===요약===', '·', '40분' 이 태그로 저장됨).
+    tags_raw = _section(text, "===태그===", "===요약===")
     summary = _section(text, "===요약===", "===인사===")
     intro = _section(text, "===인사===", "===뉴스===")
     news_raw = _section(text, "===뉴스===", "===안전수칙===")
