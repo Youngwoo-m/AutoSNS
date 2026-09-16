@@ -6,8 +6,8 @@
 브리핑은 뉴스가 없거나 생성이 실패하면 시리즈로 대신한다(블로그가 하루를 비우지 않게).
 
 글에 함께 붙는 것:
-  · Gamma 카드뉴스 PNG → 공개 GitHub 저장소에 올리고 CDN 으로 건다
-    (Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
+  · 이미지(기본: 가로 배너 1장, 설정에 따라 Gamma 카드뉴스) → 공개 GitHub 저장소에
+    올리고 CDN 으로 건다(Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
   · config.geoai.video_weekdays 인 날은 AI 아나운서 뉴스브리핑 영상을 만들어
     개인 유튜브 채널(@geoai-na)에 올리고, 그 영상을 글에 임베드한다
 둘 다 실패해도 글 발행은 그대로 진행한다(있으면 더 좋은 것이지 조건이 아니다).
@@ -53,25 +53,38 @@ def _video_today(cfg, argv=()):
     return datetime.now().weekday() in (_gcfg(cfg).get("video_weekdays") or [])
 
 
-def make_cards(data, cfg, dry_run=False):
-    """카드뉴스를 만들어 CDN 주소 목록을 돌려준다. 실패하면 빈 목록(글은 그대로 발행)."""
-    if not (_gcfg(cfg).get("cards") or {}).get("enabled", True):
+def make_images(data, cfg, dry_run=False):
+    """글에 넣을 이미지를 만들어 CDN 주소 목록을 돌려준다. 실패하면 빈 목록(글은 그대로).
+
+    geoai.media_style:
+      · banner(기본) — 가로 3:1 배너 1장. 글 흐름을 덜 끊고 Gamma 크레딧도 안 쓴다.
+      · cards        — Gamma 카드뉴스 여러 장(geoai.cards.count).
+      · none         — 이미지 없음."""
+    style = (_gcfg(cfg).get("media_style") or "banner").lower()
+    if style == "none":
         return []
+    paths = []
     try:
-        from geoai_cards import make_cards as gen
-        paths = gen(data, cfg)
+        if style == "cards":
+            if not (_gcfg(cfg).get("cards") or {}).get("enabled", True):
+                return []
+            from geoai_cards import make_cards
+            paths = make_cards(data, cfg)
+        else:
+            from geoai_banner import make_banner
+            paths = [make_banner(data, cfg)]
     except Exception as e:
-        log(f"카드뉴스 생성 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        log(f"이미지 생성 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
         return []
     if dry_run:
-        log(f"[DRY] 카드뉴스 {len(paths)}장 생성됨(업로드 안 함): {paths[0] if paths else ''}")
+        log(f"[DRY] 이미지 {len(paths)}장 생성됨(업로드 안 함): {paths[0] if paths else ''}")
         return []
     try:
         from geoai_assets import upload
         prefix = f"{datetime.now():%Y/%m/%Y%m%d_%H%M%S}"
         return upload(paths, prefix, cfg)
     except Exception as e:
-        log(f"카드뉴스 업로드 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        log(f"이미지 업로드 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
         return []
 
 
@@ -152,7 +165,7 @@ def main():
         what = ("GeoAI 주간 브리핑" if kind == "brief"
                 else f"시리즈 {idx}/{len(TOPICS)}편 — {topic[1] if topic else '남은 주제 없음'}")
         print(f"오늘({WEEKDAY_KR[wd]}요일) 예정: {what}")
-        print(f"  카드뉴스: {'만듦' if (cfg.get('geoai',{}).get('cards',{}) or {}).get('enabled', True) else '안 함'}"
+        print(f"  이미지: {(cfg.get('geoai', {}).get('media_style') or 'banner')}"
               f" / 영상: {'만들어 유튜브 업로드' if _video_today(cfg, sys.argv) else '없음'}")
         return
 
@@ -189,7 +202,7 @@ def main():
             return
         body = series_html(data, cfg, with_links=False)
 
-    images = make_cards(data, cfg, dry_run=dry)
+    images = make_images(data, cfg, dry_run=dry)
     video = make_video(data, cfg, dry_run=dry) if _video_today(cfg, sys.argv) else {}
     html = compose(body, images, video.get("video_id", ""), cfg, data.get("title", ""))
     labels = data.get("tags", []) + (list(topic[3]) if topic else [])
@@ -198,7 +211,7 @@ def main():
     if r.get("status") == "published" and topic:
         mark_posted(topic, data, r.get("url", ""))
     log(f"===== GeoAI 종료: {r.get('status') or r.get('error')} "
-        f"(카드 {len(images)}장, 영상 {'O' if video.get('video_id') else 'X'}) =====")
+        f"(이미지 {len(images)}장, 영상 {'O' if video.get('video_id') else 'X'}) =====")
 
     if not dry and r.get("status") == "published":
         try:                                          # 카톡 알림(실패 무시)

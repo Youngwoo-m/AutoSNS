@@ -80,16 +80,20 @@
 | `geoai_blogger.py` | GeoAI 블로그 발행 계층(토큰·중복확인·라벨 상한·오늘 발행 여부) |
 | `geoai_series.py` | 개념 시리즈 32편 — GeoAI 26편(`GEO_TOPICS`)과 생성형 AI 사용법 6편(`GENAI_TOPICS`)을 번갈아 발행. 본문은 Claude 가 작성 |
 | `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) + 카드뉴스·영상 합성 |
-| `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로 |
+| `geoai_banner.py` | 글 머리에 넣을 가로 3:1 배너 PNG(헤드리스 Chrome, Gamma 크레딧 없음) |
+| `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로(`media_style: cards` 일 때) |
 | `geoai_assets.py` | 카드 PNG 를 공개 GitHub 저장소에 올려 CDN 주소로(Blogger 는 이미지 업로드 미지원) |
 | `geoai_script.py` | 글 → 60~80초 뉴스브리핑 영상 대본(장면별 나레이션) |
 | `run_geoai.sh` | launchd 래퍼(인자 거부 — 실행 즉시 실제 발행) |
 | `setup_geoai_schedule.sh` | 매일 07:40 launchd 등록 |
 
 ### 카드뉴스와 영상
-- **카드뉴스**: 모든 글에 Gamma 카드 3장(`geoai.cards.count`)을 만들어 첫 장은 글 맨 위,
-  나머지는 본문 아래 '카드뉴스로 한눈에' 섹션에 넣는다. 구성은 표지 → 핵심 → 블로그
-  안내이고, 장수를 줄여도 표지·마무리 자리는 먼저 확보한다. 원본이 장당 4~5MB 라 폭 1400px JPEG 로 줄여 올린다.
+- **이미지**(`geoai.media_style`):
+  · `banner`(기본) — 가로 3:1 배너 1장을 글 맨 위에 넣는다. 카드뉴스(16:9 여러 장)는
+    글에서 차지하는 자리가 너무 커서 기본값을 배너로 바꿨다. 직접 그리므로 크레딧이 없다.
+  · `cards` — Gamma 카드뉴스 `geoai.cards.count` 장(표지 → 핵심 → 블로그 안내).
+    첫 장은 글 맨 위, 나머지는 본문 아래 '카드뉴스로 한눈에' 섹션에.
+  · `none` — 이미지 없이 글만. 원본이 장당 4~5MB 라 폭 1400px JPEG 로 줄여 올린다.
 - **영상**: `geoai.video_weekdays`(화요일 브리핑, **주 1회**)에만 만들고, 길이는
   **40초 이내**로 짧게 간다(`geoai.video_max_chars`, 말속도 1.05 기준 290자 ≈ 40초).
   모델이 길이 지시를 넘기면 문장 단위로 잘라 상한을 맞춘다. 나머지 날은
@@ -107,7 +111,9 @@
 - `geoai.brief_weekday` — 뉴스 브리핑 요일(0=월, 기본 1=화)
 - `geoai.local_tags` — 항상 붙는 지역·브랜드 라벨(15개 상한 안에서 자리 보장)
 - `editions.geoai` — 브리핑용 뉴스 질의·태그·제목(기존 에디션과 같은 방식)
-- `geoai.cards` — 카드뉴스 장수·비율·테마(`enabled: false` 면 끔)
+- `geoai.media_style` — `banner`(기본) / `cards` / `none`
+- `geoai.banner` — 배너 문구(브랜드·킥커)
+- `geoai.cards` — 카드뉴스 장수·비율·테마(`media_style: cards` 일 때)
 - `geoai.assets` — 이미지 저장소(`SMUDS-m/geoai-assets`, 공개)와 축소 폭
 - `geoai.video_weekdays` / `video_privacy` — 영상 만드는 요일(0=월)과 공개 범위
 - 유튜브 쪽 문구는 `youtube-shorts-auto/config.json` 의 `editions.geoai`

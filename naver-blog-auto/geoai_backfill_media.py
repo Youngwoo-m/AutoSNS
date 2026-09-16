@@ -4,11 +4,11 @@
 (자동 발행은 geoai_daily.py 가 글·카드·영상을 한 번에 만든다)
 
     python geoai_backfill_media.py            # 최신 글에 무엇을 붙일지만 출력
-    python geoai_backfill_media.py --cards --go        # 카드뉴스만 붙이기
-    python geoai_backfill_media.py --cards --video --go  # 카드뉴스 + 영상까지
+    python geoai_backfill_media.py --images --go          # 이미지(배너/카드)만 붙이기
+    python geoai_backfill_media.py --images --video --go  # 이미지 + 영상까지
 
 --post <URL> 로 특정 글을 지정할 수 있다(생략하면 최신 글).
---images <url,url,...> 으로 이미 올려둔 카드 이미지를 그대로 붙일 수 있다(복구용).
+--image-urls <url,url,...> 으로 이미 올려둔 이미지를 그대로 붙일 수 있다(복구용).
 --resume <HeyGen video_id> 를 주면 영상을 새로 만들지 않고 앞서 요청해 둔 것을 이어받는다
 (HeyGen 은 요청 시점에 크레딧이 나가므로, 대기 시간 초과로 놓친 영상은 이렇게 회수한다).
 """
@@ -87,7 +87,7 @@ def insert_media(content, images, video_id, title=""):
 
 def main():
     go = "--go" in sys.argv
-    want_cards = "--cards" in sys.argv
+    want_cards = "--images" in sys.argv or "--cards" in sys.argv   # --cards 는 옛 이름
     want_video = "--video" in sys.argv
     url = None
     if "--post" in sys.argv:
@@ -110,12 +110,12 @@ def main():
         return
 
     images, video = [], {}
-    if "--images" in sys.argv:
-        images = [u.strip() for u in sys.argv[sys.argv.index("--images") + 1].split(",") if u.strip()]
+    if "--image-urls" in sys.argv:
+        images = [u.strip() for u in sys.argv[sys.argv.index("--image-urls") + 1].split(",") if u.strip()]
         log(f"이미 올려둔 카드 {len(images)}장을 붙입니다")
     if want_cards:
-        from geoai_daily import make_cards
-        images = make_cards(data, cfg, dry_run=False)
+        from geoai_daily import make_images
+        images = make_images(data, cfg, dry_run=False)
     if want_video:
         from geoai_daily import make_video
         video = make_video(data, cfg, dry_run=False, heygen_video_id=resume)
