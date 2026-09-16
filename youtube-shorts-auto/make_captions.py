@@ -87,9 +87,9 @@ def build_srt(data, video_path=None):
     return "\n".join(out)
 
 
-def upload_caption(video_id, srt_text, language="ko", name="한국어(대본)"):
+def upload_caption(video_id, srt_text, language="ko", name="한국어(대본)", token_path=None):
     """SRT 를 유튜브 자막으로 올린다. 같은 언어 자막이 있으면 건너뛴다."""
-    yt = build("youtube", "v3", credentials=_creds(), cache_discovery=False)
+    yt = build("youtube", "v3", credentials=_creds(token_path), cache_discovery=False)
     try:
         have = yt.captions().list(part="snippet", videoId=video_id).execute().get("items", [])
         # trackKind='asr' 은 유튜브가 만든 자동자막이다. 우리가 올린 정확한 자막으로
@@ -119,15 +119,17 @@ def upload_caption(video_id, srt_text, language="ko", name="한국어(대본)"):
             os.remove(tmp)
 
 
-def attach(data, video_id=None):
-    """발행 파이프라인에서 호출 — 대본으로 자막을 만들어 올린다(실패해도 무해)."""
+def attach(data, video_id=None, token_path=None):
+    """발행 파이프라인에서 호출 — 대본으로 자막을 만들어 올린다(실패해도 무해).
+
+    token_path: 학과 채널이 아닌 다른 채널(예: 개인 GeoAI 채널)에 붙일 때 그 토큰."""
     vid = video_id or data.get("video_id")
     if not vid:
         return {"skipped": "no video id"}
     srt = build_srt(data)
     if not srt.strip():
         return {"skipped": "no script"}
-    return upload_caption(vid, srt)
+    return upload_caption(vid, srt, token_path=token_path)
 
 
 if __name__ == "__main__":

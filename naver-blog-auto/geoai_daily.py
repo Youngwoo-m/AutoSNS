@@ -5,73 +5,143 @@
   · 나머지 요일 → 개념 시리즈 1편(geoai_series.TOPICS 순서대로)
 브리핑은 뉴스가 없거나 생성이 실패하면 시리즈로 대신한다(블로그가 하루를 비우지 않게).
 
+글에 함께 붙는 것:
+  · Gamma 카드뉴스 PNG → 공개 GitHub 저장소에 올리고 CDN 으로 건다
+    (Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
+  · config.geoai.video_weekdays 인 날은 AI 아나운서 뉴스브리핑 영상을 만들어
+    개인 유튜브 채널(@geoai-na)에 올리고, 그 영상을 글에 임베드한다
+둘 다 실패해도 글 발행은 그대로 진행한다(있으면 더 좋은 것이지 조건이 아니다).
+
 하루 1편 원칙: 블로그에 오늘 날짜 글이 이미 있으면 아무것도 하지 않는다.
-(한 번에 몰아 올리면 Blogger 가 남용으로 보고 403 을 낸다 — career_series.py 에서 겪음)
 
 사용:
     python geoai_daily.py --plan   # 오늘 무엇을 올릴지만 확인(API 호출 없음)
-    python geoai_daily.py --dry    # 글을 만들어 보기만(발행 안 함)
+    python geoai_daily.py --dry    # 글·카드·대본까지 만들어 보고 발행/업로드는 안 함
     python geoai_daily.py --go     # 실제 발행 (run_geoai.sh 가 호출)
 """
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime
 
-from common import load_config, log, _deep_merge
+from common import BASE_DIR, load_config, log, _deep_merge
 
 WEEKDAY_KR = "월화수목금토일"
+YT_DIR = os.path.join(os.path.dirname(BASE_DIR), "youtube-shorts-auto")
+
+
+def _gcfg(cfg):
+    return cfg.get("geoai") or {}
 
 
 def _brief_day(cfg):
-    """브리핑 요일(0=월). config.geoai.brief_weekday, 기본 1(화)."""
-    return int((cfg.get("geoai") or {}).get("brief_weekday", 1))
+    return int(_gcfg(cfg).get("brief_weekday", 1))
 
 
-def publish_brief(dry_run=False, cfg=None):
-    """GeoAI 판 뉴스 브리핑을 만들어 GeoAI 블로그에 올린다.
+def _video_today(cfg):
+    return datetime.now().weekday() in (_gcfg(cfg).get("video_weekdays") or [])
 
-    네이버·학과 블로그에 쓰는 생성기를 그대로 쓰되, 에디션만 geoai 로 바꾼다
-    (config.editions.geoai — 뉴스 질의·태그·제목이 GeoAI/생성형AI 쪽으로 교체된다)."""
+
+def make_cards(data, cfg, dry_run=False):
+    """카드뉴스를 만들어 CDN 주소 목록을 돌려준다. 실패하면 빈 목록(글은 그대로 발행)."""
+    if not (_gcfg(cfg).get("cards") or {}).get("enabled", True):
+        return []
+    try:
+        from geoai_cards import make_cards as gen
+        paths = gen(data, cfg)
+    except Exception as e:
+        log(f"카드뉴스 생성 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        return []
+    if dry_run:
+        log(f"[DRY] 카드뉴스 {len(paths)}장 생성됨(업로드 안 함): {paths[0] if paths else ''}")
+        return []
+    try:
+        from geoai_assets import upload
+        prefix = f"{datetime.now():%Y/%m/%Y%m%d_%H%M%S}"
+        return upload(paths, prefix, cfg)
+    except Exception as e:
+        log(f"카드뉴스 업로드 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        return []
+
+
+def make_video(data, cfg, dry_run=False):
+    """AI 아나운서 영상을 만들어 유튜브에 올리고 video_id 를 돌려준다.
+
+    영상 제작은 youtube-shorts-auto 프로젝트(별도 venv)에서 돈다 — HeyGen·ffmpeg·
+    유튜브 업로드가 모두 거기 있다. 실패는 삼킨다(영상 없이 글만 나간다)."""
+    py = os.path.join(YT_DIR, ".venv", "bin", "python")
+    if not os.path.exists(py):
+        log("영상 건너뜀: youtube-shorts-auto/.venv 가 없습니다")
+        return {}
+    try:
+        from geoai_script import make_payload
+        payload = make_payload(data, cfg)
+    except Exception as e:
+        log(f"영상 대본 실패(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        return {}
+    if dry_run:
+        # HeyGen 은 dry-run 이어도 영상을 만들면 크레딧이 나간다 — 대본만 보여주고 멈춘다.
+        chars = sum(len(s["narration"]) for s in payload["scenes"])
+        log(f"[DRY] 영상 대본 {len(payload['scenes'])}장면/{chars}자 — "
+            f"헤드라인: {payload['headline']} (HeyGen 호출 안 함)")
+        return {"status": "dry_run", "script": payload}
+    payload["dry_run"] = False
+    payload["privacy"] = _gcfg(cfg).get("video_privacy", "public")
+    try:
+        # HeyGen 생성이 수 분 걸린다 — 넉넉히 기다린다.
+        p = subprocess.run([py, "geoai_video.py"], cwd=YT_DIR, input=json.dumps(payload),
+                           text=True, capture_output=True, timeout=2400)
+        lines = [l for l in (p.stdout or "").strip().splitlines() if l.strip()]
+        out = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
+        if not out:
+            log(f"영상 결과를 읽지 못했습니다: {(p.stderr or p.stdout or '')[-200:]}")
+        else:
+            log(f"영상: {out.get('status')} {out.get('url','')} ({out.get('seconds','?')}s)")
+        return out
+    except Exception as e:
+        log(f"영상 제작 실패(글은 정상): {type(e).__name__}: {str(e)[:150]}")
+        return {}
+
+
+def make_brief():
+    """GeoAI 판 뉴스 브리핑 글을 만든다 → (설정, data, 본문 HTML). 채널 안내는 붙이지 않는다.
+
+    설정은 여기서 다시 읽는다 — SMUDS_EDITION 을 세운 뒤라야 geoai 에디션이 병합된다."""
     os.environ["SMUDS_EDITION"] = "geoai"
     from generate_content import generate            # 환경변수 반영 위해 지연 import
     from post_blogger import build_html
-    from geoai_blogger import publish, gcfg
-
     cfg = load_config()                              # geoai 에디션이 병합된 설정
     data = generate()
-    # 글 끝 채널 안내는 GeoAI 블로그용 링크로 바꿔 끼운다(build_html 은 blogger.links 를 본다).
-    links = gcfg(cfg).get("links") or (cfg.get("blogger", {}) or {}).get("links") or []
-    html = build_html(data, _deep_merge(cfg, {"blogger": {"links": links}}))
-    r = publish(data["title"], html, data.get("tags", []), dry_run=dry_run, cfg=cfg)
-    r["title"] = data["title"]
-    r["kind"] = "brief"
-    return r
+    # 본문 HTML 은 학과 블로그와 같은 생성기를 쓰되, 끝의 CTA·링크 블록은 뺀다
+    # (geoai_blogger.compose 가 GeoAI 채널 안내를 마지막에 한 번만 붙인다).
+    body = build_html(data, _deep_merge(cfg, {"blogger": {"links": []},
+                                              "blog": {"cta": {"text": "", "links": []}}}))
+    return cfg, data, body
 
 
 def plan(cfg=None):
     cfg = cfg or load_config()
     wd = datetime.now().weekday()
-    kind = "brief" if wd == _brief_day(cfg) else "series"
-    return kind, wd
+    return ("brief" if wd == _brief_day(cfg) else "series"), wd
 
 
 def main():
     dry = "--dry" in sys.argv
-    only_plan = "--plan" in sys.argv
     cfg = load_config()
     kind, wd = plan(cfg)
 
-    if only_plan:
+    if "--plan" in sys.argv:
         from geoai_series import next_topic, TOPICS
         idx, topic = next_topic()
-        print(f"오늘({WEEKDAY_KR[wd]}요일) 예정: "
-              + ("GeoAI 주간 브리핑" if kind == "brief"
-                 else f"시리즈 {idx}/{len(TOPICS)}편 — {topic[1] if topic else '남은 주제 없음'}"))
+        what = ("GeoAI 주간 브리핑" if kind == "brief"
+                else f"시리즈 {idx}/{len(TOPICS)}편 — {topic[1] if topic else '남은 주제 없음'}")
+        print(f"오늘({WEEKDAY_KR[wd]}요일) 예정: {what}")
+        print(f"  카드뉴스: {'만듦' if (cfg.get('geoai',{}).get('cards',{}) or {}).get('enabled', True) else '안 함'}"
+              f" / 영상: {'만들어 유튜브 업로드' if _video_today(cfg) else '없음'}")
         return
 
-    # 오늘 이미 올라간 글이 있으면 멈춘다(밀린 실행·수동 재실행으로 두 편 나가는 것 방지).
-    if not dry:
+    if not dry:        # 오늘 이미 올라간 글이 있으면 멈춘다(밀린 실행·수동 재실행 대비)
         try:
             from geoai_blogger import service, blog_id, posted_today
             t = posted_today(service(), blog_id(cfg))
@@ -83,28 +153,49 @@ def main():
             raise SystemExit(1)
 
     log(f"===== GeoAI 블로그 {WEEKDAY_KR[wd]}요일 발행 시작({kind}) =====")
-    r = None
+    from geoai_blogger import compose, publish
+    from geoai_series import build_html as series_html, prepare, mark_posted
+
+    data = body = None
+    topic = None
     if kind == "brief":
         try:
-            r = publish_brief(dry_run=dry, cfg=cfg)
+            cfg, data, body = make_brief()
         except Exception as e:
             log(f"브리핑 실패({type(e).__name__}: {str(e)[:120]}) → 시리즈 1편으로 대체")
-            r = None
-    if r is None or r.get("error"):
-        os.environ.pop("SMUDS_EDITION", None)        # 시리즈는 기본 설정으로 쓴다
-        from geoai_series import run as run_series
-        r = run_series(dry_run=dry, cfg=load_config())
-    log(f"===== GeoAI 종료: {r.get('status') or r.get('error')} =====")
+            data = None
+    if data is None:                                  # 시리즈(또는 브리핑 실패 대체)
+        os.environ.pop("SMUDS_EDITION", None)
+        cfg = load_config()
+        kind = "series"
+        _, topic, data = prepare(cfg, check_blog=not dry)
+        if data is None:
+            log("올릴 글이 없습니다(시리즈 소진).")
+            return
+        body = series_html(data, cfg, with_links=False)
+
+    images = make_cards(data, cfg, dry_run=dry)
+    video = make_video(data, cfg, dry_run=dry) if _video_today(cfg) else {}
+    html = compose(body, images, video.get("video_id", ""), cfg, data.get("title", ""))
+    labels = data.get("tags", []) + (list(topic[3]) if topic else [])
+    r = publish(data["title"], html, labels, dry_run=dry, cfg=cfg)
+    r["kind"], r["title"] = kind, data["title"]
+    if r.get("status") == "published" and topic:
+        mark_posted(topic, data, r.get("url", ""))
+    log(f"===== GeoAI 종료: {r.get('status') or r.get('error')} "
+        f"(카드 {len(images)}장, 영상 {'O' if video.get('video_id') else 'X'}) =====")
 
     if not dry and r.get("status") == "published":
         try:                                          # 카톡 알림(실패 무시)
             from kakao_notify import notify
-            notify(f"[GeoAI 블로그 발행] {r.get('kind')}\n{r.get('title','')}",
-                   r.get("url") or (cfg.get("geoai") or {}).get("url", ""))
+            notify(f"[GeoAI 블로그 발행] {kind}\n{data.get('title','')}"
+                   + (f"\n영상: {video.get('url','')}" if video.get("url") else ""),
+                   r.get("url") or _gcfg(cfg).get("url", ""))
         except Exception as e:
             log(f"카톡 알림 건너뜀: {type(e).__name__}")
     if dry:
-        print(json.dumps(r, ensure_ascii=False, indent=2))
+        print(json.dumps({"post": r, "images": images, "video": video},
+                         ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

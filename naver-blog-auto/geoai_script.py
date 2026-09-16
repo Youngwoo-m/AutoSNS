@@ -1,0 +1,119 @@
+"""블로그 글 → 60~80초 뉴스브리핑 영상 대본(장면별 나레이션)을 만든다.
+
+영상은 글과 같은 내용을 다뤄야 하므로, 뉴스를 다시 모으지 않고 이미 만든 글에서 뽑는다.
+결과는 youtube-shorts-auto/geoai_video.py 가 그대로 받아 쓰는 payload 다.
+"""
+import re
+
+from anthropic import Anthropic
+
+from common import load_config, log
+
+SYSTEM = """너는 짧은 뉴스 브리핑 영상의 대본을 쓰는 한국어 방송작가다.
+원칙:
+- 주어진 블로그 글에 있는 내용만 말한다. 글에 없는 수치·기관·날짜를 지어내지 않는다.
+- 귀로 듣고 이해되는 문장으로 쓴다. 한 문장은 45자 안팎, 어려운 표현은 풀어 쓴다.
+- 읽어서 그대로 음성이 되는 글이므로 괄호·따옴표·특수기호·이모지를 쓰지 않는다.
+- 과장이나 공포 조장 없이 담백하게, 아나운서 말투(존댓말)로 쓴다.
+- 출력은 지정된 구분자(===) 형식만 반환한다."""
+
+USER = """아래 블로그 글을 60~80초 뉴스 브리핑 영상 대본으로 바꿔줘.
+
+제목: {title}
+요약:
+{summary}
+
+본문 소제목과 발췌:
+{body}
+
+요구사항
+- 장면 4~5개. 각 장면은 '## 장면제목' 한 줄과 나레이션 한 단락.
+- 나레이션 전체 합계 330~400자(한국어 기준, 430자를 절대 넘기지 말 것). 장면마다 70~100자.
+- 첫 장면 첫 문장은 시청자를 붙잡는 질문이나 상황 제시로 시작한다.
+- 마지막 장면은 "자세한 내용은 블로그 지오에이아이와 생성형에이아이에서 확인하실 수 있습니다"
+  처럼, 블로그에서 더 볼 수 있다는 안내로 끝낸다(영문 약어는 소리 나는 대로 쓴다).
+- 장면제목은 화면에 뜨지 않고 편집용이므로 짧게.
+
+반드시 아래 형식 그대로. 마커(===, ##)는 글자 그대로. 그 외 설명 금지.
+
+===헤드라인===
+영상 화면 상단에 뜰 한 줄(18자 이내). 핵심을 담되 낚시성 표현 금지.
+===제목===
+유튜브 제목(40자 이내). 사람들이 검색할 말을 앞에 둔다.
+===설명===
+유튜브 설명 첫 문단(2~3문장). 영상에서 무엇을 다루는지.
+===대본===
+## 장면제목
+나레이션
+## 장면제목
+나레이션"""
+
+
+def _split(text):
+    out, cur = {}, None
+    for line in text.splitlines():
+        m = re.match(r"^===\s*([^=]+?)\s*===$", line.strip())
+        if m:
+            cur = m.group(1).strip()
+            out[cur] = []
+        elif cur:
+            out[cur].append(line)
+    return {k: "\n".join(v).strip() for k, v in out.items()}
+
+
+def _body_digest(data, limit=5):
+    """글에서 소제목 + 첫 문장들을 뽑아 대본 재료로 넘긴다(토큰 절약)."""
+    rows = []
+    for head, para in (data.get("sections") or [])[:limit]:
+        rows.append(f"- {head}: {para[:220]}")
+    for blk in (data.get("news_blocks") or [])[:limit]:
+        rows.append(f"- {blk.get('heading','')}: {(blk.get('paragraph') or '')[:220]}")
+    return "\n".join(rows)
+
+
+def make_payload(data, cfg=None):
+    """영상 제작 payload(headline/title/description/scenes/hashtags/sources)."""
+    cfg = cfg or load_config()
+    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    summary = "\n".join(f"- {s}" for s in (data.get("summary") or [])) or "- (없음)"
+    msg = client.messages.create(
+        model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=2000, system=SYSTEM,
+        messages=[{"role": "user", "content": USER.format(
+            title=data.get("title", ""), summary=summary, body=_body_digest(data))}],
+    )
+    S = _split(msg.content[0].text.strip())
+    scenes = []
+    for part in re.split(r"^##\s+", S.get("대본", ""), flags=re.M):
+        part = part.strip()
+        if not part:
+            continue
+        head, _, rest = part.partition("\n")
+        narration = " ".join(l.strip() for l in rest.splitlines() if l.strip())
+        if narration:
+            scenes.append({"heading": head.strip(), "narration": narration})
+    if not scenes:
+        raise RuntimeError("영상 대본 장면을 파싱하지 못했습니다.")
+    chars = sum(len(s["narration"]) for s in scenes)
+    log(f"영상 대본 {len(scenes)}장면 / 나레이션 {chars}자")
+    sources = []
+    for blk in (data.get("news_blocks") or []):
+        src = blk.get("source") or {}
+        link = (src.get("real_link") or src.get("link") or "").strip()
+        if link:
+            sources.append({"title": src.get("title", ""), "link": link})
+    return {
+        "headline": S.get("헤드라인", "")[:30] or data.get("title", "")[:30],
+        "title": S.get("제목", "")[:80] or data.get("title", "")[:80],
+        "description": S.get("설명", ""),
+        "scenes": scenes,
+        "hashtags": [t for t in (data.get("tags") or []) if t][:10],
+        "sources": sources[:6],
+    }
+
+
+if __name__ == "__main__":
+    import glob, json, os, sys
+    from common import POSTS_DIR
+    path = sys.argv[1] if len(sys.argv) > 1 else sorted(glob.glob(os.path.join(POSTS_DIR, "*.json")))[-1]
+    print(json.dumps(make_payload(json.load(open(path, encoding="utf-8"))),
+                     ensure_ascii=False, indent=2))

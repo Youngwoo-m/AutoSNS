@@ -79,21 +79,42 @@
 | `geoai_auth_setup.py` | **최초 1회** — 블로그 소유 계정으로 인증(쓰기 권한까지 확인) |
 | `geoai_blogger.py` | GeoAI 블로그 발행 계층(토큰·중복확인·라벨 상한·오늘 발행 여부) |
 | `geoai_series.py` | GeoAI 개념 시리즈 26편(주제 목록은 코드 안 `TOPICS`) — 본문은 Claude 가 작성 |
-| `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) |
+| `geoai_daily.py` | 하루 1편 결정·발행(화요일=주간 뉴스 브리핑, 나머지=시리즈 1편) + 카드뉴스·영상 합성 |
+| `geoai_cards.py` | 글 내용을 Gamma 카드뉴스 PNG 여러 장으로 |
+| `geoai_assets.py` | 카드 PNG 를 공개 GitHub 저장소에 올려 CDN 주소로(Blogger 는 이미지 업로드 미지원) |
+| `geoai_script.py` | 글 → 60~80초 뉴스브리핑 영상 대본(장면별 나레이션) |
 | `run_geoai.sh` | launchd 래퍼(인자 거부 — 실행 즉시 실제 발행) |
 | `setup_geoai_schedule.sh` | 매일 07:40 launchd 등록 |
+
+### 카드뉴스와 영상
+- **카드뉴스**: 모든 글에 Gamma 카드 5장을 만들어 첫 장은 글 맨 위, 나머지는 본문 아래
+  '카드뉴스로 한눈에' 섹션에 넣는다. 원본이 장당 4~5MB 라 폭 1400px JPEG 로 줄여 올린다.
+- **영상**: `geoai.video_weekdays`(기본 화·토)에만 만든다. 글 내용을 대본으로 바꿔
+  HeyGen AI 아나운서 영상을 만들고, 개인 채널 **@geoai-na** 에 올린 뒤 글에 임베드한다.
+  제작·업로드는 `youtube-shorts-auto/geoai_video.py`(별도 venv)에서 돈다.
+- 아바타는 GeoAI 전용(`editions.geoai.heygen.talking_photo_id`, 명패 없는 데스크)을 쓰고,
+  책상에 'GeoAI와 생성형AI' 명패를 그려 넣는다(`heygen.dept`). 학과 채널 아바타는 그대로다.
+- 카드·영상이 실패해도 글은 그대로 발행된다(있으면 더 좋은 것이지 발행 조건이 아니다).
+- `--dry` 는 HeyGen 을 호출하지 않는다(크레딧이 나가므로 대본만 보여준다).
 
 ### 설정 (`config.json`)
 - `geoai.blog_id` / `geoai.url` — 대상 블로그
 - `geoai.brief_weekday` — 뉴스 브리핑 요일(0=월, 기본 1=화)
 - `geoai.local_tags` — 항상 붙는 지역·브랜드 라벨(15개 상한 안에서 자리 보장)
 - `editions.geoai` — 브리핑용 뉴스 질의·태그·제목(기존 에디션과 같은 방식)
+- `geoai.cards` — 카드뉴스 장수·비율·테마(`enabled: false` 면 끔)
+- `geoai.assets` — 이미지 저장소(`SMUDS-m/geoai-assets`, 공개)와 축소 폭
+- `geoai.video_weekdays` / `video_privacy` — 영상 만드는 요일(0=월)과 공개 범위
+- 유튜브 쪽 문구는 `youtube-shorts-auto/config.json` 의 `editions.geoai`
+  (제목 접두사·설명 꼬리말·AI 고지문·킥커·캐릭터 끄기)
 
 ### 처음 한 번
 ```bash
 cd ~/devAPP/AutoSNS/naver-blog-auto
 ./.venv/bin/python geoai_auth_setup.py     # 브라우저에서 geoaina 소유 계정으로 로그인
 ./.venv/bin/python geoai_blogger.py        # 연결·쓰기 권한 확인(발행 안 함)
+cd ../youtube-shorts-auto && ./.venv/bin/python geoai_youtube_auth.py   # @geoai-na 채널 인증
+cd ../naver-blog-auto
 bash setup_geoai_schedule.sh               # 매일 07:40 등록
 ```
 

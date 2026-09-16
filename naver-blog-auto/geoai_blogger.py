@@ -123,6 +123,43 @@ def channel_links_html(cfg=None):
             + "</ul>")
 
 
+def img_html(url, alt=""):
+    """카드뉴스 이미지 한 장. 폭은 글 폭에 맞춰 줄어들게 한다(모바일 대응)."""
+    return (f'<p style="text-align:center"><img src="{_url(url)}" alt="{_esc(alt)}" '
+            f'style="max-width:100%;height:auto;border-radius:8px"></p>')
+
+
+def video_html(video_id, title=""):
+    """유튜브 임베드. 세로 쇼츠라 9:16 비율 틀에 넣는다."""
+    if not video_id:
+        return ""
+    return ('<p style="text-align:center"><iframe width="320" height="569" '
+            f'src="https://www.youtube.com/embed/{_esc(video_id)}" '
+            f'title="{_esc(title) or "GeoAI 브리핑"}" frameborder="0" '
+            'allow="accelerometer; autoplay; clipboard-write; encrypted-media; '
+            'gyroscope; picture-in-picture" allowfullscreen></iframe></p>')
+
+
+def compose(body_html, images=(), video_id="", cfg=None, title=""):
+    """표지 카드·영상을 글 위에, 나머지 카드뉴스를 글 아래에 붙이고 채널 안내로 닫는다.
+
+    본문 HTML 에는 채널 안내가 없어야 한다(여기서 마지막에 한 번만 붙인다)."""
+    cfg = cfg or load_config()
+    images = [u for u in (images or []) if u]
+    parts = []
+    if images:
+        parts.append(img_html(images[0], title))
+    if video_id:
+        parts.append("<h3>🎬 1분 브리핑 영상</h3>")
+        parts.append(video_html(video_id, title))
+    parts.append(body_html)
+    if len(images) > 1:
+        parts.append("<h3>🖼️ 카드뉴스로 한눈에</h3>")
+        parts += [img_html(u, title) for u in images[1:]]
+    parts.append(channel_links_html(cfg))
+    return "\n".join(p for p in parts if p)
+
+
 def publish(title, html_body, labels, dry_run=False, cfg=None):
     """GeoAI 블로그에 글 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다."""
     cfg = cfg or load_config()

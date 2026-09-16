@@ -68,17 +68,23 @@ def _detected_keywords(data):
     return found
 
 
-def _creds():
-    if not os.path.exists(TOKEN_PATH):
+def _creds(token_path=None):
+    """저장된 토큰으로 자격증명을 만든다.
+
+    token_path 를 주면 다른 채널의 토큰을 쓴다(예: 개인 GeoAI 채널 —
+    token_youtube_geoai.json). 기본값은 학과 채널 토큰(token.json)."""
+    path = token_path or TOKEN_PATH
+    if not os.path.exists(path):
         raise RuntimeError(
-            "token.json 이 없습니다. 먼저 youtube_login_setup.py 로 1회 로그인하세요.")
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+            f"{os.path.basename(path)} 이 없습니다. 먼저 로그인 스크립트로 1회 인증하세요"
+            " (학과 채널: youtube_login_setup.py / GeoAI 채널: geoai_youtube_auth.py).")
+    creds = Credentials.from_authorized_user_file(path, SCOPES)
     if not creds.valid:
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            with open(TOKEN_PATH, "w", encoding="utf-8") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 f.write(creds.to_json())
-            log("토큰 자동 갱신됨.")
+            log(f"토큰 자동 갱신됨({os.path.basename(path)}).")
         else:
             raise RuntimeError(
                 "토큰이 만료되어 갱신할 수 없습니다. youtube_login_setup.py 를 다시 실행하세요.")
@@ -117,7 +123,8 @@ def _build_description(data, cfg):
     homepage = ycfg.get("homepage_url", "").strip()
     if homepage:
         parts.append("")
-        parts.append(f"🏫 세명대학교 재난안전학과: {homepage}")
+        # 라벨은 채널마다 다르다(학과 채널=학과 홈페이지, GeoAI 채널=블로그).
+        parts.append(f'{ycfg.get("homepage_label", "🏫 세명대학교 재난안전학과")}: {homepage}')
 
     # AI 아나운서 영상이면 합성 콘텐츠 고지를 자동 삽입(YouTube 정책 준수)
     if data.get("ai_disclosure"):
@@ -156,7 +163,7 @@ def _sanitize(text):
     return (text or "").replace("<", "〈").replace(">", "〉")
 
 
-def upload(data, dry_run=None, privacy=None):
+def upload(data, dry_run=None, privacy=None, token_path=None):
     cfg = load_config()
     ycfg = cfg.get("youtube", {})
     if dry_run is None:
@@ -204,7 +211,7 @@ def upload(data, dry_run=None, privacy=None):
             "'python youtube_upload.py --private' 로 하세요.")
         return {"status": "dry_run", "video": video_path}
 
-    creds = _creds()
+    creds = _creds(token_path)
     youtube = build("youtube", "v3", credentials=creds, cache_discovery=False)
     body = {
         "snippet": {

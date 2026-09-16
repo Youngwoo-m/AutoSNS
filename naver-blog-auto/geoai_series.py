@@ -278,7 +278,8 @@ def generate(idx, topic, cfg=None, recent=()):
     return best[0]
 
 
-def build_html(data, cfg=None):
+def build_html(data, cfg=None, with_links=True):
+    """with_links=False 면 채널 안내를 빼고 본문만 만든다(미디어 합성에서 마지막에 붙인다)."""
     cfg = cfg or load_config()
     P = []
     if data.get("summary"):
@@ -296,15 +297,16 @@ def build_html(data, cfg=None):
     if data.get("outro"):
         P.append(_prose_html(data["outro"]))
     P.append(f'<p><em>GeoAI 기초 시리즈 {data.get("index","")}편 · 전체 {len(TOPICS)}편</em></p>')
-    P.append(channel_links_html(cfg))
+    if with_links:
+        P.append(channel_links_html(cfg))
     return "\n".join(p for p in P if p)
 
 
-def run(dry_run=False, cfg=None):
-    """오늘 나갈 1편을 생성해 발행한다. 결과 dict 를 돌려준다."""
+def prepare(cfg=None, check_blog=True):
+    """오늘 나갈 1편을 생성한다(발행하지 않음). → (idx, topic, data) / 없으면 (None, None, None)."""
     cfg = cfg or load_config()
     have = set()
-    if not dry_run:
+    if check_blog:
         try:
             have = posted_titles(service(), blog_id(cfg))
         except Exception as e:
@@ -312,19 +314,31 @@ def run(dry_run=False, cfg=None):
     idx, topic = next_topic(have)
     if topic is None:
         log("GeoAI 시리즈: 남은 주제가 없습니다(TOPICS 에 주제를 더 넣어주세요).")
-        return {"status": "exhausted"}
+        return None, None, None
     log(f"GeoAI 시리즈 {idx}/{len(TOPICS)}편 생성: {topic[1]}")
+    recent = [v.get("title", "") for v in state().get("posted", {}).values()]
+    return idx, topic, generate(idx, topic, cfg, recent)
+
+
+def mark_posted(topic, data, url):
+    """발행 결과를 상태 파일에 남긴다(다음 실행이 같은 편을 다시 쓰지 않게)."""
     s = state()
-    recent = [v.get("title", "") for v in s.get("posted", {}).values()]
-    data = generate(idx, topic, cfg, recent)
+    s.setdefault("posted", {})[topic[0]] = {
+        "title": data["title"], "url": url, "date": f"{datetime.now():%Y-%m-%d}"}
+    save_state(s)
+
+
+def run(dry_run=False, cfg=None):
+    """오늘 나갈 1편을 생성해 발행한다(미디어 없이). 보통은 geoai_daily.py 가 호출한다."""
+    cfg = cfg or load_config()
+    idx, topic, data = prepare(cfg, check_blog=not dry_run)
+    if data is None:
+        return {"status": "exhausted"}
     html = build_html(data, cfg)
     r = publish(data["title"], html, data["tags"] + list(topic[3]),
                 dry_run=dry_run, cfg=cfg)
     if r.get("status") == "published":
-        s.setdefault("posted", {})[topic[0]] = {
-            "title": data["title"], "url": r.get("url", ""),
-            "date": f"{datetime.now():%Y-%m-%d}"}
-        save_state(s)
+        mark_posted(topic, data, r.get("url", ""))
     r["title"] = data["title"]
     r["kind"] = "series"
     return r

@@ -275,7 +275,7 @@ def _caption_chunks(script, dur, start=0.5, end_pad=0.3, maxlen=11):
 
 
 def compose_news_layout(video_in, out, title, ots_image=None, script=None, dur=None,
-                        dept=None, kicker="세명대 재난안전 뉴스"):
+                        dept=None, kicker="세명대 재난안전 뉴스", mascot=True):
     """아나운서 영상에 상단 제목바 + (선택)우측 관련화면 + (선택)하단 자막 + 좌하단 캐릭터 합성.
 
     좌표는 720x1280 기준으로 잡되, 실제 입력 영상 폭에 맞춰 배율 환산한다.
@@ -325,11 +325,15 @@ def compose_news_layout(video_in, out, title, ots_image=None, script=None, dur=N
                      f"boxborderw={px(16)}:x=(w-text_w)/2:y=h-{px(462)}:"
                      f"enable='between(t,{t0:.2f},{t1:.2f})'")
     # ---- (선택) 명패 텍스트 — 새 아바타는 명패가 찍혀 있어 기본 미표시 ----
+    # 채널 명패 — 아바타 책상면에 채널 이름을 얹는다(GeoAI 채널처럼 사진에 명패가 없는
+    # 아바타용). 좌표는 2026-09-16 에 실제 렌더 화면에서 맞췄다: 자막(y=h-462)보다
+    # 아래, 책상 상단선(1080폭 기준 y≈1470)보다 살짝 아래에 놓아 책상에 놓인 것처럼 보이게.
     dept_f = ""
     if dept:
-        dept_f = (f",drawtext=fontfile='{fnt}':text='{_esc(dept)}':fontcolor=white:fontsize={px(36)}:"
-                  f"box=1:boxcolor=0x0B1C3A@0.85:boxborderw={px(12)}:"
-                  f"x=(w-text_w)/2:y=h-{px(370)}")
+        dept_f = (f",drawbox=x={px(150)}:y={px(1000)}:w={px(420)}:h={px(78)}:"
+                  f"color=0x0B1C3A@1.0:t=fill"
+                  f",drawtext=fontfile='{fnt}':text='{_esc(dept)}':fontcolor=white:"
+                  f"fontsize={px(40)}:x=(w-text_w)/2:y={px(1015)}")
 
     # ---- 입력·필터 그래프 구성(관련화면·캐릭터는 있을 때만 오버레이) ----
     inputs = ["-i", video_in]
@@ -342,9 +346,10 @@ def compose_news_layout(video_in, out, title, ots_image=None, script=None, dur=N
                           f"force_original_aspect_ratio=increase,crop={px(268)}:{px(201)},setsar=1[ots]")
         overlays.append(f"[{label}][ots]overlay={px(426)}:{px(286)}[v{nxt}]")
         label = f"v{nxt}"; nxt += 1
-    mascot = os.path.join(BASE_DIR, "legal", "mascot.png")
-    if os.path.exists(mascot):
-        inputs += ["-i", mascot]
+    # 캐릭터는 학과 채널 브랜딩이라, 다른 채널(GeoAI)에서는 끈다(mascot=False).
+    mascot_png = os.path.join(BASE_DIR, "legal", "mascot.png")
+    if mascot and os.path.exists(mascot_png):
+        inputs += ["-i", mascot_png]
         scale_defs.append(f"[{nxt}:v]scale={px(118)}:{px(118)}[mas]")
         overlays.append(f"[{label}][mas]overlay={px(10)}:{px(882)}[v{nxt}]")
         label = f"v{nxt}"; nxt += 1
@@ -384,7 +389,11 @@ def make_news_anchor(data, title=None):
     dur = _duration(r["path"])
     stamp = data.get("stamp") or "anchor"
     out = os.path.join(POSTS_DIR, f"short_{stamp}.mp4")
-    compose_news_layout(r["path"], out, headline, ots_image=ots, script=script, dur=dur)
+    # 킥커(상단 띠 문구)와 캐릭터는 채널마다 다르다 — 에디션 설정으로 덮어쓴다.
+    hc = load_config().get("heygen", {})
+    compose_news_layout(r["path"], out, headline, ots_image=ots, script=script, dur=dur,
+                        kicker=hc.get("kicker", "세명대 재난안전 뉴스"),
+                        mascot=hc.get("mascot", True), dept=hc.get("dept"))
     try:                                       # 후킹(초반)·CTA(후반) 오버레이(완주율·구독 전환↑)
         from overlays import apply as apply_overlays
         apply_overlays(out, dur=dur)           # out 제자리 교체
