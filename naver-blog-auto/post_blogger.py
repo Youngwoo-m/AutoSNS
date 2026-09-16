@@ -12,6 +12,7 @@
 import html
 import os
 import re
+import urllib.parse
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -42,6 +43,14 @@ def _esc(t):
     return html.escape((t or "").strip())
 
 
+def _url(u):
+    """URL 의 한글 등 비ASCII 를 퍼센트 인코딩한다.
+
+    Blogger API 는 href 에 인코딩되지 않은 한글이 들어가면 400(invalid argument)을 낸다.
+    (config.blog.cta 의 유튜브 검색 링크가 한글이라 첫 발행이 여기서 막혔다)"""
+    return _esc(urllib.parse.quote((u or "").strip(), safe=":/?&=#%+@!$,;~*'()[]"))
+
+
 def _para(text):
     """빈 줄로 나뉜 덩어리를 <p> 로. 줄바꿈은 <br>."""
     out = []
@@ -66,7 +75,7 @@ def build_html(data, cfg=None):
         src = blk.get("source", {}) or {}
         link = (src.get("real_link") or src.get("link") or "").strip()
         if link:
-            parts.append(f'<p>📰 기사 원문: <a href="{_esc(link)}" target="_blank" '
+            parts.append(f'<p>📰 기사 원문: <a href="{_url(link)}" target="_blank" '
                          f'rel="noopener">{_esc(src.get("title",""))}</a></p>')
     if data.get("tips"):
         parts.append(_para(data["tips"]))
@@ -82,7 +91,7 @@ def build_html(data, cfg=None):
             parts.append(_para(cta["text"]))
         if links:
             parts.append("<ul>" + "".join(
-                f'<li><a href="{_esc(l["url"])}" target="_blank" rel="noopener">'
+                f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">'
                 f'{_esc(l.get("label", l["url"]))}</a></li>' for l in links) + "</ul>")
     return "\n".join(p for p in parts if p)
 
@@ -115,8 +124,10 @@ def publish(data, dry_run=False, cfg=None):
         "title": title,
         "content": build_html(data, cfg),
         # 라벨(=태그)은 Blogger 검색·분류에 쓰인다. 지역 태그가 항상 포함되도록 앞에 둔다.
+        # 라벨 상한 — 문서엔 20개라고 되어 있으나 실제로는 16개부터 400(invalid argument)이
+        # 떨어진다(15개는 정상). 안전하게 15개로 자른다.
         "labels": list(dict.fromkeys(
-            (cfg.get("local_tags") or []) + (data.get("tags") or [])))[:20],
+            (cfg.get("local_tags") or []) + (data.get("tags") or [])))[:15],
     }
     if dry_run:
         log(f"[DRY] Blogger 발행 예정: {title[:50]} ({len(body['content'])}자 HTML, "
