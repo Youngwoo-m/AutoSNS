@@ -53,6 +53,16 @@ USER_TEMPLATE = """블로그 주제: {topic}
 - ★ 각 뉴스 블록에 '기관·지역·날짜·수치'가 한 문장에 담긴 문장을 최소 1개 넣는다.
   (예: "행정안전부는 2026년 9월 10일 강원 지역에 드론 22대를 투입했다.")
   생성형 AI·검색 스니펫이 인용할 수 있는 형태라 노출에 유리하다. 없는 수치는 지어내지 않는다.
+- ★★ 해설(가장 중요): 각 뉴스 블록은 '요약'으로 끝내지 말고, 마지막 2~3문장을 반드시
+  재난안전학과의 시각에서 쓴 해설로 채운다. 아래 중 하나 이상을 담는다.
+  · 이 소식이 우리 지역(제천·충북)에 어떤 의미인지
+  · 학과에서 배우는 개념·기술과 어떻게 연결되는지(예: 재해영향평가, BCP, GeoAI, 위험성 평가)
+  · 독자(주민·수험생)가 실제로 참고하거나 대비할 점
+  기사 문장을 바꿔 쓴 것이 아니라, 기사에 없는 '판단'이 들어가야 한다.
+  해설 문장은 "~로 보입니다", "~할 필요가 있습니다"처럼 의견임이 드러나게 쓰고,
+  사실과 섞이지 않게 문단 끝에 모아 둔다.
+- ★ 마무리 단락에는 이번 주 소식을 관통하는 흐름을 한 문장으로 정리한다
+  (단순 인사 반복 금지). 예: "이번 주는 감시 기술이 예방 단계로 옮겨간 한 주였습니다."
 - 단정하기 어려운 세부는 "~로 알려졌다" 식으로 신중하게.
 
 최근에 이미 쓴 부제(중복 회피):
@@ -228,14 +238,17 @@ def generate():
     for attempt in range(1, 4):
         msg = client.messages.create(
             model=cfg.get("model", "claude-sonnet-4-6"),
-            max_tokens=4000,
+            # 요약·해설·FAQ·마무리까지 담으려면 4000 으로는 중간에 끊긴다
+            # (해설 규칙을 넣은 뒤 FAQ 가 잘리고 마무리가 비는 일이 있었다)
+            max_tokens=8000,
             system=system,
             messages=[{"role": "user", "content": user_msg}],
         )
         text = msg.content[0].text.strip()
         (subtitle, tags, summary, intro, blocks,
          tips, faq, outro) = _parse_structured(text, news)
-        ok_form = bool(subtitle and intro) and len(blocks) >= 2
+        # 마무리까지 나와야 글이 끝까지 생성된 것이다(토큰 상한에 걸리면 뒤가 잘린다)
+        ok_form = bool(subtitle and intro and outro) and len(blocks) >= 2
         length = _body_len(intro, blocks, tips, outro)
         # 가장 잘 나온 결과를 보관(전부 미달이면 이걸 쓴다)
         if ok_form and (best is None or length > best[-1]):
