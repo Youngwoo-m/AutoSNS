@@ -8,6 +8,7 @@
     python geoai_backfill_media.py --cards --video --go  # 카드뉴스 + 영상까지
 
 --post <URL> 로 특정 글을 지정할 수 있다(생략하면 최신 글).
+--images <url,url,...> 으로 이미 올려둔 카드 이미지를 그대로 붙일 수 있다(복구용).
 --resume <HeyGen video_id> 를 주면 영상을 새로 만들지 않고 앞서 요청해 둔 것을 이어받는다
 (HeyGen 은 요청 시점에 크레딧이 나가므로, 대기 시간 초과로 놓친 영상은 이렇게 회수한다).
 """
@@ -56,12 +57,17 @@ def data_from_post(post):
 def insert_media(content, images, video_id, title=""):
     """기존 본문은 그대로 두고 앞뒤에 미디어만 끼운다(채널 안내는 이미 글 안에 있다).
 
-    이미 붙어 있는 미디어는 지우고 새로 넣는다(두 번 돌려도 중복되지 않게)."""
-    body = re.sub(r"^(?:<p style=\"text-align:center\"><img.*?</p>\s*|<h3>🎬[^<]*</h3>\s*|"
-                  r"<p style=\"text-align:center\"><iframe.*?</iframe></p>\s*)+", "",
-                  content, flags=re.S)
-    body = re.sub(r"<h3>🖼️[^<]*</h3>(?:\s*<p style=\"text-align:center\"><img.*?</p>)+",
-                  "", body, flags=re.S)
+    **바꿀 것만 걷어낸다** — 영상만 붙일 때 이미 있는 카드뉴스를 지우면 안 된다
+    (2026-09-16 그렇게 카드 5장을 날린 적이 있다). 같은 종류를 다시 붙이면 교체된다."""
+    body = content
+    if images:                       # 표지 이미지 + 카드뉴스 묶음 교체
+        body = re.sub(r"^(?:<p style=\"text-align:center\"><img.*?</p>\s*)+", "",
+                      body, flags=re.S)
+        body = re.sub(r"<h3>🖼️[^<]*</h3>(?:\s*<p style=\"text-align:center\"><img.*?</p>)+",
+                      "", body, flags=re.S)
+    if video_id:                     # 영상 블록 교체
+        body = re.sub(r"<h3>🎬[^<]*</h3>\s*<p style=\"text-align:center\"><iframe.*?"
+                      r"</iframe></p>\s*", "", body, flags=re.S)
     head = []
     if images:
         head.append(img_html(images[0], title))
@@ -104,6 +110,9 @@ def main():
         return
 
     images, video = [], {}
+    if "--images" in sys.argv:
+        images = [u.strip() for u in sys.argv[sys.argv.index("--images") + 1].split(",") if u.strip()]
+        log(f"이미 올려둔 카드 {len(images)}장을 붙입니다")
     if want_cards:
         from geoai_daily import make_cards
         images = make_cards(data, cfg, dry_run=False)
