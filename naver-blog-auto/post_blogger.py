@@ -132,6 +132,10 @@ def publish(data, dry_run=False, cfg=None):
         "labels": list(dict.fromkeys(
             (cfg.get("local_tags") or []) + (data.get("tags") or [])))[:15],
     }
+    # 글 위치(제천) — 지역 검색·지역 관련성에 쓰이도록 모든 글에 같은 위치를 붙인다.
+    loc = bcfg.get("location") or {}
+    if loc.get("name"):
+        body["location"] = {k: v for k, v in loc.items() if v is not None}
     if dry_run:
         log(f"[DRY] Blogger 발행 예정: {title[:50]} ({len(body['content'])}자 HTML, "
             f"라벨 {len(body['labels'])}개)")
