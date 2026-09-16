@@ -167,7 +167,11 @@
       "대학진로",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/QMNM50bPyIc",
+      "instagram": "published",
+      "at": "2026-09-15T19:02:44"
+    },
     "series": "career",
     "label": "진로 8/8"
   },
