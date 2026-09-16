@@ -80,7 +80,8 @@ def upload_audio(path):
     return aid
 
 
-def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, wait=True):
+def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, wait=True,
+             meta=None):
     """아나운서 영상 생성 → (선택)완료까지 대기 후 다운로드.
 
     audio_asset_id 를 주면 그 오디오로 립싱크(우리 남성 TTS). 없으면 HeyGen TTS(text)."""
@@ -110,6 +111,15 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
     res = _req("POST", f"{API}/v2/video/generate", body=body)
     vid = res.get("data", {}).get("video_id")
     log(f"video_id = {vid} (생성 요청됨)")
+    # 대본을 video_id 옆에 남긴다 — 나중에 이어받을 때 '실제로 녹음된 대본'으로 자막을
+    # 달아야 말과 자막이 어긋나지 않는다(대본을 다시 생성하면 내용이 달라진다).
+    if vid:
+        try:
+            with open(os.path.join(POSTS_DIR, f"anchor_{vid}.json"), "w", encoding="utf-8") as f:
+                json.dump({"script": script, "scenes": (meta or {}).get("scenes", []),
+                           "title": (meta or {}).get("title", "")}, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            log(f"대본 보관 실패(영상은 정상): {type(e).__name__}")
     if not wait:
         return {"video_id": vid}
     return await_video(vid, cfg)
@@ -399,10 +409,24 @@ def make_news_anchor(data, title=None, heygen_video_id=None):
         log(f"관련화면 이미지 수집 건너뜀: {type(e).__name__}")
     if heygen_video_id:                           # 앞서 요청해 둔 영상을 이어받는다
         log(f"기존 HeyGen 영상 이어받기: {heygen_video_id}")
+        saved = os.path.join(POSTS_DIR, f"anchor_{heygen_video_id}.json")
+        if os.path.exists(saved):
+            with open(saved, encoding="utf-8") as f:
+                old = json.load(f)
+            # 음성은 그때 대본으로 이미 녹음돼 있다 — 자막도 그 대본이어야 맞는다.
+            if old.get("scenes"):
+                data["scenes"] = scenes = old["scenes"]
+            script = old.get("script") or script
+            log(f"보관된 대본으로 자막을 맞춥니다({len(script)}자)")
+        else:
+            # 녹음된 대본을 모르면 자막을 달지 않는다 — 틀린 자막이 없는 자막보다 나쁘다.
+            script = None
+            data["captions_unreliable"] = True
+            log("보관된 대본이 없어 자막 없이 합성합니다(유튜브 자동자막은 생성됨).")
         r = await_video(heygen_video_id)
     else:
         log(f"아나운서 영상 생성 시작(대본 {len(script)}자)...")
-        r = generate(tp, script)                  # HeyGen 생성 + 다운로드
+        r = generate(tp, script, meta=data)       # HeyGen 생성 + 다운로드
     dur = _duration(r["path"])
     stamp = data.get("stamp") or "anchor"
     out = os.path.join(POSTS_DIR, f"short_{stamp}.mp4")

@@ -54,7 +54,9 @@ def run(payload):
     out = {"status": r.get("status"), "video_id": r.get("video_id", ""),
            "url": r.get("url", ""), "video": data.get("video"),
            "seconds": data.get("video_seconds")}
-    if r.get("video_id"):
+    if r.get("video_id") and data.get("captions_unreliable"):
+        log("자막 업로드 건너뜀 — 녹음된 대본을 확인할 수 없는 영상입니다.")
+    elif r.get("video_id"):
         try:                                   # 대본 자막(검색·AI 요약이 읽는 통로)
             from make_captions import attach
             attach(data, video_id=r["video_id"], token_path=TOKEN_PATH)
