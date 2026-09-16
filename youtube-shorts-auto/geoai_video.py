@@ -1,4 +1,4 @@
-"""블로그 글 → AI 아나운서 뉴스브리핑 영상 → 개인 GeoAI 채널(@geoai-na) 업로드.
+"""블로그 글 → AI 아나운서 뉴스브리핑 영상 → 개인 GeoAI 채널(@geoai-safety) 업로드.
 
 naver-blog-auto 의 GeoAI 발행 파이프라인이 이 파일을 subprocess 로 부른다
 (프로젝트마다 venv 가 달라, insta-cardnews 를 부르는 방식과 같다).

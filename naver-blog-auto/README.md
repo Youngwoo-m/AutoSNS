@@ -99,7 +99,7 @@
   모델이 길이 지시를 넘기면 문장 단위로 잘라 상한을 맞춘다. 나머지 날은
   영상 없이 카드뉴스만 붙인다 — 아바타 영상은 크레딧이 들고, 매일 올리면 새 채널이
   스팸처럼 보이기도 한다. 글 내용을 대본으로 바꿔
-  HeyGen AI 아나운서 영상을 만들고, 개인 채널 **@geoai-na** 에 올린 뒤 글에 임베드한다.
+  HeyGen AI 아나운서 영상을 만들고, 개인 채널 **@geoai-safety** 에 올린 뒤 글에 임베드한다.
   제작·업로드는 `youtube-shorts-auto/geoai_video.py`(별도 venv)에서 돈다.
 - 아바타는 GeoAI 전용(`editions.geoai.heygen.talking_photo_id`, 명패 없는 데스크)을 쓰고,
   책상에 '재난안전과 GeoAI' 명패를 그려 넣는다(`heygen.dept`). 학과 채널 아바타는 그대로다.
@@ -124,7 +124,7 @@
 cd ~/devAPP/AutoSNS/naver-blog-auto
 ./.venv/bin/python geoai_auth_setup.py     # 브라우저에서 geoaina 소유 계정으로 로그인
 ./.venv/bin/python geoai_blogger.py        # 연결·쓰기 권한 확인(발행 안 함)
-cd ../youtube-shorts-auto && ./.venv/bin/python geoai_youtube_auth.py   # @geoai-na 채널 인증
+cd ../youtube-shorts-auto && ./.venv/bin/python geoai_youtube_auth.py   # @geoai-safety 채널 인증
 cd ../naver-blog-auto
 bash setup_geoai_schedule.sh               # 매일 07:40 등록
 ```

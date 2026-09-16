@@ -1,8 +1,8 @@
-"""개인 GeoAI 유튜브 채널(@geoai-na) 최초 인증 — 사용자가 직접 1회 실행.
+"""개인 GeoAI 유튜브 채널(@geoai-safety) 최초 인증 — 사용자가 직접 1회 실행.
 
     ./.venv/bin/python geoai_youtube_auth.py
 
-브라우저가 열리면 **@geoai-na 채널을 소유한 구글 계정**으로 로그인한다
+브라우저가 열리면 **@geoai-safety 채널을 소유한 구글 계정**으로 로그인한다
 (학과 채널 semyungds 계정이 아니다). 성공하면 token_youtube_geoai.json 이 생기고,
 어느 채널에 연결됐는지 즉시 확인해서 보여준다 — 계정을 잘못 고르면 여기서 걸린다.
 
@@ -18,7 +18,7 @@ from common import BASE_DIR, CLIENT_SECRET_PATH
 from youtube_upload import SCOPES
 
 TOKEN_PATH = os.path.join(BASE_DIR, "token_youtube_geoai.json")
-WANT_HANDLE = "geoai-na"
+WANT_HANDLE = "geoai-safety"   # 2026-09-16 사용자가 @geoai-na 에서 바꿈
 
 if not os.path.exists(CLIENT_SECRET_PATH):
     raise SystemExit(f"client_secret.json 이 없습니다: {CLIENT_SECRET_PATH}")
