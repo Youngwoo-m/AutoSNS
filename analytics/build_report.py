@@ -132,6 +132,27 @@ def build(rows, channel, profile, warn, today, since="2026-03-01"):
             [f"{r['views']:,}", f'<a href="{r["url"]}" style="color:#1C1D1F">{r["title"][:52]}</a>']
             for r in sorted(ytw, key=lambda x: -x["views"])[:5]], ["right", "left"]))
 
+    # 구글 검색 유입 — 어떤 검색어로 발견되는지(서치콘솔). Blogger 만 대상이다.
+    gsc = load_part("searchconsole") or {}
+    if gsc.get("items"):
+        per = gsc.get("period", {})
+        H.append('<h2 style="font-size:15px;margin:22px 0 0">구글 검색 유입 '
+                 f'<span style="font-weight:400;color:#666">({per.get("start","")}~{per.get("end","")}, '
+                 'Blogger)</span></h2>')
+        t = gsc.get("totals", {})
+        H.append(f'<p style="margin:6px 0">클릭 {t.get("clicks",0):.0f} · '
+                 f'노출 {t.get("impressions",0):.0f}</p>')
+        H.append('<table style="border-collapse:collapse;font-size:13px">'
+                 '<tr style="background:#f4f4f4"><th style="padding:4px 8px;text-align:left">검색어</th>'
+                 '<th style="padding:4px 8px">클릭</th><th style="padding:4px 8px">노출</th>'
+                 '<th style="padding:4px 8px">CTR</th><th style="padding:4px 8px">평균순위</th></tr>')
+        for it in gsc["items"][:10]:
+            H.append(f'<tr><td style="padding:4px 8px">{it["query"]}</td>'
+                     f'<td style="padding:4px 8px;text-align:right">{it["clicks"]:.0f}</td>'
+                     f'<td style="padding:4px 8px;text-align:right">{it["impressions"]:.0f}</td>'
+                     f'<td style="padding:4px 8px;text-align:right">{it["ctr"]}%</td>'
+                     f'<td style="padding:4px 8px;text-align:right">{it["position"]}</td></tr>')
+        H.append('</table>')
     H.append('<h2 style="font-size:15px;margin:22px 0 0">이번 주 발행 목록</h2>')
     if week:
         H.append(_table(["매체", "유형", "활동명", "게시일"], [

@@ -55,3 +55,4 @@ caption_boost_state.json
 assets/music/*.mp3
 assets/music/preview/
 naver-blog-auto/token_blogger.json
+analytics/token_searchconsole.json

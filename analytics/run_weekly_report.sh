@@ -13,6 +13,8 @@ echo "== 수집 시작 ($TODAY) =="
 python3 collect_web.py "$SINCE"                                 || echo "!! 블로그·홈페이지 수집 실패 — 직전 결과로 진행"
 "$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
 
+"$ROOT/naver-blog-auto/.venv/bin/python" collect_searchconsole.py || echo "!! 서치콘솔 수집 실패 — 건너뜀"
+
 echo "== 리포트 생성 =="
 REPORT="$(python3 build_report.py "$TODAY" | tail -1)"
 echo "$REPORT"
