@@ -102,7 +102,7 @@
   HeyGen AI 아나운서 영상을 만들고, 개인 채널 **@geoai-na** 에 올린 뒤 글에 임베드한다.
   제작·업로드는 `youtube-shorts-auto/geoai_video.py`(별도 venv)에서 돈다.
 - 아바타는 GeoAI 전용(`editions.geoai.heygen.talking_photo_id`, 명패 없는 데스크)을 쓰고,
-  책상에 'GeoAI와 생성형AI' 명패를 그려 넣는다(`heygen.dept`). 학과 채널 아바타는 그대로다.
+  책상에 '재난안전과 GeoAI' 명패를 그려 넣는다(`heygen.dept`). 학과 채널 아바타는 그대로다.
 - 카드·영상이 실패해도 글은 그대로 발행된다(있으면 더 좋은 것이지 발행 조건이 아니다).
 - `--dry` 는 HeyGen 을 호출하지 않는다(크레딧이 나가므로 대본만 보여준다).
 

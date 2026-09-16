@@ -54,7 +54,7 @@ def _card_texts(data, cfg):
     date_kr = f"{datetime.now():%Y년 %m월 %d일}"
     title = re.sub(r"\s*\|\s*.*$", "", data.get("title", "")).strip()
     cover = f"{title}\n{date_kr}"
-    closing = "전체 내용은 블로그에서\nGeoAI와 생성형AI"
+    closing = "전체 내용은 블로그에서\n재난안전과 GeoAI"
     if n == 1:
         return [cover]
     if n == 2:

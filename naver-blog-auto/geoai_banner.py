@@ -84,7 +84,7 @@ def make_banner(data, cfg=None):
     kicker = data.get("family") or ("GeoAI 브리핑" if data.get("news_blocks") else "GeoAI 기초")
     html = HTML.format(w=W, h=H, title=title, size=_title_size(title),
                        kicker=b.get("kicker", kicker),
-                       brand=b.get("brand", "GeoAI와 생성형AI"),
+                       brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
     html_path = os.path.join(POSTS_DIR, f"_geoai_banner_{stamp}.html")
