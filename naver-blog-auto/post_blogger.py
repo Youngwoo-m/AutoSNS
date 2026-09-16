@@ -84,11 +84,14 @@ def build_html(data, cfg=None):
     if data.get("outro"):
         parts.append(_para(data["outro"]))
     cta = (cfg.get("blog", {}) or {}).get("cta") or {}
-    links = [l for l in (cta.get("links") or []) if (l.get("url") or "").strip()]
+    # Blogger 글에는 운영 중인 채널을 모두 링크로 건다(config.blogger.links).
+    # 네이버 글의 CTA 링크(홈페이지·유튜브 검색)보다 우선한다 — 여기선 전 채널 안내가 목적.
+    links = [l for l in ((cfg.get("blogger", {}) or {}).get("links")
+                         or cta.get("links") or []) if (l.get("url") or "").strip()]
     if cta.get("text") or links:
         parts.append("<hr>")
-        if cta.get("text"):
-            parts.append(_para(cta["text"]))
+        parts.append(_para(cta.get("text") or "세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요."))
+        parts.append("<p><strong>📌 채널 바로가기</strong></p>")
         if links:
             parts.append("<ul>" + "".join(
                 f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">'
