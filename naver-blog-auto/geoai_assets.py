@@ -12,6 +12,7 @@ jsDelivr CDN 주소로 건다(무료·안정적, 깃허브 raw 보다 이미지 
 import base64
 import json
 import os
+import shutil
 import subprocess
 
 from common import POSTS_DIR, load_config, log
@@ -21,8 +22,21 @@ def _acfg(cfg=None):
     return ((cfg or load_config()).get("geoai") or {}).get("assets") or {}
 
 
+def _gh_bin():
+    """gh 실행 파일 경로. launchd 로 돌면 PATH 가 최소라 이름만으로는 못 찾는다
+    (2026-09-17 아침 발행에서 FileNotFoundError: 'gh' 로 배너가 통째로 빠졌다)."""
+    found = shutil.which("gh")
+    if found:
+        return found
+    for c in ("/opt/homebrew/bin/gh", "/usr/local/bin/gh", "/usr/bin/gh",
+              os.path.expanduser("~/.local/bin/gh")):
+        if os.path.exists(c):
+            return c
+    return "gh"
+
+
 def _gh(args, **kw):
-    p = subprocess.run(["gh"] + args, capture_output=True, text=True, timeout=120, **kw)
+    p = subprocess.run([_gh_bin()] + args, capture_output=True, text=True, timeout=120, **kw)
     if p.returncode != 0:
         raise RuntimeError(f"gh {' '.join(args[:3])} 실패: {(p.stderr or p.stdout)[:200]}")
     return p.stdout
