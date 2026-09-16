@@ -8,8 +8,9 @@
 글에 함께 붙는 것:
   · 이미지(기본: 가로 배너 1장, 설정에 따라 Gamma 카드뉴스) → 공개 GitHub 저장소에
     올리고 CDN 으로 건다(Blogger API 에는 이미지 업로드가 없어 외부 호스팅이 필요하다)
-  · config.geoai.video_weekdays 인 날은 AI 아나운서 뉴스브리핑 영상을 만들어
-    개인 유튜브 채널(@geoai-safety)에 올리고, 그 영상을 글에 임베드한다
+  · 매일 쇼츠 영상 1편을 개인 유튜브 채널(@geoai-safety)에 올리고 글에 임베드한다.
+    보통은 카드 영상(무료 TTS)이고, config.geoai.video_weekdays 인 날만 HeyGen
+    아바타 아나운서 영상이다(크레딧이 들어 주 1회)
 둘 다 실패해도 글 발행은 그대로 진행한다(있으면 더 좋은 것이지 조건이 아니다).
 
 하루 1편 원칙: 블로그에 오늘 날짜 글이 이미 있으면 아무것도 하지 않는다.
@@ -44,13 +45,20 @@ def _brief_day(cfg):
     return int(_gcfg(cfg).get("brief_weekday", 1))
 
 
-def _video_today(cfg, argv=()):
-    """오늘 영상을 만드는 날인가. --video / --no-video 로 직접 정할 수 있다."""
+def _video_style(cfg, argv=()):
+    """오늘 만들 영상 종류. None 이면 안 만든다.
+
+    · anchor — HeyGen 아바타(크레딧이 든다). geoai.video_weekdays 인 날만.
+    · cards  — 카드 프레임 + 무료 TTS. 매일 올려도 추가 비용이 없다.
+    --no-video 로 끄고, --video 로 카드 영상을 강제할 수 있다."""
     if "--no-video" in argv:
-        return False
-    if "--video" in argv:
-        return True
-    return datetime.now().weekday() in (_gcfg(cfg).get("video_weekdays") or [])
+        return None
+    g = _gcfg(cfg)
+    if datetime.now().weekday() in (g.get("video_weekdays") or []):
+        return "anchor"
+    if g.get("daily_video", True) or "--video" in argv:
+        return "cards"
+    return None
 
 
 def make_images(data, cfg, dry_run=False):
@@ -88,7 +96,7 @@ def make_images(data, cfg, dry_run=False):
         return []
 
 
-def make_video(data, cfg, dry_run=False, heygen_video_id=None):
+def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
     """AI 아나운서 영상을 만들어 유튜브에 올리고 video_id 를 돌려준다.
 
     영상 제작은 youtube-shorts-auto 프로젝트(별도 venv)에서 돈다 — HeyGen·ffmpeg·
@@ -103,12 +111,13 @@ def make_video(data, cfg, dry_run=False, heygen_video_id=None):
     except Exception as e:
         log(f"영상 대본 실패(글은 정상): {type(e).__name__}: {str(e)[:120]}")
         return {}
+    payload["style"] = style
     if dry_run:
         # HeyGen 은 dry-run 이어도 영상을 만들면 크레딧이 나간다 — 대본만 보여주고 멈춘다.
         chars = sum(len(s["narration"]) for s in payload["scenes"])
-        log(f"[DRY] 영상 대본 {len(payload['scenes'])}장면/{chars}자 — "
-            f"헤드라인: {payload['headline']} (HeyGen 호출 안 함)")
-        return {"status": "dry_run", "script": payload}
+        log(f"[DRY] {style} 영상 대본 {len(payload['scenes'])}장면/{chars}자 — "
+            f"헤드라인: {payload['headline']} (영상 생성 안 함)")
+        return {"status": "dry_run", "style": style, "script": payload}
     payload["dry_run"] = False
     payload["privacy"] = _gcfg(cfg).get("video_privacy", "public")
     if heygen_video_id:
@@ -166,7 +175,7 @@ def main():
                 else f"시리즈 {idx}/{len(TOPICS)}편 — {topic[1] if topic else '남은 주제 없음'}")
         print(f"오늘({WEEKDAY_KR[wd]}요일) 예정: {what}")
         print(f"  이미지: {(cfg.get('geoai', {}).get('media_style') or 'banner')}"
-              f" / 영상: {'만들어 유튜브 업로드' if _video_today(cfg, sys.argv) else '없음'}")
+              f" / 영상: {_video_style(cfg, sys.argv) or '없음'}")
         return
 
     if not dry and "--force" not in sys.argv:   # 오늘 이미 올라간 글이 있으면 멈춘다
@@ -203,7 +212,8 @@ def main():
         body = series_html(data, cfg, with_links=False)
 
     images = make_images(data, cfg, dry_run=dry)
-    video = make_video(data, cfg, dry_run=dry) if _video_today(cfg, sys.argv) else {}
+    style = _video_style(cfg, sys.argv)
+    video = make_video(data, cfg, dry_run=dry, style=style) if style else {}
     html = compose(body, images, video.get("video_id", ""), cfg, data.get("title", ""))
     labels = data.get("tags", []) + (list(topic[3]) if topic else [])
     r = publish(data["title"], html, labels, dry_run=dry, cfg=cfg)
@@ -211,7 +221,7 @@ def main():
     if r.get("status") == "published" and topic:
         mark_posted(topic, data, r.get("url", ""))
     log(f"===== GeoAI 종료: {r.get('status') or r.get('error')} "
-        f"(이미지 {len(images)}장, 영상 {'O' if video.get('video_id') else 'X'}) =====")
+        f"(이미지 {len(images)}장, 영상 {video.get('style', '없음') if video.get('video_id') else 'X'}) =====")
 
     if not dry and r.get("status") == "published":
         try:                                          # 카톡 알림(실패 무시)

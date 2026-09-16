@@ -33,7 +33,10 @@ USER = """아래 블로그 글을 40초 이내 뉴스 브리핑 영상 대본으
 - 첫 장면 첫 문장은 시청자를 붙잡는 질문이나 상황 제시로 시작한다.
 - 마지막 장면은 "자세한 내용은 블로그 재난안전과 지오에이아이에서 확인하실 수 있습니다"
   처럼, 블로그에서 더 볼 수 있다는 안내로 끝낸다(영문 약어는 소리 나는 대로 쓴다).
-- 장면제목은 화면에 뜨지 않고 편집용이므로 짧게.
+- 장면제목은 영상 화면에 큰 글씨로 뜨는 제목이다. 3~10자의 핵심어로 쓴다.
+  '도입', '마무리', '장면1' 같은 편집 용어는 절대 쓰지 않는다(그대로 화면에 박힌다).
+- 장면마다 '화면 문구'를 함께 준다: 영상 화면에 큰 글씨로 띄울 짧은 말 1~3줄.
+  한 줄은 18자 이내, 조사로 끝내지 말고 핵심어 위주로. 나레이션을 그대로 옮기지 않는다.
 
 반드시 아래 형식 그대로. 마커(===, ##)는 글자 그대로. 그 외 설명 금지.
 
@@ -44,9 +47,11 @@ USER = """아래 블로그 글을 40초 이내 뉴스 브리핑 영상 대본으
 ===설명===
 유튜브 설명 첫 문단(2~3문장). 영상에서 무엇을 다루는지.
 ===대본===
-## 장면제목
+## 화면제목(3~10자)
+[화면] 첫 줄 / 둘째 줄
 나레이션
-## 장면제목
+## 화면제목(3~10자)
+[화면] 첫 줄 / 둘째 줄
 나레이션"""
 
 
@@ -60,6 +65,19 @@ def _split(text):
         elif cur:
             out[cur].append(line)
     return {k: "\n".join(v).strip() for k, v in out.items()}
+
+
+def _lines_from(narration, limit=3, width=18):
+    """화면 문구가 없을 때 나레이션에서 짧은 줄을 만든다(카드 프레임이 비지 않게)."""
+    out = []
+    for sent in re.split(r"(?<=[.!?])\s+", narration.strip()):
+        sent = sent.strip().rstrip(".")
+        if not sent:
+            continue
+        out.append(sent if len(sent) <= width * 2 else sent[:width * 2].rstrip() + "…")
+        if len(out) >= limit:
+            break
+    return out
 
 
 def _body_digest(data, limit=5):
@@ -117,9 +135,19 @@ def make_payload(data, cfg=None):
         if not part:
             continue
         head, _, rest = part.partition("\n")
-        narration = " ".join(l.strip() for l in rest.splitlines() if l.strip())
+        lines, narration_lines = [], []
+        for l in rest.splitlines():
+            l = l.strip()
+            if not l:
+                continue
+            if l.startswith("[화면]"):
+                lines = [x.strip() for x in l[4:].split("/") if x.strip()][:3]
+            else:
+                narration_lines.append(l)
+        narration = " ".join(narration_lines)
         if narration:
-            scenes.append({"heading": head.strip(), "narration": narration})
+            scenes.append({"heading": head.strip(), "narration": narration,
+                           "lines": lines or _lines_from(narration)})
     if not scenes:
         raise RuntimeError("영상 대본 장면을 파싱하지 못했습니다.")
     scenes = _fit_budget(scenes, hard)

@@ -1,4 +1,8 @@
-"""블로그 글 → AI 아나운서 뉴스브리핑 영상 → 개인 GeoAI 채널(@geoai-safety) 업로드.
+"""블로그 글 → 쇼츠 영상 → 개인 GeoAI 채널(@geoai-safety) 업로드.
+
+영상은 두 가지다(payload 의 style):
+  · cards(기본)  — 카드 프레임 + 무료 TTS 나레이션. 매일 올려도 추가 비용이 없다.
+  · anchor       — HeyGen AI 아바타 아나운서. 크레딧이 들어 주 1회(화요일)만.
 
 naver-blog-auto 의 GeoAI 발행 파이프라인이 이 파일을 subprocess 로 부른다
 (프로젝트마다 venv 가 달라, insta-cardnews 를 부르는 방식과 같다).
@@ -9,6 +13,7 @@ naver-blog-auto 의 GeoAI 발행 파이프라인이 이 파일을 subprocess 로
    "scenes": [{"heading": "...", "narration": "..."}, ...],
    "hashtags": ["GeoAI", ...], "sources": [{"title": "...", "link": "..."}],
    "description": "설명 첫 문단", "dry_run": true, "privacy": "public",
+   "style": "cards | anchor",
    "heygen_video_id": "(선택) 앞서 요청해 둔 HeyGen 영상 id — 다시 만들지 않고 이어받는다"}
 
 채널·문구는 config.json 의 editions.geoai 가 정한다(제목 접두사·설명 꼬리말·고지문).
@@ -24,6 +29,9 @@ os.environ["SMUDS_EDITION"] = "geoai"
 
 from common import BASE_DIR, load_config, log          # noqa: E402
 from heygen_anchor import make_news_anchor             # noqa: E402
+from make_video import make_video                      # noqa: E402
+from render_frames import make_frames                  # noqa: E402
+from tts import make_tts                               # noqa: E402
 from youtube_upload import upload                      # noqa: E402
 
 TOKEN_PATH = os.path.join(BASE_DIR, "token_youtube_geoai.json")
@@ -45,13 +53,25 @@ def run(payload):
         "sources": payload.get("sources", []),
         "stamp": f"geoai_{datetime.now():%Y%m%d_%H%M%S}",
     }
-    # heygen_video_id 를 주면 앞서 요청해 둔 영상을 이어받는다(시간 초과로 놓친 건 복구).
-    make_news_anchor(data, title=payload.get("headline"),
-                     heygen_video_id=payload.get("heygen_video_id"))   # data['video'] 채움
+    style = (payload.get("style") or "cards").lower()
+    if style == "anchor":
+        # heygen_video_id 를 주면 앞서 요청해 둔 영상을 이어받는다(시간 초과로 놓친 건 복구).
+        make_news_anchor(data, title=payload.get("headline"),
+                         heygen_video_id=payload.get("heygen_video_id"))   # data['video'] 채움
+    else:
+        try:                                   # 뉴스 원본 이미지(있으면 카드 하단에 깔린다)
+            from fetch_images import fetch_images
+            fetch_images(data)
+        except Exception as e:
+            log(f"뉴스 이미지 수집 건너뜀: {type(e).__name__}")
+        make_frames(data)                      # 세로 카드 프레임 PNG
+        make_tts(data)                         # 장면별 한국어 TTS
+        make_video(data)                       # 프레임+음성 → mp4
+        log(f"카드 영상 완성: {data.get('video')} ({data.get('video_seconds','?')}s)")
     privacy = payload.get("privacy") or cfg.get("youtube", {}).get("privacy", "public")
     r = upload(data, dry_run=payload.get("dry_run", True), privacy=privacy,
                token_path=TOKEN_PATH)
-    out = {"status": r.get("status"), "video_id": r.get("video_id", ""),
+    out = {"status": r.get("status"), "style": style, "video_id": r.get("video_id", ""),
            "url": r.get("url", ""), "video": data.get("video"),
            "seconds": data.get("video_seconds")}
     if r.get("video_id") and data.get("captions_unreliable"):
