@@ -61,9 +61,11 @@ def _detected_keywords(data):
     # 학과별 키워드는 config.keywords 로 덮어쓸 수 있다(없으면 아래 기본값=재난안전).
     kw = load_config().get("keywords", {})
     terms = (kw.get("tag_terms") or DISASTER_TERMS) + (kw.get("region_terms") or REGION_TERMS)
+    # 띄어 쓴 표기("안전 훈련")도 잡도록 공백을 지운 사본과 함께 비교한다.
+    flat = hay.replace(" ", "")
     found = []
     for term in terms:
-        if term in hay and term not in found:
+        if (term in hay or term.replace(" ", "") in flat) and term not in found:
             found.append(term)
     return found
 

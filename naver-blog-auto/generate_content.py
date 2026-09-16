@@ -120,7 +120,11 @@ def _detected_tags(subtitle, blocks, news):
     kw = load_config().get("keywords", {})
     terms = (kw.get("tag_terms") or (DISASTER_TERMS + GEO_TERMS)) \
         + (kw.get("region_terms") or REGION_TERMS)
-    return [term for term in terms if term in hay]
+    # 본문은 "안전 훈련", "생성형 AI" 처럼 띄어 쓰는 일이 잦다. 띄어쓰기를 지운 사본과도
+    # 맞춰 보되, 태그로 붙는 값은 목록에 적힌 붙여 쓴 형태다(해시태그에 공백이 못 들어간다).
+    flat = hay.replace(" ", "")
+    return [term for term in terms
+            if term in hay or term.replace(" ", "") in flat]
 
 
 def _news_block(news):
