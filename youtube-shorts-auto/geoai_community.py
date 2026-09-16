@@ -5,14 +5,18 @@
 방식이고, 같은 약점을 가진다 — 화면이 바뀌면 셀렉터를 고쳐야 한다).
 
 작성기 구조(2026-09-16 확인):
-  · 본문   : light DOM 의 #contenteditable-root
-  · 이미지 : 숨은 input[type=file] (accept 에 image/jpeg 포함) — 클릭 대신 경로를 넣는다
-  · 게시   : shadow DOM 안 button[aria-label='게시']
+  · 접힌 작성기 : #placeholder-area 를 '진짜 마우스 클릭'으로 눌러야 펼쳐진다
+  · 본문       : 펼친 뒤의 #contenteditable-root 에 CDP Input.insertText 로 넣는다
+  · 게시       : shadow DOM 안 button[aria-label='게시']
+
+이미지는 붙이지 못한다. '이미지' 버튼이 OS 파일 선택창을 열고, input.click()/showPicker()
+가로채기도 드래그&드롭도 먹지 않았다(2026-09-16 확인). 대신 그날 쇼츠 링크를 본문에
+넣으면 유튜브가 영상 카드를 붙여 준다.
 셀렉터가 깨지면 실패 화면을 logs/ 에 남기고 조용히 포기한다(글 발행은 이미 끝난 뒤다).
 
 입력은 표준입력 JSON 이다(발행 파이프라인이 subprocess 로 부른다):
     {"title": "글 제목", "summary": "첫 줄 요약", "url": "글 주소",
-     "image": "배너 PNG 경로", "dry_run": true}
+     "video_url": "그날 쇼츠 주소(선택)", "dry_run": true}
 
 사용:
     echo '{"title":"...","url":"..."}' | python geoai_community.py        # 게시 안 함
@@ -65,22 +69,19 @@ const walk = (root, depth=0) => {
 return walk(document);
 """
 
-DEEP_FILE_INPUT = """
+DEEP_BY_ID = """
+const want = arguments[0];
 const walk = (root, depth=0) => {
-  if (depth > 12) return null;
+  if (depth > 14) return null;
   for (const el of root.querySelectorAll('*')) {
-    if (el.tagName === 'INPUT' && el.type === 'file' && (el.accept||'').includes('image/')) return el;
-    if (el.shadowRoot) { const r = walk(el.shadowRoot, depth+1); if (r) return r; }
+    if (el.id === want) { const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return el; }
+    if (el.shadowRoot) { const r2 = walk(el.shadowRoot, depth+1); if (r2) return r2; }
   }
   return null;
 };
-const el = walk(document);
-if (el) { el.style.display='block'; el.style.visibility='visible'; el.style.opacity=1;
-          el.style.position='fixed'; el.style.left='0'; el.style.top='0';
-          el.style.width='200px'; el.style.height='40px'; }
-return el;
+return walk(document);
 """
-
 
 def _click_at(driver, el):
     """요소 한가운데를 '진짜 마우스 클릭'으로 누른다.
@@ -110,7 +111,7 @@ def _ccfg(cfg=None):
     return (cfg or load_config()).get("community_post") or {}
 
 
-def post(text, image_path=None, dry_run=True, cfg=None):
+def post(text, dry_run=True, cfg=None):
     """게시물 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다."""
     cfg = cfg or load_config()
     c = _ccfg(cfg)
@@ -125,21 +126,29 @@ def post(text, image_path=None, dry_run=True, cfg=None):
             "Page.addScriptToEvaluateOnNewDocument",
             {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
         # 커뮤니티 탭 주소가 /community 에서 /posts 로 바뀌었다(2026-09 확인). 둘 다 시도한다.
-        box = None
+        placeholder = None
         for path in ("posts", "community"):
             driver.get(f"https://www.youtube.com/@{handle}/{path}")
             time.sleep(6)
-            box = driver.execute_script("return document.querySelector('#contenteditable-root');")
-            if box is not None:
+            placeholder = driver.execute_script(DEEP_BY_ID, "placeholder-area")
+            if placeholder is not None:
                 log(f"  작성기 찾음: /@{handle}/{path}")
                 break
-        if box is None:
+        if placeholder is None:
             _shot(driver, "no_composer")
             return {"error": "작성기를 찾지 못했습니다(로그인이 풀렸거나 화면이 바뀜)."}
+        # 작성기는 접혀 있다. 이 자리를 눌러야 입력란이 펼쳐진다(#contenteditable-root 는
+        # 펼치기 전까지 0x0 이라 클릭도 입력도 먹지 않는다).
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", placeholder)
+        time.sleep(1)
+        _click_at(driver, placeholder)
+        time.sleep(2)
+        box = driver.execute_script(DEEP_BY_ID, "contenteditable-root")
+        if box is None:
+            _shot(driver, "no_editor")
+            return {"error": "입력란이 펼쳐지지 않았습니다."}
         # 작성기는 접힌 상태라 Selenium 클릭이 막힌다(element not interactable).
         # 화면 안으로 올린 뒤 JS 로 펼치고, 글자는 CDP 로 직접 넣는다.
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", box)
-        time.sleep(1)
         _click_at(driver, box)
         driver.execute_cdp_cmd("Input.insertText", {"text": text})
         time.sleep(1)
@@ -148,18 +157,6 @@ def post(text, image_path=None, dry_run=True, cfg=None):
             _shot(driver, "typing_failed")
             return {"error": f"본문이 입력되지 않았습니다(입력된 글자 {len(typed)}자)."}
         log(f"  본문 입력 {len(typed)}자")
-
-        if image_path and os.path.exists(image_path):
-            inp = driver.execute_script(DEEP_FILE_INPUT)
-            if inp is None:
-                log("  이미지 input 을 찾지 못해 텍스트만 올립니다")
-            else:
-                inp.send_keys(os.path.abspath(image_path))
-                time.sleep(6)
-                save = driver.execute_script(DEEP_FIND, "이미지 저장")
-                if save is not None:            # 자르기 화면이 뜨면 저장까지 눌러 준다
-                    driver.execute_script("arguments[0].click();", save)
-                    time.sleep(4)
 
         if dry_run:
             _shot(driver, "dry")
@@ -170,8 +167,11 @@ def post(text, image_path=None, dry_run=True, cfg=None):
         if btn is None:
             _shot(driver, "no_post_button")
             return {"error": "게시 버튼을 찾지 못했습니다."}
-        driver.execute_script("arguments[0].click();", btn)
+        _click_at(driver, btn)
         time.sleep(8)
+        # 게시 직후 화면은 아직 목록을 다시 그리지 않는다 — 새로고침해서 확인한다.
+        driver.get(f"https://www.youtube.com/@{handle}/posts")
+        time.sleep(6)
         body = driver.execute_script("return document.body.innerText;") or ""
         ok = text.strip()[:VERIFY_CHARS] in body
         if not ok:
@@ -198,8 +198,9 @@ def text_for(post_data, cfg=None):
     elif s:
         summary = str(s[0]).strip()
     url = post_data.get("url", "")
+    video = post_data.get("video_url", "")     # 있으면 유튜브가 영상 카드로 펼쳐 준다
     tail = c.get("tail", "#GeoAI #재난안전 #생성형AI")
-    return "\n".join(x for x in [f"📝 {title}", summary, url, tail] if x)
+    return "\n".join(x for x in [f"📝 {title}", summary, url, video, tail] if x)
 
 
 if __name__ == "__main__":
@@ -210,6 +211,6 @@ if __name__ == "__main__":
             payload = json.loads(raw)
     dry = "--go" not in sys.argv
     text = payload.get("text") or text_for(payload)
-    result = post(text, payload.get("image"), dry_run=dry)
+    result = post(text, dry_run=dry)
     result["text"] = text
     print(json.dumps(result, ensure_ascii=False))

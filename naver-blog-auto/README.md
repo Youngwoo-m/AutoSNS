@@ -111,14 +111,18 @@
 - `--dry` 는 HeyGen 을 호출하지 않는다(크레딧이 나가므로 대본만 보여준다).
 
 ### 유튜브 게시물(커뮤니티)
-그날 글을 채널 '게시물' 탭에도 올린다 — 제목 + 한 줄 요약 + 링크 + 배너 이미지.
+그날 글을 채널 '게시물' 탭에도 올린다 — 제목 + 한 줄 요약 + 글 링크 + 그날 쇼츠 링크.
+이미지는 붙이지 못한다(유튜브가 '이미지' 버튼에서 OS 파일창을 열어 자동화가 막힌다 —
+input.click()/showPicker() 가로채기도 드래그&드롭도 안 됐다). 대신 쇼츠 주소를 본문에
+넣으면 유튜브가 영상 카드를 펼쳐 줘서 썸네일이 보인다.
 YouTube Data API 에는 게시물 작성 기능이 없어 **로그인 프로필을 쓴 브라우저 자동화**다
 (네이버 발행과 같은 방식·같은 약점 — 화면이 바뀌면 셀렉터를 고쳐야 한다).
 
 ```bash
 cd ~/devAPP/AutoSNS/youtube-shorts-auto
 ./.venv/bin/python geoai_community_login.py     # 최초 1회: 채널 계정으로 직접 로그인
-echo '{"title":"글 제목","url":"https://..."}' | ./.venv/bin/python geoai_community.py
+echo '{"title":"글 제목","url":"https://...","video_url":"https://youtu.be/..."}' \
+  | ./.venv/bin/python geoai_community.py        # --go 를 붙여야 실제 게시
 ```
 설정은 `youtube-shorts-auto/config.json` 의 `editions.geoai.community_post`
 (`enabled`·`handle`·`headless`·`tail`). 실패하면 `logs/community_*.png` 에 화면이 남고,
