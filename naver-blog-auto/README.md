@@ -136,6 +136,15 @@ echo '{"title":"글 제목","url":"https://...","video_url":"https://youtu.be/..
 (`enabled`·`handle`·`headless`·`tail`). 실패하면 `logs/community_*.png` 에 화면이 남고,
 블로그·영상 발행에는 영향을 주지 않는다.
 
+### 블로그 겉모습(Blogger 설정 — 저장소가 아니라 Blogger 에 저장된다)
+- **머리글 이미지**: `make_blog_header.py` 로 만든 배너를 공개 저장소에 올리고,
+  레이아웃 > 머리글 구성 > **이미지 URL 입력** 에 그 주소를 넣는다(이미지 위치는
+  '제목 및 설명 대신 이미지 표시' — 그림 안에 제목이 이미 있다).
+  현재 주소: `https://cdn.jsdelivr.net/gh/SMUDS-m/geoai-assets@main/brand/header_1.jpg`
+- **카드형 디자인**: 테마 > 맞춤설정 > 고급 > **CSS 추가** 에 `blog_theme.css` 내용을
+  넣는다(글 목록을 흰 카드로, 사이드바 위젯도 카드로, 날짜 헤더 숨김).
+  Blogger API 로는 테마를 못 바꿔 브라우저로 직접 넣어야 하고, 이 파일은 그 사본이다.
+
 ### 설정 (`config.json`)
 - `geoai.blog_id` / `geoai.url` — 대상 블로그
 - `geoai.brief_weekday` — 뉴스 브리핑 요일(0=월, 기본 1=화)

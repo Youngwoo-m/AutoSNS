@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+body,.post,.post-body,.widget,.sidebar,.comments,.title,.date-header,.post-title,.entry-title,h1,h2,h3,h4,p,li,td,blockquote,a{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif !important}
+.post-title,.entry-title,h1.title,h2.title,h3.title{font-weight:700 !important;letter-spacing:-.02em}
+.post-body{font-size:16px;line-height:1.8;word-break:keep-all}
+body{background:#eef1f5 !important}
+.content-outer,.content-fauxcolumn-outer,.fauxcolumn-outer,.region-inner{background:transparent !important;box-shadow:none !important}
+.main-outer,.content-inner{background:transparent !important;border:0 !important;box-shadow:none !important}
+.header-outer{background:transparent !important;background-image:none !important}
+.header-inner{padding:0 !important}
+.Header img{display:block;width:100%;height:auto;border-radius:14px}
+.tabs-outer,.tabs-inner .section:first-child{background:transparent !important;background-image:none !important}
+.date-header{display:none !important}
+.post-outer{background:#fff !important;border:1px solid #e3e8ef !important;border-radius:14px !important;
+ box-shadow:0 2px 10px rgba(11,28,58,.07) !important;padding:26px 28px !important;margin:0 0 22px !important}
+.post-outer:hover{box-shadow:0 6px 20px rgba(11,28,58,.12) !important;transition:box-shadow .2s}
+.post{background:transparent !important;border:0 !important;margin:0 !important;padding:0 !important}
+.post-title{margin:0 0 6px !important;font-size:22px !important;line-height:1.35 !important}
+.post-title a{color:#0b1c3a !important;text-decoration:none !important}
+.post-title a:hover{color:#1d4ed8 !important}
+.post-body img{border-radius:10px;max-width:100%;height:auto}
+.post-footer{border-top:1px solid #eef1f5 !important;margin-top:18px !important;padding-top:12px !important;
+ font-size:13px !important;color:#7b8794 !important}
+.jump-link a{display:inline-block;background:#0b1c3a;color:#fff !important;border-radius:999px;
+ padding:8px 18px;text-decoration:none !important;font-size:14px}
+.sidebar .widget{background:#fff !important;border:1px solid #e3e8ef !important;border-radius:14px !important;
+ padding:18px 20px !important;margin-bottom:18px !important;box-shadow:0 2px 10px rgba(11,28,58,.05) !important}
+.sidebar h2,.sidebar .title{font-size:15px !important;color:#0b1c3a !important;margin-bottom:10px !important}
+#blog-pager{margin:10px 0 30px}
+#blog-pager a{background:#fff;border:1px solid #e3e8ef;border-radius:999px;padding:9px 18px;
+ text-decoration:none !important;color:#0b1c3a !important}
+.footer-outer{background:transparent !important}
