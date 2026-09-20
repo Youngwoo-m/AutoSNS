@@ -106,12 +106,15 @@ S = [
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
 # 예전에 한 번에 몰아 올리다 계정이 API 게시 제한을 먹었다(2026-09-16).
 DAILY_LIMIT = int((cfg.get("blogger", {}) or {}).get("daily_limit", 1))
+# 한 번에 다 써버리면 저녁 브리핑 몫이 없다 — 이 실행에서 올릴 편수는 따로 묶는다.
+PER_RUN = int((cfg.get("blogger", {}) or {}).get("career_per_run", 1))
 GAP_SECONDS = 180        # 편 사이 간격
 
 svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
 bid = cfg["blogger"]["blog_id"]
 dry = "--dry" in sys.argv
 posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
+run_posted = 0                # 이번 실행에서 올린 편수
 have = {p["title"] for p in svc.posts().list(
     blogId=bid, maxResults=50, fetchBodies=False, fields="items(title)").execute().get("items", [])}
 
@@ -121,6 +124,9 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
         continue
     if posted >= DAILY_LIMIT:
         print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")
+        break
+    if run_posted >= PER_RUN:
+        print(f"이번 실행 몫({PER_RUN}편) 완료 — 나머지 한도는 브리핑 몫으로 남긴다")
         break
     if dry:
         print(f"[DRY] {n}/8 발행 예정: {full_title[:50]}")
@@ -145,7 +151,7 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
     try:
         r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
         _count_post()
-        posted += 1
+        posted += 1; run_posted += 1
         print(f"{n}/8 발행: {r['url']}")
     except Exception as e:
         print(f"{n}/8 실패(다음 실행에서 재시도): {str(e)[:110]}")
