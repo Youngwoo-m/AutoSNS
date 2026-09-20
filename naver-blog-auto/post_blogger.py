@@ -10,7 +10,9 @@
 중복 방지: 같은 제목의 글이 이미 있으면 올리지 않는다.
 """
 import html
+import json
 import os
+from datetime import datetime
 import re
 import urllib.parse
 
@@ -108,6 +110,31 @@ def build_html(data, cfg=None):
     return "\n".join(p for p in parts if p)
 
 
+POST_STATE = os.path.join(BASE_DIR, "blogger_post_state.json")
+
+
+def _today():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _posted_today():
+    """오늘 이 블로그에 API 로 올린 글 수."""
+    try:
+        with open(POST_STATE, encoding="utf-8") as f:
+            return int(json.load(f).get(_today(), 0))
+    except Exception:
+        return 0
+
+
+def _count_post():
+    """발행 기록 +1. 오늘 것만 남기고 옛 기록은 버린다."""
+    try:
+        with open(POST_STATE, "w", encoding="utf-8") as f:
+            json.dump({_today(): _posted_today() + 1}, f, ensure_ascii=False)
+    except Exception as e:
+        log(f"발행 횟수 기록 실패: {type(e).__name__}")
+
+
 def _already_posted(svc, blog_id, title):
     """같은 제목의 글이 이미 있으면 True(중복 발행 방지)."""
     try:
@@ -130,7 +157,13 @@ def publish(data, dry_run=False, cfg=None):
     if not blog_id:
         log("Blogger: blog_id 가 없어 건너뜀")
         return {"status": "no_blog_id"}
-    title = data.get("title", "재난안전 주간 브리핑")
+    # 하루 상한 — 짧은 시간에 여러 편을 올리다 계정이 API 게시 제한을 먹은 적이 있다
+    # (2026-09-16, 학과 계정). 기본 1편으로 묶는다.
+    limit = int(bcfg.get("daily_limit", 1))
+    if not dry_run and _posted_today() >= limit:
+        log(f"Blogger: 오늘 이미 {limit}편 올렸습니다 — 건너뜁니다")
+        return {"status": "daily_limit"}
+    title = data.get("title", "재난안전 브리핑")
     body = {
         "kind": "blogger#post",
         "title": title,
@@ -155,6 +188,7 @@ def publish(data, dry_run=False, cfg=None):
             log("Blogger: 같은 제목의 글이 이미 있어 건너뜀")
             return {"status": "duplicate"}
         r = svc.posts().insert(blogId=blog_id, body=body, isDraft=False).execute()
+        _count_post()
         log(f"Blogger 발행 완료: {r.get('url','')}")
         return {"status": "published", "url": r.get("url", "")}
     except Exception as e:
@@ -163,7 +197,7 @@ def publish(data, dry_run=False, cfg=None):
 
 
 if __name__ == "__main__":
-    import glob, json, sys
+    import glob, sys
     files = sorted(glob.glob(os.path.join(BASE_DIR, "posts", "*.json")))
     if not files:
         raise SystemExit("posts/*.json 이 없습니다.")
