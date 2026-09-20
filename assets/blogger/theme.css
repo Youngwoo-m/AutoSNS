@@ -82,3 +82,17 @@ body{ background:#fff; color:var(--smu-slate); }
   .post-body, .post-body p{ font-size:16px !important; }
   .post-title, .post-title a{ font-size:22px !important; }
 }
+
+/* 9) Contempo 배경 정리 — 회색은 body 가 아니라 헤더 뒤에 깔리는 '배경 사진' 레이어다
+      (.bg-photo 가 #eee, 그 위에 .bg-photo-overlay 가 검은 반투명). 둘 다 흰색으로 덮는다. */
+.bg-photo, .bg-photo-container, .bg-photo-overlay{
+  background:#fff !important; background-image:none !important;
+  opacity:1 !important; filter:none !important;
+}
+/* 본문 영역도 흰 바탕으로 통일 */
+body, .centered-top-container, .centered-bottom, .content-outer,
+.content-fauxcolumn-outer, #Blog1, .post-outer-container{ background:#fff !important; }
+.centered-top-container, .centered-bottom{ box-shadow:none !important; }
+
+/* 10) 테마 제작자 표기 숨김(하단 'Michael Elkan') */
+.credit-container, .theme-attribution{ display:none !important; }
