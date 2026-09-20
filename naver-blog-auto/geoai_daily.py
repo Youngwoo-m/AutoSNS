@@ -30,6 +30,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime
 
 from common import BASE_DIR, load_config, log, _deep_merge
@@ -97,6 +98,30 @@ def make_images(data, cfg, dry_run=False):
         log(f"이미지 업로드 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
         return []
 
+
+
+
+# launchd 가 정한 시각에는 아직 인터넷이 안 붙어 있을 때가 있다(2026-09-21 07:40 에
+# oauth2.googleapis.com 에 닿지 못해 그날 아침 글이 통째로 빠졌다). 한 번 실패했다고
+# 그 시간대를 버리지 않도록 잠시 기다렸다 다시 본다.
+CHECK_TRIES = 5
+CHECK_WAIT = 60          # 초. 5번이면 최대 4분쯤 기다린다
+
+
+def _posts_today_retry(cfg):
+    """오늘 올라간 글 제목 목록. 끝내 확인하지 못하면 None(그때만 중단한다)."""
+    for i in range(1, CHECK_TRIES + 1):
+        try:
+            from geoai_blogger import service, blog_id, posts_today
+            return posts_today(service(), blog_id(cfg))
+        except Exception as e:
+            last = f"{type(e).__name__}: {str(e)[:80]}"
+            if i < CHECK_TRIES:
+                log(f"GeoAI: 발행 여부 확인 실패({last}) — {CHECK_WAIT}초 뒤 "
+                    f"다시 시도합니다({i}/{CHECK_TRIES}).")
+                time.sleep(CHECK_WAIT)
+    log(f"GeoAI: 발행 여부를 {CHECK_TRIES}번 모두 확인하지 못했습니다({last}) — 중단합니다.")
+    return None
 
 
 def make_step_image(data, cfg, dry_run=False):
@@ -243,17 +268,14 @@ def main():
 
     if not dry and "--force" not in sys.argv:   # 하루 상한을 넘으면 멈춘다
         cap = max(int(_gcfg(cfg).get("posts_per_day", 1)), 1)
-        try:
-            from geoai_blogger import service, blog_id, posts_today
-            done = posts_today(service(), blog_id(cfg))
-            if len(done) >= cap:
-                log(f"GeoAI: 오늘 이미 {len(done)}편 발행됨(상한 {cap}) — {done[0][:50]} (건너뜀)")
-                return
-            if done:
-                log(f"GeoAI: 오늘 {len(done)}/{cap}편 발행됨 — 이어서 진행합니다.")
-        except Exception as e:
-            log(f"GeoAI: 오늘 발행 여부 확인 실패({type(e).__name__}: {str(e)[:80]}) — 중단합니다")
+        done = _posts_today_retry(cfg)
+        if done is None:                      # 끝내 확인하지 못했다
             raise SystemExit(1)
+        if len(done) >= cap:
+            log(f"GeoAI: 오늘 이미 {len(done)}편 발행됨(상한 {cap}) — {done[0][:50]} (건너뜀)")
+            return
+        if done:
+            log(f"GeoAI: 오늘 {len(done)}/{cap}편 발행됨 — 이어서 진행합니다.")
 
     log(f"===== GeoAI 블로그 {WEEKDAY_KR[wd]}요일 발행 시작({kind}) =====")
     from geoai_blogger import compose, publish
