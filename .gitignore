@@ -37,6 +37,9 @@ TikTok_업로드/
 *.jpg
 *.zip
 
+# 직접 찍은 화면 캡처는 손으로 만든 자산이라 남긴다(위 *.png/*.jpg 예외).
+!naver-blog-auto/shots/**
+
 # ── 실행 상태 파일(머신마다 다름) ────────────────────────────
 trigger_state.json
 title_history.json

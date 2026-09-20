@@ -20,6 +20,11 @@ TOKEN_PATH = os.path.join(BASE_DIR, "token_blogger_geoai.json")
 
 # 라벨 상한 — 문서엔 20개지만 실제로는 16개부터 400(invalid argument)이 떨어진다.
 LABEL_CAP = 15
+# 라벨은 개수뿐 아니라 '쉼표로 이은 전체 길이'에도 한계가 있다. 넘기면 Blogger 가
+# 400 invalid argument 를 낸다(2026-09-18·09-20 발행 실패의 원인). 실측으로
+# 213 바이트는 통과하고 221 바이트는 거부됐다 — 한글은 한 자가 3 바이트라
+# 15 개를 채우면 쉽게 넘는다. 여유를 두고 200 바이트로 자른다.
+LABEL_BYTES_CAP = 200
 
 
 def gcfg(cfg=None):
@@ -81,32 +86,72 @@ def _local_date(ts):
     return f"{d.astimezone():%Y-%m-%d}"
 
 
-def posted_today(svc, bid):
-    """오늘 이미 글이 올라갔으면 그 제목을 준다(하루 1편 원칙).
+def posts_today(svc, bid):
+    """오늘 올라간 글 제목을 모두 준다(최신 순).
 
-    launchd 가 밀린 실행을 몰아서 돌리거나 손으로 한 번 더 돌려도 두 편이 되지 않게 한다."""
-    r = svc.posts().list(blogId=bid, maxResults=5, fetchBodies=False,
+    launchd 가 밀린 실행을 몰아서 돌리거나 손으로 한 번 더 돌려도 하루 상한을
+    넘기지 않게 한다. 아침·저녁 2회 체제라 하루 여러 편이 정상이다."""
+    r = svc.posts().list(blogId=bid, maxResults=10, fetchBodies=False,
                          fields="items(title,published)").execute()
     today = f"{datetime.now():%Y-%m-%d}"
-    for i in r.get("items", []):
-        if _local_date(i.get("published")) == today:
-            return (i.get("title") or "").strip() or "(제목 없음)"
-    return ""
+    return [(i.get("title") or "").strip() or "(제목 없음)"
+            for i in r.get("items", [])
+            if _local_date(i.get("published")) == today]
 
 
-def merge_labels(topical, cfg=None):
-    """주제 라벨 + 지역/브랜드 라벨을 15개 상한 안에서 합친다.
+def posted_today(svc, bid):
+    """오늘 올라간 글이 있으면 가장 최근 제목(없으면 빈 문자열)."""
+    t = posts_today(svc, bid)
+    return t[0] if t else ""
 
-    지역 태그는 '모든 게시물에 항상' 규칙이라 뒤쪽 자리를 미리 비워 두고 채운다
-    (주제 태그가 많아도 지역 태그가 밀려 사라지지 않게)."""
+
+
+def has_label(svc, bid, label):
+    """그 라벨이 붙은 글이 블로그에 이미 있나. 카테고리 첫 글을 가려내는 데 쓴다."""
+    if not label:
+        return True
+    r = svc.posts().list(blogId=bid, labels=label, maxResults=1,
+                         fetchBodies=False, fields="items(title)").execute()
+    return bool(r.get("items"))
+
+
+def merge_labels(topical, cfg=None, pinned=()):
+    """주제 라벨 + 카테고리 + 지역/브랜드 라벨을 상한 안에서 합친다.
+
+    지역 태그와 카테고리는 '모든 게시물에 항상' 규칙이라 뒤쪽 자리를 미리 비워 두고
+    채운다(주제 태그가 많아도 밀려 사라지지 않게). 카테고리가 빠지면 그 글은 카테고리
+    메뉴에서 사라지므로, 개수·길이 어느 쪽으로도 잘리지 않아야 한다."""
     cfg = cfg or load_config()
     g = gcfg(cfg)
     local = [t for t in (g.get("local_tags") or cfg.get("local_tags") or []) if t]
     local = list(dict.fromkeys(local))[:4]
-    room = max(LABEL_CAP - len(local), 0)
+    pin = [t.strip() for t in (pinned or []) if t and t.strip()]
+    pin = [t for t in dict.fromkeys(pin) if t not in local]
+    tail = pin + local                      # 끝까지 지키는 자리
+    room = max(LABEL_CAP - len(tail), 0)
     top = [t for t in dict.fromkeys(t.strip() for t in (topical or []) if t and t.strip())
-           if t not in local][:room]
-    return (top + local)[:LABEL_CAP]
+           if t not in tail][:room]
+    return _fit_bytes((top + tail)[:LABEL_CAP], len(tail))
+
+
+def _fit_bytes(labels, keep_tail):
+    """쉼표로 이은 길이가 상한을 넘으면 주제 라벨을 뒤에서부터 덜어낸다.
+
+    뒤쪽 keep_tail 개는 지역·브랜드 라벨이라 마지막까지 남긴다(그것만으로도
+    넘치면 그때는 지역 라벨도 줄인다)."""
+    def size(ls):
+        return len(",".join(ls).encode("utf-8"))
+    out = list(labels)
+    cut = len(out) - keep_tail          # 주제 라벨의 끝 경계
+    while size(out) > LABEL_BYTES_CAP and cut > 0:
+        cut -= 1
+        del out[cut]
+    while size(out) > LABEL_BYTES_CAP and out:
+        out.pop()
+    if len(out) < len(labels):
+        log(f"라벨 길이 상한({LABEL_BYTES_CAP}바이트)에 맞춰 "
+            f"{len(labels)}개 → {len(out)}개로 줄였습니다.")
+    return out
 
 
 def channel_links_html(cfg=None):
@@ -161,14 +206,14 @@ def compose(body_html, images=(), video_id="", cfg=None, title=""):
     return "\n".join(p for p in parts if p)
 
 
-def publish(title, html_body, labels, dry_run=False, cfg=None):
+def publish(title, html_body, labels, dry_run=False, cfg=None, pinned=()):
     """GeoAI 블로그에 글 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다."""
     cfg = cfg or load_config()
     g = gcfg(cfg)
     if not g.get("enabled", False):
         return {"status": "disabled"}
     body = {"kind": "blogger#post", "title": title, "content": html_body,
-            "labels": merge_labels(labels, cfg)}
+            "labels": merge_labels(labels, cfg, pinned=pinned)}
     loc = g.get("location") or {}
     if loc.get("name"):
         body["location"] = {k: v for k, v in loc.items() if v is not None}

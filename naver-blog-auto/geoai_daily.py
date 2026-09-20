@@ -98,6 +98,31 @@ def make_images(data, cfg, dry_run=False):
         return []
 
 
+
+def make_step_image(data, cfg, dry_run=False):
+    """따라하기 단계를 그린 도식 PNG 를 올리고 CDN 주소를 준다. 없거나 실패하면 ""."""
+    if not data.get("howto"):
+        return ""
+    try:
+        from geoai_steps import make_steps
+        path = make_steps(data, cfg)
+    except Exception as e:
+        log(f"따라하기 도식 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        return ""
+    if not path:
+        return ""
+    if dry_run:
+        log(f"[DRY] 따라하기 도식 생성됨(업로드 안 함): {path}")
+        return ""
+    try:
+        from geoai_assets import upload
+        urls = upload([path], f"{datetime.now():%Y/%m/steps_%Y%m%d_%H%M%S}", cfg)
+        return urls[0] if urls else ""
+    except Exception as e:
+        log(f"따라하기 도식 업로드 건너뜀(글은 정상): {type(e).__name__}: {str(e)[:120]}")
+        return ""
+
+
 def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
     """AI 아나운서 영상을 만들어 유튜브에 올리고 video_id 를 돌려준다.
 
@@ -216,13 +241,16 @@ def main():
               f" / 영상: {_video_style(cfg, sys.argv) or '없음'}")
         return
 
-    if not dry and "--force" not in sys.argv:   # 오늘 이미 올라간 글이 있으면 멈춘다
+    if not dry and "--force" not in sys.argv:   # 하루 상한을 넘으면 멈춘다
+        cap = max(int(_gcfg(cfg).get("posts_per_day", 1)), 1)
         try:
-            from geoai_blogger import service, blog_id, posted_today
-            t = posted_today(service(), blog_id(cfg))
-            if t:
-                log(f"GeoAI: 오늘 이미 발행됨 — {t[:50]} (건너뜀)")
+            from geoai_blogger import service, blog_id, posts_today
+            done = posts_today(service(), blog_id(cfg))
+            if len(done) >= cap:
+                log(f"GeoAI: 오늘 이미 {len(done)}편 발행됨(상한 {cap}) — {done[0][:50]} (건너뜀)")
                 return
+            if done:
+                log(f"GeoAI: 오늘 {len(done)}/{cap}편 발행됨 — 이어서 진행합니다.")
         except Exception as e:
             log(f"GeoAI: 오늘 발행 여부 확인 실패({type(e).__name__}: {str(e)[:80]}) — 중단합니다")
             raise SystemExit(1)
@@ -247,14 +275,34 @@ def main():
         if data is None:
             log("올릴 글이 없습니다(시리즈 소진).")
             return
-        body = series_html(data, cfg, with_links=False)
+        step_url = make_step_image(data, cfg, dry_run=dry)
+        # 사람이 찍어 둔 실제 화면 캡처가 shots/<slug>/ 에 있으면 그것을 쓴다(도식보다 앞선다).
+        shots = {"cover": "", "steps": {}}
+        if not dry and topic:
+            from geoai_shots import upload_for
+            shots = upload_for(topic[0], cfg, steps=data.get("howto"))
+        body = series_html(data, cfg, with_links=False,
+                           step_image=step_url, shots=shots)
 
     images = make_images(data, cfg, dry_run=dry)
     style = _video_style(cfg, sys.argv)
     video = make_video(data, cfg, dry_run=dry, style=style) if style else {}
     html = compose(body, images, video.get("video_id", ""), cfg, data.get("title", ""))
     labels = data.get("tags", []) + (list(topic[3]) if topic else [])
-    r = publish(data["title"], html, labels, dry_run=dry, cfg=cfg)
+    # 카테고리는 글마다 하나씩 반드시 붙는다(라벨 가젯이 카테고리 메뉴 구실을 한다).
+    from geoai_series import category_of
+    category = category_of(topic[0]) if topic else ""
+    pinned = [category] if category else []
+    # 이 카테고리의 첫 글인가 — Blogger 의 '선택한 라벨' 목록은 고정이라, 새 카테고리가
+    # 생기면 사람이 라벨 가젯에 직접 체크해 줘야 메뉴에 뜬다. 그래서 알려 준다.
+    first_of_category = False
+    if category and not dry:
+        try:
+            from geoai_blogger import service, blog_id, has_label
+            first_of_category = not has_label(service(), blog_id(cfg), category)
+        except Exception as e:
+            log(f"카테고리 첫 글 여부 확인 실패(무시): {type(e).__name__}")
+    r = publish(data["title"], html, labels, dry_run=dry, cfg=cfg, pinned=pinned)
     r["kind"], r["title"] = kind, data["title"]
     if r.get("status") == "published" and topic:
         mark_posted(topic, data, r.get("url", ""))
@@ -265,12 +313,20 @@ def main():
         post_community(data, r.get("url", ""), cfg, dry_run=dry,
                        video_url=video.get("url", ""))
 
+    if not dry and r.get("status") == "published" and first_of_category:
+        log(f"★ '{category}' 카테고리의 첫 글입니다 — Blogger 레이아웃 > 카테고리(라벨 "
+            f"가젯) > 수정 에서 '{category}'를 체크해야 메뉴에 나타납니다.")
+
     if not dry and r.get("status") == "published":
         try:                                          # 카톡 알림(실패 무시)
             from kakao_notify import notify
-            notify(f"[GeoAI 블로그 발행] {kind}\n{data.get('title','')}"
-                   + (f"\n영상: {video.get('url','')}" if video.get("url") else ""),
-                   r.get("url") or _gcfg(cfg).get("url", ""))
+            msg = (f"[GeoAI 블로그 발행] {kind}\n{data.get('title','')}"
+                   + (f"\n영상: {video.get('url','')}" if video.get("url") else ""))
+            if first_of_category:
+                msg += (f"\n\n★ '{category}' 카테고리 첫 글입니다.\n"
+                        f"Blogger 레이아웃 > 카테고리 가젯 > 수정 에서 "
+                        f"'{category}'를 체크해 주세요(안 하면 메뉴에 안 뜹니다).")
+            notify(msg, r.get("url") or _gcfg(cfg).get("url", ""))
         except Exception as e:
             log(f"카톡 알림 건너뜀: {type(e).__name__}")
     if dry:
