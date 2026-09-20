@@ -94,8 +94,9 @@ body, .centered-top-container, .centered-bottom, .content-outer,
 .content-fauxcolumn-outer, #Blog1, .post-outer-container{ background:#fff !important; }
 .centered-top-container, .centered-bottom{ box-shadow:none !important; }
 
-/* 10) 테마 제작자 표기 숨김(하단 'Michael Elkan') */
-.credit-container, .theme-attribution{ display:none !important; }
+/* 10) 테마 제작자 표기 숨김 — 실제 클래스는 .image-attribution 이다
+       ('테마 이미지 제공: Michael Elkan'). .credit-container 는 이 테마에 없었다. */
+.image-attribution, .credit-container, .theme-attribution{ display:none !important; }
 
 /* 11) 작성자 프로필 숨김 — 학과 블로그인데 글쓴이 개인 계정명(GEOAI_NA)이 노출된다.
        레이아웃에서 끄려 했으나 반영되지 않아 CSS 로 가린다. */
