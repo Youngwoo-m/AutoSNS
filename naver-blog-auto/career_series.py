@@ -12,12 +12,12 @@ import sys
 import time
 
 from googleapiclient.discovery import build
-from post_blogger import _creds, _esc, _url
+from post_blogger import _count_post, _creds, _esc, _posted_today, _url
 from common import load_config
 
 cfg = load_config()
 LINKS = (cfg.get("blogger", {}) or {}).get("links") or []
-HUB = "https://smusafety.blogspot.com/2026/09/8.html"
+HUB = "https://smuds2026.blogspot.com/search/label/%EC%9E%AC%EB%82%9C%EC%95%88%EC%A0%84%ED%95%99%EA%B3%BC%EC%A7%84%EB%A1%9C"  # 라벨 목록
 
 # (영상ID, 제목, 요약3줄, 본문 문단들, FAQ, 라벨)
 S = [
@@ -103,13 +103,15 @@ S = [
   ["스마트재난", "디지털트윈", "진로탐색"]),
 ]
 
-DAILY_LIMIT = 2          # 하루 발행 편수(남용 차단 회피)
+# 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
+# 예전에 한 번에 몰아 올리다 계정이 API 게시 제한을 먹었다(2026-09-16).
+DAILY_LIMIT = int((cfg.get("blogger", {}) or {}).get("daily_limit", 1))
 GAP_SECONDS = 180        # 편 사이 간격
 
 svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
 bid = cfg["blogger"]["blog_id"]
 dry = "--dry" in sys.argv
-posted = 0
+posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
 have = {p["title"] for p in svc.posts().list(
     blogId=bid, maxResults=50, fetchBodies=False, fields="items(title)").execute().get("items", [])}
 
@@ -132,7 +134,7 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
              'gyroscope; picture-in-picture" allowfullscreen></iframe></p>')
     P.append("<h3>❓ 자주 묻는 질문</h3>" + "".join(
         f"<p>Q. {_esc(q)}<br>A. {_esc(a)}</p>" for q, a in faq))
-    P.append(f'<p>👉 <a href="{HUB}">진로 8가지를 한 번에 보려면 여기</a>에서 전체 시리즈를 확인하세요.</p>')
+    P.append(f'<p>👉 <a href="{HUB}">진로 시리즈 전체 보기</a></p>')
     P.append("<hr><p>세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요.</p>"
              "<p><strong>📌 채널 바로가기</strong></p><ul>" + "".join(
         f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">{_esc(l["label"])}</a></li>'
@@ -142,6 +144,7 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
             "location": cfg["blogger"]["location"]}
     try:
         r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
+        _count_post()
         posted += 1
         print(f"{n}/8 발행: {r['url']}")
     except Exception as e:
@@ -149,5 +152,5 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
         break          # 403·429 면 더 두드리지 않는다
     time.sleep(GAP_SECONDS)
 
-if posted == 0:
-    print("남은 편이 없습니다(8편 모두 발행 완료).")
+if posted == _posted_today() and not dry:
+    print("이번 실행에서 올린 글 없음(한도 소진 또는 남은 편 없음).")
