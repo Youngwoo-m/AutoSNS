@@ -136,3 +136,13 @@ python3 -m venv .venv
 ## 라이선스
 
 MIT
+
+## 개발 환경 복구
+
+용량 확보를 위해 `.venv` 를 지워 두었다(2026-09-17). 다시 쓸 때는:
+
+    cd insta-manual
+    python3 -m venv .venv
+    ./.venv/bin/python -m pip install -r requirements.txt
+
+크롬 로그인 프로필(`chrome-profile/`)은 그대로 두었으므로 재로그인은 필요 없다.

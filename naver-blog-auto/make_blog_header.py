@@ -7,7 +7,7 @@
 배경 파일 경로(BG)만 바꿔서 다시 돌리면 헤더를 새로 뽑을 수 있다.
 """
 import os, sys, time
-sys.path.insert(0, "/Users/youngwoo/devAPP/AutoSNS/naver-blog-auto")
+sys.path.insert(0, "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto")
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By

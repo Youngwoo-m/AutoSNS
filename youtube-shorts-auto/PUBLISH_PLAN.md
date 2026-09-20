@@ -98,15 +98,15 @@
 ### 수동 조작
 ```bash
 # 인스타 세션·업로드 플로우 점검(브라우저를 열어 '공유하기' 직전까지, 실제 게시 안 함)
-cd /Users/youngwoo/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --ig-test --now
+cd /Volumes/USB256/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --ig-test --now
 ```
 ```bash
 # 다음 편을 지금 즉시 발행(유튜브+인스타). 유튜브만: 뒤에 --no-ig
-cd /Users/youngwoo/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --now
+cd /Volumes/USB256/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --now
 ```
 ```bash
 # 무엇이 어디로 올라갈지 미리보기(업로드 안 함)
-cd /Users/youngwoo/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --dry --now
+cd /Volumes/USB256/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python publish_career.py --dry --now
 ```
 ```bash
 # 자동 발행 잠시 끄기 / 다시 켜기
