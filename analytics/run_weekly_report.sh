@@ -8,6 +8,12 @@ ROOT="$(cd .. && pwd)"
 TODAY="${1:-$(date +%Y-%m-%d)}"
 SINCE="2026-03-01"
 
+echo "== 네트워크 확인 =="
+if ! ./wait_network.sh; then
+  echo "!! 네트워크가 없어 수집을 건너뛴다. 이번 회차는 발송하지 않는다."
+  exit 1
+fi
+
 echo "== 수집 시작 ($TODAY) =="
 "$ROOT/youtube-shorts-auto/.venv/bin/python" collect_youtube.py || echo "!! 유튜브 수집 실패 — 직전 결과로 진행"
 python3 collect_web.py "$SINCE"                                 || echo "!! 블로그·홈페이지 수집 실패 — 직전 결과로 진행"

@@ -19,6 +19,7 @@ import os
 import re
 import smtplib
 import sys
+import time
 from email.header import Header
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -88,13 +89,26 @@ def build_message(html_path, subject, cfg, attachments=None):
     return msg, files
 
 
-def send(html_path, subject, cfg=None, attachments=None):
-    """attachments: 첨부할 파일 경로 목록(없는 파일은 건너뛴다)."""
+def send(html_path, subject, cfg=None, attachments=None, tries=3):
+    """attachments: 첨부할 파일 경로 목록(없는 파일은 건너뛴다).
+
+    절전 해제 직후처럼 네트워크가 덜 올라온 때를 대비해 몇 번 다시 시도한다.
+    인증 오류(앱 비밀번호 문제)는 다시 걸어도 소용없으므로 바로 올린다."""
     cfg = cfg or load_config()
     msg, files = build_message(html_path, subject, cfg, attachments)
-    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as s:
-        s.login(cfg["sender"], cfg["app_password"])
-        s.sendmail(cfg["sender"], cfg["to"], msg.as_string())
+    for attempt in range(1, tries + 1):
+        try:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as s:
+                s.login(cfg["sender"], cfg["app_password"])
+                s.sendmail(cfg["sender"], cfg["to"], msg.as_string())
+            break
+        except smtplib.SMTPAuthenticationError:
+            raise
+        except Exception as e:
+            if attempt == tries:
+                raise
+            log(f"발송 실패({type(e).__name__}) — {attempt}/{tries}, 60초 뒤 다시 시도한다")
+            time.sleep(60)
     log(f"메일 발송: {cfg['sender']} → {', '.join(cfg['to'])} / {subject}"
         + (f" (첨부 {len(files)}개)" if files else ""))
     return {"status": "sent", "to": cfg["to"], "from": cfg["sender"], "attachments": len(files)}

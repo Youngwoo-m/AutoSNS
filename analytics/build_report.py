@@ -30,6 +30,13 @@ def merge():
     if yt.get("degraded") == "quota":
         warn.append("유튜브 Data API 하루 할당량이 바닥나 RSS 로 받았습니다. "
                     "발행 목록은 정확하지만 조회수·구독자는 지난 집계 값입니다.")
+    for part, label in [(yt, "유튜브"), (ig, "인스타그램"), (bl, "네이버 블로그"), (sm, "학과 홈페이지")]:
+        its = part.get("items") or []
+        if its:
+            newest = max(x["date"] for x in its)
+            if newest < (datetime.now() - timedelta(days=8)).strftime("%Y-%m-%d"):
+                warn.append(f"{label} 수집이 {newest} 에서 멈춰 있습니다. "
+                            "이번 집계에 최근 발행분이 빠졌을 수 있습니다.")
     if ig.get("skipped"):
         warn.append("인스타그램 세션이 만료되어 이번 수치가 빠져 있습니다. "
                     "크롬 프로필로 다시 로그인해 주세요.")
