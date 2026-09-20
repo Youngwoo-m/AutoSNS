@@ -21,19 +21,28 @@ from googleapiclient.discovery import build
 from common import BASE_DIR, load_config, log
 
 SCOPES = ["https://www.googleapis.com/auth/blogger"]
-TOKEN_PATH = os.path.join(BASE_DIR, "token_blogger.json")
+# 어느 구글 계정으로 올릴지는 config.blogger.token_file 이 정한다.
+# (학과 계정은 2026-09-20 부터 API 신규 게시가 403 으로 막혀, 게시가 되는 계정 토큰을 쓴다.
+#  블로그 소유는 그대로 학과 블로그이고, 글쓴이 계정만 다르다.)
+DEFAULT_TOKEN = "token_blogger.json"
 CLIENT_SECRET = os.path.join(os.path.dirname(BASE_DIR), "youtube-shorts-auto",
                              "client_secret.json")
 
 
-def _creds():
-    if not os.path.exists(TOKEN_PATH):
+def _token_path(cfg=None):
+    name = ((cfg or load_config()).get("blogger", {}) or {}).get("token_file", DEFAULT_TOKEN)
+    return os.path.join(BASE_DIR, name)
+
+
+def _creds(cfg=None):
+    path = _token_path(cfg)
+    if not os.path.exists(path):
         raise RuntimeError(
-            "Blogger 토큰이 없습니다 — python blogger_auth_setup.py 로 최초 인증이 필요합니다.")
-    c = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+            f"Blogger 토큰이 없습니다({os.path.basename(path)}) — 해당 계정으로 1회 인증이 필요합니다.")
+    c = Credentials.from_authorized_user_file(path, SCOPES)
     if not c.valid and c.expired and c.refresh_token:
         c.refresh(Request())
-        with open(TOKEN_PATH, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(c.to_json())
         log("Blogger 토큰 자동 갱신됨.")
     return c
@@ -141,7 +150,7 @@ def publish(data, dry_run=False, cfg=None):
             f"라벨 {len(body['labels'])}개)")
         return {"status": "dry_run", "html_len": len(body["content"])}
     try:
-        svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
+        svc = build("blogger", "v3", credentials=_creds(cfg), cache_discovery=False)
         if _already_posted(svc, blog_id, title):
             log("Blogger: 같은 제목의 글이 이미 있어 건너뜀")
             return {"status": "duplicate"}

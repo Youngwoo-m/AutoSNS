@@ -9,7 +9,9 @@ import os
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-from post_blogger import CLIENT_SECRET, SCOPES, TOKEN_PATH
+from post_blogger import CLIENT_SECRET, SCOPES, _token_path
+
+TOKEN_PATH = _token_path()
 
 if not os.path.exists(CLIENT_SECRET):
     raise SystemExit(f"client_secret.json 을 찾을 수 없습니다: {CLIENT_SECRET}")
