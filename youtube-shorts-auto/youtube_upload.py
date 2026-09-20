@@ -128,6 +128,12 @@ def _build_description(data, cfg):
         # 라벨은 채널마다 다르다(학과 채널=학과 홈페이지, GeoAI 채널=블로그).
         parts.append(f'{ycfg.get("homepage_label", "🏫 세명대학교 재난안전학과")}: {homepage}')
 
+    # 다른 채널로 보내는 줄 — Shorts 피드로 들어온 시청자는 채널을 인지하지 못한 채
+    # 지나간다(유입의 86%가 Shorts 피드). 설명에서 다시 만날 길을 준다.
+    for ln in (ycfg.get("channel_links") or []):
+        if (ln.get("url") or "").strip():
+            parts.append(f"{ln.get('label','').strip()}: {ln['url'].strip()}")
+
     # AI 아나운서 영상이면 합성 콘텐츠 고지를 자동 삽입(YouTube 정책 준수)
     if data.get("ai_disclosure"):
         parts.append("")
