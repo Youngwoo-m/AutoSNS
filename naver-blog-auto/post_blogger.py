@@ -163,16 +163,20 @@ def publish(data, dry_run=False, cfg=None):
     if not dry_run and _posted_today() >= limit:
         log(f"Blogger: 오늘 이미 {limit}편 올렸습니다 — 건너뜁니다")
         return {"status": "daily_limit"}
+    # 대표 라벨: 에디션별 blogger_category(없으면 blogger.category)
+    max_labels = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
+    cat = (cfg.get("blogger_category")
+           or (cfg.get("blogger", {}) or {}).get("category", "재난안전뉴스"))
     title = data.get("title", "재난안전 브리핑")
     body = {
         "kind": "blogger#post",
         "title": title,
         "content": build_html(data, cfg),
         # 라벨(=태그)은 Blogger 검색·분류에 쓰인다. 지역 태그가 항상 포함되도록 앞에 둔다.
-        # 라벨 상한 — 문서엔 20개라고 되어 있으나 실제로는 16개부터 400(invalid argument)이
-        # 떨어진다(15개는 정상). 안전하게 15개로 자른다.
-        "labels": list(dict.fromkeys(
-            (cfg.get("local_tags") or []) + (data.get("tags") or [])))[:15],
+        # 라벨 = Blogger 의 카테고리 역할. 대표 라벨 + 소수의 주제어만 넣는다.
+        # 15개씩 달면 사이드바가 카테고리 메뉴가 아니라 태그 구름이 되어 쓸모가 없다.
+        # (상한은 문서상 20개지만 실제로는 16개부터 400 이 떨어진다)
+        "labels": list(dict.fromkeys([cat] + (data.get("tags") or [])))[:max_labels],
     }
     # 글 위치(제천) — 지역 검색·지역 관련성에 쓰이도록 모든 글에 같은 위치를 붙인다.
     loc = bcfg.get("location") or {}

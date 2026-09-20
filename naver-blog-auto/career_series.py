@@ -145,7 +145,10 @@ for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
              "<p><strong>📌 채널 바로가기</strong></p><ul>" + "".join(
         f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">{_esc(l["label"])}</a></li>'
         for l in LINKS) + "</ul>")
-    labels = list(dict.fromkeys((cfg.get("local_tags") or []) + tags + ["재난안전학과진로"]))[:15]
+    # 대표 라벨('진로')을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
+    # 대표 라벨('진로') + 주제어 몇 개만 — 사이드바가 카테고리 메뉴로 읽히게 한다
+    maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
+    labels = list(dict.fromkeys(["진로"] + tags))[:maxn]
     body = {"title": full_title, "content": "\n".join(P), "labels": labels,
             "location": cfg["blogger"]["location"]}
     try:
