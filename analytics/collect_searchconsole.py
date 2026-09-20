@@ -20,7 +20,9 @@ SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
 BASE = os.path.dirname(os.path.abspath(__file__))
 TOKEN_PATH = os.path.join(BASE, "token_searchconsole.json")
 CLIENT_SECRET = os.path.join(os.path.dirname(BASE), "youtube-shorts-auto", "client_secret.json")
-SITE_URL = "https://smusafety.blogspot.com/"
+# 학과 블로그. 2026-09-20 에 smusafety → smuds2026 으로 옮겼다
+# (학과 계정이 API 게시 제한에 걸려 블로그를 새로 만들었다).
+SITE_URL = "https://smuds2026.blogspot.com/"
 DAYS = 28            # 서치콘솔은 2~3일 지연이 있어 넉넉히 본다
 TOP_N = 20
 
