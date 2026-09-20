@@ -173,9 +173,9 @@ def publish(data, dry_run=False, cfg=None):
         "title": title,
         "content": build_html(data, cfg),
         # 라벨(=태그)은 Blogger 검색·분류에 쓰인다. 지역 태그가 항상 포함되도록 앞에 둔다.
-        # 라벨 = Blogger 의 카테고리 역할. 대표 라벨 + 소수의 주제어만 넣는다.
-        # 15개씩 달면 사이드바가 카테고리 메뉴가 아니라 태그 구름이 되어 쓸모가 없다.
-        # (상한은 문서상 20개지만 실제로는 16개부터 400 이 떨어진다)
+        # 라벨 = Blogger 의 카테고리. 기본값(max_labels=1)이면 대표 카테고리 하나만 단다
+        # — 사이드바 라벨 위젯을 카테고리 메뉴로 쓰기 위해서다. 주제어를 섞으면 가나다순
+        # 정렬에서 카테고리와 태그가 뒤엉켜 메뉴 구실을 못 한다.
         "labels": list(dict.fromkeys([cat] + (data.get("tags") or [])))[:max_labels],
     }
     # 글 위치(제천) — 지역 검색·지역 관련성에 쓰이도록 모든 글에 같은 위치를 붙인다.
