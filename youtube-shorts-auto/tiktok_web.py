@@ -203,12 +203,22 @@ def upload(video, caption, post=False):
 
 
 def _latest():
-    """가장 최근 대본 json 과 그 영상을 돌려준다."""
-    files = sorted(f for f in os.listdir(POSTS_DIR) if f.endswith(".json"))
-    if not files:
-        raise SystemExit("먼저 파이프라인을 실행해 영상을 만드세요.")
-    with open(os.path.join(POSTS_DIR, files[-1]), encoding="utf-8") as f:
-        return json.load(f)
+    """영상이 실제로 렌더링된 것 중 가장 최근 대본 json 을 돌려준다.
+
+    대본만 만들어지고 렌더링 전인 json 이 맨 뒤에 올 수 있으므로(그날 아침 파이프라인
+    중간 상태), video 가 비었거나 파일이 없는 건 건너뛴다.
+
+    파일명 정렬은 쓰지 않는다 — 재난안전판(20260921_...)과 GeoAI판(geoai_20260921_...)이
+    이름 규칙이 달라 사전순으로는 시간 순서가 뒤집힌다. 수정시각으로 고른다.
+    """
+    paths = [os.path.join(POSTS_DIR, f) for f in os.listdir(POSTS_DIR) if f.endswith(".json")]
+    for path in sorted(paths, key=os.path.getmtime, reverse=True):
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        v = data.get("video")
+        if v and os.path.exists(v):
+            return data
+    raise SystemExit("렌더링된 영상이 있는 대본을 찾지 못했습니다.")
 
 
 def build_caption(data, cfg):
