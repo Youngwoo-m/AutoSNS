@@ -65,3 +65,6 @@ naver-blog-auto/token_blogger_geoai.json
 naver-blog-auto/geoai_state.json
 youtube-shorts-auto/token_youtube_geoai.json
 youtube-shorts-auto/chrome-profile-youtube/
+
+# Local Netlify folder
+.netlify

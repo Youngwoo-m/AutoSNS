@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>재난안전과 GeoAI</title>
+<meta name="description" content="공간정보와 인공지능을 재난안전 업무에 쓰는 방법을 쉽게 정리합니다">
+<meta property="og:title" content="재난안전과 GeoAI">
+<meta property="og:description" content="공간정보와 인공지능을 재난안전 업무에 쓰는 방법을 쉽게 정리합니다">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/SMUDS-m/geoai-assets@main/brand/header_1.jpg">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://geoai-na.netlify.app/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --ink:#16212e; --muted:#5b6b7d;
+    --line:#e2e8f0; --brand:#0e5a6b; --brand-deep:#0b1c3a; --accent:#7fd3e0;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4;
+      --line:#233040; --brand:#7fd3e0; --brand-deep:#0b1c3a; --accent:#7fd3e0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4;
+    --line:#233040; --brand:#7fd3e0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;
+    line-height:1.75; word-break:keep-all;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 16px}
+  a{color:inherit}
+
+  /* 머리 */
+  header{
+    background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 60%,#0e5a6b 100%);
+    color:#fff; padding:56px 0 48px; text-align:center;
+  }
+  header img{max-width:100%; height:auto; border-radius:14px; display:block; margin:0 auto 26px}
+  header h1{font-size:clamp(28px,6vw,42px); margin:0 0 10px; letter-spacing:-.02em}
+  header p{margin:0; font-size:clamp(15px,3.4vw,18px); opacity:.85}
+
+  /* 공통 */
+  section{padding:48px 0}
+  h2{font-size:clamp(20px,4.6vw,25px); margin:0 0 6px; letter-spacing:-.01em}
+  .sub{color:var(--muted); margin:0 0 24px; font-size:15px}
+
+  /* 카테고리 */
+  .cats{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+  .cat{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:20px; text-decoration:none; display:block; transition:transform .15s, border-color .15s;
+  }
+  .cat:hover{transform:translateY(-2px); border-color:var(--brand)}
+  .cat .n{font-size:13px; color:var(--brand); font-weight:700; letter-spacing:.04em}
+  .cat h3{margin:6px 0 6px; font-size:18px}
+  .cat p{margin:0; color:var(--muted); font-size:14px; line-height:1.6}
+
+  /* 최신 글 */
+  .posts{display:grid; gap:12px}
+  .post{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; text-decoration:none; display:block;
+  }
+  .post:hover{border-color:var(--brand)}
+  .post .meta{font-size:13px; color:var(--muted)}
+  .post .t{margin:4px 0 0; font-weight:500; font-size:16.5px; line-height:1.5}
+  .tag{
+    display:inline-block; font-size:12px; color:var(--brand);
+    border:1px solid var(--line); border-radius:999px; padding:1px 9px; margin-left:6px;
+    vertical-align:1px;
+  }
+  .state{color:var(--muted); font-size:15px; padding:8px 0}
+
+  /* 링크 */
+  .links{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .link{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; text-decoration:none; font-weight:500;
+  }
+  .link:hover{border-color:var(--brand)}
+  .link span{display:block; color:var(--muted); font-weight:400; font-size:13.5px; margin-top:3px}
+
+  .more{display:inline-block; margin-top:18px; color:var(--brand); font-weight:500; text-decoration:none}
+  .more:hover{text-decoration:underline}
+
+  footer{
+    border-top:1px solid var(--line); margin-top:16px; padding:28px 0 44px;
+    color:var(--muted); font-size:14px; text-align:center;
+  }
+  footer a{color:var(--brand)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <img src="https://cdn.jsdelivr.net/gh/SMUDS-m/geoai-assets@main/brand/header_1.jpg"
+         alt="재난안전과 GeoAI">
+    <h1>재난안전과 GeoAI</h1>
+    <p>공간정보와 인공지능을 재난안전 업무에 쓰는 방법을 쉽게 정리합니다</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <h2>무엇을 다루나요</h2>
+    <p class="sub">개념부터 도구 사용법까지, 다섯 갈래로 나눠 씁니다.</p>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <section>
+    <h2>최신 글</h2>
+    <p class="sub">블로그에 올라온 글을 그대로 가져옵니다.</p>
+    <div class="posts" id="posts"><p class="state">불러오는 중…</p></div>
+    <a class="more" href="https://geoaina.blogspot.com/" target="_blank" rel="noopener">
+      블로그에서 전체 보기 →</a>
+  </section>
+
+  <section>
+    <h2>채널</h2>
+    <p class="sub">같은 내용을 글과 영상으로 함께 올립니다.</p>
+    <div class="links">
+      <a class="link" href="https://geoaina.blogspot.com/" target="_blank" rel="noopener">
+        📝 블로그<span>geoaina.blogspot.com</span></a>
+      <a class="link" href="https://www.youtube.com/@geoai-safety" target="_blank" rel="noopener">
+        📺 유튜브<span>@geoai-safety</span></a>
+      <a class="link" href="https://smuds2026.blogspot.com/" target="_blank" rel="noopener">
+        🏫 재난안전학과 블로그<span>smuds2026.blogspot.com</span></a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>개인이 운영하는 블로그입니다. 여기 실린 내용은 학습과 참고를 위한 일반적인 설명이며,<br>
+     실제 재난 대응과 행정 문서는 소관 기관의 최신 지침을 따라야 합니다.</p>
+  <p><a href="mailto:ds2eye@gmail.com">ds2eye@gmail.com</a></p>
+</footer>
+
+<script>
+const BLOG = 'https://geoaina.blogspot.com';
+const CATS = [
+  ['GeoAI 개념',      '위성영상과 공간분석, 공간 AI의 기본기'],
+  ['GIS 도구',        'QGIS·파이썬·공개 데이터를 실제로 다루기'],
+  ['재난 현장 활용',   '홍수·산사태·산불·폭염을 공간정보로 읽기'],
+  ['생성형AI 사용법',  '업무에 쓸 때의 요령과 지켜야 할 선'],
+  ['안전한국훈련 실무', '훈련 문서를 만들고 검토하는 절차'],
+];
+
+document.getElementById('cats').innerHTML = CATS.map(([name, desc], i) => `
+  <a class="cat" href="${BLOG}/search/label/${encodeURIComponent(name)}">
+    <div class="n">0${i + 1}</div>
+    <h3>${name}</h3>
+    <p>${desc}</p>
+  </a>`).join('');
+
+const esc = s => String(s).replace(/[&<>"]/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// Blogger 피드에는 CORS 헤더가 없어 fetch 로는 못 읽는다.
+// Blogger 가 주는 JSONP(alt=json-in-script)를 script 태그로 불러온다.
+function loadPosts() {
+  const cb = 'geoaiFeed' + Date.now();
+  const s = document.createElement('script');
+  const done = ok => { delete window[cb]; s.remove(); if (!ok) showError(); };
+  const timer = setTimeout(() => done(false), 8000);
+  window[cb] = d => { clearTimeout(timer); try { render(d); done(true); } catch (e) { done(false); } };
+  s.onerror = () => { clearTimeout(timer); done(false); };
+  s.src = `${BLOG}/feeds/posts/default?alt=json-in-script&callback=${cb}&max-results=6`;
+  document.head.appendChild(s);
+}
+
+function showError() {
+  document.getElementById('posts').innerHTML =
+    `<p class="state">글 목록을 불러오지 못했습니다.
+       <a href="${BLOG}" target="_blank" rel="noopener">블로그에서 바로 보기 →</a></p>`;
+}
+
+function render(d) {
+    const items = ((d.feed && d.feed.entry) || []).map(e => {
+      const cats = (e.category || []).map(c => c.term);
+      return {
+        title: e.title.$t,
+        url: (e.link.find(l => l.rel === 'alternate') || {}).href || BLOG,
+        date: (e.published.$t || '').slice(0, 10),
+        cat: CATS.map(c => c[0]).find(c => cats.includes(c)) || '',
+      };
+    });
+    if (!items.length) throw new Error('empty');
+    document.getElementById('posts').innerHTML = items.map(p => `
+      <a class="post" href="${esc(p.url)}" target="_blank" rel="noopener">
+        <div class="meta">${esc(p.date)}${p.cat ? `<span class="tag">${esc(p.cat)}</span>` : ''}</div>
+        <p class="t">${esc(p.title)}</p>
+      </a>`).join('');
+}
+
+loadPosts();
+</script>
+</body>
+</html>
