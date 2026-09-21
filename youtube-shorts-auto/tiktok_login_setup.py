@@ -5,6 +5,7 @@
 그 코드를 수동으로 넘겨 토큰으로 교환하는 방식을 쓴다.
 
 사용법:
+  0) 키가 살아 있는지 확인:    python tiktok_login_setup.py --check
   1) 인증 URL 출력:            python tiktok_login_setup.py
      → 출력된 URL 로 로그인/동의 → 콜백 페이지에 표시된 'code' 복사
   2) 코드로 토큰 교환/저장:    python tiktok_login_setup.py --code <복사한코드>
@@ -40,6 +41,27 @@ def _cfg():
     if not ru.startswith("https://"):
         raise SystemExit(f"redirect_uri 는 https 여야 합니다(현재: {ru}).")
     return ck, cs, ru
+
+
+def check_keys():
+    """client_credentials 로 키가 유효한지만 1초 만에 확인한다(로그인 불필요).
+
+    샌드박스 키는 만료되면 여기서 invalid_client 가 난다. 브라우저 인증을 시작하기
+    전에 먼저 이걸로 걸러야 헛수고를 안 한다.
+    """
+    ck, cs, _ = _cfg()
+    r = requests.post(TOKEN_URL, headers={
+        "Content-Type": "application/x-www-form-urlencoded"
+    }, data={
+        "client_key": ck, "client_secret": cs, "grant_type": "client_credentials",
+    }, timeout=30).json()
+    if "access_token" in r:
+        print(f"✅ client_key/secret 정상 ({ck[:8]}…) — 이제 1) 인증 URL 단계로 가세요.")
+        return 0
+    print(f"❌ 키가 거부됐습니다: {r.get('error')} / {r.get('error_description')}")
+    print("   developers.tiktok.com → Manage apps → 해당 앱에서 Client key/secret 을 다시 확인하고")
+    print("   config.json 의 tiktok.client_key / client_secret 을 바꿔 주세요.")
+    return 1
 
 
 def print_auth_url():
@@ -81,6 +103,8 @@ def exchange(code):
 
 
 if __name__ == "__main__":
+    if "--check" in sys.argv:
+        raise SystemExit(check_keys())
     if "--code" in sys.argv:
         i = sys.argv.index("--code")
         if i + 1 >= len(sys.argv):

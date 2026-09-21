@@ -63,14 +63,21 @@ YouTube 는 아이디/비밀번호가 아니라 **OAuth 토큰**으로 업로드
 1. https://developers.tiktok.com → 로그인 → 'Manage apps' → 앱 생성
 2. 앱에 **Login Kit** + **Content Posting API** 제품 추가
 3. Content Posting API 에서 **Direct Post** 사용 설정. 공개 게시하려면 심사 신청/통과 필요
-4. **Redirect URI** 에 `http://localhost:8721/callback` 등록 (config.tiktok.redirect_uri 와 동일)
+4. **Redirect URI** 에 `https://smuds.netlify.app/callback.html` 등록
+   (config.tiktok.redirect_uri 와 동일. 틱톡 Web 플랫폼은 https 만 받으므로 localhost 는 못 쓴다)
 5. 발급된 **Client key / Client secret** 을 `config.json` 의 `tiktok` 항목에 입력
 6. (샌드박스 단계) 'Sandbox' → Target users 에 본인 틱톡 계정 추가
-7. 로그인/토큰 저장:
+7. 키가 살아 있는지 먼저 확인(로그인 불필요, 1초):
    ```
-   ./.venv/bin/python tiktok_login_setup.py
+   ./.venv/bin/python tiktok_login_setup.py --check
    ```
-   브라우저에서 틱톡 로그인/동의 → `tiktok_token.json` 저장 완료.
+   샌드박스 키는 만료되면 여기서 `invalid_client` 가 난다. 이때는 포털에서 키를 다시 받아야 한다.
+8. 로그인/토큰 저장:
+   ```
+   ./.venv/bin/python tiktok_login_setup.py            # 인증 URL 출력
+   ./.venv/bin/python tiktok_login_setup.py --code <코드>
+   ```
+   콜백 페이지에 뜬 `code` 를 복사해 넘기면 `tiktok_token.json` 저장 완료.
 
 심사 통과 후 `config.json` 의 `tiktok.privacy_level` 을 `PUBLIC_TO_EVERYONE` 으로 바꾸면
 공개 발행됩니다. 심사 전에는 `SELF_ONLY` 로 두세요.
