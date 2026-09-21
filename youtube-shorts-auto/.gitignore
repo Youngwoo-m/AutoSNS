@@ -8,6 +8,7 @@ token*.bak.json
 
 # ── 실행 중 생성되는 상태/기록 ──
 trigger_state.json
+tiktok_web_state.json
 title_history.json
 
 # ── 가상환경 ──
