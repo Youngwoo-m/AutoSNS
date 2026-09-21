@@ -169,11 +169,20 @@ def upload(data, dry_run=None, privacy=None):
 
 
 def _latest_data():
-    files = sorted(f for f in os.listdir(POSTS_DIR) if f.endswith(".json"))
-    if not files:
-        raise SystemExit("먼저 파이프라인(generate_script→...→make_video)을 실행하세요.")
-    with open(os.path.join(POSTS_DIR, files[-1]), "r", encoding="utf-8") as f:
-        return json.load(f)
+    """영상이 실제로 렌더링된 것 중 가장 최근 대본을 돌려준다.
+
+    파일명 정렬은 쓰지 않는다 — 재난안전판(20260921_...)과 GeoAI판(geoai_20260921_...)은
+    이름 규칙이 달라 사전순으로는 시간 순서가 뒤집힌다. 또 그날 아침 대본만 만들어지고
+    렌더링 전인 json 이 맨 뒤에 올 수 있어(video 가 비어 있다) 그런 건 건너뛴다.
+    """
+    paths = [os.path.join(POSTS_DIR, f) for f in os.listdir(POSTS_DIR) if f.endswith(".json")]
+    for path in sorted(paths, key=os.path.getmtime, reverse=True):
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        v = data.get("video")
+        if v and os.path.exists(v):
+            return data
+    raise SystemExit("먼저 파이프라인(generate_script→...→make_video)을 실행하세요.")
 
 
 if __name__ == "__main__":
