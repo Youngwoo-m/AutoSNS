@@ -1,4 +1,9 @@
-"""진로 시리즈 8편을 각각 독립 글로 Blogger 에 올린다(영상 대본 기반).
+"""학과 블로그 시리즈를 하루 한 편씩 Blogger 에 올린다.
+
+시리즈는 SERIES 에 정의한 순서대로 소진한다 — 앞 시리즈가 다 나가야 다음으로 넘어간다.
+  · 진로 8편  — 본문이 이 파일에 박혀 있다(영상 대본 기반, 유튜브 영상을 끼운다)
+  · 자격증 16편 — 발행할 때 본문을 생성한다(cert_topics + cert_writer). 응시자격·과목·
+    일정이 해마다 바뀌어 코드에 박으면 틀린 정보가 굳기 때문이다.
 
 한 번에 몰아 올리면 Blogger 가 남용으로 보고 글쓰기를 막는다(2026-09-16 에
 25초 간격으로 넣다가 4편째부터 403 The caller does not have permission).
@@ -13,14 +18,16 @@ import time
 
 from googleapiclient.discovery import build
 from post_blogger import _count_post, _creds, _esc, _posted_today, _url
-from common import load_config
+from common import load_config, log
+import cert_topics
+import cert_writer
 
 cfg = load_config()
 LINKS = (cfg.get("blogger", {}) or {}).get("links") or []
 HUB = "https://smuds2026.blogspot.com/search/label/%EC%9E%AC%EB%82%9C%EC%95%88%EC%A0%84%ED%95%99%EA%B3%BC%EC%A7%84%EB%A1%9C"  # 라벨 목록
 
 # (영상ID, 제목, 요약3줄, 본문 문단들, FAQ, 라벨)
-S = [
+CAREER = [
  ("cDwQ52M2wn0", "재난안전학과 나오면 소방관만 되나요? 진로 8가지",
   ["재난안전학과의 진로는 소방직 하나가 아닙니다.",
    "재해영향평가·기업 재난관리·GeoAI·산업안전 등으로 나뉩니다.",
@@ -103,6 +110,12 @@ S = [
   ["스마트재난", "디지털트윈", "진로탐색"]),
 ]
 
+SERIES = [
+    {"key": "career", "label": "진로", "hub": HUB, "eps": CAREER, "kind": "static"},
+    {"key": "cert", "label": "자격증", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%90%EA%B2%A9%EC%A6%9D",
+     "eps": cert_topics.TOPICS, "kind": "generated"},
+]
+
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
 # 예전에 한 번에 몰아 올리다 계정이 API 게시 제한을 먹었다(2026-09-16).
 DAILY_LIMIT = int((cfg.get("blogger", {}) or {}).get("daily_limit", 1))
@@ -110,56 +123,108 @@ DAILY_LIMIT = int((cfg.get("blogger", {}) or {}).get("daily_limit", 1))
 PER_RUN = int((cfg.get("blogger", {}) or {}).get("career_per_run", 1))
 GAP_SECONDS = 180        # 편 사이 간격
 
+
+def _video_html(vid):
+    """영상이 있는 편에만 넣는다 — 자격증 시리즈는 짝지을 영상이 없다."""
+    if not vid:
+        return ""
+    return ('<p><iframe width="320" height="569" '
+            f'src="https://www.youtube.com/embed/{vid}" title="YouTube video player" '
+            'frameborder="0" allow="accelerometer; autoplay; clipboard-write; '
+            'encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>')
+
+
+def _links_html():
+    return ("<hr><p>세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요.</p>"
+            "<p><strong>📌 채널 바로가기</strong></p><ul>" + "".join(
+                f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">'
+                f'{_esc(l["label"])}</a></li>' for l in LINKS) + "</ul>")
+
+
+def _safe(text):
+    """생성된 문단은 통째로 escape 한 뒤 <b> 만 되살린다.
+
+    본문을 만드는 쪽이 사람이 아니라 모델이라, 태그를 그대로 믿고 넣지 않는다.
+    강조는 <b> 하나만 쓰라고 일러 두었으니 그것만 살리면 된다."""
+    out = _esc(text)
+    return out.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+
+
+def build_html(summary, paras, faq, vid, hub, label, generated):
+    """한 편의 본문. generated=True 면 문단을 걸러서 넣는다(모델이 쓴 글이라)."""
+    P = ["<h3>📌 3줄 요약</h3><ul>"
+         + "".join(f"<li>{_esc(x)}</li>" for x in summary) + "</ul>"]
+    P += [f"<p>{_safe(p) if generated else p}</p>" for p in paras]
+    P.append(_video_html(vid))
+    if faq:
+        P.append("<h3>❓ 자주 묻는 질문</h3>" + "".join(
+            f"<p>Q. {_esc(q)}<br>A. {_esc(a)}</p>" for q, a in faq))
+    P.append(f'<p>👉 <a href="{hub}">{_esc(label)} 시리즈 전체 보기</a></p>')
+    P.append(_links_html())
+    return "\n".join(x for x in P if x)
+
+
 svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
 bid = cfg["blogger"]["blog_id"]
 dry = "--dry" in sys.argv
 posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
 run_posted = 0                # 이번 실행에서 올린 편수
 have = {p["title"] for p in svc.posts().list(
-    blogId=bid, maxResults=50, fetchBodies=False, fields="items(title)").execute().get("items", [])}
+    blogId=bid, maxResults=100, fetchBodies=False,
+    fields="items(title)").execute().get("items", [])}
+maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
+stop = False
 
-for n, (vid, title, summary, paras, faq, tags) in enumerate(S, start=1):
-    full_title = f"{title} [{n}/8]"
-    if full_title in have:
-        continue
-    if posted >= DAILY_LIMIT:
-        print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")
+for ser in SERIES:
+    if stop:
         break
-    if run_posted >= PER_RUN:
-        print(f"이번 실행 몫({PER_RUN}편) 완료 — 나머지 한도는 브리핑 몫으로 남긴다")
-        break
-    if dry:
-        print(f"[DRY] {n}/8 발행 예정: {full_title[:50]}")
-        posted += 1
-        continue
-    P = ["<h3>📌 3줄 요약</h3><ul>" + "".join(f"<li>{_esc(s)}</li>" for s in summary) + "</ul>"]
-    P += [f"<p>{p}</p>" for p in paras]
-    P.append('<p><iframe width="320" height="569" '
-             f'src="https://www.youtube.com/embed/{vid}" title="YouTube video player" '
-             'frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; '
-             'gyroscope; picture-in-picture" allowfullscreen></iframe></p>')
-    P.append("<h3>❓ 자주 묻는 질문</h3>" + "".join(
-        f"<p>Q. {_esc(q)}<br>A. {_esc(a)}</p>" for q, a in faq))
-    P.append(f'<p>👉 <a href="{HUB}">진로 시리즈 전체 보기</a></p>')
-    P.append("<hr><p>세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요.</p>"
-             "<p><strong>📌 채널 바로가기</strong></p><ul>" + "".join(
-        f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">{_esc(l["label"])}</a></li>'
-        for l in LINKS) + "</ul>")
-    # 대표 라벨('진로')을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
-    # 대표 라벨('진로') + 주제어 몇 개만 — 사이드바가 카테고리 메뉴로 읽히게 한다
-    maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
-    labels = list(dict.fromkeys(["진로"] + tags))[:maxn]
-    body = {"title": full_title, "content": "\n".join(P), "labels": labels,
-            "location": cfg["blogger"]["location"]}
-    try:
-        r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
-        _count_post()
-        posted += 1; run_posted += 1
-        print(f"{n}/8 발행: {r['url']}")
-    except Exception as e:
-        print(f"{n}/8 실패(다음 실행에서 재시도): {str(e)[:110]}")
-        break          # 403·429 면 더 두드리지 않는다
-    time.sleep(GAP_SECONDS)
+    eps, total = ser["eps"], len(ser["eps"])
+    for n, ep in enumerate(eps, start=1):
+        if ser["kind"] == "static":
+            vid, title, summary, paras, faq, tags = ep
+        else:
+            _slug, title, _angle, tags = ep
+            vid = ""
+        full_title = f"{title} [{n}/{total}]"
+        if full_title in have:
+            continue
+        if posted >= DAILY_LIMIT:
+            print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")
+            stop = True
+            break
+        if run_posted >= PER_RUN:
+            print(f"이번 실행 몫({PER_RUN}편) 완료 — 나머지 한도는 브리핑 몫으로 남긴다")
+            stop = True
+            break
+        if dry:
+            print(f"[DRY] {ser['label']} {n}/{total} 발행 예정: {full_title[:50]}")
+            posted += 1
+            continue
+        if ser["kind"] == "generated":          # 본문을 지금 만든다
+            try:
+                w = cert_writer.write(n, total, title, ep[2], cfg)
+            except Exception as e:
+                print(f"{ser['label']} {n}/{total} 본문 생성 실패(다음 실행에서 재시도): "
+                      f"{type(e).__name__}: {str(e)[:90]}")
+                break
+            summary, paras, faq = w["summary"], w["paras"], w["faq"]
+        content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
+                             generated=(ser["kind"] == "generated"))
+        # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
+        labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
+        body = {"title": full_title, "content": content, "labels": labels,
+                "location": cfg["blogger"]["location"]}
+        try:
+            r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
+            _count_post()
+            posted += 1
+            run_posted += 1
+            print(f"{ser['label']} {n}/{total} 발행: {r['url']}")
+        except Exception as e:
+            print(f"{ser['label']} {n}/{total} 실패(다음 실행에서 재시도): {str(e)[:110]}")
+            stop = True
+            break          # 403·429 면 더 두드리지 않는다
+        time.sleep(GAP_SECONDS)
 
-if posted == _posted_today() and not dry:
+if not dry and run_posted == 0:
     print("이번 실행에서 올린 글 없음(한도 소진 또는 남은 편 없음).")
