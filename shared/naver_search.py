@@ -8,6 +8,8 @@ fetch_news 가 이 결과를 뉴스 항목과 같은 형태(title/link/source/pu
 """
 import json
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone, timedelta
@@ -15,6 +17,41 @@ from datetime import datetime, timezone, timedelta
 from common import log
 
 KST = timezone(timedelta(hours=9))
+
+# 네이버 검색 API 는 짧은 시간에 몰아 쏘면 429(errorCode 012)로 거절한다.
+# 질의가 29개라 딜레이 없이 돌리면 20회 언저리에서 막혔다(2026-09-21 저녁 6건 유실,
+# 재현 시 21번째 요청 1.81초 지점에서 429). 간격을 두고, 막히면 쉬었다 다시 던진다.
+_MIN_GAP = 0.2          # 초당 5회 — 재현에서 막힌 11.6회/초보다 넉넉히 아래
+_RETRY_WAIT = 1.5       # 429 를 만나면 이만큼 쉰다(재현에서 1.2초면 회복했다)
+_RETRIES = 2
+_last_call = 0.0
+
+
+def _api_get(url, cid, secret, what, q):
+    """검색 API 를 호출해 JSON 을 돌려준다. 실패하면 이유를 남기고 None."""
+    global _last_call
+    req = urllib.request.Request(url, headers={
+        "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
+        "User-Agent": "smuds/1.0"})
+    for attempt in range(_RETRIES + 1):
+        gap = _MIN_GAP - (time.monotonic() - _last_call)
+        if gap > 0:
+            time.sleep(gap)
+        _last_call = time.monotonic()
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < _RETRIES:
+                time.sleep(_RETRY_WAIT)
+                continue
+            # 무엇이 잘못됐는지 알아야 고칠 수 있다 — 코드까지 남긴다
+            log(f"{what} 실패(q='{q}': HTTP {e.code})")
+            return None
+        except Exception as e:
+            log(f"{what} 실패(q='{q}': {type(e).__name__})")
+            return None
+    return None
 
 
 def _clean(t):
@@ -57,14 +94,8 @@ def naver_blog_search(queries, cid, secret, within_days=7, per_query=10, total=8
     for q in queries:
         url = "https://openapi.naver.com/v1/search/blog.json?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
-        req = urllib.request.Request(url, headers={
-            "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
-            "User-Agent": "smuds/1.0"})
-        try:
-            with urllib.request.urlopen(req, timeout=15) as r:
-                data = json.loads(r.read().decode("utf-8"))
-        except Exception as e:
-            log(f"네이버 블로그 검색 실패(q='{q}': {type(e).__name__})")
+        data = _api_get(url, cid, secret, "네이버 블로그 검색", q)
+        if data is None:
             continue
         for it in data.get("items", []):
             link = it.get("link", "")
@@ -123,14 +154,8 @@ def naver_news_search(queries, cid, secret, within_days=7, per_query=10, total=1
     for q in queries:
         url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
-        req = urllib.request.Request(url, headers={
-            "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
-            "User-Agent": "smuds/1.0"})
-        try:
-            with urllib.request.urlopen(req, timeout=15) as r:
-                data = json.loads(r.read().decode("utf-8"))
-        except Exception as e:
-            log(f"네이버 뉴스 검색 실패(q='{q}': {type(e).__name__})")
+        data = _api_get(url, cid, secret, "네이버 뉴스 검색", q)
+        if data is None:
             continue
         for it in data.get("items", []):
             link = (it.get("originallink") or it.get("link") or "").strip()
