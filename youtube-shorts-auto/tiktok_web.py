@@ -14,6 +14,9 @@ API(tiktok_upload.py) 는 앱 심사를 통과해야 공개 게시가 되고, 20
 """
 import json
 import os
+import shutil
+import socket
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -35,23 +38,44 @@ POST_LABELS = ["게시", "Post", "업로드", "Upload"]
 CAPTION_HINTS = ["설명", "캡션", "Description", "caption"]
 
 
-def build_driver(headless=False):
+CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+DEBUG_PORT = 9222
+
+
+def _port_open(port, host="127.0.0.1"):
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex((host, port)) == 0
+
+
+def launch_chrome(url=None, port=DEBUG_PORT):
+    """Chrome 을 '평범한 앱으로' 띄우고 디버깅 포트가 열릴 때까지 기다린다.
+
+    틱톡은 chromedriver 가 직접 띄운 Chrome(--test-type=webdriver 등)을 감지해
+    접속 즉시 로그인 쿠키를 지워버린다(2026-09-22 확인). 그래서 Chrome 은 평범하게
+    띄우고 Selenium 은 디버깅 포트로 '붙기만' 한다. 그러면 자동화 흔적이 남지 않는다.
+    """
+    if _port_open(port):
+        return None                      # 이미 떠 있으면 그대로 쓴다
+    args = [CHROME, f"--user-data-dir={PROFILE_DIR}", f"--remote-debugging-port={port}",
+            "--no-first-run", "--no-default-browser-check", "--lang=ko-KR",
+            "--window-size=1400,1000"]
+    if url:
+        args.append(url)
+    proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    for _ in range(40):
+        if _port_open(port):
+            return proc
+        time.sleep(0.5)
+    raise SystemExit("Chrome 디버깅 포트가 열리지 않았습니다.")
+
+
+def build_driver(headless=False, port=DEBUG_PORT):
+    """평범하게 띄운 Chrome 에 붙는다(headless 는 틱톡에서 쓰지 않는다)."""
+    launch_chrome(port=port)
     o = Options()
-    o.add_argument(f"--user-data-dir={PROFILE_DIR}")
-    o.add_argument("--disable-blink-features=AutomationControlled")
-    o.add_experimental_option("excludeSwitches", ["enable-automation"])
-    o.add_experimental_option("useAutomationExtension", False)
-    o.add_argument("--window-size=1400,1000")
-    o.add_argument("--lang=ko-KR")
-    o.set_capability("unhandledPromptBehavior", "accept")
-    if headless:
-        o.add_argument("--headless=new")
-    d = webdriver.Chrome(options=o)
-    d.execute_cdp_cmd(
-        "Page.addScriptToEvaluateOnNewDocument",
-        {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"},
-    )
-    return d
+    o.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+    return webdriver.Chrome(options=o)
 
 
 def shot(d, name):
@@ -199,7 +223,9 @@ def upload(video, caption, post=False):
         log("✅ 게시 완료(화면 스크린샷으로 확인하세요)")
         return {"status": "posted", "shot": p}
     finally:
-        d.quit()
+        # 붙어 있는 브라우저는 닫지 않는다 — 닫으면 다음 실행 때 다시 띄워야 하고,
+        # 종료 시점에 따라 쿠키가 제대로 기록되지 않을 수 있다.
+        pass
 
 
 def _latest():
