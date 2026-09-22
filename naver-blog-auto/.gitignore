@@ -10,6 +10,7 @@ kakao_token.json
 neighbor_state.json
 buddy_request_state.json
 blogger_post_state.json
+career_naver_state.json
 
 # 직접 찍은 화면 캡처는 손으로 만든 자산이라 남긴다(위 *.png/*.jpg 예외).
 !shots/**

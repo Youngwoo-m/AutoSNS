@@ -164,67 +164,79 @@ def build_html(summary, paras, faq, vid, hub, label, generated):
     return "\n".join(x for x in P if x)
 
 
-svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
-bid = cfg["blogger"]["blog_id"]
-dry = "--dry" in sys.argv
-posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
-run_posted = 0                # 이번 실행에서 올린 편수
-have = {p["title"] for p in svc.posts().list(
-    blogId=bid, maxResults=100, fetchBodies=False,
-    fields="items(title)").execute().get("items", [])}
-maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
-stop = False
+def main():
+    """발행 루틴.
 
-for ser in SERIES:
-    if stop:
-        break
-    eps, total = ser["eps"], len(ser["eps"])
-    for n, ep in enumerate(eps, start=1):
-        if ser["kind"] == "static":
-            vid, title, summary, paras, faq, tags = ep
-        else:
-            _slug, title, _angle, tags = ep
-            vid = ""
-        full_title = f"{title} [{n}/{total}]"
-        if full_title in have:
-            continue
-        if posted >= DAILY_LIMIT:
-            print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")
-            stop = True
+    반드시 함수 안에 둔다 — 예전에는 모듈 최상단에 있어서, 다른 스크립트가
+    CAREER/SERIES 데이터를 쓰려고 import 하기만 해도 글이 발행됐다
+    (2026-09-22 진로 4·5편이 이렇게 새어 나갔다).
+    """
+    svc = build("blogger", "v3", credentials=_creds(), cache_discovery=False)
+    bid = cfg["blogger"]["blog_id"]
+    dry = "--dry" in sys.argv
+    posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
+    run_posted = 0                # 이번 실행에서 올린 편수
+    have = {p["title"] for p in svc.posts().list(
+        blogId=bid, maxResults=100, fetchBodies=False,
+        fields="items(title)").execute().get("items", [])}
+    maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
+    stop = False
+
+    for ser in SERIES:
+        if stop:
             break
-        if run_posted >= PER_RUN:
-            print(f"이번 실행 몫({PER_RUN}편) 완료 — 나머지 한도는 브리핑 몫으로 남긴다")
-            stop = True
-            break
-        if dry:
-            print(f"[DRY] {ser['label']} {n}/{total} 발행 예정: {full_title[:50]}")
-            posted += 1
-            continue
-        if ser["kind"] == "generated":          # 본문을 지금 만든다
-            try:
-                w = cert_writer.write(n, total, title, ep[2], cfg)
-            except Exception as e:
-                print(f"{ser['label']} {n}/{total} 본문 생성 실패(다음 실행에서 재시도): "
-                      f"{type(e).__name__}: {str(e)[:90]}")
+        eps, total = ser["eps"], len(ser["eps"])
+        for n, ep in enumerate(eps, start=1):
+            if ser["kind"] == "static":
+                vid, title, summary, paras, faq, tags = ep
+            else:
+                _slug, title, _angle, tags = ep
+                vid = ""
+            full_title = f"{title} [{n}/{total}]"
+            if full_title in have:
+                continue
+            if posted >= DAILY_LIMIT:
+                print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")
+                stop = True
                 break
-            summary, paras, faq = w["summary"], w["paras"], w["faq"]
-        content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
-                             generated=(ser["kind"] == "generated"))
-        # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
-        labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
-        body = {"title": full_title, "content": content, "labels": labels,
-                "location": cfg["blogger"]["location"]}
-        try:
-            r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
-            _count_post()
-            posted += 1
-            run_posted += 1
-            print(f"{ser['label']} {n}/{total} 발행: {r['url']}")
-        except Exception as e:
-            print(f"{ser['label']} {n}/{total} 실패(다음 실행에서 재시도): {str(e)[:110]}")
-            stop = True
-            break          # 403·429 면 더 두드리지 않는다
-        time.sleep(GAP_SECONDS)
+            if run_posted >= PER_RUN:
+                print(f"이번 실행 몫({PER_RUN}편) 완료 — 나머지 한도는 브리핑 몫으로 남긴다")
+                stop = True
+                break
+            if dry:
+                print(f"[DRY] {ser['label']} {n}/{total} 발행 예정: {full_title[:50]}")
+                posted += 1
+                continue
+            if ser["kind"] == "generated":          # 본문을 지금 만든다
+                try:
+                    w = cert_writer.write(n, total, title, ep[2], cfg)
+                except Exception as e:
+                    print(f"{ser['label']} {n}/{total} 본문 생성 실패(다음 실행에서 재시도): "
+                          f"{type(e).__name__}: {str(e)[:90]}")
+                    break
+                summary, paras, faq = w["summary"], w["paras"], w["faq"]
+            content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
+                                 generated=(ser["kind"] == "generated"))
+            # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
+            labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
+            body = {"title": full_title, "content": content, "labels": labels,
+                    "location": cfg["blogger"]["location"]}
+            try:
+                r = svc.posts().insert(blogId=bid, body=body, isDraft=False).execute()
+                _count_post()
+                posted += 1
+                run_posted += 1
+                print(f"{ser['label']} {n}/{total} 발행: {r['url']}")
+            except Exception as e:
+                print(f"{ser['label']} {n}/{total} 실패(다음 실행에서 재시도): {str(e)[:110]}")
+                stop = True
+                break          # 403·429 면 더 두드리지 않는다
+            time.sleep(GAP_SECONDS)
 
-if not dry and run_posted == 0:
-    print("이번 실행에서 올린 글 없음(한도 소진 또는 남은 편 없음).")
+    if not dry and run_posted == 0:
+        print("이번 실행에서 올린 글 없음(한도 소진 또는 남은 편 없음).")
+
+
+
+if __name__ == "__main__":
+    main()

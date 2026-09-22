@@ -2,8 +2,8 @@
 
 요일별 에디션(카테고리) — 매일 1편씩. 요일마다 주제가 달라야 같은 뉴스가
 반복되지 않는다(하루 걸러 같은 기사를 다루면 글도 검색도 손해다).
-  월 → 정책·제도판      화 → 산업·신기술판    수 → 재난안전판(지역 뉴스)
-  목 → 재해영향평가판    금 → 기업재난관리판    토 → GeoAI판
+  월 → 진로·자격증 시리즈  화 → 산업·신기술판    수 → 재난안전판(지역 뉴스)
+  목 → 재해영향평가판      금 → 진로·자격증 시리즈  토 → GeoAI판
   일 → 생활안전판
 
 스케줄 실행은 '실제 발행'한다(dry_run=False 고정). config 의 dry_run 은 수동 테스트용
@@ -18,12 +18,15 @@ from common import log
 # 월=0 … 일=6. None = 기본(재난안전판).
 # 지역(제천·충북) 글이 전 채널에서 가장 반응이 좋다(유튜브 1위가 '제천 오소리',
 # 블로그도 지역 기사 위주 글이 잘 읽힌다). 그래서 지역판을 주 3회로 둔다.
+# "career" 는 뉴스 브리핑이 아니라 진로·자격증 시리즈를 네이버에 올린다
+# (career_series_naver.py). 데이터랩으로 보니 자격증 검색량이 재난 브리핑의
+# 40~100배인데 그 글이 블로거로만 나가고 있었다(2026-09-22 조사).
 WEEKDAY_EDITIONS = {
-    0: [None],          # 월 재난안전(제천·충북 지역)
+    0: ["career"],      # 월 진로·자격증 시리즈
     1: ["industry"],    # 화 산업·신기술
     2: [None],          # 수 재난안전(제천·충북 지역)
     3: ["impact"],      # 목 재해영향평가
-    4: [None],          # 금 재난안전(제천·충북 지역)
+    4: ["career"],      # 금 진로·자격증 시리즈
     5: ["ai"],          # 토 GeoAI
     6: ["living"],      # 일 생활안전
 }
@@ -34,7 +37,17 @@ def _editions_for_today():
     return WEEKDAY_EDITIONS.get(datetime.now().weekday(), [None])
 
 
+def _run_career():
+    """진로·자격증 시리즈 1편을 네이버에 올린다(뉴스 생성 경로를 타지 않는다)."""
+    log("----- [진로·자격증] 네이버 발행 시작 -----")
+    import career_series_naver
+    career_series_naver.main()
+    log("----- [진로·자격증] 종료 -----")
+
+
 def _run_one(edition):
+    if edition == "career":
+        return _run_career()
     # 에디션 전환은 SMUDS_EDITION 환경변수로(‑> load_config 가 매 호출 시 읽음)
     if edition:
         os.environ["SMUDS_EDITION"] = edition
