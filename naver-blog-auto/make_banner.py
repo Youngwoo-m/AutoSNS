@@ -75,7 +75,7 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING"):
             break
     dept = ((load_config().get("blog", {}) or {}).get("banner_dept")
             or DEFAULT_DEPT)
-    html = HTML.format(title=short, date=date_str, dept=dept,
+    html = HTML.format(title=short, date=date_str, dept=dept, badge=badge,
                        size=_title_size(short))
     html_path = os.path.join(POSTS_DIR, "_banner.html")
     with open(html_path, "w", encoding="utf-8") as f:
