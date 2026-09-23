@@ -252,10 +252,27 @@ def build_caption(data, cfg):
     return _build_caption(data, cfg.get("youtube", {}))
 
 
+def _data_for(video):
+    """주어진 mp4 에 해당하는 대본 json 을 찾는다(캡션이 영상과 어긋나지 않게)."""
+    want = os.path.basename(video)
+    for f in os.listdir(POSTS_DIR):
+        if not f.endswith(".json"):
+            continue
+        with open(os.path.join(POSTS_DIR, f), encoding="utf-8") as fp:
+            data = json.load(fp)
+        if os.path.basename(data.get("video") or "") == want:
+            return data
+    raise SystemExit(f"{want} 에 해당하는 대본 json 을 찾지 못했습니다.")
+
+
 if __name__ == "__main__":
     cfg = load_config()
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    data = _latest()
-    video = args[0] if args else data.get("video")
+    if args:
+        video = args[0] if os.path.isabs(args[0]) else os.path.join(POSTS_DIR, args[0])
+        data = _data_for(video)
+    else:
+        data = _latest()
+        video = data["video"]
     caption = build_caption(data, cfg)
     print(upload(video, caption, post="--post" in sys.argv))

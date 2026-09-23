@@ -55,7 +55,30 @@ def _vf_static():
             f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=white,setsar=1")
 
 
-def _segment(frame, audio, dur, out_path, motion=True, zoom_max=1.06):
+def _segment_broll(frame, audio, dur, out_path, broll):
+    """B롤 영상 위에 투명 프레임(자막·소제목)을 얹어 한 장면을 만든다.
+
+    클립이 장면보다 짧으면 -stream_loop 로 반복하고, 길면 -t 로 자른다.
+    9:16 로 맞출 때는 늘리지 않고 꽉 채운 뒤 잘라낸다(increase+crop) — pad 로
+    레터박스를 두면 위아래 검은 띠가 생겨 자막 영역과 겹친다.
+    켄번스 줌은 걸지 않는다. 클립이 이미 움직이는데 덧대면 흔들려 보인다.
+    """
+    fc = (f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
+          f"crop={W}:{H},fps={FPS},setsar=1[bg];"
+          f"[bg][1:v]overlay=0:0:format=auto,trim=duration={dur:.3f},"
+          f"setpts=PTS-STARTPTS[v]")
+    _run(["-stream_loop", "-1", "-i", broll, "-i", frame, "-i", audio,
+          "-filter_complex", fc,
+          "-map", "[v]", "-map", "2:a",
+          "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
+          "-r", str(FPS),
+          "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-af", "apad",
+          "-t", f"{dur:.3f}", out_path])
+
+
+def _segment(frame, audio, dur, out_path, motion=True, zoom_max=1.06, broll=""):
+    if broll:
+        return _segment_broll(frame, audio, dur, out_path, broll)
     vf = _vf_motion(dur, zoom_max) if motion else _vf_static()
     args = ["-loop", "1", "-i", frame, "-i", audio,
             "-c:v", "libx264", "-preset", "veryfast"]
@@ -119,6 +142,7 @@ def make_video(data):
     work = os.path.join(POSTS_DIR, f"video_{stamp}")
     os.makedirs(work, exist_ok=True)
 
+    brolls = data.get("broll_used") or {}
     seg_paths, total = [], 0.0
     for i, (fr, au) in enumerate(zip(frames, audio)):
         dur = float(au["duration"])
@@ -126,7 +150,8 @@ def make_video(data):
             log(f"길이 상한({max_sec}s) 도달 → 장면 {i+1}부터 제외")
             break
         seg = os.path.join(work, f"seg_{i+1:02d}.mp4")
-        _segment(fr, au["path"], dur, seg, motion=motion, zoom_max=zoom_max)
+        _segment(fr, au["path"], dur, seg, motion=motion, zoom_max=zoom_max,
+                 broll=brolls.get(str(i + 1), ""))
         seg_paths.append(seg)
         total += dur
         log(f"세그먼트 {i+1}/{n} 생성({dur:.1f}s, 누적 {total:.1f}s)")

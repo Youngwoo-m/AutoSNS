@@ -77,13 +77,14 @@ def _bg_html(path):
             f'<div class="scrim"></div>')
 
 
-def _cover_html(idx, heading, lines, footer, logo, header, bg=""):
+def _cover_html(idx, heading, lines, footer, logo, header, bg="", broll=""):
     title = _esc(heading) or "재난안전 브리핑"
     sub = "".join(f'<div class="csub">{_esc(s)}</div>' for s in lines)
-    hasbg = " hasbg" if bg else ""
+    hasbg = " hasbg" if (bg or broll) else ""
+    hasbroll = " hasbroll" if broll else ""
     return f"""
-    <div class="frame cover{hasbg}" id="frame{idx}">
-      {_bg_html(bg)}
+    <div class="frame cover{hasbg}{hasbroll}" id="frame{idx}">
+      {_bg_html(bg) if bg else ('<div class="scrim"></div>' if broll else "")}
       <div class="cbar"></div>
       {_topbar(header)}
       <div class="cinner">
@@ -106,17 +107,18 @@ def _ox_mark(answer):
     return ""
 
 
-def _content_html(idx, heading, lines, footer, img_path, logo, header, bg="", answer=""):
+def _content_html(idx, heading, lines, footer, img_path, logo, header, bg="", answer="", broll=""):
     body = "".join(f'<div class="sent">{_esc(s)}</div>' for s in lines)
     mark_html = _ox_mark(answer)
     img_html = ""
     # 배경 이미지를 쓰면 본문 중앙의 작은 뉴스 사진은 생략(배경과 중복·산만)
-    if img_path and not bg:
+    if img_path and not bg and not broll:
         img_html = f'<div class="newsimg"><img src="{_file_url(img_path)}"></div>'
-    hasbg = " hasbg" if bg else ""
+    hasbg = " hasbg" if (bg or broll) else ""
+    hasbroll = " hasbroll" if broll else ""
     return f"""
-    <div class="frame content{hasbg}" id="frame{idx}">
-      {_bg_html(bg)}
+    <div class="frame content{hasbg}{hasbroll}" id="frame{idx}">
+      {_bg_html(bg) if bg else ('<div class="scrim"></div>' if broll else "")}
       <div class="accent"></div>
       {_topbar(header)}
       <div class="pad">
@@ -144,30 +146,64 @@ def _resolve_bg(path):
     return p
 
 
-def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images=None):
+def _resolve_broll(data, i):
+    """장면 i(0부터)에 쓸 B롤 클립 경로. 없으면 "".
+
+    두 가지로 준다:
+      1) data["broll"] = {"1": "posts/broll/fire.mp4", ...}   ← 장면 번호(1부터)
+      2) posts/broll/<stamp>/01.mp4 … 파일을 그냥 떨궈 두기
+    """
+    b = data.get("broll") or {}
+    path = b.get(str(i + 1)) or b.get(i + 1) or ""
+    if not path:
+        stamp = data.get("stamp") or ""
+        cand = os.path.join(POSTS_DIR, "broll", stamp, f"{i+1:02d}.mp4")
+        path = cand if stamp and os.path.exists(cand) else ""
+    if not path:
+        return ""
+    p = path if os.path.isabs(path) else os.path.normpath(os.path.join(BASE_DIR, path))
+    if not os.path.exists(p):
+        log(f"경고: B롤 클립 없음 → 배경 없이 렌더: {path}")
+        return ""
+    return p
+
+
+def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images=None,
+                brolls=None):
     bg_images = bg_images or {}
+    brolls = brolls or {}
     blocks = []
     for i, s in enumerate(scenes):
         heading = s.get("heading", "")
         lines = s.get("lines", [])
         # 장면별 배경: scene['bg_image'] 우선, 없으면 data['bg_images'][i]
         bg = _resolve_bg(s.get("bg_image") or bg_images.get(str(i)) or "")
+        # B롤이 있으면 배경 이미지는 쓰지 않는다 — 영상 위에 얹을 투명 프레임을 만든다.
+        broll = brolls.get(i, "")
+        if broll:
+            bg = ""
         if i == 0:
-            blocks.append(_cover_html(i, heading, lines, footer, logo, header, bg))
+            blocks.append(_cover_html(i, heading, lines, footer, logo, header, bg, broll))
         else:
             # 장면이 근거한 기사 사진만 붙인다(내용-사진 일치).
             si = s.get("src_idx")
             img = source_images.get(str(si), "") if si is not None else ""
             blocks.append(_content_html(i, heading, lines, footer, img, logo, header,
-                                        bg, s.get("answer", "")))
+                                        bg, s.get("answer", ""), broll))
     frames_html = "\n".join(blocks)
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
     {_font_face(font_dir)}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
-    body {{ background:#fff; font-family:'KoPub','Segoe UI Emoji','Apple Color Emoji',sans-serif;
+    body {{ background:transparent; font-family:'KoPub','Segoe UI Emoji','Apple Color Emoji',sans-serif;
             word-break:keep-all; text-wrap:pretty; -webkit-font-smoothing:antialiased;
             text-align:center; }}
     .frame {{ width:{W}px; height:{H}px; position:relative; overflow:hidden; background:#fff; }}
+    /* B롤 위에 얹는 프레임은 배경을 비운다 — ffmpeg 가 영상 위에 합성한다.
+       글자 가독성용 스크림(위/아래 어두운 그라데이션)만 남긴다. */
+    .frame.hasbroll {{ background:transparent; }}
+    .frame.hasbroll .scrim {{ position:absolute; inset:0;
+      background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 38%,
+                 rgba(0,0,0,.35) 62%,rgba(0,0,0,.78) 100%); }}
     /* ---- 장면 전체 배경 이미지(Firefly 등) + 가독성 스크림 ---- */
     .bgfill {{ position:absolute; inset:0; z-index:0; }}
     .bgfill img {{ width:100%; height:100%; object-fit:cover; }}
@@ -309,8 +345,14 @@ def make_frames(data):
     scenes = data["scenes"]
     source_images = data.get("source_images") or {}
     bg_images = data.get("bg_images") or {}
+    brolls = {i: _resolve_broll(data, i) for i in range(len(scenes))}
+    brolls = {i: p for i, p in brolls.items() if p}
+    if brolls:
+        log(f"B롤 배경 {len(brolls)}장면: " +
+            ", ".join(f"{i+1}={os.path.basename(p)}" for i, p in sorted(brolls.items())))
 
-    html_doc = _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images)
+    html_doc = _build_html(scenes, footer, logo, font_dir, source_images, header,
+                           bg_images, brolls)
     stamp = data.get("stamp") or time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(POSTS_DIR, f"frames_{stamp}")
     os.makedirs(out_dir, exist_ok=True)
@@ -325,6 +367,12 @@ def make_frames(data):
     o.add_argument("--allow-file-access-from-files")
     o.add_argument("--lang=ko-KR")
     d = webdriver.Chrome(options=o)
+    if brolls:
+        # B롤 위에 얹을 프레임은 배경이 투명해야 한다. 커맨드라인
+        # --default-background-color 는 크롬 153 에서 창을 죽인다(2026-09-23 확인).
+        # CDP 로 거는 쪽은 정상 동작한다.
+        d.execute_cdp_cmd("Emulation.setDefaultBackgroundColorOverride",
+                          {"color": {"r": 0, "g": 0, "b": 0, "a": 0}})
     pngs = []
     try:
         d.get("file:///" + html_path.replace("\\", "/"))
@@ -342,6 +390,8 @@ def make_frames(data):
         d.quit()
 
     data["frames"] = pngs
+    # make_video 가 어떤 장면에 어떤 클립을 깔지 알아야 한다(키는 문자열 장면번호).
+    data["broll_used"] = {str(i + 1): p for i, p in sorted(brolls.items())}
     with open(os.path.join(POSTS_DIR, f"{stamp}.json"), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return pngs
