@@ -50,7 +50,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
   <div id="banner">
     <div class="tape"></div>
     <div class="tape b"></div>
-    <div class="badge">DISASTER BRIEFING</div>
+    <div class="badge">{badge}</div>
     <div class="mid"><div class="title">{title}</div></div>
     <div class="foot"><span class="dept">{dept}</span> · {date}</div>
     <div class="icon">⚠️</div>
@@ -66,7 +66,7 @@ def _title_size(title):
     return 48 if n <= 26 else 42
 
 
-def make_banner(title, date_str):
+def make_banner(title, date_str, badge="DISASTER BRIEFING"):
     # 너무 긴 제목은 배너용으로 줄임 (부제만 남김). '|'(부제|브랜드) 를 먼저 확인.
     short = title
     for sep in ("|", "–", "—", ":", "-"):

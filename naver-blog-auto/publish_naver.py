@@ -449,11 +449,16 @@ def publish(data, dry_run=None):
 
     if structured:
         # 뉴스별 이미지 준비(기사 og:image, 없으면 Gamma).
-        try:
-            from article_image import prepare_images
-            prepare_images(data["news_blocks"])
-        except Exception as e:
-            log(f"뉴스 이미지 준비 실패(이미지 없이 진행): {e}")
+        # no_images: 기사가 없는 글(진로·자격증 시리즈)은 건너뛴다 — 넣어 봐야
+        # 내용과 무관한 그림이고, Gamma 는 편당 크레딧 10을 태운다(2026-09-23 확인).
+        if data.get("no_images"):
+            log("이미지 준비 건너뜀(no_images).")
+        else:
+            try:
+                from article_image import prepare_images
+                prepare_images(data["news_blocks"])
+            except Exception as e:
+                log(f"뉴스 이미지 준비 실패(이미지 없이 진행): {e}")
         # 상단 배너(제목·날짜 헤더). config.blog.banner 로 끌 수 있다.
         # 여기서는 Gamma 를 쓰지 않는다 — 헤더는 제목/날짜를 넣는 고정 서식이고,
         # Gamma 는 유료 크레딧을 쓰므로 뉴스별 삽화(article_image)에만 남긴다.
@@ -462,7 +467,8 @@ def publish(data, dry_run=None):
         if want_banner and not data.get("banner"):
             try:
                 data["banner"] = make_banner(
-                    data["title"], f"{datetime.now():%Y년 %m월 %d일}")
+                    data["title"], f"{datetime.now():%Y년 %m월 %d일}",
+                    badge=data.get("banner_badge", "DISASTER BRIEFING"))
             except Exception as e:
                 log(f"배너 생성 실패, 배너 없이 진행: {e}")
     else:

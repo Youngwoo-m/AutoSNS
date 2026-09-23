@@ -13,8 +13,10 @@
   ./.venv/bin/python career_series_naver.py --dry-run   # 에디터에 채우고 발행 직전 정지
   ./.venv/bin/python career_series_naver.py             # 1편 발행
 """
+import html
 import json
 import os
+import re
 import sys
 import time
 
@@ -52,6 +54,15 @@ def _episodes():
             yield s["key"], s["label"], i, len(eps), ep
 
 
+def _plain(t):
+    """블로거용 원고에 든 HTML 태그를 지운다.
+
+    진로 시리즈 본문에는 <b>…</b> 가 들어 있다(블로거는 HTML 로 올리니까).
+    네이버 에디터에는 글자 그대로 찍히므로 반드시 벗겨야 한다.
+    """
+    return html.unescape(re.sub(r"<[^>]+>", "", t)).strip()
+
+
 def _body_for(key, ep, n, total, cfg):
     """시리즈별 원고를 네이버 발행용 data 로 맞춘다."""
     if key == "career":
@@ -62,16 +73,18 @@ def _body_for(key, ep, n, total, cfg):
         summary, paras, faq = w["summary"], w["paras"], w["faq"]
 
     # 본문은 블록으로 넘긴다 — 구조형 경로라야 글 끝 CTA(이웃추가·채널 링크)가 붙는다.
-    blocks = [{"heading": "", "paragraph": p} for p in paras[1:]]
+    blocks = [{"heading": "", "paragraph": _plain(p)} for p in paras[1:]]
     return {
         "title": f"{title} [{n}/{total}]",
-        "summary": "\n".join(f"· {s}" for s in summary),
-        "intro": paras[0],
+        "summary": "\n".join(f"· {_plain(s)}" for s in summary),
+        "intro": _plain(paras[0]),
         "news_blocks": blocks,
-        "faq": "\n".join(f"Q. {q}\nA. {a}" for q, a in faq),
+        "faq": "\n".join(f"Q. {_plain(q)}\nA. {_plain(a)}" for q, a in faq),
         "tags": tags,
         "category": CATEGORY,
         "no_banner": False,
+        "no_images": True,          # 기사가 없는 글이라 삽화를 만들지 않는다
+        "banner_badge": "CAREER & LICENSE",
     }
 
 
