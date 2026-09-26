@@ -208,7 +208,7 @@ def _resolve_broll(data, i, scenes=None, auto=None):
 
 
 def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images=None,
-                brolls=None):
+                brolls=None, scrim=1.0):
     bg_images = bg_images or {}
     brolls = brolls or {}
     blocks = []
@@ -230,6 +230,7 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
             blocks.append(_content_html(i, heading, lines, footer, img, logo, header,
                                         bg, s.get("answer", ""), broll))
     frames_html = "\n".join(blocks)
+    sc0, sc1, sc2 = (round(v * scrim, 3) for v in (0.60, 0.20, 0.64))
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
     {_font_face(font_dir)}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
@@ -240,9 +241,12 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
     /* B롤 위에 얹는 프레임은 배경을 비운다 — ffmpeg 가 영상 위에 합성한다.
        글자 가독성용 스크림(위/아래 어두운 그라데이션)만 남긴다. */
     .frame.hasbroll {{ background:transparent; }}
+    /* 스크림 농도는 config.video.broll_scrim 으로 조절한다(0=없음, 1=기본).
+       가운데는 옅게 두고 위아래(소제목·푸터 자리)만 눌러 배경이 살아 보이게 한다. */
     .frame.hasbroll .scrim {{ position:absolute; inset:0;
-      background:linear-gradient(180deg,rgba(0,0,0,.72) 0%,rgba(0,0,0,.35) 38%,
-                 rgba(0,0,0,.35) 62%,rgba(0,0,0,.78) 100%); }}
+      background:linear-gradient(180deg,
+                 rgba(0,0,0,{sc0}) 0%, rgba(0,0,0,{sc1}) 38%,
+                 rgba(0,0,0,{sc1}) 62%, rgba(0,0,0,{sc2}) 100%); }}
     /* ---- 장면 전체 배경 이미지(Firefly 등) + 가독성 스크림 ---- */
     .bgfill {{ position:absolute; inset:0; z-index:0; }}
     .bgfill img {{ width:100%; height:100%; object-fit:cover; }}
@@ -396,8 +400,9 @@ def make_frames(data):
         log(f"B롤 배경 {len(brolls)}장면: " +
             ", ".join(f"{i+1}={os.path.basename(p)}" for i, p in sorted(brolls.items())))
 
+    scrim = float(cfg.get("video", {}).get("broll_scrim", 1.0))
     html_doc = _build_html(scenes, footer, logo, font_dir, source_images, header,
-                           bg_images, brolls)
+                           bg_images, brolls, scrim)
     stamp = data.get("stamp") or time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(POSTS_DIR, f"frames_{stamp}")
     os.makedirs(out_dir, exist_ok=True)
