@@ -146,12 +146,43 @@ def _resolve_bg(path):
     return p
 
 
-def _resolve_broll(data, i):
+# 장면 내용 → B롤 클립. 앞에 있는 것부터 확인하므로 구체적인 말을 위에 둔다.
+# (클립은 make_broll.py 가 posts/broll/ 에 만든다)
+BROLL_KEYWORDS = [
+    ("flood",     ["호우", "침수", "홍수", "폭우", "범람", "하천", "태풍", "장마", "수해"]),
+    ("snow",      ["대설", "폭설", "한파", "결빙", "눈길", "한랭", "동파"]),
+    ("heat",      ["폭염", "무더위", "열대야", "온열질환", "고온"]),
+    ("quake",     ["지진", "여진", "내진", "흔들", "붕괴"]),
+    ("satellite", ["위성", "드론", "GeoAI", "공간정보", "원격탐사", "디지털 트윈",
+                   "디지털트윈", "관제", "분광", "인공지능", "AI"]),
+    ("wildfire",  ["산불", "들불", "화재", "연기", "건조특보", "불씨", "소방"]),
+]
+
+
+def _auto_broll(scene, available, is_last=False):
+    """장면 문구에서 재난 종류를 읽어 어울리는 클립을 고른다.
+
+    제목·자막·내레이션을 합쳐 키워드를 찾는다. 못 찾으면 "" 를 돌려주고
+    그 장면은 예전처럼 흰 카드로 렌더된다 — 억지로 깔면 내용과 어긋난다.
+    마지막 장면(마무리·CTA)은 특정 재난과 무관하므로 새벽 도시를 기본으로 쓴다.
+    """
+    text = " ".join([scene.get("heading", ""), " ".join(scene.get("lines", [])),
+                     scene.get("narration", "")])
+    for name, words in BROLL_KEYWORDS:
+        if name in available and any(w in text for w in words):
+            return available[name]
+    if is_last and "dawn" in available:
+        return available["dawn"]
+    return ""
+
+
+def _resolve_broll(data, i, scenes=None, auto=None):
     """장면 i(0부터)에 쓸 B롤 클립 경로. 없으면 "".
 
-    두 가지로 준다:
+    세 가지로 준다(위가 우선):
       1) data["broll"] = {"1": "posts/broll/fire.mp4", ...}   ← 장면 번호(1부터)
       2) posts/broll/<stamp>/01.mp4 … 파일을 그냥 떨궈 두기
+      3) config.video.broll_auto 가 켜져 있으면 장면 문구를 보고 자동으로 고른다
     """
     b = data.get("broll") or {}
     path = b.get(str(i + 1)) or b.get(i + 1) or ""
@@ -159,6 +190,14 @@ def _resolve_broll(data, i):
         stamp = data.get("stamp") or ""
         cand = os.path.join(POSTS_DIR, "broll", stamp, f"{i+1:02d}.mp4")
         path = cand if stamp and os.path.exists(cand) else ""
+    if not path and auto and scenes:
+        # 기사 사진이 있는 장면은 건드리지 않는다. B롤을 깔면 그 사진이 빠지는데,
+        # 장면 내용과 기사 사진이 맞물리는 게 이 영상의 강점이다(2026-09-26).
+        # 표지·안전수칙·마무리처럼 사진이 없는 장면에만 움직임을 준다.
+        si = scenes[i].get("src_idx")
+        has_photo = si is not None and str(si) in (data.get("source_images") or {})
+        if not has_photo:
+            path = _auto_broll(scenes[i], auto, is_last=(i == len(scenes) - 1))
     if not path:
         return ""
     p = path if os.path.isabs(path) else os.path.normpath(os.path.join(BASE_DIR, path))
@@ -345,7 +384,13 @@ def make_frames(data):
     scenes = data["scenes"]
     source_images = data.get("source_images") or {}
     bg_images = data.get("bg_images") or {}
-    brolls = {i: _resolve_broll(data, i) for i in range(len(scenes))}
+    auto = {}
+    if cfg.get("video", {}).get("broll_auto", False):
+        bdir = os.path.join(POSTS_DIR, "broll")
+        if os.path.isdir(bdir):
+            auto = {os.path.splitext(f)[0]: os.path.join(bdir, f)
+                    for f in os.listdir(bdir) if f.endswith(".mp4")}
+    brolls = {i: _resolve_broll(data, i, scenes, auto) for i in range(len(scenes))}
     brolls = {i: p for i, p in brolls.items() if p}
     if brolls:
         log(f"B롤 배경 {len(brolls)}장면: " +
