@@ -126,6 +126,10 @@
       "침수피해"
     ]
   },
+  "weekly": {
+    "fallback_when_quiet": true,
+    "fallback_kind": "quiz"
+  },
   "editions": {
     "ai": {
       "domain": "GeoAI(지리공간 인공지능) 재난관리",

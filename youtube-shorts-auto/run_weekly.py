@@ -8,6 +8,7 @@ tiktok_upload.py 를 직접 돌리면 기본 dry_run 이라 실수로 발행되�
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime
 
 from common import BASE_DIR, load_config, log
@@ -46,8 +47,59 @@ def _post_instagram_reel(data, ai_label=False):
     log(f"인스타 릴 발행: {out[-1] if out else '(무응답, stderr:' + (p.stderr or '')[-120:] + ')'}")
 
 
-def main():
-    log("===== 주간 유튜브 Shorts + 인스타 + 틱톡 시작 =====")
+def _event_signal(cfg):
+    """수·토 슬롯이 '이번 주 큰 사건이 있었나'를 트리거와 같은 기준으로 판단한다.
+
+    (event_or_None, 사유). 쿨다운·주간상한은 보지 않는다 — 여기서 알고 싶은 건
+    '발행할 만한 사건이 존재하는가'뿐이고, 도배 방지는 트리거 쪽 몫이다.
+    """
+    from check_trigger import decide
+    return decide(cfg)
+
+
+def _publish_fallback(cfg, check_only=False):
+    """큰 사건이 없는 주엔 뉴스를 억지로 만들지 않고 예약 시리즈(O·X 퀴즈) 1편을 올린다.
+
+    행사·점검 기사로 채운 뉴스 숏폼이 조회수 중앙값 174로 가장 부진했던 실측 결과에 따른 것.
+    publish_career.py 가 예약표에서 '미발행 최우선 편'을 골라 유튜브+인스타에 올린다.
+    """
+    kind = cfg.get("weekly", {}).get("fallback_kind", "quiz")
+    # --now: 예정일과 무관하게 미발행 최우선 편. --check 는 같은 선택을 발행 없이 보여준다.
+    args = ["--now", "--dry"] if check_only else ["--now"]
+    log(f"대체 콘텐츠({kind}) {'미리보기' if check_only else '발행'}: publish_career.py {' '.join(args)}")
+    env = {k: v for k, v in os.environ.items() if k != "SMUDS_EDITION"}
+    p = subprocess.run([sys.executable, "publish_career.py", *args],
+                       cwd=BASE_DIR, capture_output=True, text=True,
+                       timeout=1800, env=env)
+    for ln in (p.stdout or "").strip().splitlines()[-4:]:
+        log(f"  {ln}")
+    if p.returncode != 0:
+        log(f"대체 콘텐츠 발행 실패(rc={p.returncode}): {(p.stderr or '')[-300:]}")
+    return p.returncode == 0
+
+
+def main(argv=()):
+    check_only = "--check" in argv
+    log("===== 주간 유튜브 Shorts + 인스타 + 틱톡 시작 ====="
+        + (" [CHECK — 발행하지 않음]" if check_only else ""))
+
+    # 0) 큰 사건이 없는 주면 뉴스를 만들지 않고 예약 시리즈로 대체한다.
+    cfg0 = load_config()
+    if cfg0.get("weekly", {}).get("fallback_when_quiet", True):
+        try:
+            event, why = _event_signal(cfg0)
+        except Exception as e:
+            event, why = True, f"사건 판단 실패 → 뉴스로 진행({type(e).__name__})"
+        if not event:
+            log(f"뉴스 대신 예약 시리즈로 — {why}")
+            _publish_fallback(cfg0, check_only=check_only)
+            log("===== 종료(대체 발행) =====")
+            return
+        log(f"뉴스로 진행 — {why}")
+    if check_only:
+        log("===== 종료(CHECK: 뉴스 경로로 진행할 상황) =====")
+        return
+
     try:
         data = generate()                 # 1) 뉴스 → 대본(장면+나레이션)
         cfg = load_config()
@@ -154,4 +206,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
