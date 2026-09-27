@@ -49,6 +49,13 @@ body:not(.item-view) .blog-posts{ display:flex; flex-wrap:wrap; gap:20px; }
 body:not(.item-view) .blog-posts .post-outer-container{
   flex:1 1 330px; min-width:0;
 }
+/* 마지막 줄에 한 장만 남을 때 가로로 늘어나지 않게 반 칸으로 묶는다.
+   좁은 화면에서는 이 상한을 풀어야 한 줄에 한 장이 제대로 나온다. */
+@media (min-width:720px){
+  body:not(.item-view) .blog-posts .post-outer-container{
+    max-width:calc(50% - 10px);
+  }
+}
 /* 테두리는 !important 가 필요하다 — Contempo 가 .post-outer 에 border:none 을
    더 구체적인 선택자로 걸어 둬서 그냥 쓰면 덮인다. */
 body:not(.item-view) .blog-posts .post-outer{
@@ -97,7 +104,8 @@ body.item-view .blog-posts .post-outer .post-body{
 
 /* 8) 모바일 */
 @media (max-width:720px){
-  .blog-posts .post-outer{ flex:1 1 100%; padding:20px 18px; }
+  body:not(.item-view) .blog-posts .post-outer-container{ flex:1 1 100%; }
+  body:not(.item-view) .blog-posts .post-outer{ padding:20px 18px !important; }
   .post-body, .post-body p{ font-size:16px !important; }
   .post-title, .post-title a{ font-size:22px !important; }
 }
