@@ -93,13 +93,17 @@ def _creds(token_path=None):
     return creds
 
 
+DESC_LIMIT = 4900      # 유튜브 한도 5000자 — 전각 치환으로 늘 수 있어 여유를 둔다
+TITLE_LIMIT = 100
+
+
 def _build_title(data, ycfg):
     """제목 앞에 [SMU 재난안전뉴스] 등 접두사를 붙인다(중복/100자 초과 방지)."""
     title = (data.get("title") or "재난안전 Shorts").strip()
     prefix = ycfg.get("title_prefix", "").strip()
     if prefix and not title.startswith(prefix):
         title = f"{prefix} {title}"
-    return _sanitize(title)[:100]
+    return _sanitize(title)[:TITLE_LIMIT]
 
 
 def _build_description(data, cfg):
@@ -142,6 +146,7 @@ def _build_description(data, cfg):
             "AI로 자동 생성한 아바타 영상입니다(합성 음성·영상)."))
 
     sources = data.get("sources") or []
+    src_from = len(parts)          # 길이 초과 시 여기부터 뒤로 덜어낸다(출처는 부가 정보)
     if sources and ycfg.get("include_sources", True):
         parts.append("")
         parts.append("📰 참고 뉴스 출처")
@@ -156,9 +161,23 @@ def _build_description(data, cfg):
     tags = list(dict.fromkeys((data.get("hashtags") or []) + base_tags))
     # #Shorts 는 항상 포함되도록 보장
     tag_line_src = tags if any(t.lower() == "shorts" for t in tags) else (["Shorts"] + tags)
-    parts.append("")
-    parts.append(" ".join("#" + t for t in tag_line_src))
-    desc = "\n".join(p for p in parts if p is not None).strip()
+    tag_line = " ".join("#" + t for t in tag_line_src)
+
+    # 유튜브 설명 상한 5000자. 넘으면 출처 줄을 끝에서부터 덜어낸다 — 해시태그 줄은
+    # 검색 유입에 쓰이므로 반드시 남긴다. 지금은 1.5천자대라 걸리지 않지만, 출처 제목이
+    # 길어져 조용히 넘치면 업로드가 invalidDescription 으로 통째로 실패한다.
+    head = list(parts)
+    while True:
+        desc = "\n".join(x for x in head + ["", tag_line] if x is not None).strip()
+        if len(desc) <= DESC_LIMIT or len(head) <= src_from:
+            break
+        head.pop()
+    # 링크를 잃은 출처 제목 줄이 홀로 남지 않게 한 줄 더 덜어낸다.
+    if len(head) > src_from and str(head[-1]).startswith("· ["):
+        head.pop()
+        desc = "\n".join(x for x in head + ["", tag_line] if x is not None).strip()
+    if len(head) < len(parts):
+        log(f"설명이 {DESC_LIMIT}자를 넘어 출처 {len(parts) - len(head)}줄을 덜어냈습니다.")
     return _sanitize(desc)
 
 
@@ -169,6 +188,24 @@ def _sanitize(text):
     '… 스마트 안전망 > 뉴스데스크' 의 꺾쇠가 원인이었다(출처 목록을 설명에 넣기 때문).
     비슷하게 생긴 전각 기호로 바꿔 의미는 살리고 거부는 피한다."""
     return (text or "").replace("<", "〈").replace(">", "〉")
+
+
+def _preflight(title, description, keywords):
+    """업로드 직전 최종 점검. 한도를 넘은 채 API 를 때리면 영상·TTS·아나운서 비용을
+    다 쓰고 invalidDescription/invalidTags 로 버려진다(2026-09-12 사례).
+
+    평소엔 걸리지 않는 백스톱이다 — 제목·설명·태그는 각 빌더에서 이미 잘라 넣는다.
+    여기서 걸리면 빌더 쪽이 깨진 것이므로, 조용히 자르지 않고 멈추고 사유를 남긴다.
+    """
+    for name, val, lim in (("제목", title, TITLE_LIMIT),
+                           ("설명", description, 5000),
+                           ("태그 총합", ",".join(keywords or []), 500)):
+        if len(val) > lim:
+            raise ValueError(f"{name}이 유튜브 한도를 넘었습니다({len(val)}>{lim}자) — 업로드 중단")
+    for name, val in (("제목", title), ("설명", description)):
+        bad = [c for c in "<>" if c in val]
+        if bad:
+            raise ValueError(f"{name}에 유튜브가 거부하는 문자 {bad} 가 남아 있습니다 — 업로드 중단")
 
 
 def upload(data, dry_run=None, privacy=None, token_path=None):
@@ -198,6 +235,8 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
             break
         trimmed.append(k)
     keywords = trimmed
+
+    _preflight(title, description, keywords)
 
     status = {
         "privacyStatus": privacy,
