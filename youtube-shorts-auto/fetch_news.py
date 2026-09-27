@@ -5,6 +5,8 @@
 (naver-blog-auto / insta-cardnews 의 검증된 fetch_news 를 그대로 재사용.)
 """
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -22,11 +24,27 @@ def _rss_url(query):
     return f"https://news.google.com/rss/search?q={q}&hl=ko&gl=KR&ceid=KR:ko"
 
 
+# 구글 뉴스 RSS 는 가끔 멀쩡한 질의에 404/5xx 를 돌려준다(9월 한 회차에 1~6건 산발,
+# 같은 회차의 나머지 질의는 정상, 재현 안 됨). 요청 단위의 일시 오류라 잠깐 쉬고 다시 묻는다.
+_RSS_RETRY_WAITS = (2, 5)
+
+
+def _get_rss(url):
+    for attempt in range(len(_RSS_RETRY_WAITS) + 1):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as e:
+            if (e.code == 404 or e.code == 429 or e.code >= 500) \
+                    and attempt < len(_RSS_RETRY_WAITS):
+                time.sleep(_RSS_RETRY_WAITS[attempt])
+                continue
+            raise
+
+
 def _fetch_one(query, within_days):
-    url = _rss_url(query)
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        raw = resp.read()
+    raw = _get_rss(_rss_url(query))
     root = ET.fromstring(raw)
     cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
     items = []
