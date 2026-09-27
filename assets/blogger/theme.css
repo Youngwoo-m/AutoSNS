@@ -77,6 +77,14 @@ body:not(.item-view) .blog-posts .post-outer:hover{
 body:not(.item-view) .blog-posts .post-outer .post-body{
   font-size:15px !important; line-height:1.7 !important; color:#5b6273;
   max-height:7em; overflow:hidden;
+  /* 잘린 자리가 글자 중간에서 뚝 끊기지 않게 아래쪽을 흐리게 뺀다.
+     배경색을 덮는 방식이 아니라 마스크라, 카드 배경이 바뀌어도 따라간다. */
+  -webkit-mask-image:linear-gradient(180deg,#000 62%,transparent 100%);
+          mask-image:linear-gradient(180deg,#000 62%,transparent 100%);
+}
+/* 개별 글에서는 마스크를 반드시 풀어야 한다 — 남겨 두면 본문 끝이 흐려진다. */
+body.item-view .post-body{
+  -webkit-mask-image:none !important; mask-image:none !important;
 }
 body.item-view .blog-posts .post-outer .post-body{
   max-height:none; overflow:visible;
