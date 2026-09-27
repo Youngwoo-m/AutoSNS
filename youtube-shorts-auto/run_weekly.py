@@ -83,9 +83,13 @@ def main(argv=()):
     log("===== 주간 유튜브 Shorts + 인스타 + 틱톡 시작 ====="
         + (" [CHECK — 발행하지 않음]" if check_only else ""))
 
-    # 0) 큰 사건이 없는 주면 뉴스를 만들지 않고 예약 시리즈로 대체한다.
+    # 0) 큰 사건이 없으면 뉴스를 만들지 않고 예약 시리즈로 대체한다 — 단 지정 요일만.
+    #    수(중앙값 699)보다 토(250)가 약하고, 토요일은 아나운서 크레딧까지 쓰므로
+    #    조용한 주의 토요일만 대체하고 수요일은 늘 뉴스로 둔다.
     cfg0 = load_config()
-    if cfg0.get("weekly", {}).get("fallback_when_quiet", True):
+    wcfg0 = cfg0.get("weekly", {})
+    fb_days = wcfg0.get("fallback_weekdays", [5])      # 5=토요일
+    if wcfg0.get("fallback_when_quiet", True) and datetime.now().weekday() in fb_days:
         try:
             event, why = _event_signal(cfg0)
         except Exception as e:
@@ -97,7 +101,10 @@ def main(argv=()):
             return
         log(f"뉴스로 진행 — {why}")
     if check_only:
-        log("===== 종료(CHECK: 뉴스 경로로 진행할 상황) =====")
+        wd = "월화수목금토일"[datetime.now().weekday()]
+        why = ("뉴스 경로로 진행할 상황" if datetime.now().weekday() in fb_days
+               else f"{wd}요일은 대체 대상이 아님(대체 요일 {fb_days}) — 늘 뉴스")
+        log(f"===== 종료(CHECK: {why}) =====")
         return
 
     try:
