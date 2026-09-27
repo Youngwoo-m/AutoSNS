@@ -54,6 +54,51 @@ def _api_get(url, cid, secret, what, q):
     return None
 
 
+_MAX_EXPAND = 8         # 질의 하나가 펼쳐지는 최대 개수(호출 수 폭증 방지)
+
+
+def _expand_query(q):
+    """구글 문법 'A OR B' 질의를 네이버가 알아듣는 단순 질의 여러 개로 펼친다.
+
+    네이버 검색 API 는 OR 을 지원하지 않아, OR 이 든 질의는 0건을 돌려준다
+    (2026-09-27 확인: 기본판 26개 중 24개, 토요일 AI판 5개 전부 0건).
+    구글처럼 OR 은 '바로 옆 단어끼리' 묶는다고 보고 곱집합으로 펼친다:
+      '제천 재난 OR 화재 OR 호우'   → 제천 재난 / 제천 화재 / 제천 호우
+      '충북 OR 충청북도 재난안전'   → 충북 재난안전 / 충청북도 재난안전
+    그냥 OR 로 자르면 '화재'처럼 지역 없는 단독 질의가 생겨 전국 기사가 쏟아진다.
+    """
+    toks = q.split()
+    groups, i = [], 0
+    while i < len(toks):
+        g = [toks[i]]
+        while i + 2 < len(toks) and toks[i + 1] == "OR":
+            g.append(toks[i + 2])
+            i += 2
+        groups.append(list(dict.fromkeys(g)))
+        i += 1
+    out = [[]]
+    for g in groups:
+        out = [a + [b] for a in out for b in g]
+    seen, res = set(), []
+    for words in out:
+        w = list(dict.fromkeys(words))            # '속보 … 속보' 같은 반복 단어 정리
+        s = " ".join(w)
+        if s and s not in seen:
+            seen.add(s)
+            res.append(s)
+    return res[:_MAX_EXPAND]
+
+
+def _expand_all(queries):
+    seen, res = set(), []
+    for q in queries:
+        for s in _expand_query(q):
+            if s not in seen:
+                seen.add(s)
+                res.append(s)
+    return res
+
+
 def _clean(t):
     t = re.sub(r"<[^>]+>", "", t or "")
     for a, b in [("&quot;", '"'), ("&amp;", "&"), ("&lt;", "<"),
@@ -91,7 +136,7 @@ def naver_blog_search(queries, cid, secret, within_days=7, per_query=10, total=8
     keywords = _query_keywords(queries)
     cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
     seen, items = set(), []
-    for q in queries:
+    for q in _expand_all(queries):
         url = "https://openapi.naver.com/v1/search/blog.json?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
         data = _api_get(url, cid, secret, "네이버 블로그 검색", q)
@@ -151,7 +196,7 @@ def naver_news_search(queries, cid, secret, within_days=7, per_query=10, total=1
     keywords = _query_keywords(queries)
     cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
     seen, items = set(), []
-    for q in queries:
+    for q in _expand_all(queries):
         url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
         data = _api_get(url, cid, secret, "네이버 뉴스 검색", q)
