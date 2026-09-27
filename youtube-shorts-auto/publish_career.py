@@ -46,7 +46,10 @@ def _save(sched):
 
 
 def _pick(sched, ignore_date):
-    """발행할 편 1개 선택: 미발행 중 예정일 이른 순. ignore_date 면 날짜 조건 무시."""
+    """발행할 편 1개 선택: 미발행 중 예정일 이른 순. ignore_date 면 날짜 조건 무시.
+
+    영상 파일이 없는 편은 건너뛴다 — 한 편이 빠져도 주간 슬롯 전체가 죽지 않게.
+    """
     today = datetime.date.today()
     cand = []
     for e in sched:
@@ -56,7 +59,11 @@ def _pick(sched, ignore_date):
         if ignore_date or due <= today:
             cand.append(e)
     cand.sort(key=lambda e: e["date"])
-    return cand[0] if cand else None
+    for e in cand:
+        if os.path.exists(os.path.join(BASE_DIR, e["video"])):
+            return e
+        log(f"영상이 없어 건너뜁니다: [{e.get('label', e['no'])}] {e['video']}")
+    return None
 
 
 def _upload(ep):
@@ -144,7 +151,7 @@ def main(argv):
     sched = _load()
     ep = _pick(sched, ignore_date)
     if not ep:
-        log("발행할 예약 편이 없습니다(오늘 기준 미발행/예정일 없음).")
+        log("발행할 예약 편이 없습니다(오늘 기준 미발행/예정일 없음, 또는 영상 파일 없음).")
         return
     if dry:
         ch = "유튜브" if no_ig else "유튜브+인스타"
