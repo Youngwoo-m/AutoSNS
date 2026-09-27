@@ -3,7 +3,9 @@
 표준 라이브러리만 사용. 반환: [{title, link, source, published(dt), published_str}]
 실제 기사 목록만 돌려주므로, 생성 단계에서 '없는 사실'을 지어낼 여지를 줄인다.
 """
+import os
 import re
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -13,6 +15,9 @@ from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree as ET
 
 from common import load_config, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.keyword_terms import is_disaster_relevant  # noqa: E402
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -104,6 +109,18 @@ def _region_rank(item, region_priority, exclude=()):
             if alias in hay:
                 return rank
     return len(region_priority)
+
+
+def _select_rank(item, region_priority, exclude=(), extra_terms=()):
+    """최종 선정 순서: 재난 관련 지역 기사 → 재난 관련 기타 지역 → 재난 무관 기사.
+
+    지역 가점은 재난·안전 관련 말이 제목에 든 기사에만 준다. 무관한 기사는
+    버리지 않고 맨 뒤로 보낸다(기사가 모자란 날엔 자리를 채우게).
+    """
+    n = len(region_priority)
+    if not is_disaster_relevant(item.get("title", ""), extra_terms):
+        return n + 1
+    return _region_rank(item, region_priority, exclude)
 
 
 def _norm_title(title):
@@ -247,7 +264,8 @@ def fetch_news():
     results = _dedup_similar(results, dedup_similarity)
     merged = before_dedup - len(results)
     if region_priority:
-        results.sort(key=lambda x: _region_rank(x, region_priority, region_exclude))
+        rel_extra = cfg.get("relevance_extra", [])
+        results.sort(key=lambda x: _select_rank(x, region_priority, region_exclude, rel_extra))
     results = results[:max_items]
     # Esri 글은 날짜가 조금 지나도 참고 가치가 커서, 최소 N건은 자리를 보장한다
     keep = cfg.get("esri_keep", 2)
@@ -259,7 +277,7 @@ def fetch_news():
             log(f"Esri 글 {len(missing)}건 자리 보장(참고용)")
     if region_priority:
         matched = sum(1 for x in results
-                      if _region_rank(x, region_priority, region_exclude)
+                      if _select_rank(x, region_priority, region_exclude, rel_extra)
                       < len(region_priority))
         log(f"뉴스 {len(results)}건 수집(최근 {within}일, 지역우선 "
             f"{' > '.join(region_priority)}; 우선지역 {matched}건, 중복 {merged}건 병합).")
