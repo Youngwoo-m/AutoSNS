@@ -411,6 +411,26 @@ def _type_caption(driver, caption):
     return ok
 
 
+def _saved_caption_ok(driver, code, caption):
+    """게시물 편집창을 다시 열어 저장된 캡션이 의도한 내용인지 확인한다(읽기만)."""
+    try:
+        driver.get(f"https://www.instagram.com/p/{code}/")
+        time.sleep(4)
+        if not _click_dialog_button(driver, ["옵션 더 보기", "옵션", "More options"]):
+            return False
+        time.sleep(1.5)
+        if not _click_dialog_button(driver, ["수정", "Edit"]):
+            return False
+        time.sleep(4)
+        boxes = [b for b in driver.find_elements(
+            By.CSS_SELECTOR, "div[role='textbox'][contenteditable='true']") if b.is_displayed()]
+        ok = bool(boxes) and _norm_caption(boxes[0].text) == _norm_caption(caption)
+        _click_dialog_button(driver, ["취소", "Cancel"])
+        return ok
+    except Exception:
+        return False
+
+
 def _fix_caption_after_publish(driver, username, caption):
     """게시 직후 실제 캡션을 확인하고, 비어 있으면 편집으로 채운다.
 
@@ -459,7 +479,12 @@ def _fix_caption_after_publish(driver, username, caption):
         if _norm_caption(box.text) == _norm_caption(caption):
             _click_dialog_button(driver, ["완료", "Done"])
             time.sleep(5)
-            log("게시 후 캡션 보완 완료")
+            # 저장됐는지 편집창을 다시 열어 확인한다. 예전엔 '완료'만 누르고 성공으로 기록해,
+            # 실제로는 저장되지 않은 5건(9/15~9/27)이 모두 '보완 완료'로 남았다.
+            if _saved_caption_ok(driver, code, caption):
+                log(f"게시 후 캡션 보완 완료(저장 확인됨, {code})")
+            else:
+                log(f"⚠ 게시 후 캡션 보완 저장 안 됨({code}) — 캡션이 빈 채로 게시돼 있습니다")
         else:
             _click_dialog_button(driver, ["취소", "Cancel"])
             log("게시 후 캡션 보완 실패(저장하지 않음) — ig_caption_boost 로 보완하세요")

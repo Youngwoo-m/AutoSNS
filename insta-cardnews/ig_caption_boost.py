@@ -163,7 +163,7 @@ def _boost_one(d, code, add_lines):
     original = box.text
     if not original.strip():
         _click_text(d, ["취소", "Cancel"])
-        return "skip"                                       # 캡션 없는 게시물은 건드리지 않음
+        return "empty"                                      # 캡션 없는 게시물은 건드리지 않음
     need = [ln for ln in add_lines if _norm(ln) not in _norm(original)]
     if not need:
         _click_text(d, ["취소", "Cancel"])
@@ -208,6 +208,7 @@ def run(go=False, limit=None, headless=None, recheck=False):
     seen = set() if recheck else (set(st.get("done", [])) | set(st.get("failed", [])))
     d = build_driver(headless=ig.get("headless", False) if headless is None else headless)
     added = errors = 0
+    empty_codes = []
     try:
         codes = [c for c in _collect_codes(d, ig["username"]) if c not in seen]
         log(f"미처리 {len(codes)}건 (이번 최대 {limit}건, dry_run={not go})")
@@ -226,7 +227,12 @@ def run(go=False, limit=None, headless=None, recheck=False):
                 log(f"  보강 {added}/{limit} → {code}")
             elif res == "skip":
                 st.setdefault("done", []).append(code)
-                log(f"  건너뜀(문구 있음/캡션 없음) → {code}")
+                log(f"  건너뜀(문구 이미 있음) → {code}")
+            elif res == "empty":
+                # 캡션이 통째로 빈 게시물 — 덧붙일 원문이 없어 여기선 못 고친다. 눈에 띄게 남긴다.
+                # (예전엔 '문구 있음'과 같은 줄로 기록돼 9월 빈 캡션 릴 8건이 로그에 묻혀 있었다)
+                empty_codes.append(code)
+                log(f"  ⚠ 캡션 없음 → https://www.instagram.com/p/{code}/")
             else:
                 errors += 1
                 st.setdefault("failed", []).append(code)
@@ -235,8 +241,8 @@ def run(go=False, limit=None, headless=None, recheck=False):
             time.sleep(random.uniform(lo, hi) if res == "added" else random.uniform(4, 8))
     finally:
         d.quit()
-    log(f"종료 — 보강 {added}건, 실패 {errors}건")
-    return {"added": added, "errors": errors}
+    log(f"종료 — 보강 {added}건, 실패 {errors}건, 캡션 없음 {len(empty_codes)}건")
+    return {"added": added, "errors": errors, "empty": empty_codes}
 
 
 if __name__ == "__main__":

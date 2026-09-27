@@ -16,7 +16,9 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -65,7 +67,8 @@ def _row(it):
     cap = ((it.get("caption") or {}).get("text") or "").strip()
     return {
         "title": cap.split("\n")[0][:90],
-        "date": datetime.fromtimestamp(it["taken_at"], timezone.utc).strftime("%Y-%m-%d"),
+        # 한국 시간으로 날짜를 찍는다 — UTC 로 찍으면 아침 08:30 카드뉴스 릴이 전날로 표시됐다.
+        "date": datetime.fromtimestamp(it["taken_at"], KST).strftime("%Y-%m-%d"),
         "type": kind,
         "caption_empty": not cap,
         "pages": len(it.get("carousel_media") or []),
