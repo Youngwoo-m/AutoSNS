@@ -15,7 +15,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from common import POSTS_DIR, load_config, log
+from common import POSTS_DIR, load_config, log, start_chrome
 
 W = 1200                    # 폭 고정, 높이는 단계 수에 따라 늘어난다
 CARD_H = 104                # 카드 한 장 높이(대략) — 창 크기 계산에만 쓴다
@@ -81,7 +81,7 @@ def make_steps(data, cfg=None):
     o.add_argument(f"--window-size={W + 100},{260 + CARD_H * len(steps)}")
     o.add_argument("--force-device-scale-factor=2")
     o.add_argument("--hide-scrollbars")
-    d = webdriver.Chrome(options=o)
+    d = start_chrome(o)
     try:
         d.get("file:///" + html_path.replace("\\", "/"))
         time.sleep(0.8)

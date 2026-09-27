@@ -13,7 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from common import POSTS_DIR, load_config, log
+from common import POSTS_DIR, load_config, log, start_chrome
 
 DEFAULT_DEPT = "세명대학교 재난안전학과"
 
@@ -86,7 +86,7 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING"):
     o.add_argument("--window-size=1100,560")
     o.add_argument("--force-device-scale-factor=2")  # 선명하게
     o.add_argument("--hide-scrollbars")
-    d = webdriver.Chrome(options=o)
+    d = start_chrome(o)
     try:
         d.get("file:///" + html_path.replace("\\", "/"))
         time.sleep(1.2)

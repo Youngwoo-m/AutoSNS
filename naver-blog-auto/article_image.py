@@ -14,7 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-from common import POSTS_DIR, log
+from common import POSTS_DIR, log, start_chrome
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -27,7 +27,7 @@ def _driver():
     o.add_argument("--lang=ko-KR")
     o.add_argument("--disable-blink-features=AutomationControlled")
     o.set_capability("unhandledPromptBehavior", "accept")
-    return webdriver.Chrome(options=o)
+    return start_chrome(o)
 
 
 def _open_article(driver, url):

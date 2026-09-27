@@ -19,7 +19,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from common import PROFILE_DIR, LOGS_DIR, load_config, log
+from common import LOGS_DIR, PROFILE_DIR, load_config, log, start_chrome
 from make_banner import make_banner
 from gamma_image import make_gamma_image
 
@@ -40,7 +40,7 @@ def build_driver(headless):
     opts.set_capability("unhandledPromptBehavior", "accept")
     if headless:
         opts.add_argument("--headless=new")
-    driver = webdriver.Chrome(options=opts)
+    driver = start_chrome(opts)
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",
         {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"},

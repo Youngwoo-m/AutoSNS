@@ -1,6 +1,7 @@
 """공통 설정/경로 유틸."""
 import json
 import os
+import time
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -59,3 +60,29 @@ def log(msg):
     logfile = os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m}.log")
     with open(logfile, "a", encoding="utf-8") as f:
         f.write(line + "\n")
+
+
+def start_chrome(options, tries=3, wait=90):
+    """크롬을 띄운다. 드라이버 짝이 안 맞으면 기다렸다 다시 시도한다.
+
+    크롬이 자동 업데이트되면 selenium 이 받아 둔 chromedriver 와 버전이 어긋나
+    SessionNotCreatedException 이 난다. selenium manager 가 새 드라이버를 받는 데
+    1~2분이면 되는데, 그 사이에 걸리면 그날 글이 통째로 버려졌다
+    (2026-09-19, 09-26 실제 발생 — 본문까지 다 만들어 놓고 발행에서 끊겼다).
+    """
+    from selenium import webdriver
+    from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
+    last = None
+    for n in range(1, tries + 1):
+        try:
+            return webdriver.Chrome(options=options)
+        except (SessionNotCreatedException, WebDriverException) as e:
+            msg = str(e)
+            if "session not created" not in msg.lower():
+                raise
+            last = e
+            if n < tries:
+                log(f"크롬 실행 실패({n}/{tries}) — {wait}초 뒤 다시 시도합니다. "
+                    "(크롬이 업데이트되면 드라이버를 새로 받는 동안 이 오류가 난다)")
+                time.sleep(wait)
+    raise last
