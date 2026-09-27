@@ -3,7 +3,10 @@
 # launchd(com.smuds.cacheprune.daily)가 매일 새벽 호출. 수동 실행도 가능.
 # 안전장치: 해당 프로필을 점유한 프로세스가 있으면 그 프로필은 건너뛴다(손상 방지).
 set -u
-ROOT="$HOME/devAPP/AutoSNS"
+# 이 스크립트가 놓인 곳을 기준으로 잡는다. 전에는 "$HOME/devAPP/AutoSNS" 로 박혀
+# 있었는데, 2026-09-21 에 같은 이름의 빈 디렉터리가 홈에 생기면서 그쪽을 보게 됐다.
+# chrome-profile 이 하나도 없으니 조용히 0건으로 끝났다(9/20 로그 "약 0MB 확보").
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="$ROOT/maintenance/logs"; mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/prune.log"
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
@@ -16,8 +19,10 @@ PRUNE_NAMES=(
   "WasmTtsEngine" "OptimizationHints" "optimization_guide_prediction_model_downloads"
 )
 
-freed_before=$(df -k / | awk 'NR==2{print $4}')
-echo "[$(ts)] prune 시작" >> "$LOG"
+# 지우는 볼륨을 잰다. 전에는 df -k / 로 내장 디스크를 재서, USB 에서 지워 놓고
+# "여유 0GB" 를 찍었다.
+freed_before=$(df -k "$ROOT" | awk 'NR==2{print $4}')
+echo "[$(ts)] prune 시작 — $ROOT" >> "$LOG"
 
 # 각 chrome-profile* 디렉터리 순회
 find "$ROOT" -maxdepth 2 -type d -name "chrome-profile*" 2>/dev/null | while IFS= read -r prof; do
@@ -33,6 +38,6 @@ find "$ROOT" -maxdepth 2 -type d -name "chrome-profile*" 2>/dev/null | while IFS
   done
 done
 
-freed_after=$(df -k / | awk 'NR==2{print $4}')
+freed_after=$(df -k "$ROOT" | awk 'NR==2{print $4}')
 diff_mb=$(( (freed_after - freed_before) / 1024 ))
 echo "[$(ts)] prune 완료 — 약 ${diff_mb}MB 확보 (여유 $((freed_after/1024/1024))GB)" >> "$LOG"
