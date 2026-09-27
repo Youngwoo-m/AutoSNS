@@ -14,3 +14,7 @@ career_naver_state.json
 
 # 직접 찍은 화면 캡처는 손으로 만든 자산이라 남긴다(위 *.png/*.jpg 예외).
 !shots/**
+
+# 글에 그대로 들어가는 그림(입시 인포그래픽 등)도 손질한 자산이라 남긴다.
+# 고칠 때는 그림을 직접 만지지 말고 그리는 스크립트(admission_infographic.py)를 고친다.
+!assets/admission/*.png

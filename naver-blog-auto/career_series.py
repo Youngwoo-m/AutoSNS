@@ -13,12 +13,13 @@
 사용: python career_series.py           # 남은 편 중 2편 발행
       python career_series.py --dry     # 무엇을 올릴지만 출력
 """
+import os
 import sys
 import time
 
 from googleapiclient.discovery import build
 from post_blogger import _count_post, _creds, _esc, _posted_today, _url
-from common import load_config, log
+from common import BASE_DIR, load_config, log
 import admission_topics
 import cert_topics
 import cert_writer
@@ -118,7 +119,8 @@ SERIES = [
     # 자격증 18편이 끝나면 이어진다(2026-10 중순 예정). 입시 정보는 틀리면 학생이
     # 지원을 그르치므로 생성 지침을 따로 쓴다 — cert_writer.PROFILES["admission"].
     {"key": "admission", "label": "입시", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%85%EC%8B%9C",
-     "eps": admission_topics.TOPICS, "kind": "generated", "profile": "admission"},
+     "eps": admission_topics.TOPICS, "kind": "generated", "profile": "admission",
+     "images": admission_topics.IMAGES},
 ]
 
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
@@ -155,10 +157,40 @@ def _safe(text):
     return out.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
 
 
-def build_html(summary, paras, faq, vid, hub, label, generated):
-    """한 편의 본문. generated=True 면 문단을 걸러서 넣는다(모델이 쓴 글이라)."""
+def _episode_image(ser, ep, dry=False):
+    """이 편에 붙일 그림이 있으면 CDN 에 올려 주소를 준다. 없거나 실패하면 "".
+
+    그림은 저장소 안 PNG 로 두고 발행할 때만 올린다 — 글보다 먼저 공개되지 않게.
+    올리기가 실패해도 글은 그림 없이 나간다(GeoAI 글과 같은 원칙)."""
+    rel = (ser.get("images") or {}).get(ep[0])
+    if not rel:
+        return ""
+    path = os.path.join(BASE_DIR, rel)
+    if not os.path.exists(path):
+        print(f"  그림 파일이 없어 건너뜀: {rel}")
+        return ""
+    if dry:
+        print(f"  [DRY] 그림 붙일 예정: {rel}")
+        return ""
+    try:
+        from geoai_assets import upload
+        urls = upload([path], f"{time.strftime('%Y/%m')}/{ser['key']}_{ep[0]}", cfg)
+        return urls[0] if urls else ""
+    except Exception as e:
+        print(f"  그림 올리기 실패(글은 그림 없이 나감): {type(e).__name__}: {str(e)[:90]}")
+        return ""
+
+
+def build_html(summary, paras, faq, vid, hub, label, generated, image_url=""):
+    """한 편의 본문. generated=True 면 문단을 걸러서 넣는다(모델이 쓴 글이라).
+
+    image_url 이 있으면 요약 바로 아래에 그림을 넣는다(입시 11편 인포그래픽 등)."""
     P = ["<h3>📌 3줄 요약</h3><ul>"
          + "".join(f"<li>{_esc(x)}</li>" for x in summary) + "</ul>"]
+    if image_url:
+        P.append('<p style="text-align:center"><img src="%s" alt="%s" '
+                 'style="max-width:100%%;height:auto;border-radius:8px"></p>'
+                 % (_url(image_url), _esc(label)))
     P += [f"<p>{_safe(p) if generated else p}</p>" for p in paras]
     P.append(_video_html(vid))
     if faq:
@@ -195,7 +227,7 @@ def main():
             if ser["kind"] == "static":
                 vid, title, summary, paras, faq, tags = ep
             else:
-                _slug, title, _angle, tags = ep
+                slug, title, _angle, tags = ep
                 vid = ""
             full_title = f"{title} [{n}/{total}]"
             if full_title in have:
@@ -210,6 +242,7 @@ def main():
                 break
             if dry:
                 print(f"[DRY] {ser['label']} {n}/{total} 발행 예정: {full_title[:50]}")
+                _episode_image(ser, ep, dry=True)
                 posted += 1
                 continue
             if ser["kind"] == "generated":          # 본문을 지금 만든다
@@ -221,8 +254,10 @@ def main():
                           f"{type(e).__name__}: {str(e)[:90]}")
                     break
                 summary, paras, faq = w["summary"], w["paras"], w["faq"]
+            image_url = _episode_image(ser, ep, dry=False)
             content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
-                                 generated=(ser["kind"] == "generated"))
+                                 generated=(ser["kind"] == "generated"),
+                                 image_url=image_url)
             # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
             labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
             body = {"title": full_title, "content": content, "labels": labels,
