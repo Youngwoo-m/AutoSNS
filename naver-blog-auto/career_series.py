@@ -19,6 +19,7 @@ import time
 from googleapiclient.discovery import build
 from post_blogger import _count_post, _creds, _esc, _posted_today, _url
 from common import load_config, log
+import admission_topics
 import cert_topics
 import cert_writer
 
@@ -113,7 +114,11 @@ CAREER = [
 SERIES = [
     {"key": "career", "label": "진로", "hub": HUB, "eps": CAREER, "kind": "static"},
     {"key": "cert", "label": "자격증", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%90%EA%B2%A9%EC%A6%9D",
-     "eps": cert_topics.TOPICS, "kind": "generated"},
+     "eps": cert_topics.TOPICS, "kind": "generated", "profile": "cert"},
+    # 자격증 18편이 끝나면 이어진다(2026-10 중순 예정). 입시 정보는 틀리면 학생이
+    # 지원을 그르치므로 생성 지침을 따로 쓴다 — cert_writer.PROFILES["admission"].
+    {"key": "admission", "label": "입시", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%85%EC%8B%9C",
+     "eps": admission_topics.TOPICS, "kind": "generated", "profile": "admission"},
 ]
 
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
@@ -209,7 +214,8 @@ def main():
                 continue
             if ser["kind"] == "generated":          # 본문을 지금 만든다
                 try:
-                    w = cert_writer.write(n, total, title, ep[2], cfg)
+                    w = cert_writer.write(n, total, title, ep[2], cfg,
+                                          profile=ser.get("profile", "cert"))
                 except Exception as e:
                     print(f"{ser['label']} {n}/{total} 본문 생성 실패(다음 실행에서 재시도): "
                           f"{type(e).__name__}: {str(e)[:90]}")
