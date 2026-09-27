@@ -51,9 +51,15 @@ body{ background:#fff; color:var(--smu-slate); }
 .blog-posts .post-outer:hover{
   border-color:var(--smu-navy); box-shadow:0 6px 16px rgba(39,44,60,.10);
 }
-.blog-posts .post-outer .post-body{
+/* 목록(index-view)에서만 잘라낸다. body.index-view 로 묶지 않으면 개별 글
+   페이지(item-view)도 같은 구조를 써서 본문이 7em 에서 통째로 잘린다
+   — 3줄 요약만 남고 나머지가 사라졌다(2026-09-27 확인). */
+body.index-view .blog-posts .post-outer .post-body{
   font-size:15px !important; line-height:1.7 !important; color:#5b6273;
   max-height:7em; overflow:hidden;
+}
+body.item-view .blog-posts .post-outer .post-body{
+  max-height:none; overflow:visible;
 }
 .blog-posts .post-outer .post-title, .blog-posts .post-outer .post-title a{
   font-size:19px !important; font-weight:700;
