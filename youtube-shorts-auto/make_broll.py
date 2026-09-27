@@ -205,9 +205,13 @@ const flakes = [];
 window.draw = function (t) {
   bg('#1c2231', '#39445c');
   skyline(13, H*0.82, 260, '70,84,112', .45);
-  X.fillStyle = '#e8eef7';                                   // 쌓인 눈
+  // 쌓인 눈. 흰색을 그대로 깔면 아래쪽 흰 글자(푸터·학과명)가 묻힌다.
+  // 푸른 회색으로 낮추고 아래로 갈수록 어둡게 해서 글자 자리를 확보한다.
+  { const g = X.createLinearGradient(0, H*0.82, 0, H);
+    g.addColorStop(0, '#b9c6da'); g.addColorStop(1, '#4a5670');
+    X.fillStyle = g; }
   X.beginPath(); X.moveTo(0,H);
-  for (let x=0;x<=W;x+=12) X.lineTo(x, H*0.84 + Math.sin(x/160)*16);
+  for (let x=0;x<=W;x+=12) X.lineTo(x, H*0.88 + Math.sin(x/160)*12);
   X.lineTo(W,H); X.closePath(); X.fill();
   for (const f of flakes) {                                  // 눈발
     const y = (f.y + t*H*f.sp) % (H+40) - 20;
