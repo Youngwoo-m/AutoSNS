@@ -20,7 +20,15 @@ def _creds():
     return creds
 
 
-def youtube_search(queries, within_days=7, per_query=5, total=10):
+# 우리 채널 — 검색 결과에 우리 영상이 다시 잡혀 '출처'로 재인용되는 것을 막는다.
+# (2026-09-27 확인: AI판 수집 8건에 우리 [SMU 재난안전뉴스] 영상이 섞여 있었다)
+OWN_CHANNELS = {
+    "UCyB8hWjVghfgzZgj8fwmZrQ",   # 세명대학교 재난안전학과
+    "UCbHDlxMFIackeJRwW2iTYew",   # 재난안전과 GeoAI
+}
+
+
+def youtube_search(queries, within_days=7, per_query=5, total=10, exclude_channels=()):
     """검색어로 최근 유튜브 동영상을 찾아 뉴스와 같은 형태의 항목으로 돌려준다.
 
     주의: 유튜브 search API 는 호출당 할당량 100유닛을 쓴다(쿼리 5개면 500유닛/회).
@@ -34,6 +42,7 @@ def youtube_search(queries, within_days=7, per_query=5, total=10):
         return []
     after = (datetime.now(timezone.utc) - timedelta(days=within_days)).strftime(
         "%Y-%m-%dT%H:%M:%SZ")
+    skip = OWN_CHANNELS | set(exclude_channels or ())
     seen, items = set(), []
     for q in queries:
         try:
@@ -50,6 +59,8 @@ def youtube_search(queries, within_days=7, per_query=5, total=10):
                 continue
             seen.add(vid)
             sn = it["snippet"]
+            if sn.get("channelId") in skip:
+                continue
             try:
                 pub = datetime.fromisoformat(sn["publishedAt"].replace("Z", "+00:00"))
             except Exception:
