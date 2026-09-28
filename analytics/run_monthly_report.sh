@@ -40,10 +40,16 @@ fi
 XLSX="out/재난안전학과_${YM}_활동목록.xlsx"
 cp "out/monthly_${YM}.xlsx" "$XLSX" 2>/dev/null
 
-# 학교 제출용 양식(온라인 홍보활동 보고서). 양식 파일이 없으면 첨부에서 빠진다.
+# 학교 제출용 양식(온라인 홍보활동 보고서)은 말일 잡이 미리 만들어 둔다.
+# 그때 못 만들었으면(맥이 꺼져 있었다든지) 여기서 만들어 첨부는 빠지지 않게 한다.
 PROMO="out/[재난안전학과] 온라인 홍보활동 보고서 ${YM}.xlsx"
-./.venv/bin/python build_promo_report.py "$YM" "$PROMO" >/dev/null \
-  || { echo "!! 홍보활동 보고서 생성 실패 — 첨부에서 제외"; PROMO=""; }
+if [[ -f "$PROMO" ]]; then
+  echo "홍보활동 보고서: 말일에 작성된 파일을 첨부한다"
+else
+  echo "홍보활동 보고서: 말일 작성분이 없어 지금 만든다"
+  ./.venv/bin/python build_promo_report.py "$YM" "$PROMO" >/dev/null \
+    || { echo "!! 홍보활동 보고서 생성 실패 — 첨부에서 제외"; PROMO=""; }
+fi
 
 if [[ "${SMUDS_REPORT_DRYRUN:-0}" == "1" ]]; then
   echo "== 드라이런: 메일 발송 건너뜀 =="
