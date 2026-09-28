@@ -12,7 +12,8 @@
   인스타 게시물          ← 이미지·카드뉴스
   인스타 릴스            ← 숏츠·영상
   블로그                 ← 네이버 블로그
-  페이스북·기타          ← 운영하지 않아 비워 둔다
+  기타                   ← 블로거(blogspot)
+  페이스북               ← 운영하지 않아 비워 둔다
 
 사용: python build_promo_report.py [YYYY-MM] [출력경로]
 """
@@ -24,7 +25,7 @@ from copy import copy
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from analytics.common import OUT_DIR, log  # noqa: E402
+from analytics.common import OUT_DIR, load_part, log  # noqa: E402
 from analytics.build_report import merge  # noqa: E402
 from analytics.build_monthly import prev_month  # noqa: E402
 
@@ -39,8 +40,14 @@ LAST_ROW = 29           # 양식의 마지막 데이터 행(기타)
 
 
 def sections(rows, ym):
-    """양식 순서대로 (구분, 분류, 항목들). 항목은 (내용, 업로드일자, 비고)."""
+    """양식 순서대로 (구분, 분류, 항목들). 항목은 (내용, 업로드일자, 링크)."""
     cur = [r for r in rows if r["date"][:7] == ym]
+
+    # 블로거(blogspot)는 주간·월간 리포트의 4개 매체에 들어 있지 않아 따로 읽는다.
+    blogger = [x for x in (load_part("blogger") or {}).get("items", [])
+               if x["date"][:7] == ym]
+    blogger = [(x["title"] or "(제목 없음)", x["date"], x.get("url", ""))
+               for x in sorted(blogger, key=lambda a: a["date"])]
 
     def pick(media, types=None, sources=None):
         out = []
@@ -63,7 +70,7 @@ def sections(rows, ym):
         ("인스타", "릴스", pick("인스타그램", types=("숏츠", "영상"))),
         ("페이스북", None, []),
         ("블로그", None, pick("네이버 블로그")),
-        ("기타", None, []),
+        ("기타", None, blogger),
     ]
 
 
@@ -133,7 +140,7 @@ def build(rows, ym, out_path):
                 if h > 1:
                     ws.merge_cells(start_row=sub, start_column=2, end_row=sub + h - 1, end_column=2)
                 sub += h
-        ws[f"A{row}"] = f"{gubun}\n(총 {counts.get(gubun, 0)}건)" if gubun != "기타" else "기타"
+        ws[f"A{row}"] = f"{gubun}\n(총 {counts.get(gubun, 0)}건)"
         row += span
         i += len(block)
 
