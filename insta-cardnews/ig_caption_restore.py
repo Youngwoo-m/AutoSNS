@@ -20,33 +20,9 @@ import random
 import sys
 import time
 
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-
 from common import load_config, log
 from ig_caption_boost import _blocked, _click_text, _norm, _open_editor
-from post_instagram import build_driver, shot
-
-
-def _fill_empty(d, box, text):
-    """빈 캡션칸에 text 를 넣는다. 줄바꿈은 ENTER, 본문은 execCommand."""
-    ActionChains(d).move_to_element(box).pause(0.4).click().perform()
-    time.sleep(0.6)
-    # 빈 편집기를 실제 키 입력으로 깨운다(스크립트 입력만으론 저장이 안 된 사례가 있다).
-    ActionChains(d).send_keys(" ").pause(0.3).send_keys(Keys.BACK_SPACE).perform()
-    time.sleep(0.6)
-    for i, para in enumerate(text.split("\n")):
-        if i:
-            ActionChains(d).send_keys(Keys.ENTER).perform()
-            time.sleep(0.25)
-        if para:
-            d.execute_script(
-                "arguments[0].focus(); document.execCommand('insertText', false, arguments[1]);",
-                box, para)
-            time.sleep(0.35)
-    # 끝에도 실제 키 입력을 한 번 넣어 편집기 상태가 화면과 맞도록 한다.
-    ActionChains(d).send_keys(" ").pause(0.3).send_keys(Keys.BACK_SPACE).perform()
-    time.sleep(1.0)
+from post_instagram import _fill_empty_caption, build_driver, shot
 
 
 def restore_one(d, code, caption, go):
@@ -60,7 +36,7 @@ def restore_one(d, code, caption, go):
     if not go:
         _click_text(d, ["취소", "Cancel"])
         return "dry"
-    _fill_empty(d, box, caption)
+    _fill_empty_caption(d, box, caption)
     if _norm(box.text) != _norm(caption):
         shot(d, f"restore_mismatch_{code}")
         _click_text(d, ["취소", "Cancel"])

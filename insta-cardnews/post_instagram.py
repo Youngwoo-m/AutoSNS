@@ -411,6 +411,29 @@ def _type_caption(driver, caption):
     return ok
 
 
+def _fill_empty_caption(driver, box, caption):
+    """빈 캡션칸에 caption 을 넣는다. 줄바꿈은 ENTER, 본문은 execCommand.
+
+    빈 편집기에 스크립트로만 글을 넣으면 화면엔 보여도 저장되지 않았다(9/15~9/27 5건).
+    앞뒤로 실제 키 입력을 한 번씩 넣어 편집기 상태를 화면과 맞춘다 — 이 방식으로
+    2026-09-28 빈 캡션 8건을 복원했고 8건 모두 다시 열어 저장을 확인했다."""
+    ActionChains(driver).move_to_element(box).pause(0.4).click().perform()
+    time.sleep(0.6)
+    ActionChains(driver).send_keys(" ").pause(0.3).send_keys(Keys.BACK_SPACE).perform()
+    time.sleep(0.6)
+    for i, para in enumerate(caption.split("\n")):
+        if i:
+            ActionChains(driver).send_keys(Keys.ENTER).perform()
+            time.sleep(0.25)
+        if para:
+            driver.execute_script(
+                "arguments[0].focus(); document.execCommand('insertText', false, arguments[1]);",
+                box, para)
+            time.sleep(0.35)
+    ActionChains(driver).send_keys(" ").pause(0.3).send_keys(Keys.BACK_SPACE).perform()
+    time.sleep(1.0)
+
+
 def _saved_caption_ok(driver, code, caption):
     """게시물 편집창을 다시 열어 저장된 캡션이 의도한 내용인지 확인한다(읽기만)."""
     try:
@@ -464,18 +487,7 @@ def _fix_caption_after_publish(driver, username, caption):
             _click_dialog_button(driver, ["취소", "Cancel"])
             return
         log(f"⚠ 게시된 캡션이 비어 있음({code}) → 편집으로 채웁니다")
-        ActionChains(driver).move_to_element(box).pause(0.3).click().perform()
-        time.sleep(0.5)
-        for i, para in enumerate(caption.split("\n")):
-            if i:
-                ActionChains(driver).send_keys(Keys.ENTER).perform()
-                time.sleep(0.2)
-            if para:
-                driver.execute_script(
-                    "arguments[0].focus(); document.execCommand('insertText', false, arguments[1]);",
-                    box, para)
-                time.sleep(0.3)
-        time.sleep(1)
+        _fill_empty_caption(driver, box, caption)
         if _norm_caption(box.text) == _norm_caption(caption):
             _click_dialog_button(driver, ["완료", "Done"])
             time.sleep(5)
