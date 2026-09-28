@@ -1,0 +1,68 @@
+/* ───────────────────────────────────────────────────────────
+   GeoAI 블로그(geoaina.blogspot.com) 사용자 CSS — 공개 페이지에서 뽑아 보관한 것
+   뽑은 날 2026-09-29. 테마: Blogger Simple(고전판). 넣는 곳: 테마 → 맞춤설정 → 고급 → CSS 추가
+   선택자가 Simple 테마 구조(.content-outer, .post-outer 등)에 맞춰져 있어 다른 테마에는 그대로 맞지 않는다.
+   ─────────────────────────────────────────────────────────── */
+Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif !important}
+.post-title,.entry-title,h1.title,h2.title,h3.title{font-weight:700 !important;letter-spacing:-.02em}
+.post-body{font-size:16px;line-height:1.8;word-break:keep-all}
+body{background:#eef1f5 !important}
+.content-outer,.content-fauxcolumn-outer,.fauxcolumn-outer,.region-inner{background:transparent !important;box-shadow:none !important}
+.main-outer,.content-inner{background:transparent !important;border:0 !important;box-shadow:none !important}
+.header-outer{background:transparent !important;background-image:none !important}
+.header-inner{padding:0 !important}
+.Header img{display:block;width:100%;height:auto;border-radius:14px}
+.tabs-outer,.tabs-inner .section:first-child{background:transparent !important;background-image:none !important}
+.date-header{display:none !important}
+.post-outer{background:#fff !important;border:1px solid #e3e8ef !important;border-radius:14px !important;box-shadow:0 2px 10px rgba(11,28,58,.07) !important;padding:26px 28px !important;margin:0 0 22px !important}
+.post-outer:hover{box-shadow:0 6px 20px rgba(11,28,58,.12) !important;transition:box-shadow .2s}
+.post{background:transparent !important;border:0 !important;margin:0 !important;padding:0 !important}
+.post-title{margin:0 0 6px !important;font-size:22px !important;line-height:1.35 !important}
+.post-title a{color:#0b1c3a !important;text-decoration:none !important}
+.post-title a:hover{color:#1d4ed8 !important}
+.post-body img{border-radius:10px;max-width:100%;height:auto}
+.post-footer{border-top:1px solid #eef1f5 !important;margin-top:18px !important;padding-top:12px !important;font-size:13px !important;color:#7b8794 !important}
+.jump-link a{display:inline-block;background:#0b1c3a;color:#fff !important;border-radius:999px;padding:8px 18px;text-decoration:none !important;font-size:14px}
+.sidebar .widget{background:#fff !important;border:1px solid #e3e8ef !important;border-radius:14px !important;padding:18px 20px !important;margin-bottom:18px !important;box-shadow:0 2px 10px rgba(11,28,58,.05) !important}
+.sidebar h2,.sidebar .title{font-size:15px !important;color:#0b1c3a !important;margin-bottom:10px !important}
+#blog-pager{margin:10px 0 30px}
+#blog-pager a{background:#fff;border:1px solid #e3e8ef;border-radius:999px;padding:9px 18px;text-decoration:none !important;color:#0b1c3a !important}
+.footer-outer{background:transparent !important}
+
+/* ───────────────────────────────────────────────────────────
+   반응형 — 2026-09-29 추가. Simple 테마를 바꾸지 않고 좁은 화면에서만 폭 고정을 푼다.
+   넣은 자리: 테마 HTML 의 ]]></b:skin> 바로 앞(위 사용자 CSS 뒤).
+
+   Simple 이 폭을 묶는 곳(<b:template-skin>, content.width=960px, 오른쪽 칸 310px):
+     body{min-width}  /  .content-outer,.region-inner{min-width;max-width}
+     .main-inner .columns{padding-right:310px}  /  .column-right-outer{width;margin-right:-310px}
+   template-skin 이 b:skin 보다 뒤에 오므로 !important 로 덮는다.
+
+   함께 바꾼 것(되돌릴 때 필요):
+     1) 테마 HTML 5번 줄 viewport — 원래:
+        <meta expr:content='data:blog.isMobile ? &quot;width=device-width,initial-scale=1.0,
+              minimum-scale=1.0,maximum-scale=1.0&quot; : &quot;width=1100&quot;' name='viewport'/>
+        바꾼 뒤: <meta content='width=device-width, initial-scale=1' name='viewport'/>
+     2) 테마 → 모바일 설정: '모바일'(간이 모바일판) → '데스크톱'(이 반응형 페이지를 그대로)
+   ─────────────────────────────────────────────────────────── */
+@media (max-width:1000px){
+  body{min-width:0 !important}
+  .content-outer,.content-fauxcolumn-outer,.region-inner{min-width:0 !important;max-width:100% !important;width:auto !important}
+}
+@media (max-width:860px){
+  .main-inner .columns{padding-left:0 !important;padding-right:0 !important}
+  .main-inner .fauxcolumn-center-outer{left:0 !important;right:0 !important}
+  .main-inner .fauxcolumn-left-outer,.main-inner .fauxcolumn-right-outer{display:none !important}
+  .main-inner .column-center-outer,.main-inner .column-left-outer,.main-inner .column-right-outer{float:none !important;position:static !important;right:auto !important;width:auto !important;margin:0 !important}
+  .main-inner .column-center-inner,.main-inner .column-left-inner,.main-inner .column-right-inner{padding:0 12px !important}
+  .post-outer{padding:18px 16px !important}
+  .post-title{font-size:19px !important}
+  .post-body img{max-width:100% !important;height:auto !important}
+  .post-body iframe,.post-body video,.post-body table{max-width:100% !important}
+  .post-body pre{white-space:pre-wrap;word-break:break-all}
+  .tabs-inner .widget ul{white-space:nowrap;overflow-x:auto}
+}
+/* 여백 조정(같은 날 두 번째) — 휴대폰에서 글 카드 양옆이 77px 씩 비어 카드 폭이 221px 에 그쳤다.
+   Simple 의 body 좌우 40px(그림자 자리) + .content-inner 10px + .section 15px + 위 12px 가 겹친 것.
+   위 규칙 뒤에 두어 덮는다. 결과: 양옆 약 12px, 카드 폭 351px(375px 화면). */
+@media (max-width:860px){body{padding:0 !important}.content-inner{padding:10px 8px !important}.main-inner .column-center-inner,.main-inner .column-left-inner,.main-inner .column-right-inner{padding:0 !important}.section{margin:0 4px !important}}
