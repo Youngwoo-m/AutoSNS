@@ -24,7 +24,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from common import PROFILE_DIR, LOGS_DIR, POSTS_DIR, load_config, log
+from common import BASE_DIR, PROFILE_DIR, LOGS_DIR, POSTS_DIR, load_config, log
 
 IS_MAC = sys.platform == "darwin"
 IS_WIN = sys.platform.startswith("win")
@@ -454,6 +454,27 @@ def _saved_caption_ok(driver, code, caption):
         return False
 
 
+CAPTION_LOG = os.path.join(BASE_DIR, "caption_log.json")
+
+
+def _record_caption(code, caption):
+    """게시물 코드와 그때 넣은 캡션을 남긴다.
+
+    캡션이 빈 채로 올라가는 사고가 반복되는데, 나중에 무엇을 넣어야 했는지 알 길이
+    없어 사람이 하나씩 찾아 채웠다. 발행 순간이 원문을 아는 유일한 시점이라 여기서
+    남긴다(build_caption_fixlist.py 가 이 기록으로 복원 목록을 만든다)."""
+    try:
+        rec = {}
+        if os.path.exists(CAPTION_LOG):
+            with open(CAPTION_LOG, "r", encoding="utf-8") as f:
+                rec = json.load(f)
+        rec[code] = {"caption": caption, "at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        with open(CAPTION_LOG, "w", encoding="utf-8") as f:
+            json.dump(rec, f, ensure_ascii=False, indent=1)
+    except Exception as e:
+        log(f"캡션 기록 실패({type(e).__name__}) — 발행에는 영향 없음")
+
+
 def _fix_caption_after_publish(driver, username, caption):
     """게시 직후 실제 캡션을 확인하고, 비어 있으면 편집으로 채운다.
 
@@ -469,6 +490,7 @@ def _fix_caption_after_publish(driver, username, caption):
             log("게시 후 캡션 확인 생략(최근 게시물을 찾지 못함)")
             return
         code = m.group(1)
+        _record_caption(code, caption)
         driver.get(f"https://www.instagram.com/p/{code}/")
         time.sleep(4)
         if not _click_dialog_button(driver, ["옵션 더 보기", "옵션", "More options"]):

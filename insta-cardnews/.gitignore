@@ -8,3 +8,5 @@ __pycache__/
 kakao_token.json
 follow_back_state.json
 caption_boost_state.json
+caption_log.json
+captions_auto.json
