@@ -368,8 +368,13 @@ def main():
     if r.get("status") == "published" or dry:      # 유튜브 게시물(커뮤니티)
         post_community(data, r.get("url", ""), cfg, dry_run=dry,
                        video_url=video.get("url", ""))
-        post_threads(data, r.get("url", ""), cfg, dry_run=dry,
-                     video_url=video.get("url", ""))
+        # 스레드는 저녁 회차에서만 올린다. 아침·저녁 둘 다 올리면 월 60건대가 돼
+        # 계정이 GeoAI 글로 도배된다(2026-09-28 결정). 저녁 회차 = --no-video.
+        if "--no-video" in sys.argv or "--threads" in sys.argv:
+            post_threads(data, r.get("url", ""), cfg, dry_run=dry,
+                         video_url=video.get("url", ""))
+        else:
+            log("쓰레드 건너뜀: 아침 회차(저녁 회차에서만 올린다)")
 
     if not dry and r.get("status") == "published" and first_of_category:
         log(f"★ '{category}' 카테고리의 첫 글입니다 — Blogger 레이아웃 > 카테고리(라벨 "
