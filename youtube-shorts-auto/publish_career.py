@@ -16,6 +16,7 @@
 """
 import datetime
 import json
+import re
 import os
 import subprocess
 import sys
@@ -109,6 +110,49 @@ def _ig_caption(ep):
     return "\n".join(lines).strip()
 
 
+def _threads_text(ep, url):
+    """스레드 본문: 제목 + 설명 앞부분 + 유튜브 링크 + 해시태그(최대 5개).
+
+    run_weekly.py 의 뉴스 크로스포스트와 같은 구성으로 맞췄다."""
+    body = [ln.strip() for ln in ep.get("description", "").splitlines()
+            if ln.strip() and not ln.strip().startswith("#")]
+    # 제목의 '#Shorts' 는 유튜브 노출용이라 스레드에서는 뺀다.
+    title = re.sub(r"\s*#shorts\b", "", ep.get("title", "재난안전학과 진로"), flags=re.I).strip()
+    summary = next((ln for ln in body if ln != title), "")
+    tags = [t for t in (ep.get("tags") or []) if t.lower() != "shorts"][:5]
+    parts = [title, summary, ("▶ " + url) if url else "",
+             " ".join("#" + t for t in tags)]
+    return "\n\n".join(x for x in parts if x)[:500]
+
+
+def _post_threads(ep, url):
+    """스레드에 텍스트로 크로스포스트한다. 예외를 올리지 않고 상태 문자열만 돌려준다.
+
+    유튜브 뉴스(run_weekly.py)에는 붙어 있었는데 진로 시리즈에는 없어서, 9월 스레드
+    발행이 유튜브 22건 중 8건에 그쳤다."""
+    cli = os.path.join(IG_DIR, "threads_cli.py")
+    if not (os.path.exists(IG_PY) and os.path.exists(cli)):
+        return "skipped: threads_cli 없음"
+    text = _threads_text(ep, url)
+    if not text.strip():
+        return "skipped: 본문 없음"
+    env = {k: v for k, v in os.environ.items() if k != "SMUDS_EDITION"}
+    try:
+        p = subprocess.run([IG_PY, "threads_cli.py"], cwd=IG_DIR,
+                           input=json.dumps({"text": text}), text=True,
+                           capture_output=True, timeout=300, env=env)
+    except subprocess.TimeoutExpired:
+        return "error: timeout"
+    out = (p.stdout or "").strip().splitlines()
+    try:
+        status = json.loads(out[-1] if out else "").get("status", "unknown")
+    except Exception:
+        status = f"unparsed(rc={p.returncode})"
+    log(f"  쓰레드 게시 상태: {status}"
+        + (f" (stderr: {(p.stderr or '')[-200:]})" if status not in ("published", "dry_run") else ""))
+    return status
+
+
 def _post_instagram(ep, dry=False):
     """insta-cardnews venv 로 릴 게시(subprocess). 절대 예외를 올리지 않고 상태 문자열 반환.
 
@@ -147,6 +191,7 @@ def main(argv):
     ignore_date = "--now" in argv
     dry = "--dry" in argv
     no_ig = "--no-ig" in argv
+    no_threads = "--no-threads" in argv
     ig_test = "--ig-test" in argv
     sched = _load()
     ep = _pick(sched, ignore_date)
@@ -154,7 +199,7 @@ def main(argv):
         log("발행할 예약 편이 없습니다(오늘 기준 미발행/예정일 없음, 또는 영상 파일 없음).")
         return
     if dry:
-        ch = "유튜브" if no_ig else "유튜브+인스타"
+        ch = "유튜브" + ("" if no_ig else "+인스타") + ("" if no_threads else "+쓰레드")
         log(f"[DRY] 발행 예정({ch}): [{ep.get('label', ep['no'])}] {ep['title'][:60]}  ← {ep['video']}")
         return
     if ig_test:
@@ -190,23 +235,26 @@ def main(argv):
         log(f"자동 댓글 건너뜀(유튜브는 정상): {type(e).__name__}")
     # 2) 인스타(부가 채널) — 실패해도 유튜브 발행은 유지
     ig_status = "skipped" if no_ig else _post_instagram(ep)
+    # 3) 스레드(부가 채널) — 위와 같이 실패해도 유튜브 발행은 유지
+    th_status = "skipped" if no_threads else _post_threads(ep, url)
 
     ep["published"] = {
         "youtube": url,
         "instagram": ig_status,
+        "threads": th_status,
         "at": datetime.datetime.now().isoformat(timespec="seconds"),
     }
     _save(sched)
-    log(f"[{ep.get('label', ep['no'])}] 발행 완료 — YT:{url}  IG:{ig_status}")
+    log(f"[{ep.get('label', ep['no'])}] 발행 완료 — YT:{url}  IG:{ig_status}  TH:{th_status}")
     try:                        # 카카오톡 발행 알림(실패 무시)
         from kakao_notify import notify
         notify(f"[SMUDS 발행완료] 진로/퀴즈 {ep.get('label', ep['no'])}\n"
-               f"{ep.get('title','')}\n{url}\n인스타: {ig_status}", url)
+               f"{ep.get('title','')}\n{url}\n인스타: {ig_status} · 쓰레드: {th_status}", url)
     except Exception as e:
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
     if ig_status not in ("published", "shared_unconfirmed", "skipped"):
         log(f"  ⚠ 인스타 재시도(수동): cd {IG_DIR} && echo '<payload>' | ./.venv/bin/python post_reel_cli.py")
-    print("PUBLISHED:", ep["no"], "YT", url, "IG", ig_status)
+    print("PUBLISHED:", ep["no"], "YT", url, "IG", ig_status, "TH", th_status)
 
 
 if __name__ == "__main__":
