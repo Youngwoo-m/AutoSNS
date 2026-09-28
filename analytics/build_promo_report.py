@@ -35,6 +35,7 @@ from openpyxl.styles import Alignment, Font  # noqa: E402
 
 TEMPLATE = "/Volumes/USB256/온라인 홍보활동 보고서.xlsx"
 DEPT = "재난안전학과"
+SIGNER = "나영우"          # 작성자·홍보전담교원·학부(과)장 모두 같은 분이다
 HEAD_ROW = 6            # 구분/분류/내용/업로드일자/비고
 FIRST_ROW = 7           # 데이터 시작
 LAST_ROW = 29           # 양식의 마지막 데이터 행(기타)
@@ -150,6 +151,8 @@ def build(rows, ym, out_path):
     y, m = int(ym[:4]), int(ym[5:])
     last_day = monthrange(y, m)[1]
     ws["A1"] = f"[{DEPT}] 온라인 홍보활동 보고서 ({y}.{m:02d}.01. - {m:02d}.{last_day:02d}.)"
+    for cell, label in (("D2", "작성자"), ("D3", "홍보전담교원"), ("D4", "학부(과) 장")):
+        ws[cell] = f"{label} : {SIGNER}"
     ws.column_dimensions["E"].width = 46   # 링크가 잘리지 않게
     ws.print_area = f"A1:E{end_row}"
     wb.save(out_path)

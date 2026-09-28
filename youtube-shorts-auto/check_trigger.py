@@ -229,6 +229,15 @@ def main(dry=False):
     r = upload(data, dry_run=False, privacy=privacy)
     log(f"[트리거] 유튜브: {r.get('status')} {r.get('url','')}")
 
+    # 스레드에도 같이 올린다(부가 채널 — 실패해도 유튜브 발행은 그대로).
+    try:
+        from threads_post import compose, crosspost
+        crosspost(compose(data.get("title", "재난안전 속보"),
+                          (data.get("scenes") or [{}])[0].get("narration", ""),
+                          r.get("url", ""), data.get("hashtags") or []))
+    except Exception as e:
+        log(f"[트리거] 쓰레드 건너뜀(유튜브는 정상): {type(e).__name__}")
+
     # 상태 기록
     now = datetime.now(timezone.utc).isoformat()
     state["last_trigger"] = now
