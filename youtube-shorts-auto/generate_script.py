@@ -126,8 +126,32 @@ def _news_block(news):
     lines = []
     for i, n in enumerate(news, 1):
         src = f" / {n['source']}" if n["source"] else ""
-        lines.append(f"{i}. [{n['published_str']}{src}] {n['title']}")
+        star = "★ " if n.get("_lead") else ""
+        lines.append(f"{i}. {star}[{n['published_str']}{src}] {n['title']}")
     return "\n".join(lines)
+
+
+LEAD_NOTE = """
+
+[이번 영상은 속보 영상입니다]
+★ 표시 기사가 지금 발행하게 된 사건입니다. 제목과 첫 장면은 반드시 이 사건으로 시작하고,
+영상의 중심도 이 사건에 둡니다. 나머지 기사는 이 사건과 관련이 있을 때만 뒤 장면에서 짧게 곁들이고,
+관련이 없으면 쓰지 않습니다."""
+
+
+def _with_lead(news, lead):
+    """트리거 사건 기사(lead)를 뉴스 목록 맨 앞에 ★로 올린다(같은 기사는 한 번만)."""
+    if not lead:
+        return news
+    seen, head = set(), []
+    for n in lead:
+        key = n.get("link") or n.get("title")
+        if key in seen:
+            continue
+        seen.add(key)
+        head.append({**n, "_lead": True, "source": n.get("source", "")})
+    rest = [n for n in news if (n.get("link") or n.get("title")) not in seen]
+    return head + rest
 
 
 def _between(text, start, end):
@@ -190,7 +214,11 @@ def _parse(text):
     return title, scenes, description, tags
 
 
-def generate():
+def generate(lead=None):
+    """lead: 트리거가 잡은 사건의 기사들. 주면 영상이 그 사건으로 시작한다.
+
+    예전엔 트리거가 발행 여부만 정하고 내용은 평소 수집을 그대로 써서, 9/28 트리거가
+    '양구 사방사업'으로 발동했는데 영상은 '보은 화재'를 다뤘다."""
     cfg = load_config()
     topic = cfg.get("topic", "재난안전 관련 뉴스와 안전 정보")
     history = load_history()
@@ -203,7 +231,7 @@ def generate():
     system = (SYSTEM.replace("__DOMAIN__", domain)
               .replace("__TIPSLABEL__", tips_label))
 
-    news = fetch_news()
+    news = _with_lead(fetch_news(), lead)
     user_msg = (USER_TEMPLATE
                 .replace("__TIPSLABEL__", tips_label)
                 .replace("__TIPSDESC__", tips_desc)
@@ -213,6 +241,8 @@ def generate():
                     news_block=_news_block(news),
                     recent=recent,
                 ))
+    if lead:
+        user_msg += LEAD_NOTE
 
     client = Anthropic(api_key=cfg["anthropic_api_key"])
     title, scenes, description, tags = "", [], "", []

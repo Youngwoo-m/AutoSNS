@@ -133,7 +133,8 @@ def decide(cfg):
         if big_enough:
             sig = _norm_title(rep["title"])[:40]
             return ({"sig": sig, "label": rep["title"][:40], "source": "news",
-                     "rep": rep, "size": size, "severity": sev},
+                     "rep": rep, "size": size, "severity": sev,
+                     "items": c["items"][:3]},
                     f"사건 감지: '{_norm_title(rep['title'])[:24]}' "
                     f"기사 {size}건, 심각도 {'있음' if sev else '없음'}")
     top = next((c for c in clusters
@@ -219,7 +220,7 @@ def main(dry=False):
     from make_video import make_video
     from youtube_upload import upload
 
-    data = generate()
+    data = generate(lead=event.get("items") or [event["rep"]])   # 영상이 이 사건으로 시작하게
     fetch_images(data)
     make_frames(data)
     make_tts(data)
