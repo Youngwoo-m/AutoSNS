@@ -29,6 +29,7 @@ from analytics.build_report import merge  # noqa: E402
 from analytics.build_monthly import prev_month  # noqa: E402
 
 from openpyxl import load_workbook  # noqa: E402
+from openpyxl.styles import Alignment, Font  # noqa: E402
 
 TEMPLATE = "/Volumes/USB256/온라인 홍보활동 보고서.xlsx"
 DEPT = "재난안전학과"
@@ -50,12 +51,7 @@ def sections(rows, ym):
                 continue
             if sources and r.get("source") not in sources:
                 continue
-            note = ""
-            if media == "유튜브" and r.get("views"):
-                note = f"조회 {r['views']:,}회"
-            elif media == "인스타그램" and r.get("likes"):
-                note = f"좋아요 {r['likes']}"
-            out.append((r["title"] or "(제목 없음)", r["date"], note))
+            out.append((r["title"] or "(제목 없음)", r["date"], r.get("url", "")))
         return out
 
     return [
@@ -104,10 +100,16 @@ def build(rows, ym, out_path):
                 ws[f"{c}{row + i}"]._style = copy(sample[c])
             ws.row_dimensions[row + i].height = row_h
             if i < len(items):
-                content, date, note = items[i]
+                content, date, url = items[i]
                 ws[f"C{row + i}"] = content
                 ws[f"D{row + i}"] = date.replace("-", ".") + "."
-                ws[f"E{row + i}"] = note
+                if url:
+                    cell = ws[f"E{row + i}"]
+                    cell.value = url
+                    cell.hyperlink = url
+                    cell.font = copy(cell.font)
+                    cell.font = Font(name=cell.font.name, size=9, color="FF0563C1", underline="single")
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
         ws[f"A{row}"] = gubun          # 건수는 아래에서 총계를 알고 난 뒤 채운다
         if bunryu:
             ws[f"B{row}"] = bunryu
@@ -138,6 +140,7 @@ def build(rows, ym, out_path):
     y, m = int(ym[:4]), int(ym[5:])
     last_day = monthrange(y, m)[1]
     ws["A1"] = f"[{DEPT}] 온라인 홍보활동 보고서 ({y}.{m:02d}.01. - {m:02d}.{last_day:02d}.)"
+    ws.column_dimensions["E"].width = 46   # 링크가 잘리지 않게
     ws.print_area = f"A1:E{end_row}"
     wb.save(out_path)
     total = sum(counts.values())
