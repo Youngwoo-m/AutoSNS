@@ -65,8 +65,39 @@ def _cluster(items, threshold):
     return clusters
 
 
-def _has_severity(title, severity_words):
+# 재난 '사건'이 아니라 예방·행정·홍보 기사임을 드러내는 말. 이런 말이 든 제목은
+# 심각도 키워드가 있어도 사건으로 치지 않는다('산사태 예방 사방사업 완료' 같은 보도자료).
+# 2026-09-01~09-28 트리거 발행 6건 중 실제 재난은 1건(영광 특별재난지역)뿐이었고,
+# 나머지 5건이 펀드 운용사 선정·안전한국훈련·어린이 안전체험교육·AI 도입 예산·
+# 사방사업 완료였다. 보도자료는 여러 언론이 받아써 기사 수 기준도 쉽게 넘는다.
+DEFAULT_NON_EVENT = [
+    "예방", "대비", "사방사업", "사업 완료", "사업완료", "정비", "점검", "훈련",
+    "교육", "체험", "캠페인", "협약", "MOU", "선정", "공모", "표창", "수상",
+    "설명회", "간담회", "워크숍", "세미나", "포럼", "도입", "조성", "구축",
+    "위탁운용", "운용사", "펀드", "예산",
+]
+
+
+def _is_non_event(title, non_event_words):
+    return any(w in title for w in non_event_words)
+
+
+def _has_severity(title, severity_words, non_event_words=()):
+    """심각도 키워드가 있고, 예방·행정 문맥이 아닐 때만 True."""
+    if non_event_words and _is_non_event(title, non_event_words):
+        return False
     return any(w in title for w in severity_words)
+
+
+def _mostly_non_event(items, non_event_words):
+    """클러스터 제목의 절반 이상이 예방·행정 문맥이면 사건이 아닌 보도자료로 본다.
+
+    기사 수만으로 발동하는 경로(strong_cluster)도 이걸로 거른다 — 9월 오발동 5건 중
+    3건(펀드 운용사 선정·안전체험교육·AI 도입 예산)이 이 경로로 들어왔다."""
+    if not items or not non_event_words:
+        return False
+    n = sum(1 for i in items if _is_non_event(i.get("title", ""), non_event_words))
+    return n * 2 >= len(items)
 
 
 def decide(cfg):
@@ -78,6 +109,7 @@ def decide(cfg):
     strong_cluster = tcfg.get("strong_cluster", 8)    # 이만큼 크면 심각도 없어도 발행
     threshold = cfg.get("news", {}).get("dedup_similarity", 0.6)
     severity_words = tcfg.get("severity_keywords", DEFAULT_SEVERITY)
+    non_event_words = tcfg.get("non_event_keywords", DEFAULT_NON_EVENT)
 
     raw = fetch_recent_raw(within_days=2)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=within_hours)
@@ -88,10 +120,15 @@ def decide(cfg):
     clusters = _cluster(recent, threshold)
     clusters.sort(key=lambda c: len(c["items"]), reverse=True)
 
+    skipped = []
     for c in clusters:
         size = len(c["items"])
         rep = c["items"][0]  # 최신 대표 기사
-        sev = any(_has_severity(i.get("title", ""), severity_words) for i in c["items"])
+        if size >= min_cluster and _mostly_non_event(c["items"], non_event_words):
+            skipped.append(f"'{_norm_title(rep['title'])[:20]}'({size}건)")
+            continue          # 예방·행정 보도자료 — 기사 수와 무관하게 사건 아님
+        sev = any(_has_severity(i.get("title", ""), severity_words, non_event_words)
+                  for i in c["items"])
         big_enough = (size >= min_cluster and sev) or (size >= strong_cluster)
         if big_enough:
             sig = _norm_title(rep["title"])[:40]
@@ -99,12 +136,16 @@ def decide(cfg):
                      "rep": rep, "size": size, "severity": sev},
                     f"사건 감지: '{_norm_title(rep['title'])[:24]}' "
                     f"기사 {size}건, 심각도 {'있음' if sev else '없음'}")
-    top = clusters[0] if clusters else None
+    top = next((c for c in clusters
+                if not (len(c["items"]) >= min_cluster
+                        and _mostly_non_event(c["items"], non_event_words))), None)
+    note = f" · 보도자료로 보고 제외: {', '.join(skipped[:3])}" if skipped else ""
     if not top:
-        return None, "발행할 만큼 큰 사건 없음 (클러스터 없음)"
+        return None, f"발행할 만큼 큰 사건 없음 (클러스터 없음{note})"
 
     size = len(top["items"])
-    sev = any(_has_severity(i.get("title", ""), severity_words) for i in top["items"])
+    sev = any(_has_severity(i.get("title", ""), severity_words, non_event_words)
+              for i in top["items"])
     if size < min_cluster:
         why = f"기사 부족 {size}<{min_cluster}건"
     elif not sev:
@@ -112,7 +153,7 @@ def decide(cfg):
         why = f"심각도 키워드 없음, 기사 {size}<{strong_cluster}건(무심각도 기준)"
     else:
         why = f"기사 {size}건, 심각도 있음"
-    detail = f"최대 클러스터 '{_norm_title(top['items'][0]['title'])[:24]}' — {why}"
+    detail = f"최대 클러스터 '{_norm_title(top['items'][0]['title'])[:24]}' — {why}{note}"
     return None, f"발행할 만큼 큰 사건 없음 ({detail})"
 
 
