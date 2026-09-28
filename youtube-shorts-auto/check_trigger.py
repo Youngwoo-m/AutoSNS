@@ -106,7 +106,10 @@ def decide(cfg):
     within_hours = tcfg.get("within_hours", 18)
 
     min_cluster = tcfg.get("min_cluster", 4)          # 몇 개 언론사면 '큰 사건'
-    strong_cluster = tcfg.get("strong_cluster", 8)    # 이만큼 크면 심각도 없어도 발행
+    # 이만큼 크면 심각도 없어도 발행. 0 이면 끈다(심각도 키워드가 있는 사건만 발동).
+    # 2026-09-29 끔: 9월 이후 이 경로로 잡힌 4건이 모두 재난이 아니었다 — 펀드 운용사
+    # 선정, 안전체험교육 확대, AI 도입 예산, 재난안전상황실 운영 체계 전환.
+    strong_cluster = tcfg.get("strong_cluster", 0)
     threshold = cfg.get("news", {}).get("dedup_similarity", 0.6)
     severity_words = tcfg.get("severity_keywords", DEFAULT_SEVERITY)
     non_event_words = tcfg.get("non_event_keywords", DEFAULT_NON_EVENT)
@@ -129,7 +132,7 @@ def decide(cfg):
             continue          # 예방·행정 보도자료 — 기사 수와 무관하게 사건 아님
         sev = any(_has_severity(i.get("title", ""), severity_words, non_event_words)
                   for i in c["items"])
-        big_enough = (size >= min_cluster and sev) or (size >= strong_cluster)
+        big_enough = (size >= min_cluster and sev) or (strong_cluster > 0 and size >= strong_cluster)
         if big_enough:
             sig = _norm_title(rep["title"])[:40]
             return ({"sig": sig, "label": rep["title"][:40], "source": "news",
@@ -150,8 +153,9 @@ def decide(cfg):
     if size < min_cluster:
         why = f"기사 부족 {size}<{min_cluster}건"
     elif not sev:
-        # 기사 수는 충족했지만 심각도 키워드가 없어 strong_cluster 기준까지 요구됨.
-        why = f"심각도 키워드 없음, 기사 {size}<{strong_cluster}건(무심각도 기준)"
+        # 기사 수는 충족했지만 심각도 키워드가 없다.
+        why = (f"심각도 키워드 없음(기사 {size}건 — 심각도 없는 발동은 꺼 둠)" if strong_cluster <= 0
+               else f"심각도 키워드 없음, 기사 {size}<{strong_cluster}건(무심각도 기준)")
     else:
         why = f"기사 {size}건, 심각도 있음"
     detail = f"최대 클러스터 '{_norm_title(top['items'][0]['title'])[:24]}' — {why}{note}"
