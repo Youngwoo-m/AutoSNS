@@ -308,6 +308,7 @@ def post_carousel(data, dry_run=None):
             return {"status": "dry_run", "images": len(images)}
 
         # 6) 공유하기 (다음 버튼과 동일한 JS 클릭 방식)
+        _settle_caption_before_share(driver, caption)
         if not _click_dialog_button(driver, SHARE_LABELS):
             shot(driver, "no_share")
             raise RuntimeError("'공유하기' 버튼을 찾지 못했습니다.")
@@ -473,6 +474,41 @@ def _record_caption(code, caption):
             json.dump(rec, f, ensure_ascii=False, indent=1)
     except Exception as e:
         log(f"캡션 기록 실패({type(e).__name__}) — 발행에는 영향 없음")
+
+
+def _settle_caption_before_share(driver, caption):
+    """'공유하기' 직전, 캡션칸 상태를 기록하고 편집기를 안정시킨다.
+
+    캡션이 화면에는 있는데 게시물엔 비어 올라가는 사고가 반복된다. 유력한 경로 둘:
+      - 캡션 끝이 '@smu_ds_official' 이라 멘션 자동완성이 열린 채 공유를 누른다.
+      - 붙여넣기·스크립트 입력만으로는 편집기 내부 상태가 화면과 어긋난다
+        (복원 경로가 앞뒤로 실제 키를 한 번씩 넣어 해결한 것과 같은 문제).
+    그래서 ESC 로 자동완성을 닫고, 실제 키 입력을 한 번 넣어 상태를 맞춘 뒤,
+    공유 직전 길이를 로그에 남긴다(원인 확인용)."""
+    box = _caption_box(driver)
+    if box is None:
+        log("공유 직전 점검: 캡션칸을 찾지 못함")
+        return
+    try:
+        before = box.text
+        popups = driver.find_elements(
+            By.CSS_SELECTOR, "div[role='listbox'], ul[role='listbox'], div[role='presentation'] li")
+        open_popup = any(p.is_displayed() for p in popups)
+        log(f"공유 직전 점검: 캡션 {len(before)}자, 자동완성 {'열림' if open_popup else '닫힘'}")
+        if open_popup:
+            ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+            time.sleep(0.5)
+        # 실제 키 입력 한 번으로 편집기 상태를 화면과 맞춘다(복원 경로에서 검증된 방법).
+        ActionChains(driver).move_to_element(box).pause(0.3).click().perform()
+        time.sleep(0.4)
+        ActionChains(driver).send_keys(" ").pause(0.3).send_keys(Keys.BACK_SPACE).perform()
+        time.sleep(0.6)
+        after = box.text
+        if _norm_caption(after) != _norm_caption(caption):
+            log(f"⚠ 공유 직전 캡션이 달라짐({len(before)}자 → {len(after)}자)")
+        shot(driver, "reel_caption_settled")
+    except Exception as e:
+        log(f"공유 직전 점검 중 오류({type(e).__name__}) — 게시는 계속한다")
 
 
 def _fix_caption_after_publish(driver, username, caption):
@@ -778,6 +814,7 @@ def post_reel(data, dry_run=None):
             return {"status": "dry_run"}
 
         # 5) 공유하기 (릴은 처리 시간이 더 길다 → 최대 ~150초 대기)
+        _settle_caption_before_share(driver, caption)
         if not _click_dialog_button(driver, SHARE_LABELS):
             shot(driver, "reel_no_share")
             raise RuntimeError("'공유하기' 버튼을 찾지 못했습니다.")
