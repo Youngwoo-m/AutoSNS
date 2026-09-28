@@ -12,6 +12,7 @@
 
 사용: python naver_add_video.py <logNo> <유튜브 URL>          # 넣어 보고 멈춤
       python naver_add_video.py <logNo> <유튜브 URL> --go     # 수정 발행
+      python naver_add_video.py <logNo> <유튜브 URL> --strip [--go]  # 영상 위 주소 줄만 정리
 """
 import sys
 import time
@@ -23,8 +24,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from common import load_config, log
-from publish_naver import (MOD_KEY, _embed_video, _type_text, build_driver,
-                           click_if_present, shot)
+from publish_naver import (MOD_KEY, _embed_video, _strip_embed_url_lines, _type_text,
+                           build_driver, click_if_present, shot)
 
 # 블로그 주소는 로그인 계정(config.naver_id=smuds)과 다르다. config 의 blog_id 는 블로거용이라 쓰지 않는다.
 BLOG_ID = "studs23"
@@ -54,7 +55,34 @@ def _video_before_faq(driver):
     """, VIDEO_SEL, FAQ_HEAD)
 
 
-def add_video(log_no, video_url, go=False):
+def _republish(driver, log_no, video_url):
+    """수정한 글을 다시 발행하고, 공개 글을 열어 영상이 있는지 확인한다."""
+    if not click_if_present(driver, By.XPATH,
+            "//button[contains(@class,'publish') and contains(.,'발행')]", 6):
+        click_if_present(driver, By.XPATH, "//*[contains(@class,'publish_btn')]", 6)
+    time.sleep(2)
+    shot(driver, f"addvideo_layer_{log_no}")
+    if not click_if_present(driver, By.XPATH,
+            "//div[contains(@class,'layer') or contains(@class,'option')]"
+            "//button[contains(@class,'confirm') and contains(.,'발행')]", 6):
+        click_if_present(driver, By.XPATH, "//button[contains(@class,'confirm_btn')]", 6)
+    time.sleep(6)
+
+    # 공개 글을 다시 열어 확인한다(모바일 페이지가 가볍고 iframe 없이 본문이 바로 나온다).
+    driver.switch_to.default_content()
+    driver.get(f"https://m.blog.naver.com/{BLOG_ID}/{log_no}")
+    time.sleep(5)
+    has = bool(driver.find_elements(By.CSS_SELECTOR, VIDEO_SEL + ", .se-oembed"))
+    url_line = any((p.text or "").strip() == video_url
+                   for p in driver.find_elements(By.CSS_SELECTOR, ".se-text-paragraph"))
+    shot(driver, f"addvideo_public_{log_no}")
+    ok = has and not url_line
+    log(f"영상 넣기 {log_no}: " + ("완료(공개 글에서 확인)" if ok else
+        f"⚠ 공개 글 확인 실패(영상 {'있음' if has else '없음'}, 주소 줄 {'남음' if url_line else '없음'})"))
+    return "added" if ok else "not_confirmed"
+
+
+def add_video(log_no, video_url, go=False, strip_only=False):
     cfg = load_config()
     blog_id = BLOG_ID
     driver = build_driver(cfg.get("publish", {}).get("headless", False))
@@ -80,8 +108,25 @@ def add_video(log_no, video_url, go=False):
         time.sleep(1)
 
         if _has_video(driver):
-            log(f"영상 넣기 {log_no}: 이미 영상이 있어 건드리지 않습니다.")
-            return "has_video"
+            # 이미 영상이 있으면 새로 넣지 않는다. 다만 카드 위에 주소 글자 줄이 남아
+            # 있으면(1885810 직후 발행분) strip 모드에서 그 줄만 지운다.
+            if not strip_only:
+                log(f"영상 넣기 {log_no}: 이미 영상이 있어 건드리지 않습니다.")
+                return "has_video"
+            if not _strip_embed_url_lines(driver, video_url):
+                log(f"영상 넣기 {log_no}: 지울 주소 줄이 없습니다.")
+                return "nothing_to_strip"
+            shot(driver, f"addvideo_strip_{log_no}")
+            if not _has_video(driver):
+                log(f"영상 넣기 {log_no}: 정리 후 영상이 사라져 발행하지 않습니다.")
+                return "not_inserted"
+            if not go:
+                log(f"영상 넣기 {log_no}: [DRY] 주소 줄 정리 확인, 발행 전에 멈춤.")
+                return "dry"
+            return _republish(driver, log_no, video_url)
+        elif strip_only:
+            log(f"영상 넣기 {log_no}: 영상이 없는 글이라 정리할 것이 없습니다.")
+            return "no_video"
         faq = _faq_paragraph(driver)
         if faq is None:
             shot(driver, f"addvideo_nofaq_{log_no}")
@@ -101,6 +146,7 @@ def add_video(log_no, video_url, go=False):
         _type_text(driver, "🎬 영상으로 보기")
         _embed_video(driver, video_url)
         time.sleep(1)
+        _strip_embed_url_lines(driver, video_url)
         shot(driver, f"addvideo_after_{log_no}")
 
         if not (_has_video(driver) and _video_before_faq(driver)):
@@ -110,29 +156,11 @@ def add_video(log_no, video_url, go=False):
             log(f"영상 넣기 {log_no}: [DRY] 들어간 것 확인, 발행 전에 멈춤(저장하지 않음).")
             return "dry"
 
-        if not click_if_present(driver, By.XPATH,
-                "//button[contains(@class,'publish') and contains(.,'발행')]", 6):
-            click_if_present(driver, By.XPATH, "//*[contains(@class,'publish_btn')]", 6)
-        time.sleep(2)
-        shot(driver, f"addvideo_layer_{log_no}")
-        if not click_if_present(driver, By.XPATH,
-                "//div[contains(@class,'layer') or contains(@class,'option')]"
-                "//button[contains(@class,'confirm') and contains(.,'발행')]", 6):
-            click_if_present(driver, By.XPATH, "//button[contains(@class,'confirm_btn')]", 6)
-        time.sleep(6)
-
-        # 공개 글을 다시 열어 확인한다(모바일 페이지가 가볍고 iframe 없이 본문이 바로 나온다).
-        driver.switch_to.default_content()
-        driver.get(f"https://m.blog.naver.com/{blog_id}/{log_no}")
-        time.sleep(5)
-        ok = bool(driver.find_elements(By.CSS_SELECTOR, VIDEO_SEL + ", .se-oembed"))
-        shot(driver, f"addvideo_public_{log_no}")
-        log(f"영상 넣기 {log_no}: {'완료(공개 글에서 확인)' if ok else '⚠ 공개 글에서 영상을 찾지 못함'}")
-        return "added" if ok else "not_confirmed"
+        return _republish(driver, log_no, video_url)
     finally:
         driver.quit()
 
 
 if __name__ == "__main__":
     a = [x for x in sys.argv[1:] if not x.startswith("--")]
-    print(add_video(a[0], a[1], go="--go" in sys.argv))
+    print(add_video(a[0], a[1], go="--go" in sys.argv, strip_only="--strip" in sys.argv))

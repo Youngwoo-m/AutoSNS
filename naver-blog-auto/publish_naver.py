@@ -441,6 +441,48 @@ def _embed_video(driver, url, wait=7):
     return True
 
 
+def _strip_embed_url_lines(driver, url):
+    """유튜브 주소를 붙여넣으면 에디터가 영상 카드를 만들면서 주소 글자도 한 줄 남긴다.
+    그 줄을 지운다. 본문 입력을 모두 마친 뒤(발행 직전)에 부른다.
+
+    스크립트로 옮긴 커서는 에디터가 인식하지 못해, 지우기 키가 주소 대신 영상 카드를
+    지웠다(2026-09-28 시험). 줄 오른쪽 빈 곳을 실제로 클릭해 커서를 두고 줄을 선택해
+    지운다. 지운 뒤 영상 카드 수가 줄었으면 되돌린다(⌘Z)."""
+    if not url:
+        return 0
+    card_sel = ".se-component.se-oembed"
+    removed = 0
+    for _ in range(3):
+        lines = [p for p in driver.find_elements(
+            By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")
+            if (p.text or "").strip() == url]
+        if not lines:
+            break
+        before = len(driver.find_elements(By.CSS_SELECTOR, card_sel))
+        p = lines[-1]
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", p)
+        time.sleep(0.3)
+        ActionChains(driver).move_to_element_with_offset(
+            p, p.size["width"] // 2 - 4, 0).click().perform()
+        time.sleep(0.6)
+        ActionChains(driver).key_down(MOD_KEY).send_keys(Keys.ARROW_RIGHT).key_up(MOD_KEY).perform()
+        time.sleep(0.2)
+        ActionChains(driver).key_down(Keys.SHIFT).key_down(MOD_KEY).send_keys(Keys.ARROW_LEFT)\
+            .key_up(MOD_KEY).key_up(Keys.SHIFT).perform()
+        time.sleep(0.3)
+        ActionChains(driver).send_keys(Keys.BACK_SPACE).perform()
+        time.sleep(0.6)
+        if len(driver.find_elements(By.CSS_SELECTOR, card_sel)) < before:
+            ActionChains(driver).key_down(MOD_KEY).send_keys("z").key_up(MOD_KEY).perform()
+            time.sleep(0.8)
+            log("⚠ 주소 줄 지우기가 영상 카드를 건드려 되돌렸습니다(주소 줄은 남음).")
+            break
+        removed += 1
+    if removed:
+        log(f"영상 카드 위 주소 줄 {removed}개 정리.")
+    return removed
+
+
 def publish(data, dry_run=None):
     cfg = load_config()
     naver_id = cfg["naver_id"]
@@ -559,6 +601,10 @@ def publish(data, dry_run=None):
             if data.get("sources"):
                 insert_sources_links(driver, data["sources"])
                 time.sleep(1)
+
+        # 영상 카드 위에 남은 주소 글자 줄을 지운다(본문 입력을 다 마친 뒤라 커서 위치가 무관하다).
+        if data.get("video_url"):
+            _strip_embed_url_lines(driver, data["video_url"])
 
         shot(driver, "after_typing")
 
