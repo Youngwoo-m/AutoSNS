@@ -40,12 +40,17 @@ fi
 XLSX="out/재난안전학과_${YM}_활동목록.xlsx"
 cp "out/monthly_${YM}.xlsx" "$XLSX" 2>/dev/null
 
+# 학교 제출용 양식(온라인 홍보활동 보고서). 양식 파일이 없으면 첨부에서 빠진다.
+PROMO="out/[재난안전학과] 온라인 홍보활동 보고서 ${YM}.xlsx"
+./.venv/bin/python build_promo_report.py "$YM" "$PROMO" >/dev/null \
+  || { echo "!! 홍보활동 보고서 생성 실패 — 첨부에서 제외"; PROMO=""; }
+
 if [[ "${SMUDS_REPORT_DRYRUN:-0}" == "1" ]]; then
   echo "== 드라이런: 메일 발송 건너뜀 =="
 elif [[ -f mail_config.json ]]; then
   echo "== 메일 발송 =="
   SUBJECT="$(cat "out/monthly_${YM}.subject.txt" 2>/dev/null || echo '[재난안전학과] 월간 콘텐츠 활동 리포트')"
-  python3 send_mail.py "$HTML" "$SUBJECT" "$HWPX" "$XLSX" || echo "!! 메일 발송 실패"
+  python3 send_mail.py "$HTML" "$SUBJECT" "$HWPX" "$XLSX" "$PROMO" || echo "!! 메일 발송 실패"
 else
   echo "메일 설정(mail_config.json) 없음 — 리포트 파일만 생성했습니다."
 fi
