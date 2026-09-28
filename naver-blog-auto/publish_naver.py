@@ -325,6 +325,13 @@ def type_structured_post(driver, data):
     if data.get("tips"):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
         _type_text(driver, data["tips"])
+    # 관련 유튜브 영상 — 블로그 독자가 채널로 넘어가는 길(외부 유입이 전체의 0.1%뿐이었다).
+    # 블로거 글과 같은 자리(자주 묻는 질문 앞)에 둔다. 예전엔 예전 형식 글에서만 넣고
+    # 구조형 글에서는 video_url 을 무시해, 진로·자격증 시리즈 네이버판엔 영상이 없었다.
+    if data.get("video_url"):
+        ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
+        _type_text(driver, "🎬 영상으로 보기")
+        _embed_video(driver, data["video_url"])
     # 자주 묻는 질문 — 질문-답변 쌍은 검색 답변·생성형 AI 인용에 가장 잘 걸리는 형식이다.
     if data.get("faq"):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()

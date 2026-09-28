@@ -66,9 +66,11 @@ def _plain(t):
 def _body_for(key, ep, n, total, cfg):
     """시리즈별 원고를 네이버 발행용 data 로 맞춘다."""
     if key == "career":
-        _vid, title, summary, paras, faq, tags = ep
+        vid, title, summary, paras, faq, tags = ep
     else:
-        _slug, title, angle, tags = ep
+        slug, title, angle, tags = ep
+        ser = next(s for s in career_series.SERIES if s["key"] == key)
+        vid = (ser.get("videos") or {}).get(slug, "")       # 짝이 맞는 편만
         w = cert_writer.write(n, total, title, angle, cfg)
         summary, paras, faq = w["summary"], w["paras"], w["faq"]
 
@@ -85,6 +87,8 @@ def _body_for(key, ep, n, total, cfg):
         "no_banner": False,
         "no_images": True,          # 기사가 없는 글이라 삽화를 만들지 않는다
         "banner_badge": "CAREER & LICENSE",
+        # 블로거판과 같은 영상(학과 채널 진로 시리즈). 없으면 넣지 않는다.
+        "video_url": f"https://youtu.be/{vid}" if vid else "",
     }
 
 

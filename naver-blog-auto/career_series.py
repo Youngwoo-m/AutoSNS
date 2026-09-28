@@ -115,12 +115,13 @@ CAREER = [
 SERIES = [
     {"key": "career", "label": "진로", "hub": HUB, "eps": CAREER, "kind": "static"},
     {"key": "cert", "label": "자격증", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%90%EA%B2%A9%EC%A6%9D",
-     "eps": cert_topics.TOPICS, "kind": "generated", "profile": "cert"},
+     "eps": cert_topics.TOPICS, "kind": "generated", "profile": "cert",
+     "videos": cert_topics.VIDEOS},
     # 자격증 18편이 끝나면 이어진다(2026-10 중순 예정). 입시 정보는 틀리면 학생이
     # 지원을 그르치므로 생성 지침을 따로 쓴다 — cert_writer.PROFILES["admission"].
     {"key": "admission", "label": "입시", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%85%EC%8B%9C",
      "eps": admission_topics.TOPICS, "kind": "generated", "profile": "admission",
-     "images": admission_topics.IMAGES},
+     "images": admission_topics.IMAGES, "videos": admission_topics.VIDEOS},
 ]
 
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
@@ -132,7 +133,7 @@ GAP_SECONDS = 180        # 편 사이 간격
 
 
 def _video_html(vid):
-    """영상이 있는 편에만 넣는다 — 자격증 시리즈는 짝지을 영상이 없다."""
+    """영상이 있는 편에만 넣는다. 생성형 시리즈는 series['videos'] 에 짝이 있는 편만."""
     if not vid:
         return ""
     return ('<p><iframe width="320" height="569" '
@@ -228,7 +229,7 @@ def main():
                 vid, title, summary, paras, faq, tags = ep
             else:
                 slug, title, _angle, tags = ep
-                vid = ""
+                vid = (ser.get("videos") or {}).get(slug, "")   # 짝이 맞는 편만
             full_title = f"{title} [{n}/{total}]"
             if full_title in have:
                 continue

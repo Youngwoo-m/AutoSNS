@@ -153,3 +153,11 @@ TOPICS = [
 IMAGES = {
     "adm-lab": "assets/admission/adm-lab.png",
 }
+
+
+# 편마다 함께 넣을 유튜브 영상(학과 채널 세로 영상). 내용이 분명히 맞는 편만 둔다.
+VIDEOS = {
+    "adm-what": "QwR_yawsGaY",    # 재난안전학과에선 뭘 배울까? (전공과목)
+    "adm-life": "Umdxiyk-er0",    # 재난안전학과 대학생의 하루 브이로그
+    "adm-after": "cDwQ52M2wn0",   # 진로 1/8 진로 8가지
+}

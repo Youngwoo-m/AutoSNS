@@ -100,3 +100,17 @@ TOPICS = [
      "민간·국제 자격은 주관 기관이 여럿이므로 이름을 단정하지 말고 갈래만 보여 준다.",
      ["소방안전관리자", "BCP", "기업재난관리"]),
 ]
+
+
+# 편마다 함께 넣을 유튜브 영상(학과 채널 진로 시리즈). 글 주제와 영상 내용이 분명히
+# 이어지는 편만 둔다 — 맞는 영상이 없는 편(소방설비·위험물·가스·기상 등)은 넣지 않는다.
+VIDEOS = {
+    "cert-safety": "nfmBkUtvirA",            # 진로 6/8 산업안전기사 하는 일
+    "cert-construction": "nfmBkUtvirA",      # 〃 (현장 안전관리자)
+    "cert-disaster-manager": "bqWQMpfRz8k",  # 진로 7/8 재난안전관리자
+    "cert-bangjae": "iCB8xvR7W-8",           # 진로 5/8 방재안전직 공무원
+    "cert-survey": "F29DOc6lfR0",            # 진로 4/8 GeoAI 공간정보 전문가
+    "cert-bcp": "k0JLSxS21WA",               # 진로 3/8 기업 재난관리(BCP)
+    "cert-map": "cDwQ52M2wn0",               # 진로 1/8 진로 8가지
+    "cert-info": "QMNM50bPyIc",              # 진로 8/8 스마트 재난안전관리자
+}
