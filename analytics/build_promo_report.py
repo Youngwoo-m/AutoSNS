@@ -13,7 +13,8 @@
   인스타 릴스            ← 숏츠·영상
   블로그                 ← 네이버 블로그
   기타                   ← 블로거(blogspot)
-  페이스북               ← 운영하지 않아 비워 둔다
+  페이스북 칸            ← 스레드(Threads). 페이스북은 운영하지 않고 스레드를 쓰므로
+                            칸 이름도 '페이스북(스레드)' 로 적어 오해가 없게 한다.
 
 사용: python build_promo_report.py [YYYY-MM] [출력경로]
 """
@@ -43,11 +44,13 @@ def sections(rows, ym):
     """양식 순서대로 (구분, 분류, 항목들). 항목은 (내용, 업로드일자, 링크)."""
     cur = [r for r in rows if r["date"][:7] == ym]
 
-    # 블로거(blogspot)는 주간·월간 리포트의 4개 매체에 들어 있지 않아 따로 읽는다.
-    blogger = [x for x in (load_part("blogger") or {}).get("items", [])
-               if x["date"][:7] == ym]
-    blogger = [(x["title"] or "(제목 없음)", x["date"], x.get("url", ""))
-               for x in sorted(blogger, key=lambda a: a["date"])]
+    # 블로거·스레드는 주간·월간 리포트의 4개 매체에 들어 있지 않아 따로 읽는다.
+    def extra(part):
+        got = [x for x in (load_part(part) or {}).get("items", []) if x["date"][:7] == ym]
+        return [(x["title"] or "(제목 없음)", x["date"], x.get("url", ""))
+                for x in sorted(got, key=lambda a: a["date"])]
+
+    blogger, threads = extra("blogger"), extra("threads")
 
     def pick(media, types=None, sources=None):
         out = []
@@ -68,7 +71,7 @@ def sections(rows, ym):
         ("유튜브", "Shorts", pick("유튜브", types=("숏츠",))),
         ("인스타", "게시물", pick("인스타그램", types=("이미지", "카드뉴스"))),
         ("인스타", "릴스", pick("인스타그램", types=("숏츠", "영상"))),
-        ("페이스북", None, []),
+        ("페이스북(스레드)", None, threads),
         ("블로그", None, pick("네이버 블로그")),
         ("기타", None, blogger),
     ]

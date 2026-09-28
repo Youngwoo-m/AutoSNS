@@ -19,6 +19,7 @@ echo "== 수집 시작 ($TODAY) =="
 "$ROOT/youtube-shorts-auto/.venv/bin/python" collect_youtube.py || echo "!! 유튜브 수집 실패 — 직전 결과로 진행"
 python3 collect_web.py "$SINCE"                                 || echo "!! 블로그·홈페이지 수집 실패 — 직전 결과로 진행"
 python3 collect_blogger.py "$SINCE"                             || echo "!! 블로거 수집 실패 — 직전 결과로 진행"
+"$ROOT/insta-cardnews/.venv/bin/python" collect_threads.py "$SINCE"   || echo "!! 스레드 수집 실패 — 직전 결과로 진행"
 "$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
 
 echo "== 월간 리포트 생성 =="
