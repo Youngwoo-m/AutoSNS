@@ -194,7 +194,8 @@ def build_md(a, channel, profile):
     L += ["", "## 5. 다음 달 제안", ""] + [f"- {p}" for p in a["plans"]]
     L += ["", "## 6. 이번 달 활동 목록", "", "| 매체명 | 유형 | 활동명 | 게시일 |", "|---|---|---|---|"]
     for r in sorted(a["cur"], key=lambda x: x["date"], reverse=True):
-        L.append(f"| {r['media']} | {r['type']} | {(r['title'] or '(제목 없음)')[:52].replace('|', '·')} "
+        name = (r["title"] or "(제목 없음)")[:52].replace("|", "·") + (" (제목 추정)" if r.get("title_inferred") else "")
+        L.append(f"| {r['media']} | {r['type']} | {name} "
                  f"| {r['date']} |")
     L += ["", "## 7. 누적 월별 추이", "", "| 월 | " + " | ".join(MED) + " | 합계 |",
           "|---|" + "---|" * (len(MED) + 1)]
@@ -217,7 +218,8 @@ def build_xlsx(a, path):
         c.font, c.fill = head, fill
         c.alignment = Alignment(horizontal="center")
     for r in sorted(a["cur"], key=lambda x: x["date"], reverse=True):
-        ws.append([r["media"], r["type"], r["title"] or "(제목 없음)", r["date"],
+        ws.append([r["media"], r["type"],
+                   (r["title"] or "(제목 없음)") + (" (제목 추정)" if r.get("title_inferred") else ""), r["date"],
                    r.get("views") or None, r.get("likes") or None, r["url"]])
     for w, l in zip([13, 10, 60, 12, 10, 9, 46], "ABCDEFG"):
         ws.column_dimensions[l].width = w

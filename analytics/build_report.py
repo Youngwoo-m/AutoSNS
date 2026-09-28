@@ -49,7 +49,29 @@ def merge():
     for x in sm["items"]:
         rows.append({**x, "media": "학과 홈페이지"})
     rows.sort(key=lambda r: r["date"], reverse=True)
+    fill_missing_titles(rows)
     return rows, yt.get("channel", {}), ig.get("profile", {}), warn
+
+
+def fill_missing_titles(rows):
+    """캡션 없이 올라간 인스타 릴스는 제목이 비어 "(제목 없음)" 으로 찍힌다.
+    같은 날(±1일) 유튜브 영상을 그대로 올린 것이라 그 제목을 빌려 쓰고 추정 표시를 단다.
+    빌릴 것이 없으면 비운 채로 둔다."""
+    yt = {}
+    for r in rows:
+        if r["media"] == "유튜브" and r["title"].strip():
+            yt.setdefault(r["date"], r["title"])
+    for r in rows:
+        if r["title"].strip() or r["media"] != "인스타그램":
+            continue
+        d = datetime.strptime(r["date"], "%Y-%m-%d")
+        for off in (0, -1, 1):
+            cand = yt.get((d + timedelta(days=off)).strftime("%Y-%m-%d"))
+            if cand:
+                r["title"] = cand
+                r["title_inferred"] = True
+                break
+    return rows
 
 
 def prev_snapshot(today):
@@ -164,7 +186,8 @@ def build(rows, channel, profile, warn, today, since="2026-03-01"):
     if week:
         H.append(_table(["매체", "유형", "활동명", "게시일"], [
             [f'<span style="color:{COLOR[r["media"]]}">{r["media"]}</span>', r["type"],
-             f'<a href="{r["url"]}" style="color:#1C1D1F;text-decoration:none">{r["title"][:46] or "(제목 없음)"}</a>',
+             f'<a href="{r["url"]}" style="color:#1C1D1F;text-decoration:none">{r["title"][:46] or "(제목 없음)"}</a>'
+             + ('<span style="color:#888;font-size:11px"> 제목 추정</span>' if r.get("title_inferred") else ""),
              r["date"]] for r in week]))
     else:
         H.append('<p style="font-size:13px;color:#666">이번 주 발행이 없습니다.</p>')

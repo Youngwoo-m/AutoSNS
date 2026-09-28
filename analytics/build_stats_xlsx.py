@@ -242,7 +242,7 @@ def build(rows, channel, profile, path):
         ws.cell(r, 2, x.get("likes", 0))
         ws.cell(r, 3, x["date"])
         ws.cell(r, 4, x["type"])
-        ws.cell(r, 5, x["title"] or "(제목 없음)")
+        ws.cell(r, 5, (x["title"] or "(제목 없음)") + (" (제목 추정)" if x.get("title_inferred") else ""))
         ws.cell(r, 6, x["url"])
         r += 1
     widths(ws, [8, 12, 12, 12, 60, 46])
@@ -254,7 +254,7 @@ def build(rows, channel, profile, path):
     for x in sorted(rows, key=lambda a: a["date"], reverse=True):
         ws.cell(r, 1, x["media"])
         ws.cell(r, 2, x["type"])
-        ws.cell(r, 3, x["title"] or "(제목 없음)")
+        ws.cell(r, 3, (x["title"] or "(제목 없음)") + (" (제목 추정)" if x.get("title_inferred") else ""))
         ws.cell(r, 4, x["date"])
         ws.cell(r, 5, x.get("views") or None).number_format = "#,##0"
         ws.cell(r, 6, x.get("likes") or None)
