@@ -234,19 +234,29 @@ def post_threads(data, post_url, cfg, dry_run=False, video_url=""):
 
     스레드 발행은 insta-cardnews 로그인 세션으로만 되므로 그쪽 venv 의 threads_cli.py
     를 부른다. 실패해도 삼킨다 — 블로그·영상은 이미 나간 뒤다."""
+    def _one_line(v):
+        """summary 는 글 종류에 따라 문자열이거나 문단 리스트다(시리즈 글은 리스트)."""
+        if isinstance(v, (list, tuple)):
+            v = next((str(x) for x in v if str(x).strip()), "")
+        return str(v or "").strip().split("\n")[0]
+
     ig_dir = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
     py = os.path.join(ig_dir, ".venv", "bin", "python")
     cli = os.path.join(ig_dir, "threads_cli.py")
     if not (os.path.exists(py) and os.path.exists(cli)):
         log("쓰레드 건너뜀: insta-cardnews 쪽을 찾지 못함")
         return {}
-    summary = (data.get("summary") or "").strip().split("\n")[0]
-    tags = [t for t in (data.get("labels") or data.get("tags") or []) if t][:5]
-    link = post_url or video_url
-    text = "\n\n".join(x for x in [
-        data.get("title", "GeoAI 재난안전"), summary,
-        ("▶ " + link) if link else "",
-        " ".join("#" + str(t).replace(" ", "") for t in tags)] if x)[:500]
+    try:
+        summary = _one_line(data.get("summary"))
+        tags = [t for t in (data.get("labels") or data.get("tags") or []) if t][:5]
+        link = post_url or video_url
+        text = "\n\n".join(x for x in [
+            data.get("title", "GeoAI 재난안전"), summary,
+            ("▶ " + link) if link else "",
+            " ".join("#" + str(t).replace(" ", "") for t in tags)] if x)[:500]
+    except Exception as e:
+        log(f"쓰레드 본문 조립 실패({type(e).__name__}: {str(e)[:100]}) — 건너뜀")
+        return {}
     if dry_run:
         log(f"쓰레드(dry): {text[:60]}…")
         return {"status": "dry_run"}

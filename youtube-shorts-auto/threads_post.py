@@ -16,10 +16,15 @@ TIMEOUT = 300
 
 
 def compose(title, summary="", url="", tags=(), limit=500):
-    """제목 + 요약 한 줄 + 링크 + 해시태그(최대 5개). '#Shorts' 는 유튜브용이라 뺀다."""
-    title = re.sub(r"\s*#shorts\b", "", title or "", flags=re.I).strip()
+    """제목 + 요약 한 줄 + 링크 + 해시태그(최대 5개). '#Shorts' 는 유튜브용이라 뺀다.
+
+    summary 는 글 종류에 따라 문자열일 수도 문단 리스트일 수도 있다."""
+    if isinstance(summary, (list, tuple)):
+        summary = next((str(x) for x in summary if str(x).strip()), "")
+    summary = str(summary or "").strip().split("\n")[0]
+    title = re.sub(r"\s*#shorts\b", "", str(title or ""), flags=re.I).strip()
     picked = [t for t in (tags or []) if t.lower() != "shorts"][:5]
-    parts = [title, (summary or "").strip(), ("▶ " + url) if url else "",
+    parts = [title, summary, ("▶ " + url) if url else "",
              " ".join("#" + t for t in picked)]
     return "\n\n".join(x for x in parts if x)[:limit]
 
