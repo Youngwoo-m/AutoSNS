@@ -71,7 +71,9 @@ def _body_for(key, ep, n, total, cfg):
         slug, title, angle, tags = ep
         ser = next(s for s in career_series.SERIES if s["key"] == key)
         vid = (ser.get("videos") or {}).get(slug, "")       # 짝이 맞는 편만
-        w = cert_writer.write(n, total, title, angle, cfg)
+        # 시리즈마다 생성 지침이 다르다 — 빠뜨리면 입시 글이 자격증 지침('큐넷 공고를
+        # 확인하세요')으로 생성된다. 블로거판(career_series)과 같은 profile 을 넘긴다.
+        w = cert_writer.write(n, total, title, angle, cfg, profile=ser.get("profile", "cert"))
         summary, paras, faq = w["summary"], w["paras"], w["faq"]
 
     # 본문은 블록으로 넘긴다 — 구조형 경로라야 글 끝 CTA(이웃추가·채널 링크)가 붙는다.
@@ -120,7 +122,7 @@ def main():
         time.sleep(GAP_SECONDS)
 
     if done == 0 and not dry:
-        log("올릴 편이 남아 있지 않습니다(진로 8편 + 자격증 16편 모두 발행됨).")
+        log("올릴 편이 남아 있지 않습니다(진로·자격증·입시 시리즈 모두 발행됨).")
     return 0
 
 
