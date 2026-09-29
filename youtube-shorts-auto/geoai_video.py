@@ -52,6 +52,7 @@ def run(payload):
         "hashtags": payload.get("hashtags", []),
         "sources": payload.get("sources", []),
         "stamp": f"geoai_{datetime.now():%Y%m%d_%H%M%S}",
+        "date_label": payload.get("label") or "",   # 띠 화면 날짜 자리(시리즈 표시)
     }
     style = (payload.get("style") or "cards").lower()
     if style == "anchor":

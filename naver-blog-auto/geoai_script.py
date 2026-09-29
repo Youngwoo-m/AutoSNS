@@ -166,7 +166,15 @@ def make_payload(data, cfg=None):
         "scenes": scenes,
         "hashtags": [t for t in (data.get("tags") or []) if t][:10],
         "sources": sources[:6],
+        # 쇼츠 띠 화면의 날짜 자리에 쓸 표시 — 글 제목의 마지막 토막(예: 'GeoAI 기초 13편')
+        "label": _series_label(data.get("title", "")),
     }
+
+
+def _series_label(title):
+    """'산사태 위험지도는 어떻게 만드나 | GeoAI 기초 13편' → 'GeoAI 기초 13편'. 토막이 없으면 ""."""
+    parts = [p.strip() for p in (title or "").split(" | ") if p.strip()]
+    return parts[-1][:20] if len(parts) >= 2 else ""
 
 
 if __name__ == "__main__":

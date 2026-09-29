@@ -81,10 +81,11 @@ def upload_audio(path):
 
 
 def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, wait=True,
-             meta=None):
+             meta=None, dimension=None):
     """아나운서 영상 생성 → (선택)완료까지 대기 후 다운로드.
 
-    audio_asset_id 를 주면 그 오디오로 립싱크(우리 남성 TTS). 없으면 HeyGen TTS(text)."""
+    audio_asset_id 를 주면 그 오디오로 립싱크(우리 남성 TTS). 없으면 HeyGen TTS(text).
+    dimension 을 주면 그 크기로 요청한다 — 가로 토킹포토를 띠 화면에 넣을 때 1920x1080."""
     cfg = load_config().get("heygen", {})
     if audio_asset_id:
         voice = {"type": "audio", "audio_asset_id": audio_asset_id}
@@ -107,7 +108,7 @@ def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, 
     bg = (load_config().get("heygen", {}) or {}).get("background")
     if bg:                       # {"type":"color","value":"#008000"} 또는 image_asset_id
         vin["background"] = bg
-    body = {"video_inputs": [vin], "dimension": {"width": W, "height": H}}
+    body = {"video_inputs": [vin], "dimension": dimension or {"width": W, "height": H}}
     res = _req("POST", f"{API}/v2/video/generate", body=body)
     vid = res.get("data", {}).get("video_id")
     log(f"video_id = {vid} (생성 요청됨)")
@@ -389,9 +390,12 @@ def make_news_anchor(data, title=None, heygen_video_id=None):
     """뉴스 data → 아나운서 영상 + 제목 + 우측 관련화면 + 자막 → data['video'] 세팅.
 
     실패하면 예외를 올린다(호출부에서 카드 영상으로 폴백)."""
-    tp = load_config().get("heygen", {}).get("talking_photo_id")
+    hc = load_config().get("heygen", {})
+    tp = hc.get("talking_photo_id")
     if not tp:
         raise RuntimeError("config.heygen.talking_photo_id 가 없습니다(아바타 미설정).")
+    from band_layout import OVERLAY_Y, compose as band_compose, dimension as band_dim, is_band
+    band = is_band(hc)          # 가로 아바타를 가운데 띠에 넣는 화면(2026-09-29 확정)
     scenes = data.get("scenes", [])
     script = " ".join(s.get("narration", "").strip() for s in scenes if s.get("narration"))
     if not script.strip():
@@ -403,8 +407,9 @@ def make_news_anchor(data, title=None, heygen_video_id=None):
         from fetch_images import fetch_images
         fetch_images(data)
         imgs = [p for p in (data.get("source_images") or {}).values() if p and os.path.exists(p)]
-        ots = _pick_ots_image(imgs)            # 로고 제외·사진 우선(없으면 None→박스 생략)
-        log(f"관련화면 이미지: {'선택 '+os.path.basename(ots) if ots else '적합 사진 없음 → 생략'}")
+        if not band:                           # 띠 화면에는 관련화면 자리가 없다
+            ots = _pick_ots_image(imgs)        # 로고 제외·사진 우선(없으면 None→박스 생략)
+            log(f"관련화면 이미지: {'선택 '+os.path.basename(ots) if ots else '적합 사진 없음 → 생략'}")
     except Exception as e:
         log(f"관련화면 이미지 수집 건너뜀: {type(e).__name__}")
     if heygen_video_id:                           # 앞서 요청해 둔 영상을 이어받는다
@@ -426,18 +431,29 @@ def make_news_anchor(data, title=None, heygen_video_id=None):
         r = await_video(heygen_video_id)
     else:
         log(f"아나운서 영상 생성 시작(대본 {len(script)}자)...")
-        r = generate(tp, script, meta=data)       # HeyGen 생성 + 다운로드
+        r = generate(tp, script, meta=data, dimension=band_dim(hc))   # HeyGen 생성 + 다운로드
     dur = _duration(r["path"])
     stamp = data.get("stamp") or "anchor"
     out = os.path.join(POSTS_DIR, f"short_{stamp}.mp4")
     # 킥커(상단 띠 문구)와 캐릭터는 채널마다 다르다 — 에디션 설정으로 덮어쓴다.
-    hc = load_config().get("heygen", {})
-    compose_news_layout(r["path"], out, headline, ots_image=ots, script=script, dur=dur,
-                        kicker=hc.get("kicker", "세명대 재난안전 뉴스"),
-                        mascot=hc.get("mascot", True), dept=hc.get("dept"))
+    kicker = hc.get("kicker", "세명대 재난안전 뉴스")
+    vw, vh = _img_size(r["path"])
+    overlay_pos = {}
+    if band and vw > vh:
+        # 날짜 자리: GeoAI 는 시리즈 표시(예: GeoAI 기초 13편), 없으면 오늘 날짜
+        from datetime import datetime
+        label = data.get("date_label") or datetime.now().strftime("%Y.%m.%d")
+        chunks = _caption_chunks(script, dur) if script else []
+        band_compose(hc, r["path"], out, headline, kicker, label, chunks, dur)
+        overlay_pos = OVERLAY_Y                # 후킹·구독 유도를 제목·장면·자막 밖으로
+    else:
+        if band:                               # 이어받은 옛 세로 영상 등 — 예전 화면으로
+            log(f"띠 화면인데 영상이 가로가 아니라({vw}x{vh}) 예전 화면으로 합성합니다")
+        compose_news_layout(r["path"], out, headline, ots_image=ots, script=script, dur=dur,
+                            kicker=kicker, mascot=hc.get("mascot", True), dept=hc.get("dept"))
     try:                                       # 후킹(초반)·CTA(후반) 오버레이(완주율·구독 전환↑)
         from overlays import apply as apply_overlays
-        apply_overlays(out, dur=dur)           # out 제자리 교체
+        apply_overlays(out, dur=dur, **overlay_pos)   # out 제자리 교체
     except Exception as e:
         log(f"오버레이 건너뜀(영상은 정상): {type(e).__name__}: {e}")
     data["video"] = out
