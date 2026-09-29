@@ -230,6 +230,38 @@ def _closing(idx, total, block, logo):
     </div>"""
 
 
+def _info(idx, total, block, spec, logo):
+    """인포그래픽 카드(infographic.plan 이 설계). 소제목은 카드 원문 그대로 쓴다."""
+    emoji, title, _ = _split(block)
+    t = spec.get("type")
+    if t == "stat":
+        its = spec.get("items")[:3]
+        body = '<div class="stats n%d">' % len(its) + "".join(
+            f'<div class="stat"><div class="sval">{_e(i["value"])}</div>'
+            f'<div class="slab">{_e(i["label"])}</div></div>' for i in its) + "</div>"
+    elif t == "flow":
+        st = spec.get("steps")[:5]
+        body = f'<div class="flow n{len(st)}">' + '<span class="arrow">→</span>'.join(
+            f'<div class="step"><span class="snum">{k + 1}</span><span class="stxt">{_e(x)}</span></div>'
+            for k, x in enumerate(st)) + "</div>"
+    else:
+        l, r = spec.get("left"), spec.get("right")
+        col = lambda c, cls: (f'<div class="side {cls}"><div class="stitle">{_e(c["title"])}</div>'
+                              + "".join(f'<p>{_e(x)}</p>' for x in (c.get("points") or [])[:3]) + "</div>")
+        body = f'<div class="compare">{col(l, "left")}<span class="vs">VS</span>{col(r, "right")}</div>'
+    note = f'<div class="note">{_e(spec.get("note", ""))}</div>' if spec.get("note") else ""
+    return f"""
+    <div class="card info" id="card{idx}">
+      {_chrome(idx, total)}
+      <div class="body fit">
+        <div class="head">{f'<span class="emo">{emoji}</span>' if emoji else ''}
+          <span class="htitle">{_e(title)}</span></div>
+        {body}{note}
+      </div>
+      {_footer(logo)}
+    </div>"""
+
+
 def _font_face(font_dir):
     faces = []
     for w, f in ((300, "KoPubWorld Dotum_Pro Light.otf"), (500, "KoPubWorld Dotum_Pro Medium.otf"),
@@ -301,6 +333,40 @@ body { background:#fff; font-family:'KoPub','Apple Color Emoji',sans-serif; }
           word-break:keep-all; text-wrap:balance; }
 .hl { color:#2F6FE4; }
 .csub { font-weight:500; font-size:.9em; line-height:1.5; color:#46597A; word-break:keep-all; }
+/* 인포그래픽 카드 — 요소가 작으면 카드가 비어 보여 기본 크기를 키운다(자동 축소는 그대로) */
+.card.info .body { font-size:50px; }
+.card.info .head { margin-bottom:1em; }
+.stats { display:flex; gap:.5em; }
+.stat { flex:1; background:#FFFFFF; border:1px solid #D6E3F8; border-radius:18px; padding:.7em .5em;
+        text-align:center; box-shadow:0 4px 14px rgba(30,79,175,.07); }
+.stats.n1 .stat { padding:.9em .6em; }
+.sval { font-weight:700; font-size:2.1em; line-height:1.1; color:#2F6FE4; letter-spacing:-.02em;
+        white-space:nowrap; }
+.stats.n1 .sval { font-size:3.2em; }
+.stats.n3 .sval { font-size:1.6em; }
+.slab { margin-top:.35em; font-weight:500; font-size:.78em; line-height:1.35; color:#2E3F5C; word-break:keep-all; }
+.flow { display:flex; align-items:center; justify-content:space-between; gap:.2em; }
+.step { flex:1; display:flex; flex-direction:column; align-items:center; gap:.35em; background:#FFFFFF;
+        border:1px solid #D6E3F8; border-radius:16px; padding:.6em .3em; min-height:5.2em;
+        box-shadow:0 4px 14px rgba(30,79,175,.07); }
+.snum { width:1.5em; height:1.5em; border-radius:50%; background:#2F6FE4; color:#fff; font-weight:700;
+        font-size:.8em; display:flex; align-items:center; justify-content:center; }
+.stxt { font-weight:700; font-size:.78em; line-height:1.3; text-align:center; color:#0E2350; word-break:keep-all; }
+.flow.n5 .stxt { font-size:.66em; }
+.flow.n5 .step { padding:.55em .2em; }
+.arrow { flex:none; color:#2F6FE4; font-weight:700; font-size:1em; }
+.compare { display:flex; align-items:stretch; gap:.4em; }
+.side { flex:1; border-radius:16px; padding:.65em .7em; }
+.side.left { background:#F1F4F9; border:1px solid #DCE3EE; }
+.side.right { background:#FFFFFF; border:2px solid #2F6FE4; box-shadow:0 4px 14px rgba(30,79,175,.10); }
+.stitle { font-weight:700; font-size:.92em; margin-bottom:.35em; color:#0E2350; }
+.side.left .stitle { color:#5B6B85; }
+.side p { font-weight:500; font-size:.76em; line-height:1.45; color:#2E3F5C; margin-bottom:.25em;
+          word-break:keep-all; padding-left:.8em; text-indent:-.8em; }
+.side p::before { content:"· "; }
+.vs { align-self:center; font-weight:700; color:#2F6FE4; font-size:.8em; }
+.note { margin-top:.8em; font-weight:500; font-size:.82em; line-height:1.5; color:#46597A; text-align:center;
+        word-break:keep-all; }
 """
 
 FIT_JS = """
@@ -313,6 +379,11 @@ document.fonts.ready.then(() => {
     for (let i = 0; i < 40 && (el.scrollHeight > el.clientHeight + 1 || inner() > el.clientHeight); i++) {
       fs -= 1; el.style.fontSize = fs + 'px';
     }
+  });
+  // 큰 숫자는 한 줄로 두고, 칸보다 길면 그 숫자만 줄인다('4,200만 원'이 두 줄로 꺾였다)
+  document.querySelectorAll('.sval').forEach(el => {
+    let fs = parseFloat(getComputedStyle(el).fontSize);
+    for (let i = 0; i < 60 && el.scrollWidth > el.clientWidth; i++) { fs -= 2; el.style.fontSize = fs + 'px'; }
   });
   window.__fitDone = true;
 });
@@ -329,11 +400,16 @@ def _kind(i, n, block):
     return "news"
 
 
-def build_html(cards, font_dir, photo, logo):
+def build_html(cards, font_dir, photo, logo, infographics=None):
     n = len(cards)
+    infographics = infographics or {}
     parts = []
     for i, c in enumerate(cards):
         k = _kind(i, n, c)
+        spec = infographics.get(str(i + 1))
+        if spec and k != "cover":
+            parts.append(_info(i, n, c, spec, logo))
+            continue
         parts.append(_cover(i, n, c, photo, logo) if k == "cover" else
                      _points(i, n, c, logo) if k == "points" else
                      _closing(i, n, c, logo) if k == "closing" else _news(i, n, c, logo))
@@ -353,7 +429,7 @@ def make_cards(data):
     logo = LOGO_SRC if os.path.exists(LOGO_SRC) else ""   # 밝은 바탕에선 원래 파란 로고가 또렷하다
     html_path = os.path.join(out_dir, "_cards.html")
     with open(html_path, "w", encoding="utf-8") as f:
-        f.write(build_html(cards, font_dir, photo, logo))
+        f.write(build_html(cards, font_dir, photo, logo, data.get("infographics")))
 
     o = Options()
     o.add_argument("--headless=new")

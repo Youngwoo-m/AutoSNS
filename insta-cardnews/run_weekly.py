@@ -24,6 +24,12 @@ def _make_cards(data):
         from gamma_make import make_cards
         log("카드 렌더러: Gamma")
     else:
+        # 2~3장을 숫자·흐름·비교 인포그래픽으로(숫자는 출처 제목과 값으로 대조). 실패해도 일반 카드.
+        try:
+            from infographic import plan
+            plan(data)
+        except Exception as e:
+            log(f"인포그래픽 설계 건너뜀: {type(e).__name__}: {str(e)[:80]}")
         from render_cards_local import make_cards
         log("카드 렌더러: 로컬(KoPubWorld)")
     return make_cards(data)
