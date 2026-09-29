@@ -128,7 +128,7 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
         raise RuntimeError(f"모르는 생성 프로필: {profile} (가능: {', '.join(PROFILES)})")
     sys_prompt, user_tmpl, kind = PROFILES[profile]
     cfg = cfg or load_config()
-    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    client = _llm_client(cfg)
     msg = client.messages.create(
         model=cfg.get("model", "claude-sonnet-4-6"),
         max_tokens=4000, system=sys_prompt,
@@ -147,3 +147,15 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
         raise RuntimeError(f"형식 미달(요약 {len(summary)}줄, 문단 {len(paras)}개)")
     log(f"{kind} 본문 생성: {sum(len(p) for p in paras)}자 / 문단 {len(paras)} / FAQ {len(faq)}")
     return {"summary": summary, "paras": paras, "faq": faq[:3]}
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
+

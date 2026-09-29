@@ -119,7 +119,7 @@ def plan(data):
     prompt = PROMPT.format(cards="\n\n".join(f"[{i + 1}]\n{c}" for i, c in enumerate(cards)),
                            sources="\n".join(f"- {t}" for t in src))
     try:
-        msg = Anthropic(api_key=cfg["anthropic_api_key"]).messages.create(
+        msg = _llm_client(cfg).messages.create(
             model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=1500,
             messages=[{"role": "user", "content": prompt}])
         text = msg.content[0].text
@@ -153,3 +153,15 @@ def plan(data):
     data["infographics"] = out
     log(f"인포그래픽 {len(out)}장: " + ", ".join(f"{k}번 {v['type']}" for k, v in out.items()))
     return out
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
+

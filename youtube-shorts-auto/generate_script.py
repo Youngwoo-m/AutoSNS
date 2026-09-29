@@ -244,7 +244,7 @@ def generate(lead=None):
     if lead:
         user_msg += LEAD_NOTE
 
-    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    client = _llm_client(cfg)
     title, scenes, description, tags = "", [], "", []
     for attempt in range(1, 4):
         msg = client.messages.create(
@@ -296,6 +296,18 @@ def generate(lead=None):
     save_history(history)
     log(f"Shorts 대본 생성 완료: {data['title']}  (장면 {len(scenes)}개, 뉴스 {len(news)}건)")
     return data
+
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
 
 
 if __name__ == "__main__":

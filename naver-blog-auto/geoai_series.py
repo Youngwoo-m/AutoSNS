@@ -624,7 +624,7 @@ def generate(idx, topic, cfg=None, recent=()):
     """한 편을 생성한다. 형식·분량이 모자라면 최대 3번까지 다시 쓴다."""
     cfg = cfg or load_config()
     slug, title, angle, tags = topic
-    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    client = _llm_client(cfg)
     user = USER.format(n=idx, title=title, angle=angle,
                        today=f"{datetime.now():%Y-%m-%d}",
                        recent="\n".join(f"- {t}" for t in list(recent)[-12:]) or "(없음)")
@@ -790,6 +790,18 @@ def run(dry_run=False, cfg=None):
     r["title"] = data["title"]
     r["kind"] = "series"
     return r
+
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
 
 
 if __name__ == "__main__":

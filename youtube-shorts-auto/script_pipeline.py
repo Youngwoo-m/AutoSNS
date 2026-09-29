@@ -79,7 +79,7 @@ JSON 형식:
 def _claude(prompt):
     from anthropic import Anthropic
     cfg = load_config()
-    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    client = _llm_client(cfg)
     msg = client.messages.create(model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=2000,
                                  messages=[{"role": "user", "content": prompt}])
     text = msg.content[0].text.strip()
@@ -250,6 +250,18 @@ def _preview(d):
             print(f"  {i}. {s['heading']} | {' / '.join(s['lines'])}\n     {s['narration']}  [{s.get('pexels')}]")
     if d.get("problems"):
         print("  ⚠ 확인 필요:", "; ".join(d["problems"]))
+
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
 
 
 if __name__ == "__main__":

@@ -119,7 +119,7 @@ def _fit_budget(scenes, hard):
 def make_payload(data, cfg=None):
     """영상 제작 payload(headline/title/description/scenes/hashtags/sources)."""
     cfg = cfg or load_config()
-    client = Anthropic(api_key=cfg["anthropic_api_key"])
+    client = _llm_client(cfg)
     summary = "\n".join(f"- {s}" for s in (data.get("summary") or [])) or "- (없음)"
     hard = int((cfg.get("geoai") or {}).get("video_max_chars", 290))
     msg = client.messages.create(
@@ -175,6 +175,18 @@ def _series_label(title):
     """'산사태 위험지도는 어떻게 만드나 | GeoAI 기초 13편' → 'GeoAI 기초 13편'. 토막이 없으면 ""."""
     parts = [p.strip() for p in (title or "").split(" | ") if p.strip()]
     return parts[-1][:20] if len(parts) >= 2 else ""
+
+
+
+def _llm_client(cfg):
+    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.llm import client
+    return client(cfg)
 
 
 if __name__ == "__main__":
