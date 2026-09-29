@@ -81,7 +81,7 @@ def _cover_html(idx, heading, lines, footer, logo, header, bg="", broll=""):
     title = _esc(heading) or "재난안전 브리핑"
     sub = "".join(f'<div class="csub">{_esc(s)}</div>' for s in lines)
     hasbg = " hasbg" if (bg or broll) else ""
-    hasbroll = " hasbroll" if broll else ""
+    hasbroll = (" hasbroll" + (" realbroll" if "broll_pexels" in broll else "")) if broll else ""
     return f"""
     <div class="frame cover{hasbg}{hasbroll}" id="frame{idx}">
       {_bg_html(bg) if bg else ('<div class="scrim"></div>' if broll else "")}
@@ -115,7 +115,7 @@ def _content_html(idx, heading, lines, footer, img_path, logo, header, bg="", an
     if img_path and not bg and not broll:
         img_html = f'<div class="newsimg"><img src="{_file_url(img_path)}"></div>'
     hasbg = " hasbg" if (bg or broll) else ""
-    hasbroll = " hasbroll" if broll else ""
+    hasbroll = (" hasbroll" + (" realbroll" if "broll_pexels" in broll else "")) if broll else ""
     return f"""
     <div class="frame content{hasbg}{hasbroll}" id="frame{idx}">
       {_bg_html(bg) if bg else ('<div class="scrim"></div>' if broll else "")}
@@ -247,6 +247,12 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
       background:linear-gradient(180deg,
                  rgba(0,0,0,{sc0}) 0%, rgba(0,0,0,{sc1}) 38%,
                  rgba(0,0,0,{sc1}) 62%, rgba(0,0,0,{sc2}) 100%); }}
+    /* 실사(Pexels) 배경은 일러스트보다 밝고 복잡해 글자가 묻힌다(눈길·하늘 등).
+       순백색·굵게·짙은 테두리 그림자로 글자를 띄운다. 클립 자체도 pexels_broll 이 어둡게 가공한다. */
+    .frame.realbroll .heading {{ color:#ffffff;
+      text-shadow:0 2px 6px rgba(0,0,0,.85), 0 0 28px rgba(0,0,0,.65); }}
+    .frame.realbroll .sent, .frame.realbroll .csub {{ color:#ffffff; font-weight:600; opacity:1;
+      text-shadow:0 1px 3px rgba(0,0,0,.95), 0 2px 10px rgba(0,0,0,.8), 0 0 24px rgba(0,0,0,.55); }}
     /* ---- 장면 전체 배경 이미지(Firefly 등) + 가독성 스크림 ---- */
     .bgfill {{ position:absolute; inset:0; z-index:0; }}
     .bgfill img {{ width:100%; height:100%; object-fit:cover; }}
