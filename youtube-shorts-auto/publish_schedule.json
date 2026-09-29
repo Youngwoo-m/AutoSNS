@@ -687,5 +687,43 @@
     ],
     "published": null,
     "season_note": "여름 낙뢰"
+  },
+  {
+    "no": 25,
+    "series": "quiz",
+    "label": "퀴즈 25",
+    "date": "2027-06-22",
+    "video": "posts/short_TIKTOK_QUIZ25.mp4",
+    "title": "[재난안전 O·X] 침수 때 차 빼러 가도 될까? | 세명대 재난안전학과 [25] #Shorts",
+    "description": "침수 때 차 빼러 가도 될까?\n👉 즉시 대피가 최우선 · 차보다 내 생명 먼저\n재난안전 상식 O/X 퀴즈 [25]\n근거: 행정안전부 국민재난안전포털 '호우·침수 행동요령'\n\n세명대학교 재난안전학과\n▶ https://www.semyung.ac.kr/smds.do\n\n#지하주차장침수 #침수대피요령 #장마안전 #재난안전퀴즈 #재난안전 #세명대학교 #재난안전학과 #Shorts",
+    "tags": [
+      "지하주차장침수",
+      "침수대피요령",
+      "장마안전",
+      "재난안전퀴즈",
+      "재난안전",
+      "세명대학교",
+      "재난안전학과",
+      "Shorts"
+    ],
+    "published": null
+  },
+  {
+    "no": 9,
+    "series": "career",
+    "label": "진로 9",
+    "date": "2027-06-29",
+    "video": "posts/short_CAREER09_09291228.mp4",
+    "title": "소방공무원 하는 일 | 불 끄는 게 다가 아니에요 | 세명대 재난안전학과 진로 [9] #Shorts",
+    "description": "소방관 하면 화재 진압만 떠오르시나요? 사실 소방공무원의 역할은 생각보다 훨씬 넓습니다.\n\n세명대학교 재난안전학과 진로 시리즈\n▶ https://www.semyung.ac.kr/smds.do\n\n#소방공무원 #재난안전학과 #세명대학교 #소방직공무원 #재난안전 #Shorts",
+    "tags": [
+      "소방공무원",
+      "재난안전학과",
+      "세명대학교",
+      "소방직공무원",
+      "재난안전",
+      "Shorts"
+    ],
+    "published": null
   }
 ]

@@ -402,5 +402,23 @@
       "highway driving car",
       "rest area parking"
     ]
+  },
+  {
+    "topic": "지하주차장 침수 시 차량 이동",
+    "answer": "X",
+    "bg_key": "06_safety",
+    "hook": "침수 때 차 빼러 가도 될까?",
+    "statement": "지하주차장이 침수되기 시작하면 차를 빼러 내려가도 된다.",
+    "takeaway": [
+      "즉시 대피가 최우선",
+      "차보다 내 생명 먼저"
+    ],
+    "explanation": "정답은 엑스예요. 행정안전부 국민재난안전포털 침수 행동요령에 따르면, 지하주차장에 물이 유입되기 시작하면 절대 차량을 이동하려 하지 말고 즉시 지상으로 대피해야 합니다. 지하공간은 물이 차오르는 속도가 매우 빠르고 출입구가 순식간에 막혀 탈출이 불가능해질 수 있기 때문입니다.",
+    "pexels": [
+      "underground parking garage flooded",
+      "heavy rain street water"
+    ],
+    "no": 25,
+    "source": "행정안전부 국민재난안전포털 '호우·침수 행동요령'"
   }
 ]

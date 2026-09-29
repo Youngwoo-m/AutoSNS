@@ -138,6 +138,20 @@ def draft(kind, topic):
     return path, d
 
 
+def _next_no(sched, series):
+    """시리즈의 다음 편 번호. 예약표 편수를 세면 안 된다 — 진로 1편은 예약표에 없어
+    (2~8편만 있음) 7편을 세어 8을 붙였다가, 이미 있는 진로 8편과 겹쳤다(2026-09-29).
+    제목·라벨에 적힌 번호의 최댓값 다음으로 잡는다."""
+    nums = []
+    for e in sched:
+        if e.get("series") != series:
+            continue
+        for text in (e.get("label", ""), e.get("title", "")):
+            nums += [int(x) for x in re.findall(r"\[(\d+)(?:/\d+)?\]|(?:퀴즈|진로) (\d+)", text)
+                     for x in x if x]
+    return max(nums, default=0) + 1
+
+
 def _next_tuesday(sched):
     last = max(datetime.date.fromisoformat(e["date"]) for e in sched)
     d = last + datetime.timedelta(days=1)
@@ -164,7 +178,7 @@ def approve(path):
         video = render_one(q)
         quizzes.append(q)
         json.dump(quizzes, open(QUIZ_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-        n = sum(1 for e in sched if e.get("series") == "quiz") + 1
+        n = _next_no(sched, "quiz")
         label = f"퀴즈 {n}"
         title = f"[재난안전 O·X] {q['hook']} | 세명대 재난안전학과 [{n}] #Shorts"
         desc = (f"{q['hook']}\n👉 {' · '.join(q['takeaway'])}\n재난안전 상식 O/X 퀴즈 [{n}]\n"
@@ -176,7 +190,7 @@ def approve(path):
         from render_frames import make_frames
         from tts import make_tts
         from make_video import make_video
-        n = sum(1 for e in sched if e.get("series") == "career") + 1
+        n = _next_no(sched, "career")
         stamp = f"CAREER{n:02d}_{datetime.datetime.now():%m%d%H%M}"
         data = {"stamp": stamp, "header_text": "세명대 재난안전학과 진로", "max_seconds": 45,
                 "title": d["title"], "source_images": {}, "broll": {},
