@@ -424,14 +424,17 @@ def make_frames(data):
             if i == 0:
                 continue
             try:
-                from pexels_broll import fetch as _stock_fetch
+                from pexels_broll import fetch_pair as _stock_pair
                 from shared.stock_video import pick_query
                 sc = scenes[i]
                 text = " ".join([sc.get("heading", "")] + list(sc.get("lines", []))
                                 + [sc.get("narration", "")])
                 q = pick_query([text, data.get("title", "")])
-                info = _stock_fetch(q, pick=used.get(q, 0))
-                used[q] = used.get(q, 0) + 1
+                k = used.get(q, 0)
+                info, alt = _stock_pair(q, start=k)
+                used[q] = k + 2              # 두 번째 클립 몫까지 건너뛴다
+                if alt:
+                    data.setdefault("broll_alt", {})[str(i + 1)] = alt["path"]
                 brolls[i] = info["path"]
                 labels.add(i)
                 data.setdefault("stock_used", {})[str(i + 1)] = {

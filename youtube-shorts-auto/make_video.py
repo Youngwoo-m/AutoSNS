@@ -55,7 +55,10 @@ def _vf_static():
             f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=white,setsar=1")
 
 
-def _segment_broll(frame, audio, dur, out_path, broll):
+CUT_MIN_SEC = 4.0     # 이보다 짧은 장면은 컷을 바꾸지 않는다(오히려 정신없다)
+
+
+def _segment_broll(frame, audio, dur, out_path, broll, alt=""):
     """B롤 영상 위에 투명 프레임(자막·소제목)을 얹어 한 장면을 만든다.
 
     클립이 장면보다 짧으면 -stream_loop 로 반복하고, 길면 -t 로 자른다.
@@ -63,22 +66,35 @@ def _segment_broll(frame, audio, dur, out_path, broll):
     레터박스를 두면 위아래 검은 띠가 생겨 자막 영역과 겹친다.
     켄번스 줌은 걸지 않는다. 클립이 이미 움직이는데 덧대면 흔들려 보인다.
     """
-    fc = (f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
-          f"crop={W}:{H},fps={FPS},setsar=1[bg];"
-          f"[bg][1:v]overlay=0:0:format=auto,trim=duration={dur:.3f},"
-          f"setpts=PTS-STARTPTS[v]")
-    _run(["-stream_loop", "-1", "-i", broll, "-i", frame, "-i", audio,
+    fit = f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},setsar=1"
+    if alt and alt != broll and dur > CUT_MIN_SEC:
+        # 장면 절반에서 두 번째 클립으로 컷한다 — 한 클립을 7~8초 돌리면 화면이 늘어진다.
+        h = round(dur / 2, 3)
+        fc = (f"[0:v]{fit},trim=duration={h},setpts=PTS-STARTPTS[a];"
+              f"[1:v]{fit},trim=duration={dur - h:.3f},setpts=PTS-STARTPTS[b];"
+              f"[a][b]concat=n=2:v=1:a=0[bg];"
+              f"[bg][2:v]overlay=0:0:format=auto,trim=duration={dur:.3f},setpts=PTS-STARTPTS[v]")
+        inputs = ["-stream_loop", "-1", "-i", broll, "-stream_loop", "-1", "-i", alt,
+                  "-i", frame, "-i", audio]
+        amap = "3:a"
+    else:
+        fc = (f"[0:v]{fit}[bg];"
+              f"[bg][1:v]overlay=0:0:format=auto,trim=duration={dur:.3f},"
+              f"setpts=PTS-STARTPTS[v]")
+        inputs = ["-stream_loop", "-1", "-i", broll, "-i", frame, "-i", audio]
+        amap = "2:a"
+    _run([*inputs,
           "-filter_complex", fc,
-          "-map", "[v]", "-map", "2:a",
+          "-map", "[v]", "-map", amap,
           "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
           "-r", str(FPS),
           "-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-af", "apad",
           "-t", f"{dur:.3f}", out_path])
 
 
-def _segment(frame, audio, dur, out_path, motion=True, zoom_max=1.06, broll=""):
+def _segment(frame, audio, dur, out_path, motion=True, zoom_max=1.06, broll="", alt=""):
     if broll:
-        return _segment_broll(frame, audio, dur, out_path, broll)
+        return _segment_broll(frame, audio, dur, out_path, broll, alt)
     vf = _vf_motion(dur, zoom_max) if motion else _vf_static()
     args = ["-loop", "1", "-i", frame, "-i", audio,
             "-c:v", "libx264", "-preset", "veryfast"]
@@ -175,6 +191,7 @@ def make_video(data):
     os.makedirs(work, exist_ok=True)
 
     brolls = data.get("broll_used") or {}
+    alts = data.get("broll_alt") or {}          # 실사 장면의 두 번째 클립(절반에서 컷)
     seg_paths, total = [], 0.0
     for i, (fr, au) in enumerate(zip(frames, audio)):
         dur = float(au["duration"])
@@ -183,7 +200,7 @@ def make_video(data):
             break
         seg = os.path.join(work, f"seg_{i+1:02d}.mp4")
         _segment(fr, au["path"], dur, seg, motion=motion, zoom_max=zoom_max,
-                 broll=brolls.get(str(i + 1), ""))
+                 broll=brolls.get(str(i + 1), ""), alt=alts.get(str(i + 1), ""))
         seg_paths.append(seg)
         total += dur
         log(f"세그먼트 {i+1}/{n} 생성({dur:.1f}s, 누적 {total:.1f}s)")

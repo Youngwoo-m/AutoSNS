@@ -196,7 +196,7 @@ def approve(path):
                 "\n\n" + " ".join("#" + t for t in tags))
         entry = {"no": no, "series": "quiz", "label": label}
     else:
-        from pexels_broll import fetch
+        from pexels_broll import fetch_pair
         from render_frames import make_frames
         from tts import make_tts
         from make_video import make_video
@@ -208,7 +208,10 @@ def approve(path):
                            for s in d["scenes"]]}
         for i, s in enumerate(d["scenes"], start=1):
             try:
-                data["broll"][str(i)] = fetch(s["pexels"])["path"]
+                a, b = fetch_pair(s["pexels"])          # b: 장면 절반에서 컷할 두 번째 클립
+                data["broll"][str(i)] = a["path"]
+                if b:
+                    data.setdefault("broll_alt", {})[str(i)] = b["path"]
             except Exception as e:
                 log(f"실사 B롤 실패({s['pexels']}) → 일러스트: {type(e).__name__}")
         make_frames(data); make_tts(data); make_video(data)

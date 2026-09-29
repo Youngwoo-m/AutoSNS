@@ -41,6 +41,25 @@ def fetch(query, pick=0, dim=True):
     return _sv.fetch(query, keys, OUT_DIR, pick=pick, fx=DIM_FX if dim else None, log=log)
 
 
+def fetch_pair(query, start=0, tries=4):
+    """한 장면에 쓸 클립 두 개(절반에서 컷). 두 번째는 다른 촬영자의 것을 우선한다 —
+    같은 촬영자의 연속 영상이면 컷을 바꿔도 같은 화면처럼 보인다(퀴즈 13 눈길 장면).
+    두 번째를 못 구하면 (첫째, None)."""
+    a = fetch(query, pick=start)
+    fallback = None
+    for k in range(start + 1, start + 1 + tries):
+        try:
+            b = fetch(query, pick=k)
+        except Exception:
+            break
+        if b["path"] == a["path"]:
+            break                                # 후보가 바닥나 같은 것을 돌려받았다
+        if b.get("by") != a.get("by"):
+            return a, b
+        fallback = fallback or b
+    return a, fallback
+
+
 if __name__ == "__main__":
     for q in sys.argv[1:]:
         print(json.dumps(fetch(q), ensure_ascii=False))

@@ -57,11 +57,14 @@ def render_one(q):
     # 일러스트 그대로 — 시리즈 끝맺음을 같은 화면으로 통일한다. 받기에 실패하면 그 장면만
     # 자동 매칭(일러스트)으로 돌아간다(렌더가 멈추지 않게).
     if q.get("pexels"):
-        from pexels_broll import fetch
+        from pexels_broll import fetch_pair
         data["broll"] = {}
         for i, query in enumerate(q["pexels"], start=1):
             try:
-                data["broll"][str(i)] = fetch(query)["path"]
+                a, b = fetch_pair(query)                # b: 장면 절반에서 컷할 두 번째 클립
+                data["broll"][str(i)] = a["path"]
+                if b:
+                    data.setdefault("broll_alt", {})[str(i)] = b["path"]
             except Exception as e:
                 log(f"Pexels B롤 실패({query}) → 일러스트로: {type(e).__name__}: {str(e)[:80]}")
     log(f"===== {stamp} 렌더: {q['topic']} (정답 {q['answer']}) =====")
