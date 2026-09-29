@@ -273,7 +273,7 @@ def post_threads(data, post_url, cfg, dry_run=False, video_url=""):
         return {}
 
 
-def make_brief():
+def make_brief(dry=False):
     """GeoAI 판 뉴스 브리핑 글을 만든다 → (설정, data, 본문 HTML). 채널 안내는 붙이지 않는다.
 
     설정은 여기서 다시 읽는다 — SMUDS_EDITION 을 세운 뒤라야 geoai 에디션이 병합된다."""
@@ -282,6 +282,8 @@ def make_brief():
     from post_blogger import build_html
     cfg = load_config()                              # geoai 에디션이 병합된 설정
     data = generate()
+    from blog_photo import photo_html
+    data["photo_html"] = photo_html(data.get("title", ""), data.get("summary", ""), cfg, dry_run=dry)
     # 본문 HTML 은 학과 블로그와 같은 생성기를 쓰되, 끝의 CTA·링크 블록은 뺀다
     # (geoai_blogger.compose 가 GeoAI 채널 안내를 마지막에 한 번만 붙인다).
     body = build_html(data, _deep_merge(cfg, {"blogger": {"links": []},
@@ -329,7 +331,7 @@ def main():
     topic = None
     if kind == "brief":
         try:
-            cfg, data, body = make_brief()
+            cfg, data, body = make_brief(dry=dry)
         except Exception as e:
             log(f"브리핑 실패({type(e).__name__}: {str(e)[:120]}) → 시리즈 1편으로 대체")
             data = None
@@ -347,6 +349,9 @@ def main():
         if not dry and topic:
             from geoai_shots import upload_for
             shots = upload_for(topic[0], cfg, steps=data.get("howto"))
+        from blog_photo import photo_html
+        data["photo_html"] = photo_html(data.get("title", ""), " ".join(data.get("summary") or []),
+                                        cfg, dry_run=dry)
         body = series_html(data, cfg, with_links=False,
                            step_image=step_url, shots=shots)
 

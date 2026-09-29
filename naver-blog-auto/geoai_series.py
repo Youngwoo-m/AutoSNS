@@ -730,6 +730,7 @@ def build_html(data, cfg=None, with_links=True, step_image="", shots=None):
         P.append("<h3>📌 3줄 요약</h3><ul>"
                  + "".join(f"<li>{_esc(s)}</li>" for s in data["summary"]) + "</ul>")
     P.append(_prose_html(data.get("intro", "")))
+    P.append(data.get("photo_html", ""))          # 자료사진(blog_photo) — 도입부 뒤, 첫 소제목 앞
     for head, body in data.get("sections", []):
         P.append(f"<h3>{_esc(head)}</h3>")
         P.append(_prose_html(body))

@@ -80,6 +80,7 @@ def build_html(data, cfg=None):
         parts.append("<h3>📌 3줄 요약</h3><ul>"
                      + "".join(f"<li>{_esc(i)}</li>" for i in items) + "</ul>")
     parts.append(_para(data.get("intro", "")))
+    parts.append(data.get("photo_html", ""))      # 자료사진(blog_photo) — 도입부 뒤, 첫 뉴스 앞
     for blk in data.get("news_blocks", []):
         parts.append(f"<h3>{_esc(blk.get('heading',''))}</h3>")
         parts.append(_para(blk.get("paragraph", "")))
@@ -168,6 +169,9 @@ def publish(data, dry_run=False, cfg=None):
     cat = (cfg.get("blogger_category")
            or (cfg.get("blogger", {}) or {}).get("category", "재난안전뉴스"))
     title = data.get("title", "재난안전 브리핑")
+    if not dry_run and "photo_html" not in data:  # Blogger 글에만 — 네이버 글은 이미 나갔다
+        from blog_photo import photo_html
+        data["photo_html"] = photo_html(title, data.get("summary", ""), cfg)
     body = {
         "kind": "blogger#post",
         "title": title,

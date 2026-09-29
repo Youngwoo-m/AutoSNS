@@ -182,7 +182,7 @@ def _episode_image(ser, ep, dry=False):
         return ""
 
 
-def build_html(summary, paras, faq, vid, hub, label, generated, image_url=""):
+def build_html(summary, paras, faq, vid, hub, label, generated, image_url="", photo_html=""):
     """한 편의 본문. generated=True 면 문단을 걸러서 넣는다(모델이 쓴 글이라).
 
     image_url 이 있으면 요약 바로 아래에 그림을 넣는다(입시 11편 인포그래픽 등)."""
@@ -192,6 +192,8 @@ def build_html(summary, paras, faq, vid, hub, label, generated, image_url=""):
         P.append('<p style="text-align:center"><img src="%s" alt="%s" '
                  'style="max-width:100%%;height:auto;border-radius:8px"></p>'
                  % (_url(image_url), _esc(label)))
+    elif photo_html:                              # 그 편 그림이 없으면 자료사진(blog_photo)
+        P.append(photo_html)
     P += [f"<p>{_safe(p) if generated else p}</p>" for p in paras]
     P.append(_video_html(vid))
     if faq:
@@ -256,9 +258,13 @@ def main():
                     break
                 summary, paras, faq = w["summary"], w["paras"], w["faq"]
             image_url = _episode_image(ser, ep, dry=False)
+            photo = ""
+            if not image_url:
+                from blog_photo import photo_html as _photo
+                photo = _photo(full_title, " ".join(summary or []), cfg)
             content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
                                  generated=(ser["kind"] == "generated"),
-                                 image_url=image_url)
+                                 image_url=image_url, photo_html=photo)
             # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
             labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
             body = {"title": full_title, "content": content, "labels": labels,
