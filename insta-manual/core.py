@@ -19,7 +19,7 @@ for _d in (UPLOADS_DIR, LOGS_DIR, PROFILE_DIR):
 
 DEFAULTS = {
     "anthropic_api_key": "",          # 비우면 AI 초안 기능만 꺼진다(게시는 정상 동작)
-    "caption_model": "claude-opus-5",
+    "caption_model": "claude-sonnet-5",
     "instagram": {
         "username": "",               # @ 없이. 첫 댓글을 달 때 프로필을 찾는 데 쓴다
         "headless": False,            # True 면 창 없이 — 로그인 문제 추적이 어려워 권장 안 함

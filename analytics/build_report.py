@@ -161,6 +161,22 @@ def build(rows, channel, profile, warn, today, since="2026-03-01"):
             [f"{r['views']:,}", f'<a href="{r["url"]}" style="color:#1C1D1F">{r["title"][:52]}</a>']
             for r in sorted(ytw, key=lambda x: -x["views"])[:5]], ["right", "left"]))
 
+    # 네이버 블로그·스레드 조회(누적). 공개 화면에 없어 주인 통계에서 따로 모은다
+    # (collect_naver_stats.py, collect_threads.py — 2026-09-29 추가). 조회는 올린 뒤
+    # 며칠에 걸쳐 붙으므로 최근 30일 글을 누적 조회순으로 보여 준다.
+    cut30 = (datetime.strptime(str(today)[:10], "%Y-%m-%d") - timedelta(days=30)).strftime("%Y-%m-%d")
+    for part_name, label in (("blog", "네이버 블로그"), ("threads", "스레드")):
+        its = [x for x in (load_part(part_name) or {}).get("items", [])
+               if x.get("views") is not None and x["date"] >= cut30]
+        if not its:
+            continue
+        H.append(f'<h2 style="font-size:15px;margin:22px 0 0">{label} 조회 상위 '
+                 '<span style="font-weight:400;color:#666">(최근 30일 글, 누적)</span></h2>')
+        H.append(_table(["조회", "날짜", "제목"], [
+            [f"{x['views']:,}", x["date"][5:],
+             f'<a href="{x["url"]}" style="color:#1C1D1F">{x["title"][:48]}</a>']
+            for x in sorted(its, key=lambda x: -x["views"])[:5]], ["right", "left", "left"]))
+
     # 구글 검색 유입 — 어떤 검색어로 발견되는지(서치콘솔). Blogger 만 대상이다.
     gsc = load_part("searchconsole") or {}
     if gsc.get("items"):

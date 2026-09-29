@@ -149,6 +149,12 @@ def bgm_track(kind, vcfg):
     뉴스는 차분한 곡(화재·사고 소식에 댄스 비트는 어색하다), 퀴즈·진로는 밝은 곡."""
     tracks = vcfg.get("bgm_tracks") or {}
     t = tracks.get(kind) or tracks.get("default")
+    # 곡 목록이면 영상마다 돌아가며 고른다 — 한 곡만 쓰니 영상이 모두 같게 들렸다.
+    # Lyria(학교 AI 게이트웨이)로 만든 곡은 음량을 -20 LUFS 로 맞춰 두어 volume 0.2 가
+    # 곧 -34 LUFS 다(2026-09-29).
+    if isinstance(t, list):
+        import random
+        t = random.choice([x for x in t if x.get("path")]) if t else None
     if not t:
         path = vcfg.get("bgm_path", "")
         t = {"path": path, "volume": vcfg.get("bgm_volume", 0.12)} if path else None
@@ -160,6 +166,8 @@ def bgm_track(kind, vcfg):
         return None
     name = t.get("name") or os.path.splitext(os.path.basename(path))[0].replace("_", " ")
     credit = t.get("credit") or f"🎵 배경음악: {name} — Kevin MacLeod (incompetech.com) / CC BY 4.0"
+    if t.get("credit") == "":
+        credit = ""                        # 표기가 필요 없는 곡
     return {"path": path, "volume": float(t.get("volume", 0.12)), "name": name, "credit": credit}
 
 

@@ -145,6 +145,10 @@ def _build_description(data, cfg):
             "※ 이 영상은 세명대학교 재난안전학과 학과장의 모습을 바탕으로 "
             "AI로 자동 생성한 아바타 영상입니다(합성 음성·영상)."))
 
+    if data.get("ai_broll") and not data.get("ai_disclosure"):
+        parts.append("")
+        parts.append("※ 일부 배경 화면은 AI로 생성한 영상입니다(실제 현장 영상이 아님).")
+
     sources = data.get("sources") or []
     src_from = len(parts)          # 길이 초과 시 여기부터 뒤로 덜어낸다(출처는 부가 정보)
     if sources and ycfg.get("include_sources", True):
@@ -246,7 +250,8 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
     }
     # AI 아나운서 영상은 유튜브의 공식 '변경·합성 콘텐츠' 라벨까지 신고한다.
     # (설명문 고지는 우리가 쓰는 안내문일 뿐, 정책상 요구되는 신고는 이 플래그다.)
-    if data.get("ai_disclosure"):
+    # 배경에 AI 실사 클립을 쓴 뉴스도 같다 — 실제 현장처럼 보이는 합성 영상이다.
+    if data.get("ai_disclosure") or data.get("ai_broll"):
         status["containsSyntheticMedia"] = True
 
     if dry_run:

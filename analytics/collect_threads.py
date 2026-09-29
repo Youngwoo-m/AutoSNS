@@ -62,6 +62,47 @@ def _title(text, user):
     return ""
 
 
+# 조회수는 프로필 목록에 없고 게시물 화면에만 '조회 11회'로 나온다(주인에게만 보임, 9/29 확인).
+# 게시물마다 화면을 열어야 해서 최근 글만 새로 읽고, 오래된 글은 직전 수집값을 쓴다 —
+# 조회는 대부분 올린 뒤 며칠 안에 붙는다.
+VIEWS_FRESH_DAYS = 60
+_VIEWS = re.compile(r"조회\s*([\d.,]+)\s*(천|만)?\s*회")
+
+
+def _views(text):
+    m = _VIEWS.search(text or "")
+    if not m:
+        return None
+    n = float(m.group(1).replace(",", ""))
+    return int(round(n * {"천": 1_000, "만": 10_000}.get(m.group(2), 1)))
+
+
+def _fill_views(d, items):
+    from datetime import datetime, timedelta
+    from analytics.common import load_part
+    old = {x["url"]: x for x in (load_part("threads") or {}).get("items", [])}
+    cut = (datetime.now() - timedelta(days=VIEWS_FRESH_DAYS)).strftime("%Y-%m-%d")
+    fresh = 0
+    for it in items:
+        prev = old.get(it["url"], {})
+        if it["date"] < cut and prev.get("views") is not None:
+            it["views"] = prev["views"]
+            continue
+        try:
+            d.get(it["url"])
+            time.sleep(4)
+            v = _views(d.execute_script("return document.body.innerText"))
+        except Exception:
+            v = None
+        if v is None:
+            v = prev.get("views")           # 못 읽으면 지난 값(없으면 비움)
+        else:
+            fresh += 1
+        if v is not None:
+            it["views"] = v
+    log(f"스레드 조회수: 새로 읽음 {fresh}건 / 전체 {len(items)}건")
+
+
 def collect(since):
     d = build_driver(headless=False)
     d.set_script_timeout(60)
@@ -94,6 +135,7 @@ def collect(since):
             time.sleep(1.2)
         items = [x for x in items if x["date"] >= since]
         items.sort(key=lambda x: x["date"], reverse=True)
+        _fill_views(d, items)
         return {"profile": {"username": USER, "url": PROFILE}, "items": items}
     finally:
         d.quit()

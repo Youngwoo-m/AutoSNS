@@ -193,8 +193,8 @@
 
   <label for="sModel">캡션 모델</label>
   <select id="sModel">
-    <option value="claude-opus-5">Claude Opus 5 (기본 · 가장 정확)</option>
-    <option value="claude-sonnet-5">Claude Sonnet 5 (저렴)</option>
+    <option value="claude-sonnet-5">Claude Sonnet 5 (기본 · 학교 게이트웨이)</option>
+    <option value="claude-opus-5">Claude Opus 5 (가장 정확 · 크레딧 많이 씀)</option>
     <option value="claude-haiku-4-5">Claude Haiku 4.5 (가장 저렴)</option>
   </select>
 
@@ -262,7 +262,7 @@ function applyCfg(){
 function fillSettings(){
   $('#sUser').value = CFG.username || '';
   $('#sKey').value = CFG.api_key_set ? KEY_MASK : '';
-  $('#sModel').value = CFG.caption_model || 'claude-opus-5';
+  $('#sModel').value = CFG.caption_model || 'claude-sonnet-5';
   $('#sCtx').value = CFG.account_context || '';
   $('#sCta').value = CFG.follow_cta || '';
   $('#sTags').value = CFG.hashtags || '';

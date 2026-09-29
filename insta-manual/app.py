@@ -86,7 +86,7 @@ def _public_settings(cfg):
     ig = cfg.get("instagram", {})
     return {
         "api_key_set": bool(cfg.get("anthropic_api_key")),
-        "caption_model": cfg.get("caption_model", "claude-opus-5"),
+        "caption_model": cfg.get("caption_model", "claude-sonnet-5"),
         "account_context": cfg.get("account_context", ""),
         "username": ig.get("username", ""),
         "follow_cta": ig.get("follow_cta", ""),
@@ -109,7 +109,7 @@ def api_settings():
 
     b = request.get_json(silent=True) or {}
     patch = {
-        "caption_model": (b.get("caption_model") or "claude-opus-5").strip(),
+        "caption_model": (b.get("caption_model") or "claude-sonnet-5").strip(),
         "account_context": (b.get("account_context") or "").strip(),
         "instagram": {
             "username": (b.get("username") or "").strip().lstrip("@"),

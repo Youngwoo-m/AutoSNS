@@ -19,3 +19,18 @@
       -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k \
       -af "afade=t=in:st=0:d=1,afade=t=out:st=26.4:d=2,loudnorm=I=-14:TP=-1.5" \
       -shortest -movflags +faststart 결과.mp4
+
+## AI 생성 음악 (Google Lyria 3 Clip, 2026-09-29~ 기본)
+
+세명대 AI 게이트웨이(`/v1/gateway/audio/music/`, lyria-3-clip-preview, 곡당 40 크레딧)로 만든
+연주곡. 한 번 받은 30초 곡을 3초 크로스페이드로 두 번 이어 약 57초로 늘렸다(숏폼 한 편보다
+길게 — 루프 이음새가 들리지 않게). 음량은 loudnorm 으로 맞춰 두었다.
+
+| 파일 | 용도 | 음량 | 믹스 volume |
+|---|---|---|---|
+| lyria_news_1 / lyria_news_2 | 뉴스(차분) | -20 LUFS | 0.2 → -34 LUFS |
+| lyria_bright_1 / lyria_bright_2 | 퀴즈·진로(밝음) | -20 LUFS | 0.2 |
+| lyria_reel_1 | 카드뉴스 릴스(나레이션 없음) | -29 LUFS | 그대로 |
+
+설명 표기: `🎵 배경음악: AI 생성 음악(Google Lyria, 세명대 AI 게이트웨이)` (출처 표기 의무는 없지만
+AI 생성임을 밝혀 둔다). 이미 렌더해 둔 예약 영상은 원래 곡(Kevin MacLeod)과 그 표기를 유지한다.

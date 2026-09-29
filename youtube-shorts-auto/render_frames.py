@@ -230,8 +230,9 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
             blocks.append(_content_html(i, heading, lines, footer, img, logo, header,
                                         bg, s.get("answer", ""), broll))
         if i in labels:
+            txt = labels.get(i, "배경: 자료 화면") if isinstance(labels, dict) else "배경: 자료 화면"
             blocks[-1] = blocks[-1].replace(
-                f'id="frame{i}">', f'id="frame{i}">\n      <div class="stocklabel">배경: 자료 화면</div>', 1)
+                f'id="frame{i}">', f'id="frame{i}">\n      <div class="stocklabel">{txt}</div>', 1)
     frames_html = "\n".join(blocks)
     sc0, sc1, sc2 = (round(v * scrim, 3) for v in (0.60, 0.20, 0.64))
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
@@ -409,13 +410,14 @@ def make_frames(data):
                     for f in os.listdir(bdir) if f.endswith(".mp4")}
     brolls = {i: _resolve_broll(data, i, scenes, auto) for i in range(len(scenes))}
     brolls = {i: p for i, p in brolls.items() if p}
-    labels = set()
+    labels = {}                     # 장면 번호 → 화면 표기
     # 뉴스 영상: 일러스트 자동 매칭 자리(기사 사진 없는 장면)를 주제 맞춤 실사로 바꾸고
     # '배경: 자료 화면'을 표기한다 — 카드뉴스 릴과 같은 기준(2026-09-29 결정).
     # 기사 사진이 있는 장면은 사진을 그대로 둔다. 실사를 못 구하면 일러스트 그대로.
     if data.get("news_stock") and cfg.get("video", {}).get("stock_news", True):
         auto_paths = set(auto.values())
         used = {}                       # 같은 검색어가 반복되면 2·3순위 클립을 쓴다
+        ai_used = set()                 # 이미 깐 AI 실사 클립
         for i, p in sorted(brolls.items()):
             if p not in auto_paths:
                 continue
@@ -436,11 +438,35 @@ def make_frames(data):
                 if alt:
                     data.setdefault("broll_alt", {})[str(i + 1)] = alt["path"]
                 brolls[i] = info["path"]
-                labels.add(i)
+                labels[i] = "배경: 자료 화면"
                 data.setdefault("stock_used", {})[str(i + 1)] = {
                     k: info.get(k) for k in ("source", "query", "id", "by", "url")}
             except Exception as e:
-                log(f"뉴스 실사 배경 실패({i+1}장면) → 일러스트 그대로: {type(e).__name__}: {str(e)[:70]}")
+                # 실사 영상(Pexels·Pixabay)이 없으면 학교 AI로 미리 만들어 둔 실사풍 클립을 쓴다.
+                # 실제 영상으로 오해하지 않게 'AI 생성 영상'으로 표기하고 유튜브 합성 콘텐츠로
+                # 신고한다(data["ai_broll"] → youtube_upload). 클립이 없으면 일러스트 그대로.
+                # 같은 클립을 두 장면에 깔지 않고, 마무리 장면(구독 안내)엔 사건 주제 대신
+                # 차분한 하늘 클립을 쓴다 — 시험에서 '안전은 준비에서 시작' 위에 불길이 깔렸다.
+                try:
+                    from veo_clips import real_clip
+                    from shared.stock_video import DEFAULT_QUERY
+                    ai = None if i == len(scenes) - 1 else real_clip(q)
+                    if not ai or ai in ai_used:
+                        ai = real_clip(DEFAULT_QUERY)
+                    if ai in ai_used:
+                        ai = None
+                except Exception:
+                    ai = None
+                if ai:
+                    ai_used.add(ai)
+                    brolls[i] = ai
+                    labels[i] = "배경: AI 생성 영상"
+                    data["ai_broll"] = True
+                    clip = os.path.basename(ai).replace("_dim.mp4", "")
+                    data.setdefault("stock_used", {})[str(i + 1)] = {"source": "veo", "query": q, "clip": clip}
+                    log(f"뉴스 {i+1}장면: 실사 없음 → AI 실사 클립({clip})")
+                else:
+                    log(f"뉴스 실사 배경 실패({i+1}장면) → 일러스트 그대로: {type(e).__name__}: {str(e)[:70]}")
     if brolls:
         log(f"B롤 배경 {len(brolls)}장면: " +
             ", ".join(f"{i+1}={os.path.basename(p)}" for i, p in sorted(brolls.items())))

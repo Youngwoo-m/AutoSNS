@@ -6,9 +6,9 @@
 ## 공통 규칙 (모든 프롬프트 끝에 붙인다)
 
 ```
-Vertical 9:16 aspect ratio. 8 seconds. Flat vector illustration style,
+Tall vertical framing. Flat vector illustration style,
 clean editorial infographic look, NOT photorealistic. Muted palette:
-deep navy #334A8E, slate #272C3C, warm amber #FFA500, off-white.
+deep navy blue, dark slate gray, warm amber orange, off-white.
 Slow steady camera, minimal motion, no camera shake. Upper 40% of the
 frame kept visually simple and uncluttered for text overlay. No text,
 no letters, no numbers, no logos, no watermarks anywhere in the image.
@@ -16,11 +16,14 @@ No people's faces in close-up. No audio, no speech, no music.
 ```
 
 **왜 이 조건인가**
-- `9:16 / 8초` — 숏폼 한 장면 길이와 같다.
+- `9:16 / 8초` — 숏폼 한 장면 길이와 같다. 비율·길이는 문장에 쓰지 말고 API 값으로만
+  준다 — 문장에 '9:16'을 쓰니 화면 구석에 '9/16'이 글자로 찍혔다(9/29 위성 장면).
 - `일러스트·도해풍, NOT photorealistic` — 실제 재난 영상으로 오해받지 않게. 우리는
   뉴스 브리핑 옆에 이 화면을 쓰므로, 실사처럼 보이면 가짜 현장 영상이 된다.
 - `상단 40% 비워두기` — render_frames 가 그 자리에 소제목·자막을 얹는다.
 - `텍스트·로고 금지` — 생성 모델이 만드는 글자는 거의 항상 깨진 한글/영문이다.
+- `색은 이름으로` — 색상 코드(#334A8E 등)를 적으면 코드가 그대로 화면에 글자로
+  그려진다(드론 기체에 '2F2A30'이 찍힘, 9/29 시험). 색 이름만 쓴다.
 - `얼굴 클로즈업 금지` — 특정 인물처럼 보이는 얼굴을 피한다.
 - `무음` — 내레이션은 TTS 로 따로 입힌다.
 
@@ -183,6 +186,8 @@ the bottom third. Very slow push-in. Peaceful, reassuring tone.
 ## 쓰는 법
 
 1. 위 장면 프롬프트 + **공통 규칙**을 이어 붙여 베오에 넣는다.
+   학교 AI 게이트웨이로 자동 생성: `python3 veo_clips.py "마무리 장면" 위성`
+   → `posts/broll/veo/<장면>.mp4` (8초 한 편 400 크레딧, 월 12,000. `--list` 로 목록)
 2. 받은 mp4 를 아래 둘 중 한 방법으로 걸면 `render_frames.py` 가 배경으로 깐다.
 
 **영상별 폴더에 떨구기 (간단)**

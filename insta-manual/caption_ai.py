@@ -13,6 +13,20 @@ from PIL import Image
 
 from core import load_config, log
 
+
+def _client(cfg, key):
+    """설정에 llm_gateway(세명대 AI 게이트웨이)가 있으면 그쪽을 먼저 쓰고, 실패하면 이 키로.
+    AutoSNS 의 shared/llm.py 를 빌려 쓴다. 이 도구만 따로 떼어 쓰면 전처럼 키로 직접 부른다."""
+    if (cfg.get("llm_gateway") or {}).get("api_key"):
+        import sys
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if os.path.exists(os.path.join(root, "shared", "llm.py")):
+            if root not in sys.path:
+                sys.path.insert(0, root)
+            from shared.llm import client
+            return client({**cfg, "anthropic_api_key": key})
+    return Anthropic(api_key=key)
+
 # 긴 변 1024px 로 줄여 보낸다(비용·속도. 카드 글자는 이 크기에서 충분히 읽힌다).
 MAX_EDGE = 1024
 
@@ -75,9 +89,9 @@ def draft_caption(image_paths, hint=""):
     content.append({"type": "text", "text": ask})
 
     log(f"AI 캡션 초안 생성 중... (카드 {len(paths)}장)")
-    client = Anthropic(api_key=key)
+    client = _client(cfg, key)
     msg = client.messages.create(
-        model=cfg.get("caption_model", "claude-opus-5"),
+        model=cfg.get("caption_model", "claude-sonnet-5"),
         max_tokens=2000,
         system=system,
         messages=[{"role": "user", "content": content}],
