@@ -185,14 +185,16 @@ PICK = """아래는 이번 주 고용24에 올라온 채용공고 후보다. 세
 {rows}"""
 
 SUMMARIZE = """아래 채용공고 원문에서 항목마다 짧게 뽑아라. 원문에 없는 내용은 쓰지 않는다.
-- duty: 담당업무 한 줄(45자 이내, 명사형으로 끝낸다. 예: '소방시설 점검 및 방재실 운영')
+- duty: 담당업무 한 줄(45자 이내, 명사형으로 끝낸다. 예: '소방시설 점검 및 방재실 운영').
+  원문에 적힌 업무만 쓴다. '등'을 붙여 원문에 없는 분야를 짐작해 넣지 않는다.
 - quals: 자격요건 한 줄(60자 이내). 필수 자격증·면허를 먼저, 우대는 '우대:'로.
   경력 연수·학력은 따로 표시하므로 쓰지 않는다(자격증·면허·특수 조건만).
   원문에 자격 조건이 없으면 '공고 원문 참고'.
 - newbie: 대학 졸업 예정·신규 졸업자가 지원할 수 있으면 true. 원문이 '○년 이상 경력 필수',
   '경력자만', '특급·1급 선임자로 실무경력 필요'처럼 경력을 요구하면 false.
   (자격증만 요구하는 것은 true — 자격증은 학생도 딸 수 있다.)
-- related: 실제 업무가 재난·안전·방재·소방·산업안전·보건관리와 관련 있으면 true
+- related: 원문에 적힌 실제 업무가 재난·안전·방재·소방·산업안전·보건관리이면 true.
+  원문에서 그런 업무가 확인되지 않으면 false(예: 임업·조리·돌봄·일반행정)
   (공무원 임용시험은 뽑는 분야 중에 재난·안전 관련 직렬이 있으면 true, 그 분야를 duty 에 적는다).
 
 출력은 JSON 배열 하나만: [{{"id": "...", "duty": "...", "quals": "...", "newbie": true, "related": true}}]
@@ -208,23 +210,39 @@ def _client(cfg):
     return client(cfg)
 
 
+def _llm_text(cfg, prompt, max_tokens):
+    """게이트웨이 Sonnet 5 는 먼저 생각(thinking)에 토큰을 쓰고, 그 양이 실행마다 다르다
+    (선별에서 800·4000 토큰을 생각만 하다 답 없이 끝남, 9/29). 비면 한도를 두 배로 한 번 더."""
+    for mt in (max_tokens, max_tokens * 2):
+        msg = _client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
+                                           max_tokens=mt,
+                                           messages=[{"role": "user", "content": prompt}])
+        text = "".join(getattr(b, "text", "") for b in msg.content)
+        if text.strip():
+            return text
+        log(f"답이 비었음(stop_reason={msg.stop_reason}, max_tokens={mt}) — 한도를 늘려 다시")
+    raise RuntimeError("답이 비었습니다 — 두 번 모두 생각만 하다 끝남")
+
+
 def _ask(cfg, prompt, max_tokens=3000):
-    msg = _client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
-                                       max_tokens=max_tokens,
-                                       messages=[{"role": "user", "content": prompt}])
-    # 게이트웨이 Sonnet 5 는 먼저 생각(thinking)에 토큰을 쓴다. 한도가 작으면 생각만 하다
-    # 답 없이 끝나므로(후보 194건 선별에서 800 토큰으로 발생) 한도를 넉넉히 준다.
-    text = "".join(getattr(b, "text", "") for b in msg.content)
-    if not text.strip():
-        raise RuntimeError(f"답이 비었습니다(stop_reason={msg.stop_reason}) — max_tokens 를 늘릴 것")
+    text = _llm_text(cfg, prompt, max_tokens)
     i = text.find("[")
     return json.JSONDecoder().raw_decode(text[i:])[0] if i >= 0 else []
+
+
+def _ask_obj(cfg, prompt, max_tokens=4000):
+    """JSON 객체 하나를 돌려받는다(원서접수센터 공고 한 건 요약용)."""
+    text = _llm_text(cfg, prompt, max_tokens)
+    i = text.find("{")
+    if i < 0:
+        raise ValueError("JSON 없음")
+    return json.JSONDecoder().raw_decode(text[i:])[0]
 
 
 def pick(cfg, cands, n=MAX_JOBS):
     rows = "\n".join(f"{i}. {'[공공] ' if c.get('public') else ''}{c['company']} | {c['title']}"
                      for i, c in enumerate(cands))
-    ids = _ask(cfg, PICK.format(n=n, rows=rows), 4000)
+    ids = _ask(cfg, PICK.format(n=n, rows=rows), 12000)
     out = []
     for k in ids:
         if isinstance(k, int) and 0 <= k < len(cands) and cands[k] not in out:
@@ -269,8 +287,9 @@ def summarize(cfg, jobs):
         j["quals"] = (r.get("quals") or "").strip() or "공고 원문 참고"
         # 특급 소방안전관리자는 실무경력이 있어야 딸 수 있는 자격이다. 모델 판정이 실행마다
         # 달라서(9/29 같은 공고가 한 번은 빠지고 한 번은 남음) 규칙으로 뺀다.
-        if "특급" in j["title"] + j["quals"]:
-            log(f"제외(특급 자격 = 경력 필요): {j['company']} | {j['title'][:40]}")
+        if re.search(r"특급|기술사|지도사", j["title"] + j["quals"]):
+            # 기술사·산업안전지도사도 응시에 실무경력이 필요한 자격이다(한국안전 공고가 실행마다 판정이 갈림)
+            log(f"제외(경력이 필요한 자격): {j['company']} | {j['title'][:40]}")
             continue
         if r.get("newbie") is False:
             log(f"제외(원문상 경력 필요): {j['company']} | {j['title'][:40]}")
@@ -295,34 +314,49 @@ def build(jobs):
     now = datetime.now()
     week = (now.day - 1) // 7 + 1
     npub = sum(1 for j in jobs if j.get("public"))
+    ngov = sum(1 for j in jobs if j.get("gov"))
+    extra = " (공무원·공공기관 포함)" if ngov else " (공공기관 포함)" if npub else ""
     title = (f"[채용정보] 신입 지원 가능한 재난안전·방재·소방 채용공고 {len(jobs)}선"
-             f"{' (공무원·공공기관 포함)' if npub else ''} | {now.month}월 {week}주차")
+             f"{extra} | {now.month}월 {week}주차")
     intro = (f"이번 주({_md((now - timedelta(days=DAYS)).strftime('%Y-%m-%d'))}~{_md(now.strftime('%Y-%m-%d'))}) "
-             "고용24에 새로 올라온 재난안전 분야 채용공고 중 신입이 지원할 수 있는 공고"
+             "고용24와 지방자치단체 인터넷원서접수센터에 올라온 재난안전 분야 채용공고 중 신입이 지원할 수 있는 공고"
              "(신입 모집·경력무관)만 모았습니다."
-             + (f" 공무원·공공기관 공고 {npub}건을 앞에 두었습니다." if npub else "") + "\n"
+             + (f" 공무원·공공기관 공고 {npub}건을 앞에 두었습니다." if npub else "")
+             + ("" if ngov else " 이번 주 원서접수센터에는 재난·안전 직렬 신입 공채 공고가 없었습니다.") + "\n"
              "공고마다 핵심만 요약했으니, 관심 있는 공고는 아래 링크로 원문을 꼭 확인해 주세요.")
     blocks = []
     circled = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮"
     for i, j in enumerate(jobs):
         car = {"신입": "신입", "경력무관": "경력무관(신입 가능)", "관계없음": "경력무관(신입 가능)"
                }.get(j["career"], j["career"])
+        if j.get("gov"):
+            car = {"공개경쟁": "공개경쟁(신입 가능)", "경력경쟁": "경력경쟁(자격증 요건)"}.get(j.get("exam_type"), "")
         cond = " · ".join(x for x in (car, j["edu"]) if x)
-        period = (f"{_md(j['reg'])} ~ 채용 시까지" if j["until_hired"] or not j["deadline"]
-                  else f"{_md(j['reg'])} ~ {_md(j['deadline'])} 마감")
+        if j.get("gov"):
+            a = j.get("apply", "").split(" ~ ")
+            period = (f"원서접수 {_md(a[0])} ~ {_md(a[1])}" if len(a) == 2
+                      else "원서접수 기간은 공고문 참고")
+        else:
+            period = (f"{_md(j['reg'])} ~ 채용 시까지" if j["until_hired"] or not j["deadline"]
+                      else f"{_md(j['reg'])} ~ {_md(j['deadline'])} 마감")
         quals = j["quals"] if not cond else f"{cond} / {j['quals']}"
+        duty_label = "모집 직렬" if j.get("gov") else "담당업무"
         text = "\n".join([
             f"{circled[i] if i < len(circled) else str(i + 1) + '.'} "
-            f"{'[공공] ' if j.get('public') else ''}{j['company']}",
+            f"{'[공무원] ' if j.get('gov') else '[공공] ' if j.get('public') else ''}{j['company']}",
             f"{j['title']}",
-            f"· 담당업무: {j['duty']}",
+            f"· {duty_label}: {j['duty']}",
             f"· 급여: {_pay(j['pay'])}",
             f"· 자격요건: {quals}",
             f"· 지원기간: {period}",
         ])
-        blocks.append({"text": text, "link_text": "👉 고용24 원본 공고 보기", "url": j["url"]})
+        blocks.append({"text": text, "url": j["url"],
+                       "link_text": "👉 원서접수센터 원본 공고 보기" if j.get("gov") else "👉 고용24 원본 공고 보기"})
     outro = ("─────────────\n"
-             "※ 출처: 고용24(work24.go.kr) 채용정보. 요약은 편의를 위한 것이며, 급여·자격·마감일 등 "
+             "※ 출처: 고용24(work24.go.kr) 채용정보"
+             + (", 지방자치단체 인터넷원서접수센터(local.gosi.go.kr) 시험공고(공공누리 제4유형)"
+                if any(j.get("gov") for j in jobs) else "") +
+             ". 요약은 편의를 위한 것이며, 급여·자격·마감일 등 "
              "세부 조건은 반드시 원본 공고에서 확인하세요. 마감 전에 채용이 끝날 수도 있습니다.\n"
              "세명대학교 재난안전학과는 매주 일요일 재난안전 분야 채용정보를 정리해 올립니다. "
              "이웃추가하고 다음 주 공고도 받아보세요!")
@@ -354,22 +388,30 @@ def _save_state(jobs):
 
 
 def main():
+    if "--publish" in sys.argv:
+        # --list 로 만든 초안(posts/jobs_*.json)을 그대로 올린다 — 다시 고르면 모델이 다른
+        # 공고를 고를 수 있어, 사람이 본 글과 올라가는 글이 달라진다.
+        path = sys.argv[sys.argv.index("--publish") + 1]
+        saved = json.load(open(path, encoding="utf-8"))
+        jobs = saved.pop("jobs")
+        return _publish(saved, jobs, go=True)
     mode = next((a for a in sys.argv[1:] if a in ("--dry", "--go", "--list")), None)
     if not mode:
-        raise SystemExit("사용: jobs_work24.py --list | --dry | --go")
+        raise SystemExit("사용: jobs_work24.py --list | --dry | --go | --publish posts/jobs_….json")
     cfg = load_config()
+    # 지자체 공무원 공채(원서접수센터) — 고용24 공무원 공고는 대부분 임기제 경력직이다
+    try:
+        from jobs_gosi import collect as collect_gosi
+        gov = collect_gosi(lambda prompt: _ask_obj(cfg, prompt), posted=_load_state())
+    except Exception as e:
+        log(f"원서접수센터 수집 건너뜀: {type(e).__name__}: {e}")
+        gov = []
     cands = collect()
-    if len(cands) < MIN_JOBS:
-        log(f"채용정보: 후보 {len(cands)}건 — 이번 주는 올리지 않음")
-        return 0
-    jobs = pick(cfg, cands, MAX_JOBS + 6)
+    jobs = pick(cfg, cands, MAX_JOBS + 6) if len(cands) >= 1 else []
     log(f"채용정보: {len(jobs)}건 선택 — " + ", ".join(j["company"] for j in jobs))
-    if len(jobs) < MIN_JOBS:
-        log("채용정보: 고른 공고가 너무 적어 이번 주는 올리지 않음")
-        return 0
-    jobs = summarize(cfg, jobs)
+    jobs = summarize(cfg, jobs) if jobs else []
     pub = [j for j in jobs if j.get("public")]
-    jobs = (pub + [j for j in jobs if not j.get("public")])[:MAX_JOBS]   # 공공을 앞에
+    jobs = (gov + pub + [j for j in jobs if not j.get("public")])[:MAX_JOBS]   # 공무원·공공을 앞에
     if len(jobs) < MIN_JOBS:
         log("채용정보: 원문 확인 뒤 남은 공고가 너무 적어 이번 주는 올리지 않음")
         return 0
@@ -383,6 +425,10 @@ def main():
             print("\n" + b["text"] + "\n" + b["link_text"] + " → " + b["url"])
         print("\n" + data["outro"])
         return 0
+    return _publish(data, jobs, go=(mode == "--go"))
+
+
+def _publish(data, jobs, go):
     from make_banner import make_banner
     try:
         data["banner"] = make_banner("재난안전 분야 채용공고", f"{datetime.now():%Y년 %m월 %d일}",
@@ -390,8 +436,8 @@ def main():
     except Exception as e:
         log(f"배너 생성 실패, 배너 없이 진행: {e}")
     from publish_naver import publish
-    r = publish(data, dry_run=(mode != "--go"))
-    if mode == "--go" and r.get("status") == "published":
+    r = publish(data, dry_run=not go)
+    if go and r.get("status") == "published":
         _save_state(jobs)
         log(f"✅ 채용정보 발행: {data['title']}")
     return 0
