@@ -43,7 +43,14 @@ QUERIES = [
     ("재난", True), ("재난안전", False), ("재난관리", False), ("비상계획", False),
     ("방재", True), ("소방안전관리자", True), ("안전관리자", True),
     ("산업안전", True), ("안전보건", True),
+    ("공무원", True), ("임용시험", True), ("임기제", True),   # 지자체 공무원 채용(관련 없는 것은 선별에서 뺀다)
 ]
+# 공무원·공기업·공공기관(기업형태 04)만 따로 넓게 찾는다. 이런 공고는 제목이 '제4회 ○○군
+# 임기제공무원 임용시험'처럼 직무가 안 보여서 전체 필드에서 찾아야 걸린다(2026-09-29).
+PUBLIC_QUERIES = ["재난", "안전", "방재", "소방", "비상"]
+# 신입(N) + 경력무관(Z). 공무원·공공기관 공고는 거의 다 '경력무관'이라 신입만 걸면 모두
+# 빠진다. 글에는 '신입' / '경력무관(신입 가능)'으로 구분해 적는다.
+CAREER_TYPES = "N,Z"
 
 
 def _get(url, tries=3):
@@ -94,15 +101,19 @@ def _rows(page_html):
             "url": BASE + html.unescape(link.group(1)),
             "pay": re.sub(r"\s+", " ", pay), "career": career, "edu": edu,
             "until_hired": "채용시까지" in flat,
+            "public": 'tbl_label navy">공공' in r,
             "deadline": dl.group(1) if dl else "", "reg": reg.group(1) if reg else "",
         })
     return out
 
 
-def search(keyword, title_only, since, max_pages=4):
+def search(keyword, title_only, since, max_pages=4, public=False):
     q = {"srcKeyword": keyword, "keyword": keyword, "resultCnt": "50", "sortField": "DATE",
          "sortOrderBy": "DESC", "siteClcd": "all", "searchMode": "Y", "codeDepth1Info": "11000",
-         "codeDepth2Info": "11000", "academicGbnoEdu": "noEdu", "benefitSrchAndOr": "O"}
+         "codeDepth2Info": "11000", "academicGbnoEdu": "noEdu", "benefitSrchAndOr": "O",
+         "careerTypes": CAREER_TYPES}
+    if public:
+        q["enterPriseGbn"] = "04"
     if title_only:
         q.update({"keywordWantedTitle": "Y", "keywordBusiNm": "N", "keywordJobCont": "N",
                   "keywordStaAreaNm": "N"})
@@ -114,7 +125,10 @@ def search(keyword, title_only, since, max_pages=4):
         if not rows or min((r["reg"] for r in rows if r["reg"]), default="0") < since:
             break
         time.sleep(1)
-    return [r for r in got if r["reg"] >= since]
+    got = [r for r in got if r["reg"] >= since]
+    for r in got:
+        r["public"] = r.get("public") or public
+    return got
 
 
 def collect(days=DAYS):
@@ -122,21 +136,31 @@ def collect(days=DAYS):
     today = datetime.now().strftime("%Y-%m-%d")
     posted = _load_state()
     seen = {}
-    for kw, title_only in QUERIES:
+    for kw, title_only, public in ([(k, t, False) for k, t in QUERIES]
+                                   + [(k, False, True) for k in PUBLIC_QUERIES]):
         try:
-            rows = search(kw, title_only, since)
+            rows = search(kw, title_only, since, public=public)
         except Exception as e:
             log(f"고용24 검색 실패({kw}): {type(e).__name__}: {e}")
             continue
         for r in rows:
-            if r["id"] in posted or r["id"] in seen:
+            if r["id"] in posted:
+                continue
+            if r["id"] in seen:
+                seen[r["id"]]["public"] = seen[r["id"]]["public"] or r["public"]
+                continue
+            if r["career"] and r["career"] not in ("신입", "경력무관", "관계없음", "신입·경력"):
+                continue                      # 목록 표시로도 경력직이면 뺀다
+            # 목록엔 '경력무관'인데 제목이 '기술직 경력 직원 채용'인 공고가 있었다(서울대병원, 9/29)
+            if re.search(r"경력\s*(직|사원|직원)|경력자(?!\s*우대)", r["title"]) and "신입" not in r["title"]:
                 continue
             if r["deadline"] and r["deadline"] < today:
                 continue
             r["found_by"] = kw
             seen[r["id"]] = r
         time.sleep(1)
-    log(f"고용24: 최근 {days}일 후보 {len(seen)}건 (이미 올린 공고 제외)")
+    log(f"고용24: 최근 {days}일 신입·경력무관 후보 {len(seen)}건 "
+        f"(공공 {sum(1 for r in seen.values() if r['public'])}건, 이미 올린 공고 제외)")
     return list(seen.values())
 
 
@@ -144,24 +168,34 @@ def collect(days=DAYS):
 PICK = """아래는 이번 주 고용24에 올라온 채용공고 후보다. 세명대학교 재난안전학과 학생·졸업생에게
 소개할 만한 공고를 최대 {n}건 골라라.
 
+후보는 모두 신입 또는 경력무관 공고다. [공공] 표시는 공무원·공기업·공공기관 공고다.
+
 맞는 분야: 재난관리·재난안전(공공기관·지자체·재난 전문기업), 방재·방재실, 소방시설·소방안전관리,
 안전관리자(건설·산업·시설), 산업안전·안전보건, 비상계획·비상대비, 안전 점검·진단.
-빼는 것: 제목·회사로 봐서 재난안전 직무가 아닌 공고(개발자, 돌봄, 영업, 단순 사무·경비·미화 등).
-고를 때: 공공기관·지자체·연구기관·재난 전문기업을 앞에 두고, 같은 종류(예: 건설현장 안전관리자)가
-몰리지 않게 섞고, 같은 회사는 한 건만 고르고, 신입이 지원할 수 있는 공고를 우대한다.
+공무원·공공기관은 재난·안전·방재·소방 업무이거나 그럴 가능성이 있는 임용시험·채용공고(예: 지자체
+임기제공무원 임용시험, 공공기관 안전직)를 넣는다 — 제목에 직무가 안 보여도 기관이 지자체·소방·
+공공기관이면 후보로 본다.
+빼는 것: 재난안전 직무가 아닌 공고(개발자, 돌봄, 조리, 간호, 영업, 단순 사무·경비·미화 등).
+고를 때: [공공] 공고를 먼저 두되 관련 없는 것은 빼고, 같은 종류(예: 건설현장 안전관리자)가
+몰리지 않게 섞고, 같은 회사는 한 건만 고른다.
 
 출력은 고른 번호의 JSON 배열 하나만(중요한 순서대로). 예: [3, 17, 5]
 
 [후보]
 {rows}"""
 
-SUMMARIZE = """아래 채용공고 원문에서 항목마다 두 가지만 짧게 뽑아라. 원문에 없는 내용은 쓰지 않는다.
+SUMMARIZE = """아래 채용공고 원문에서 항목마다 짧게 뽑아라. 원문에 없는 내용은 쓰지 않는다.
 - duty: 담당업무 한 줄(45자 이내, 명사형으로 끝낸다. 예: '소방시설 점검 및 방재실 운영')
 - quals: 자격요건 한 줄(60자 이내). 필수 자격증·면허를 먼저, 우대는 '우대:'로.
   경력 연수·학력은 따로 표시하므로 쓰지 않는다(자격증·면허·특수 조건만).
   원문에 자격 조건이 없으면 '공고 원문 참고'.
+- newbie: 대학 졸업 예정·신규 졸업자가 지원할 수 있으면 true. 원문이 '○년 이상 경력 필수',
+  '경력자만', '특급·1급 선임자로 실무경력 필요'처럼 경력을 요구하면 false.
+  (자격증만 요구하는 것은 true — 자격증은 학생도 딸 수 있다.)
+- related: 실제 업무가 재난·안전·방재·소방·산업안전·보건관리와 관련 있으면 true
+  (공무원 임용시험은 뽑는 분야 중에 재난·안전 관련 직렬이 있으면 true, 그 분야를 duty 에 적는다).
 
-출력은 JSON 배열 하나만: [{{"id": "...", "duty": "...", "quals": "..."}}]
+출력은 JSON 배열 하나만: [{{"id": "...", "duty": "...", "quals": "...", "newbie": true, "related": true}}]
 
 {items}"""
 
@@ -188,7 +222,8 @@ def _ask(cfg, prompt, max_tokens=3000):
 
 
 def pick(cfg, cands, n=MAX_JOBS):
-    rows = "\n".join(f"{i}. {c['company']} | {c['title']}" for i, c in enumerate(cands))
+    rows = "\n".join(f"{i}. {'[공공] ' if c.get('public') else ''}{c['company']} | {c['title']}"
+                     for i, c in enumerate(cands))
     ids = _ask(cfg, PICK.format(n=n, rows=rows), 4000)
     out = []
     for k in ids:
@@ -216,13 +251,35 @@ def summarize(cfg, jobs):
             log(f"상세 읽기 실패 {j['id']}: {type(e).__name__}")
         items.append(f"[id: {j['id']}] {j['company']} | {j['title']}\n{j['detail'] or '(원문 없음)'}")
         time.sleep(1)
-    res = {r.get("id"): r for r in _ask(cfg, SUMMARIZE.format(items="\n\n".join(items)), 6000)
-           if isinstance(r, dict)}
+    # 여섯 건씩 나눠 묻는다 — 18건을 한 번에 물으니 생각(thinking)까지 합쳐 한도를 넘겨
+    # JSON 이 중간에 잘렸다(2026-09-29). 한 묶음이 실패하면 한 번 더 묻는다.
+    res = {}
+    for k in range(0, len(items), 6):
+        for attempt in (1, 2):
+            try:
+                got = _ask(cfg, SUMMARIZE.format(items="\n\n".join(items[k:k + 6])), 8000)
+                res.update({r.get("id"): r for r in got if isinstance(r, dict)})
+                break
+            except (ValueError, RuntimeError) as e:
+                log(f"요약 {k // 6 + 1}묶음 실패({attempt}/2): {type(e).__name__}: {str(e)[:80]}")
+    keep = []
     for j in jobs:
         r = res.get(j["id"], {})
         j["duty"] = (r.get("duty") or "").strip() or "공고 원문 참고"
         j["quals"] = (r.get("quals") or "").strip() or "공고 원문 참고"
-    return jobs
+        # 특급 소방안전관리자는 실무경력이 있어야 딸 수 있는 자격이다. 모델 판정이 실행마다
+        # 달라서(9/29 같은 공고가 한 번은 빠지고 한 번은 남음) 규칙으로 뺀다.
+        if "특급" in j["title"] + j["quals"]:
+            log(f"제외(특급 자격 = 경력 필요): {j['company']} | {j['title'][:40]}")
+            continue
+        if r.get("newbie") is False:
+            log(f"제외(원문상 경력 필요): {j['company']} | {j['title'][:40]}")
+            continue
+        if r.get("related") is False:
+            log(f"제외(재난안전 무관): {j['company']} | {j['title'][:40]}")
+            continue
+        keep.append(j)
+    return keep
 
 
 # ── 글 만들기 ────────────────────────────────────────────────────────────────
@@ -237,19 +294,26 @@ def _md(d):
 def build(jobs):
     now = datetime.now()
     week = (now.day - 1) // 7 + 1
-    title = f"[채용정보] 재난안전·방재·소방 분야 채용공고 {len(jobs)}선 | {now.month}월 {week}주차"
+    npub = sum(1 for j in jobs if j.get("public"))
+    title = (f"[채용정보] 신입 지원 가능한 재난안전·방재·소방 채용공고 {len(jobs)}선"
+             f"{' (공무원·공공기관 포함)' if npub else ''} | {now.month}월 {week}주차")
     intro = (f"이번 주({_md((now - timedelta(days=DAYS)).strftime('%Y-%m-%d'))}~{_md(now.strftime('%Y-%m-%d'))}) "
-             "고용24에 새로 올라온 재난안전 분야 채용공고를 모았습니다.\n"
+             "고용24에 새로 올라온 재난안전 분야 채용공고 중 신입이 지원할 수 있는 공고"
+             "(신입 모집·경력무관)만 모았습니다."
+             + (f" 공무원·공공기관 공고 {npub}건을 앞에 두었습니다." if npub else "") + "\n"
              "공고마다 핵심만 요약했으니, 관심 있는 공고는 아래 링크로 원문을 꼭 확인해 주세요.")
     blocks = []
     circled = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮"
     for i, j in enumerate(jobs):
-        cond = " · ".join(x for x in (j["career"], j["edu"]) if x)
+        car = {"신입": "신입", "경력무관": "경력무관(신입 가능)", "관계없음": "경력무관(신입 가능)"
+               }.get(j["career"], j["career"])
+        cond = " · ".join(x for x in (car, j["edu"]) if x)
         period = (f"{_md(j['reg'])} ~ 채용 시까지" if j["until_hired"] or not j["deadline"]
                   else f"{_md(j['reg'])} ~ {_md(j['deadline'])} 마감")
         quals = j["quals"] if not cond else f"{cond} / {j['quals']}"
         text = "\n".join([
-            f"{circled[i] if i < len(circled) else str(i + 1) + '.'} {j['company']}",
+            f"{circled[i] if i < len(circled) else str(i + 1) + '.'} "
+            f"{'[공공] ' if j.get('public') else ''}{j['company']}",
             f"{j['title']}",
             f"· 담당업무: {j['duty']}",
             f"· 급여: {_pay(j['pay'])}",
@@ -265,7 +329,7 @@ def build(jobs):
     return {
         "title": title, "body": intro, "link_blocks": blocks, "outro": outro,
         "category": CATEGORY, "no_banner": False,
-        "tags": ["채용정보", "재난안전채용", "방재", "소방안전관리자", "안전관리자",
+        "tags": ["채용정보", "신입채용", "재난안전채용", "공무원채용", "방재", "소방안전관리자", "안전관리자",
                  "산업안전", "고용24", "재난안전학과", "세명대학교", "세명대"],
     }
 
@@ -298,12 +362,17 @@ def main():
     if len(cands) < MIN_JOBS:
         log(f"채용정보: 후보 {len(cands)}건 — 이번 주는 올리지 않음")
         return 0
-    jobs = pick(cfg, cands)
+    jobs = pick(cfg, cands, MAX_JOBS + 6)
     log(f"채용정보: {len(jobs)}건 선택 — " + ", ".join(j["company"] for j in jobs))
     if len(jobs) < MIN_JOBS:
         log("채용정보: 고른 공고가 너무 적어 이번 주는 올리지 않음")
         return 0
     jobs = summarize(cfg, jobs)
+    pub = [j for j in jobs if j.get("public")]
+    jobs = (pub + [j for j in jobs if not j.get("public")])[:MAX_JOBS]   # 공공을 앞에
+    if len(jobs) < MIN_JOBS:
+        log("채용정보: 원문 확인 뒤 남은 공고가 너무 적어 이번 주는 올리지 않음")
+        return 0
     data = build(jobs)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     with open(os.path.join(POSTS_DIR, f"jobs_{stamp}.json"), "w", encoding="utf-8") as f:
