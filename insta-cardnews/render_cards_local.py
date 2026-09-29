@@ -1,6 +1,6 @@
 """로컬 HTML + 헤드리스 Chrome 으로 카드뉴스 PNG 를 만든다(Gamma 없이).
 
-2026-09-29 다시 설계: Gamma 는 편당 크레딧 30 을 쓰고, 넘긴 문장을 스스로 요약·재배치
+2026-09-29 다시 설계(밝은 톤): Gamma 는 편당 크레딧 30 을 쓰고, 넘긴 문장을 스스로 요약·재배치
 해서 원문에 없는 말(상자 제목 등)이 생긴다. 로컬 렌더러는 Claude 가 쓴 문장을 그대로
 쓰되, Gamma 카드의 좋은 점(짙은 남색 바탕, 상자형 배치, 그림 있는 표지)은 살린다.
 
@@ -241,60 +241,66 @@ def _font_face(font_dir):
 
 
 CSS = """
+/* 밝은 톤(2026-09-29): 흰 바탕 → 옅은 하늘색, 짙은 남색 글자, 파란 강조 */
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0B1C3A; font-family:'KoPub','Apple Color Emoji',sans-serif; }
-.card { width:1080px; height:1080px; position:relative; overflow:hidden; color:#fff;
-        background:radial-gradient(120% 90% at 85% 0%, #1B3A6E 0%, #0B1C3A 55%, #081530 100%); }
+body { background:#fff; font-family:'KoPub','Apple Color Emoji',sans-serif; }
+.card { width:1080px; height:1080px; position:relative; overflow:hidden; color:#12284C;
+        background:linear-gradient(160deg, #FFFFFF 0%, #F4F8FE 55%, #E6EFFC 100%); }
+.card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:14px; background:#2F6FE4; }
 .top { position:absolute; left:72px; right:72px; top:56px; display:flex; justify-content:space-between;
        align-items:center; z-index:5; }
-.chip { font-weight:700; font-size:26px; color:#CFE0FF; background:rgba(79,142,247,.18);
-        border:1px solid rgba(79,142,247,.45); padding:8px 20px; border-radius:40px; }
-.pg { font-weight:500; font-size:24px; color:#8FA3C2; }
+.chip { font-weight:700; font-size:26px; color:#1E4FAF; background:#E3EDFD;
+        border:1px solid #BFD4F7; padding:8px 20px; border-radius:40px; }
+.pg { font-weight:500; font-size:24px; color:#8093B1; }
 .foot { position:absolute; left:0; right:0; bottom:46px; text-align:center; z-index:5; }
-.foot img { height:46px; opacity:.92; }
-.foottext { font-weight:500; font-size:26px; color:#8FA3C2; }
+.foot img { height:46px; }
+.foottext { font-weight:500; font-size:26px; color:#8093B1; }
 .body { position:absolute; left:72px; right:72px; top:140px; bottom:130px;
         display:flex; flex-direction:column; justify-content:center; font-size:40px; }
 .head { display:flex; align-items:center; gap:22px; margin-bottom:.8em; }
-.emo { flex:none; width:1.9em; height:1.9em; border-radius:.45em; background:rgba(79,142,247,.16);
+.emo { flex:none; width:1.9em; height:1.9em; border-radius:.45em; background:#E3EDFD;
        display:flex; align-items:center; justify-content:center; font-size:1.05em; }
-.htitle { font-weight:700; font-size:1.45em; line-height:1.25; word-break:keep-all; text-wrap:balance; }
+.htitle { font-weight:700; font-size:1.45em; line-height:1.25; color:#0E2350; word-break:keep-all;
+          text-wrap:balance; }
 .boxes { display:flex; flex-direction:column; gap:.55em; }
-.box { background:rgba(19,41,79,.92); border:1px solid rgba(79,142,247,.28); border-left:8px solid #4F8EF7;
-       border-radius:14px; padding:.6em .8em; }
-.btitle { font-weight:700; font-size:.86em; line-height:1.35; margin-bottom:.15em; color:#fff;
+.box { background:#FFFFFF; border:1px solid #D6E3F8; border-left:8px solid #2F6FE4;
+       border-radius:14px; padding:.6em .8em; box-shadow:0 4px 14px rgba(30,79,175,.07); }
+.btitle { font-weight:700; font-size:.86em; line-height:1.35; margin-bottom:.15em; color:#0E2350;
           word-break:keep-all; }
-.box p, .ptxt p, .cta p { font-weight:500; font-size:.82em; line-height:1.5; color:#E3EBF8;
+.box p, .ptxt p, .cta p { font-weight:500; font-size:.82em; line-height:1.5; color:#2E3F5C;
        word-break:keep-all; text-wrap:pretty; }
 .pts { display:flex; flex-direction:column; gap:.55em; }
-.pt { display:flex; gap:.6em; background:rgba(19,41,79,.92); border:1px solid rgba(79,142,247,.28);
-      border-radius:14px; padding:.6em .8em; }
-.num { flex:none; width:1.5em; height:1.5em; border-radius:50%; background:#4F8EF7; color:#fff;
+.pt { display:flex; gap:.6em; background:#FFFFFF; border:1px solid #D6E3F8; border-radius:14px;
+      padding:.6em .8em; box-shadow:0 4px 14px rgba(30,79,175,.07); }
+.num { flex:none; width:1.5em; height:1.5em; border-radius:50%; background:#2F6FE4; color:#fff;
        font-weight:700; display:flex; align-items:center; justify-content:center; font-size:.9em; }
-.ptitle { font-weight:700; font-size:.92em; line-height:1.35; margin-bottom:.2em; word-break:keep-all; }
+.ptitle { font-weight:700; font-size:.92em; line-height:1.35; margin-bottom:.2em; color:#0E2350;
+          word-break:keep-all; }
 .chks { display:flex; flex-direction:column; gap:.45em; }
 .chk { display:flex; gap:.55em; align-items:flex-start; font-weight:500; font-size:.86em; line-height:1.45;
-       word-break:keep-all; }
-.tick { flex:none; width:1.25em; height:1.25em; border-radius:50%; background:#2FBF71; color:#fff;
+       color:#2E3F5C; word-break:keep-all; }
+.tick { flex:none; width:1.25em; height:1.25em; border-radius:50%; background:#1FA864; color:#fff;
         font-weight:700; font-size:.8em; display:flex; align-items:center; justify-content:center; margin-top:.15em; }
-.cta { margin-top:.9em; border:2px solid #4F8EF7; border-radius:14px; padding:.55em .8em; }
-.cta p { color:#CFE0FF; }
-/* 표지 */
+.cta { margin-top:.9em; background:#EAF1FD; border:2px solid #2F6FE4; border-radius:14px; padding:.55em .8em; }
+.cta p { color:#1E4FAF; font-weight:700; }
+/* 표지 — 사진이 아래로 흰 바탕에 녹아든다 */
 .cover .photo { position:absolute; left:0; right:0; top:0; height:600px; background-size:cover;
-                background-position:center; filter:brightness(.78) saturate(.9); }
-.cover .photo-fade { position:absolute; left:0; right:0; top:300px; height:320px;
-                     background:linear-gradient(180deg, rgba(11,28,58,0) 0%, #0B1C3A 92%); }
+                background-position:center; }
+.cover .photo-fade { position:absolute; left:0; right:0; top:330px; height:290px;
+                     background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 94%); }
 .cover .nophoto { position:absolute; inset:0;
-                  background:radial-gradient(90% 70% at 80% 10%, #24488A 0%, #0B1C3A 60%); }
+                  background:radial-gradient(90% 70% at 80% 10%, #D8E6FC 0%, #FFFFFF 62%); }
+.cover .top .chip { background:rgba(255,255,255,.88); }
+.cover .top .pg { color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.5); }
 .stock { position:absolute; right:72px; top:118px; z-index:6; font-weight:700; font-size:22px; color:#fff;
          background:rgba(0,0,0,.55); padding:6px 14px; border-radius:8px; }
 .cbody { position:absolute; left:72px; right:72px; top:560px; bottom:130px; display:flex;
          flex-direction:column; justify-content:flex-start; font-size:40px; }
 .cover .nophoto ~ .cbody { top:300px; justify-content:center; }
-.ctitle { font-weight:700; font-size:2.05em; line-height:1.2; margin-bottom:.35em; word-break:keep-all;
-          text-wrap:balance; }
-.hl { color:#6FA8FF; }
-.csub { font-weight:500; font-size:.9em; line-height:1.5; color:#C9D4E6; word-break:keep-all; }
+.ctitle { font-weight:700; font-size:2.05em; line-height:1.2; margin-bottom:.35em; color:#0E2350;
+          word-break:keep-all; text-wrap:balance; }
+.hl { color:#2F6FE4; }
+.csub { font-weight:500; font-size:.9em; line-height:1.5; color:#46597A; word-break:keep-all; }
 """
 
 FIT_JS = """
@@ -344,7 +350,7 @@ def make_cards(data):
     out_dir = os.path.join(POSTS_DIR, f"cards_{stamp}")
     os.makedirs(out_dir, exist_ok=True)
     photo = _cover_photo(data, out_dir)
-    logo = _white_logo(out_dir)
+    logo = LOGO_SRC if os.path.exists(LOGO_SRC) else ""   # 밝은 바탕에선 원래 파란 로고가 또렷하다
     html_path = os.path.join(out_dir, "_cards.html")
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(build_html(cards, font_dir, photo, logo))
