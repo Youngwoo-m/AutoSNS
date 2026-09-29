@@ -18,11 +18,19 @@ from common import POSTS_DIR, load_config, log
 
 
 async def _synth(text, voice, rate, out_path):
-    kwargs = {"voice": voice}
+    """음성을 저장하고 단어 경계 [[시작초, 끝초, 단어], …]를 돌려준다(나레이션 자막용)."""
+    kwargs = {"voice": voice, "boundary": "WordBoundary"}
     if rate:
         kwargs["rate"] = rate
-    communicate = edge_tts.Communicate(text, **kwargs)
-    await communicate.save(out_path)
+    words = []
+    with open(out_path, "wb") as f:
+        async for ch in edge_tts.Communicate(text, **kwargs).stream():
+            if ch["type"] == "audio":
+                f.write(ch["data"])
+            elif ch["type"] == "WordBoundary":
+                words.append([round(ch["offset"] / 1e7, 3),
+                              round((ch["offset"] + ch["duration"]) / 1e7, 3), ch["text"]])
+    return words
 
 
 def _duration(path):
@@ -49,10 +57,10 @@ def make_tts(data):
         text = s.get("narration") or " ".join([s.get("heading", "")] + s.get("lines", []))
         text = text.strip() or "재난안전 정보입니다."
         out_path = os.path.join(out_dir, f"{i+1:02d}.mp3")
-        asyncio.run(_synth(text, voice, rate, out_path))
+        words = asyncio.run(_synth(text, voice, rate, out_path))
         dur = _duration(out_path)
         audio.append({"path": out_path, "duration": round(dur + tail, 3),
-                      "speech": round(dur, 3)})
+                      "speech": round(dur, 3), "words": words})
         log(f"TTS {i+1}/{len(scenes)} ({dur:.1f}s): {text[:24]}...")
 
     data["audio"] = audio

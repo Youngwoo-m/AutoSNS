@@ -221,6 +221,15 @@ def make_video(data):
     except Exception as e:
         log(f"오버레이 건너뜀(영상은 정상): {type(e).__name__}: {e}")
 
+    # 나레이션 자막 — 소리 끄고 보는 사람에게도 나레이션이 전달되게(config.video.captions).
+    if vcfg.get("captions", True) and not data.get("captions_burned"):
+        try:
+            from captions import burn
+            if burn(out_path, data, os.path.join(work, "captions")):
+                data["captions_burned"] = True
+        except Exception as e:
+            log(f"나레이션 자막 건너뜀(영상은 정상): {type(e).__name__}: {str(e)[:120]}")
+
     data["video"] = out_path
     data["video_seconds"] = round(total, 1)
     with open(os.path.join(POSTS_DIR, f"{stamp}.json"), "w", encoding="utf-8") as f:
