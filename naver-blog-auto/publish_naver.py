@@ -193,6 +193,29 @@ def insert_sources_links(driver, sources):
     return done > 0
 
 
+def insert_link_blocks(driver, blocks, outro=""):
+    """본문 뒤에 [요약 여러 줄 + 링크 한 줄] 묶음을 차례로 넣고, 끝에 outro 를 붙인다.
+
+    채용정보 글처럼 항목마다 원문으로 가는 링크가 바로 아래 있어야 하는 글에 쓴다
+    (insert_sources_links 는 링크를 글 끝에 모아 둔다). blocks: [{text, link_text, url}]
+    """
+    _end_key = Keys.ARROW_DOWN if IS_MAC else Keys.END
+    ActionChains(driver).key_down(MOD_KEY).send_keys(_end_key).key_up(MOD_KEY).perform()
+    time.sleep(0.3)
+    done = 0
+    for b in blocks:
+        ActionChains(driver).send_keys(Keys.ENTER).send_keys(Keys.ENTER).perform()
+        _type_text(driver, b["text"])
+        ActionChains(driver).send_keys(Keys.ENTER).perform()
+        if _link_line(driver, b.get("link_text") or "👉 원본 보기", b["url"]):
+            done += 1
+    if outro:
+        ActionChains(driver).send_keys(Keys.ENTER).send_keys(Keys.ENTER).perform()
+        _type_text(driver, outro)
+    log(f"링크 묶음 {done}/{len(blocks)}건 삽입.")
+    return done
+
+
 def _link_line(driver, anchor, url):
     """현재 줄에 anchor 텍스트를 입력하고 그 텍스트에 url 링크를 건다."""
     ActionChains(driver).send_keys(anchor).perform()
@@ -596,6 +619,9 @@ def publish(data, dry_run=None):
                     By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")))
             type_contenteditable(driver, body_el, data["body"])
             time.sleep(1)
+            if data.get("link_blocks"):
+                insert_link_blocks(driver, data["link_blocks"], data.get("outro", ""))
+                time.sleep(1)
             if data.get("video_url"):
                 _embed_video(driver, data["video_url"])
             if data.get("sources"):

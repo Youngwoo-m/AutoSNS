@@ -30,6 +30,19 @@ def _log(msg):
         print(msg)
 
 
+def _text_first(r):
+    """응답에서 사고(thinking) 블록을 뺀다. 호출하는 쪽이 모두 content[0].text 를 읽는데,
+    게이트웨이의 Sonnet 5 는 어려운 요청에 사고 블록을 먼저 붙여 보낸다
+    (2026-09-29 채용공고 선별에서 AttributeError: 'ThinkingBlock' … 'text')."""
+    try:
+        blocks = [b for b in r.content if getattr(b, "type", "") not in ("thinking", "redacted_thinking")]
+        if blocks and blocks is not r.content:
+            r.content = blocks
+    except Exception:
+        pass
+    return r
+
+
 class _Messages:
     def __init__(self, gw, direct, model_map):
         self._gw, self._direct, self._map = gw, direct, model_map
@@ -41,7 +54,7 @@ class _Messages:
             try:
                 r = self._gw.messages.create(**gkw)
                 _log(f"LLM: 학교 게이트웨이({gkw['model']})")
-                return r
+                return _text_first(r)
             except Exception as e:
                 if self._direct is None:
                     raise
