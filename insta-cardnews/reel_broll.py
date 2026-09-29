@@ -21,6 +21,8 @@ OUT_DIR = os.path.join(POSTS_DIR, "broll_pexels")
 FONT = os.path.join(os.path.dirname(BASE_DIR), "FONTS", "KoPubWorld Dotum_Pro Medium.otf")
 
 TOPIC_QUERIES, DEFAULT_QUERY = _sv.TOPIC_QUERIES, _sv.DEFAULT_QUERY
+MAX_CLIPS = 3          # 릴 하나에 쓸 배경 클립 수(서로 다른 촬영자)
+CUT_SEC = 7.0          # 이 간격으로 배경 클립을 바꾼다(카드 2장 = 7초)
 
 # 실사를 못 구하면 유튜브 쪽이 만든 일러스트 B롤(make_broll.py)로 채운다(2026-09-29 결정 —
 # AI 영상 생성 대신). 사실적인 가짜 재난 장면이 아니라 오해 위험이 없어 '자료 화면' 표기도 뺀다.
@@ -44,7 +46,25 @@ def fetch_bg(data):
     if not any(keys.values()):
         return illust_bg(query)
     try:
-        return _sv.fetch(query, keys, OUT_DIR, ffmpeg=imageio_ffmpeg.get_ffmpeg_exe(), log=log)
+        ff = imageio_ffmpeg.get_ffmpeg_exe()
+        first = _sv.fetch(query, keys, OUT_DIR, ffmpeg=ff, log=log)
+        # 7초(카드 2장)마다 배경을 다른 촬영자의 클립으로 바꾼다 — 한 클립을 28초 돌리면
+        # 화면이 늘어진다. 같은 촬영자의 연속 영상은 컷을 바꿔도 같은 화면처럼 보여 피한다.
+        clips, bys = [first["path"]], {first.get("by")}
+        for k in range(1, 6):
+            if len(clips) >= MAX_CLIPS:
+                break
+            try:
+                c = _sv.fetch(query, keys, OUT_DIR, pick=k, ffmpeg=ff, log=log)
+            except Exception:
+                break
+            if c["path"] in clips:
+                break
+            if c.get("by") not in bys:
+                clips.append(c["path"])
+                bys.add(c.get("by"))
+        first["clips"] = clips
+        return first
     except Exception as e:
         log(f"릴 실사 배경 실패({query}) → 일러스트 B롤: {type(e).__name__}: {str(e)[:80]}")
         return illust_bg(query)
@@ -75,3 +95,29 @@ def label_png(work_dir, text="배경: 자료 화면"):
     d.text((pad_x, pad_y), text, font=font, fill=(255, 255, 255, 235))
     img.save(path)
     return path
+
+
+def bg_sequence(clips, dur, work_dir, ffmpeg, cut=CUT_SEC):
+    """clips 를 cut 초씩 돌려 dur 초짜리 배경 영상 하나로 이어 붙인다. 클립이 하나면 그대로."""
+    import math
+    import subprocess
+    if len(clips) < 2:
+        return clips[0]
+    n = math.ceil(dur / cut)
+    parts = []
+    for j in range(n):
+        clip = clips[j % len(clips)]
+        start = (j // len(clips)) * cut           # 같은 클립이 다시 나오면 다음 구간부터
+        out = os.path.join(work_dir, f"bg_{j:02d}.mp4")
+        subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-stream_loop", "-1", "-ss", f"{start:.2f}",
+                        "-i", clip, "-t", f"{cut:.2f}", "-an",
+                        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30",
+                        "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", out], check=True)
+        parts.append(out)
+    lst = os.path.join(work_dir, "bg_list.txt")
+    with open(lst, "w", encoding="utf-8") as f:
+        f.writelines(f"file '{p}'\n" for p in parts)
+    seq = os.path.join(work_dir, "bg_seq.mp4")
+    subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst,
+                    "-c", "copy", seq], check=True)
+    return seq

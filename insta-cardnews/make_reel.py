@@ -61,8 +61,14 @@ def make_reel(data, audio_path=None):
     # 않고, 카드 아래 띠에 '배경: 자료 화면'을 표기한다. 받기에 실패하면 예전처럼 단색 배경.
     stock = None
     if rcfg.get("stock_bg", True):
-        from reel_broll import fetch_bg, label_png
+        from reel_broll import bg_sequence, fetch_bg, label_png
         stock = fetch_bg(data)
+        if stock and len(stock.get("clips") or []) > 1:
+            try:
+                stock["path"] = bg_sequence(stock["clips"], dur, work, FFMPEG)
+                log(f"릴 배경: 클립 {len(stock['clips'])}개를 7초마다 컷")
+            except Exception as e:
+                log(f"배경 컷 이어붙이기 실패 → 클립 하나로: {type(e).__name__}: {str(e)[:80]}")
     if stock:
         top = (1920 - card) // 2
         labeled = stock.get("label", True)          # 일러스트 B롤이면 표기하지 않는다
