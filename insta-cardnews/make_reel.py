@@ -56,16 +56,44 @@ def make_reel(data, audio_path=None):
     # 카드를 940px 로 살짝 줄여 세로 가운데 배치 → 인스타 릴 썸네일의 1:1 중앙 크롭에도
     # 카드 상·하단(제목/출처)이 잘리지 않게 여백을 준다(기존 1080 은 크롭 경계에 딱 붙어 잘림).
     card = int(rcfg.get("card_px", 940))
-    vf = (f"scale={card}:{card}:force_original_aspect_ratio=decrease,"
-          f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={bg},"
-          f"setsar=1,fps=30,format=yuv420p")
     afade = max(dur - 1.5, 0)
+    # 카드 위아래 띠에 주제 맞춤 실사(Pexels)를 깐다(config.reel.stock_bg). 카드는 가리지
+    # 않고, 카드 아래 띠에 '배경: 자료 화면'을 표기한다. 받기에 실패하면 예전처럼 단색 배경.
+    stock = None
+    if rcfg.get("stock_bg", True):
+        from reel_broll import fetch_bg, label_png
+        stock = fetch_bg(data)
+    if stock:
+        top = (1920 - card) // 2
+        labeled = stock.get("label", True)          # 일러스트 B롤이면 표기하지 않는다
+        inputs = ["-f", "concat", "-safe", "0", "-i", list_path,
+                  "-stream_loop", "-1", "-i", audio,
+                  "-stream_loop", "-1", "-i", stock["path"]]
+        graph = (f"[2:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+                 f"setsar=1,fps=30[bg];"
+                 f"[0:v]scale={card}:{card}:force_original_aspect_ratio=decrease,setsar=1,fps=30[c];")
+        if labeled:
+            inputs += ["-loop", "1", "-i", label_png(work)]
+            graph += (f"[bg][c]overlay=(W-w)/2:(H-h)/2[v1];"
+                      f"[v1][3:v]overlay={(1080 - card) // 2}:{top + card + 16}:shortest=1,"
+                      f"format=yuv420p[v]")
+        else:
+            graph += "[bg][c]overlay=(W-w)/2:(H-h)/2:shortest=1,format=yuv420p[v]"
+        vargs = ["-filter_complex", graph, "-map", "[v]", "-map", "1:a"]
+        log(f"릴 배경: {'실사' if labeled else '일러스트'} '{stock['query']}' "
+            f"({stock.get('source', '')} {stock['id']}, by {stock['by']})"
+            + (" + '배경: 자료 화면' 표기" if labeled else ""))
+        data["reel_stock"] = {k: stock.get(k) for k in ("source", "query", "id", "by", "url")}
+    else:
+        inputs = ["-f", "concat", "-safe", "0", "-i", list_path, "-stream_loop", "-1", "-i", audio]
+        vargs = ["-vf", (f"scale={card}:{card}:force_original_aspect_ratio=decrease,"
+                         f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color={bg},"
+                         f"setsar=1,fps=30,format=yuv420p")]
     cmd = [
         FFMPEG, "-y",
-        "-f", "concat", "-safe", "0", "-i", list_path,
-        "-stream_loop", "-1", "-i", audio,
+        *inputs,
         "-t", str(dur),
-        "-vf", vf,
+        *vargs,
         "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-r", "30",
         "-c:a", "aac", "-b:a", "160k", "-ar", "44100",
         "-af", f"afade=t=in:st=0:d=0.6,afade=t=out:st={afade}:d=1.5",

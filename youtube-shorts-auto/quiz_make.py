@@ -52,6 +52,17 @@ def render_one(q):
         ],
         "source_images": {},
     }
+    # 실사 B롤(Pexels): 문항에 검색어가 있으면 1·2장면 배경으로 쓴다. 마무리(3장면)는
+    # 일러스트 그대로 — 시리즈 끝맺음을 같은 화면으로 통일한다. 받기에 실패하면 그 장면만
+    # 자동 매칭(일러스트)으로 돌아간다(렌더가 멈추지 않게).
+    if q.get("pexels"):
+        from pexels_broll import fetch
+        data["broll"] = {}
+        for i, query in enumerate(q["pexels"], start=1):
+            try:
+                data["broll"][str(i)] = fetch(query)["path"]
+            except Exception as e:
+                log(f"Pexels B롤 실패({query}) → 일러스트로: {type(e).__name__}: {str(e)[:80]}")
     log(f"===== {stamp} 렌더: {q['topic']} (정답 {q['answer']}) =====")
     make_frames(data)
     make_tts(data)
