@@ -419,6 +419,10 @@ def make_frames(data):
         for i, p in sorted(brolls.items()):
             if p not in auto_paths:
                 continue
+            # 첫 장면(표지)은 일러스트로 둔다. 사건 제목('보은군 주택 화재') 위에 실제 불길이
+            # 깔리면 표기가 있어도 그 현장 영상으로 받아들이기 쉽다(2026-09-29 결정).
+            if i == 0:
+                continue
             try:
                 from pexels_broll import fetch as _stock_fetch
                 from shared.stock_video import pick_query
