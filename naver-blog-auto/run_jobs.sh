@@ -17,4 +17,8 @@ for i in $(seq 1 40); do
     [ "$i" -eq 1 ] && echo "[$(date '+%F %T')] 네이버 크롬 프로필 사용 중 — 기다림" >> logs/jobs.log
     sleep 60
 done
-exec ./.venv/bin/python jobs_work24.py --go >> "logs/jobs.log" 2>&1
+./.venv/bin/python jobs_work24.py --go >> "logs/jobs.log" 2>&1 || exit $?
+# 같은 초안으로 인스타그램 카드뉴스도 올린다(소방 제외, 블로그 링크 안내). 방금 만든 초안이
+# 없으면(이번 주 블로그를 건너뛴 경우) jobs_insta.py 가 알아서 건너뛴다.
+cd ../insta-cardnews || exit 1
+exec ./.venv/bin/python jobs_insta.py --latest --go >> "../naver-blog-auto/logs/jobs.log" 2>&1

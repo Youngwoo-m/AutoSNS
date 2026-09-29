@@ -75,6 +75,7 @@ def _cover_photo(data, out_dir):
         return ""
     q = pick_query([data.get("title") or "", " ".join(str(c) for c in data.get("cards") or [])])
     q = PHOTO_QUERY.get(q, q.replace(" timelapse", ""))
+    q = data.get("cover_query") or q      # 뉴스가 아닌 카드(채용정보 등)는 부르는 쪽이 정한다
     try:
         u = "https://api.pexels.com/v1/search?" + urllib.parse.urlencode(
             {"query": q, "orientation": "landscape", "per_page": 6})
