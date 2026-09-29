@@ -20,24 +20,7 @@ from common import BASE_DIR, POSTS_DIR, load_config, log  # noqa: E402
 OUT_DIR = os.path.join(POSTS_DIR, "broll_pexels")
 FONT = os.path.join(os.path.dirname(BASE_DIR), "FONTS", "KoPubWorld Dotum_Pro Medium.otf")
 
-# 제목·카드 문구에서 먼저 걸리는 것부터(앞쪽이 더 구체적). 사고·피해 장면이 나오지
-# 않을 상황 장면으로만 검색한다.
-TOPIC_QUERIES = [
-    (("산불",), "forest fire smoke"),
-    (("호우", "폭우", "집중호우", "침수", "홍수", "장마", "물폭탄"), "heavy rain street"),
-    (("태풍", "강풍", "돌풍"), "storm wind trees"),
-    (("폭설", "대설", "빙판", "한파", "동파"), "snow winter street"),
-    (("폭염", "열사병", "온열", "무더위"), "hot summer sun city"),
-    (("산사태", "토사", "토석류"), "mountain forest rain"),
-    (("지진",), "city buildings aerial"),
-    (("화재", "불길", "연기"), "fire smoke dark"),
-    (("드론",), "drone flying sky"),
-    (("AI", "인공지능", "CCTV", "스마트", "디지털"), "city lights night timelapse"),
-    (("훈련", "소방", "구조대"), "fire truck city"),
-    (("교통", "도로", "고속도로"), "highway traffic night"),
-    (("추석", "명절", "전통시장", "축제"), "busy market street"),
-]
-DEFAULT_QUERY = "clouds sky timelapse"
+TOPIC_QUERIES, DEFAULT_QUERY = _sv.TOPIC_QUERIES, _sv.DEFAULT_QUERY
 
 # 실사를 못 구하면 유튜브 쪽이 만든 일러스트 B롤(make_broll.py)로 채운다(2026-09-29 결정 —
 # AI 영상 생성 대신). 사실적인 가짜 재난 장면이 아니라 오해 위험이 없어 '자료 화면' 표기도 뺀다.
@@ -49,18 +32,9 @@ ILLUST_FOR = {"heavy rain street": "flood", "forest fire smoke": "wildfire",
 
 
 def pick_query(data):
-    """제목에서 가장 먼저 나오는 말을 기준으로 고른다(제목 앞머리가 기사의 주어다).
-
-    목록 순서로 고르면 '충북 드론 선제 출동 — AI가 산불·재난 골든타임'이 '산불'로
-    잡혀 숲 연기가 깔렸다. 산불이 난 기사가 아닌데 산불 현장처럼 보인다."""
-    title = data.get("title") or ""
-    body = " ".join(str(c) for c in (data.get("cards") or []))
-    for text in (title, body):
-        hits = [(text.find(w), query) for words, query in TOPIC_QUERIES
-                for w in words if w in text]
-        if hits:
-            return min(hits)[1]
-    return DEFAULT_QUERY
+    """제목 → 카드 문구 순으로 주제 검색어를 고른다(shared.stock_video.pick_query)."""
+    return _sv.pick_query([data.get("title") or "",
+                           " ".join(str(c) for c in (data.get("cards") or []))])
 
 
 def fetch_bg(data):

@@ -266,6 +266,7 @@ def generate(lead=None):
     tags = list(dict.fromkeys(["Shorts"] + tags + base_tags))[:15]
 
     data = {
+        "news_stock": True,          # 사진 없는 장면에 주제 맞춤 실사 + '자료 화면' 표기(render_frames)
         "title": title.strip()[:100],
         "scenes": scenes,
         "description": description,

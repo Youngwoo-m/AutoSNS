@@ -208,7 +208,7 @@ def _resolve_broll(data, i, scenes=None, auto=None):
 
 
 def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images=None,
-                brolls=None, scrim=1.0):
+                brolls=None, scrim=1.0, labels=()):
     bg_images = bg_images or {}
     brolls = brolls or {}
     blocks = []
@@ -229,6 +229,9 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
             img = source_images.get(str(si), "") if si is not None else ""
             blocks.append(_content_html(i, heading, lines, footer, img, logo, header,
                                         bg, s.get("answer", ""), broll))
+        if i in labels:
+            blocks[-1] = blocks[-1].replace(
+                f'id="frame{i}">', f'id="frame{i}">\n      <div class="stocklabel">배경: 자료 화면</div>', 1)
     frames_html = "\n".join(blocks)
     sc0, sc1, sc2 = (round(v * scrim, 3) for v in (0.60, 0.20, 0.64))
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
@@ -253,6 +256,10 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
       text-shadow:0 2px 6px rgba(0,0,0,.85), 0 0 28px rgba(0,0,0,.65); }}
     .frame.realbroll .sent, .frame.realbroll .csub {{ color:#ffffff; font-weight:600; opacity:1;
       text-shadow:0 1px 3px rgba(0,0,0,.95), 0 2px 10px rgba(0,0,0,.8), 0 0 24px rgba(0,0,0,.55); }}
+    /* 뉴스에 실사를 깔 때의 표기. 머리글 아래·제목 위 왼쪽이라 글자와 겹치지 않는다. */
+    .stocklabel {{ position:absolute; left:64px; top:318px; z-index:6; font-size:34px;
+      font-weight:700; color:#ffffff; background:rgba(0,0,0,.62); padding:10px 20px;
+      border-radius:10px; letter-spacing:-.3px; }}
     /* ---- 장면 전체 배경 이미지(Firefly 등) + 가독성 스크림 ---- */
     .bgfill {{ position:absolute; inset:0; z-index:0; }}
     .bgfill img {{ width:100%; height:100%; object-fit:cover; }}
@@ -402,13 +409,38 @@ def make_frames(data):
                     for f in os.listdir(bdir) if f.endswith(".mp4")}
     brolls = {i: _resolve_broll(data, i, scenes, auto) for i in range(len(scenes))}
     brolls = {i: p for i, p in brolls.items() if p}
+    labels = set()
+    # 뉴스 영상: 일러스트 자동 매칭 자리(기사 사진 없는 장면)를 주제 맞춤 실사로 바꾸고
+    # '배경: 자료 화면'을 표기한다 — 카드뉴스 릴과 같은 기준(2026-09-29 결정).
+    # 기사 사진이 있는 장면은 사진을 그대로 둔다. 실사를 못 구하면 일러스트 그대로.
+    if data.get("news_stock") and cfg.get("video", {}).get("stock_news", True):
+        auto_paths = set(auto.values())
+        used = {}                       # 같은 검색어가 반복되면 2·3순위 클립을 쓴다
+        for i, p in sorted(brolls.items()):
+            if p not in auto_paths:
+                continue
+            try:
+                from pexels_broll import fetch as _stock_fetch
+                from shared.stock_video import pick_query
+                sc = scenes[i]
+                text = " ".join([sc.get("heading", "")] + list(sc.get("lines", []))
+                                + [sc.get("narration", "")])
+                q = pick_query([text, data.get("title", "")])
+                info = _stock_fetch(q, pick=used.get(q, 0))
+                used[q] = used.get(q, 0) + 1
+                brolls[i] = info["path"]
+                labels.add(i)
+                data.setdefault("stock_used", {})[str(i + 1)] = {
+                    k: info.get(k) for k in ("source", "query", "id", "by", "url")}
+            except Exception as e:
+                log(f"뉴스 실사 배경 실패({i+1}장면) → 일러스트 그대로: {type(e).__name__}: {str(e)[:70]}")
     if brolls:
         log(f"B롤 배경 {len(brolls)}장면: " +
             ", ".join(f"{i+1}={os.path.basename(p)}" for i, p in sorted(brolls.items())))
 
     scrim = float(cfg.get("video", {}).get("broll_scrim", 1.0))
     html_doc = _build_html(scenes, footer, logo, font_dir, source_images, header,
-                           bg_images, brolls, scrim)
+                           bg_images, brolls, scrim, labels)
     stamp = data.get("stamp") or time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(POSTS_DIR, f"frames_{stamp}")
     os.makedirs(out_dir, exist_ok=True)

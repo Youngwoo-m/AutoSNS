@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 
 API = "https://api.pexels.com/videos/search"
+TEXTY = ("-words", "-text", "-logo", "-letter", "-sign-", "-title", "-typography", "-subtitle")
 
 # 실사 클립은 일러스트보다 밝고 복잡해 글자가 묻힌다. 네 단계를 비교해 풍경은 살리고
 # 글자는 읽히는 '중간'을 골랐다(2026-09-29, 퀴즈 13 눈길 장면).
@@ -30,6 +31,11 @@ def search(query, api_key, per_page=8, min_sec=6):
     out = []
     for v in data.get("videos", []):
         if (v.get("duration") or 0) < min_sec:
+            continue
+        # 화면에 글자·로고가 든 클립은 배경으로 못 쓴다('…fireplace-with-the-words-firewood').
+        # Pexels 는 원본 주소의 설명 부분에 내용을 적어 두므로 거기서 거른다.
+        slug = (v.get("url") or "").lower()
+        if any(w in slug for w in TEXTY):
             continue
         files = [f for f in v.get("video_files", [])
                  if f.get("file_type") == "video/mp4" and f.get("height", 0) > f.get("width", 0)]
