@@ -30,6 +30,19 @@ def search(query, api_key, per_page=30, min_sec=6):
         files.sort(key=lambda f: (abs((f.get("height") or 0) - 1920), -(f.get("height") or 0)))
         if files:
             out.append((h, files[0]))
+    if out:
+        return out
+    # Pixabay 는 세로 영상이 드물다(대부분 가로). 세로가 하나도 없으면 1920 폭 이상 가로
+    # 영상을 받아 가운데를 세로로 자른다 — dim() 이 1080×1920 으로 채워 자르고 흐리게
+    # 가공하므로 배경으로는 확대 흔적이 거의 보이지 않는다.
+    for h in data.get("hits", []):
+        if (h.get("duration") or 0) < min_sec:
+            continue
+        wide = [f for f in (h.get("videos") or {}).values()
+                if f.get("url") and (f.get("width") or 0) >= 1920]
+        wide.sort(key=lambda f: f.get("width") or 0)
+        if wide:
+            out.append((h, {**wide[0], "cropped": True}))
     return out
 
 
@@ -49,6 +62,7 @@ def fetch(query, api_key, out_dir, pick=0, fx=DIM_FX, suffix="_dim", ffmpeg="ffm
     path = dim(raw, fx=fx, suffix=suffix, ffmpeg=ffmpeg) if fx else raw
     info = {"source": "pixabay", "query": query, "id": h["id"], "path": path, "raw": raw,
             "width": f.get("width"), "height": f.get("height"), "duration": h.get("duration"),
+            "cropped": bool(f.get("cropped")),
             "size_mb": round(os.path.getsize(path) / 1e6, 1),
             "by": h.get("user", ""), "url": h.get("pageURL", "")}
     log(f"Pixabay B롤: {query} → {info['width']}x{info['height']} {info['duration']}s "
