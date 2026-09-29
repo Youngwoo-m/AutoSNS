@@ -13,7 +13,7 @@ import time
 
 import imageio_ffmpeg
 
-from common import POSTS_DIR, load_config, log
+from common import BASE_DIR, POSTS_DIR, load_config, log
 
 W, H = 1080, 1920
 FPS = 30
@@ -114,12 +114,44 @@ def _mix_bgm(video_in, bgm_path, volume, out_path):
         "-i", video_in,
         "-stream_loop", "-1", "-i", bgm_path,
         "-filter_complex",
-        f"[1:a]volume={volume}[bg];[0:a][bg]amix=inputs=2:duration=first:dropout_transition=0[a]",
+        # normalize=0: amix 기본값은 입력 수로 나눠 나레이션까지 절반(-6dB)이 됐다
+        # (QUIZ07 -17.5 → -23.5 LUFS). 나레이션 크기는 그대로 두고 음악만 얹는다.
+        f"[1:a]volume={volume}[bg];[0:a][bg]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[a]",
         "-map", "0:v", "-map", "[a]",
         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
         "-movflags", "+faststart",
         out_path,
     ])
+
+
+def bgm_track(kind, vcfg):
+    """용도(news / quiz / career)에 맞는 배경음악 {path, volume, name, credit}. 없으면 None.
+
+    곡마다 원래 음량이 20dB 넘게 달라(Blip Stream -11.4, Long Note Two -32.9 LUFS) 한 가지
+    음량으로는 한쪽은 나레이션을 덮고 한쪽은 안 들린다. 곡별 음량을 두고, 나레이션
+    (-17.5 LUFS)보다 16dB 남짓 낮은 -34 LUFS 로 맞췄다(2026-09-29 측정).
+    뉴스는 차분한 곡(화재·사고 소식에 댄스 비트는 어색하다), 퀴즈·진로는 밝은 곡."""
+    tracks = vcfg.get("bgm_tracks") or {}
+    t = tracks.get(kind) or tracks.get("default")
+    if not t:
+        path = vcfg.get("bgm_path", "")
+        t = {"path": path, "volume": vcfg.get("bgm_volume", 0.12)} if path else None
+    if not t:
+        return None
+    path = t["path"] if os.path.isabs(t["path"]) else os.path.normpath(os.path.join(BASE_DIR, t["path"]))
+    if not os.path.exists(path):
+        log(f"배경음악 파일 없음 → 음악 없이: {path}")
+        return None
+    name = t.get("name") or os.path.splitext(os.path.basename(path))[0].replace("_", " ")
+    credit = t.get("credit") or f"🎵 배경음악: {name} — Kevin MacLeod (incompetech.com) / CC BY 4.0"
+    return {"path": path, "volume": float(t.get("volume", 0.12)), "name": name, "credit": credit}
+
+
+def mix_into(video, track):
+    """video 에 배경음악을 섞어 제자리에서 바꾼다(파일 이름이 그대로여야 예약표가 맞는다)."""
+    tmp = video.replace(".mp4", ".bgm.tmp.mp4")
+    _mix_bgm(video, track["path"], track["volume"], tmp)
+    os.replace(tmp, video)
 
 
 def make_video(data):
@@ -160,12 +192,11 @@ def make_video(data):
     _concat(seg_paths, os.path.join(work, "_list.txt"), out_path)
     log(f"영상 합치기 완료(총 {total:.1f}s): {out_path}")
 
-    bgm = vcfg.get("bgm_path", "")
-    if bgm and os.path.exists(bgm):
-        mixed = os.path.join(POSTS_DIR, f"short_{stamp}_bgm.mp4")
-        _mix_bgm(out_path, bgm, float(vcfg.get("bgm_volume", 0.12)), mixed)
-        out_path = mixed
-        log(f"배경음악 믹스 완료: {out_path}")
+    track = bgm_track(data.get("bgm_kind", "news"), vcfg)
+    if track:
+        mix_into(out_path, track)
+        data["bgm_credit"] = track["credit"]
+        log(f"배경음악 믹스 완료({track['name']}, 음량 {track['volume']}): {out_path}")
 
     try:                                       # 후킹(초반)·CTA(후반) 오버레이(완주율·구독 전환↑)
         from overlays import apply as apply_overlays

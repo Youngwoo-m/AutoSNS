@@ -25,7 +25,24 @@
     "bgm_volume": 0.12,
     "motion": true,
     "zoom_max": 1.06,
-    "header_text": "SMU 재난안전뉴스"
+    "header_text": "SMU 재난안전뉴스",
+    "bgm_tracks": {
+      "news": {
+        "path": "../assets/music/Long_Note_Two.mp3",
+        "volume": 0.88,
+        "name": "Long Note Two"
+      },
+      "quiz": {
+        "path": "../assets/music/Blip_Stream.mp3",
+        "volume": 0.074,
+        "name": "Blip Stream"
+      },
+      "career": {
+        "path": "../assets/music/Blip_Stream.mp3",
+        "volume": 0.074,
+        "name": "Blip Stream"
+      }
+    }
   },
   "news": {
     "queries": [

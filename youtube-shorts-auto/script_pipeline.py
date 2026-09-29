@@ -138,6 +138,16 @@ def draft(kind, topic):
     return path, d
 
 
+def _with_credit(desc, credit):
+    """설명의 해시태그 줄 바로 앞에 출처 한 줄을 넣는다(이미 있으면 그대로)."""
+    if credit in desc:
+        return desc
+    lines = desc.rstrip().split("\n")
+    if lines and lines[-1].lstrip().startswith("#"):
+        return "\n".join(lines[:-1] + [credit, "", lines[-1]])
+    return desc.rstrip() + "\n\n" + credit
+
+
 def _next_no(sched, series):
     """시리즈의 다음 편 번호. 예약표 편수를 세면 안 된다 — 진로 1편은 예약표에 없어
     (2~8편만 있음) 7편을 세어 8을 붙였다가, 이미 있는 진로 8편과 겹쳤다(2026-09-29).
@@ -193,7 +203,7 @@ def approve(path):
         n = _next_no(sched, "career")
         stamp = f"CAREER{n:02d}_{datetime.datetime.now():%m%d%H%M}"
         data = {"stamp": stamp, "header_text": "세명대 재난안전학과 진로", "max_seconds": 45,
-                "title": d["title"], "source_images": {}, "broll": {},
+                "title": d["title"], "source_images": {}, "broll": {}, "bgm_kind": "career",
                 "scenes": [{"heading": s["heading"], "lines": s["lines"], "narration": s["narration"]}
                            for s in d["scenes"]]}
         for i, s in enumerate(d["scenes"], start=1):
@@ -209,6 +219,12 @@ def approve(path):
                 f"▶ https://www.semyung.ac.kr/smds.do\n\n" + " ".join("#" + t for t in tags))
         entry = {"no": n, "series": "career", "label": label}
 
+    # 배경음악 출처(CC BY 4.0). 인스타 캡션도 이 설명에서 만들어지므로 여기에 넣는다.
+    from make_video import bgm_track
+    track = bgm_track(d["kind"], load_config().get("video", {}))
+    if track:
+        desc = _with_credit(desc, track["credit"])
+        entry["bgm_credit"] = track["credit"]
     entry.update({"date": _next_tuesday(sched),
                   "video": os.path.relpath(video, BASE_DIR), "title": title[:100],
                   "description": desc, "tags": tags, "published": None})

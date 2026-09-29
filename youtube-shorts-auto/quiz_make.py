@@ -51,6 +51,7 @@ def render_one(q):
              "bg_image": _bg("07_cta")},
         ],
         "source_images": {},
+        "bgm_kind": "quiz",
     }
     # 실사 B롤(Pexels): 문항에 검색어가 있으면 1·2장면 배경으로 쓴다. 마무리(3장면)는
     # 일러스트 그대로 — 시리즈 끝맺음을 같은 화면으로 통일한다. 받기에 실패하면 그 장면만

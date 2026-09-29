@@ -166,16 +166,18 @@ def _build_description(data, cfg):
     # 유튜브 설명 상한 5000자. 넘으면 출처 줄을 끝에서부터 덜어낸다 — 해시태그 줄은
     # 검색 유입에 쓰이므로 반드시 남긴다. 지금은 1.5천자대라 걸리지 않지만, 출처 제목이
     # 길어져 조용히 넘치면 업로드가 invalidDescription 으로 통째로 실패한다.
+    # 배경음악 출처(CC BY 4.0 — 표기 필수). 설명이 길어 출처 줄을 덜어낼 때도 남긴다.
+    tail = (["", data["bgm_credit"]] if data.get("bgm_credit") else []) + ["", tag_line]
     head = list(parts)
     while True:
-        desc = "\n".join(x for x in head + ["", tag_line] if x is not None).strip()
+        desc = "\n".join(x for x in head + tail if x is not None).strip()
         if len(desc) <= DESC_LIMIT or len(head) <= src_from:
             break
         head.pop()
     # 링크를 잃은 출처 제목 줄이 홀로 남지 않게 한 줄 더 덜어낸다.
     if len(head) > src_from and str(head[-1]).startswith("· ["):
         head.pop()
-        desc = "\n".join(x for x in head + ["", tag_line] if x is not None).strip()
+        desc = "\n".join(x for x in head + tail if x is not None).strip()
     if len(head) < len(parts):
         log(f"설명이 {DESC_LIMIT}자를 넘어 출처 {len(parts) - len(head)}줄을 덜어냈습니다.")
     return _sanitize(desc)
