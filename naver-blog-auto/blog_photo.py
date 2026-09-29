@@ -2,7 +2,9 @@
 
 그동안 학과 블로그 글은 이미지가 하나도 없었고(브리핑·진로·자격증), GeoAI 글도 그려
 만든 배너·도식뿐이었다. 글 주제에 맞는 무료 실사 사진을 Pexels(없으면 Pixabay)에서
-찾아 우리 저장소(CDN)에 다시 올리고, 본문 도입부 뒤에 넣는다.
+찾아 우리 저장소(CDN)에 다시 올리고, 본문 도입부 뒤에 넣는다. 공급처는 글마다 번갈아
+먼저 찾는다(직전 사진이 Pexels 면 이번엔 Pixabay 부터) — 한 곳만 쓰면 사진 풀이 좁고
+분위기가 비슷한 사진이 반복된다. 먼저 찾은 곳에 맞는 사진이 없으면 다른 곳으로 넘어간다.
 
 주의 — 자료사진임을 반드시 밝힌다. 브리핑은 실제 사고를 다루는데, 그 옆의 사진이
 현장 사진처럼 읽히면 독자를 속이는 셈이다. 그래서 캡션 첫머리는 늘 '자료사진'이고,
@@ -80,6 +82,12 @@ def _remember(uid):
         log(f"자료사진 기록 실패(글은 정상): {type(e).__name__}")
 
 
+def _order(hist):
+    """직전에 쓴 사진의 공급처가 아닌 곳을 먼저 — 글마다 번갈아 쓰게."""
+    last = hist[-1].split(":", 1)[0] if hist else ""
+    return ("pixabay", "pexels") if last == "pexels" else ("pexels", "pixabay")
+
+
 def figure_html(url, photo):
     """사진 + '자료사진 · 사진: 촬영자 / 공급처' 캡션."""
     e = html.escape
@@ -107,7 +115,8 @@ def photo_html(title, summary="", cfg=None, dry_run=False):
     queries = queries_for(title, summary, cfg)
     if not queries:
         return ""
-    photo = stock_photo.find(queries, keys, skip=_history(), log=log)
+    hist = _history()
+    photo = stock_photo.find(queries, keys, skip=hist, providers=_order(hist), log=log)
     if not photo:
         log(f"자료사진 없음(검색어 {queries}) — 사진 없이 발행")
         return ""
