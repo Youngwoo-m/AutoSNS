@@ -70,7 +70,9 @@ def _latest_blog_url():
     return f"https://blog.naver.com/PostList.naver?blogId={BLOG_ID}&categoryNo={CATEGORY_NO}"
 
 
-def build(draft):
+def build(draft, extra=False):
+    """extra=True: 이미 올린 주의 '추가 공고'(블로그 글을 고쳐 채운 공고). 인스타는 올린
+    캐러셀에 사진을 더할 수 없어 새 게시물로 올린다(9/29)."""
     jobs = [j for j in draft["jobs"] if not NO_FIRE.search(j["title"] + j.get("duty", "") + j.get("quals", ""))]
     if len(jobs) < 2:
         return None
@@ -79,7 +81,7 @@ def build(draft):
     week = (now.day - 1) // 7 + 1
     ngov = sum(1 for j in jobs if j.get("gov"))
     cards = ["\n".join([
-        f"신입 채용공고, 이번 주 {len(jobs)}선",
+        f"신입 채용공고, 이번 주 추가 {len(jobs)}선" if extra else f"신입 채용공고, 이번 주 {len(jobs)}선",
         "",
         "재난안전·안전관리 분야",
         "신입·경력무관 공고만 골랐어요" + (" (공무원 포함)" if ngov else ""),
@@ -114,7 +116,8 @@ def build(draft):
         "원본 공고 링크는 프로필 링크의 네이버 블로그 '채용정보'에서 확인하세요",
     ]))
     blog = _latest_blog_url()
-    lines = [f"💼 [채용정보] 신입 지원 가능한 재난안전·안전관리 채용공고 {len(jobs)}선 | {now.month}월 {week}주차",
+    head = f"추가 {len(jobs)}선" if extra else f"{len(jobs)}선"
+    lines = [f"💼 [채용정보] 신입 지원 가능한 재난안전·안전관리 채용공고 {head} | {now.month}월 {week}주차",
              "", "고용24·지방자치단체 인터넷원서접수센터에서 이번 주 공고 중 신입이 지원할 수 있는 공고만 골랐어요.", ""]
     for i, j in enumerate(jobs, 1):
         lines.append(f"{i}. {j['company']} — {_short(j['title'], 34)} ({_deadline(j)})")
@@ -123,7 +126,7 @@ def build(draft):
               + ". 세부 조건은 반드시 원본 공고에서 확인하세요.", "",
               " ".join("#" + t for t in TAGS)]
     return {
-        "title": f"신입 채용공고 {len(jobs)}선", "cards": cards, "caption": "\n".join(lines),
+        "title": f"신입 채용공고 {'추가 ' if extra else ''}{len(jobs)}선", "cards": cards, "caption": "\n".join(lines),
         "hashtags": [], "sources": [], "cover_query": "construction safety helmet",
         "stamp": "JOBS_" + now.strftime("%Y%m%d_%H%M%S"), "jobs": [j["id"] for j in jobs],
     }
@@ -165,7 +168,7 @@ def main():
         if not any(j["id"] in naver for j in draft.get("jobs", [])):
             log("인스타 채용정보: 이 초안은 블로그에 발행되지 않았음 — 건너뜀")
             return 0
-    data = build(draft)
+    data = build(draft, extra="--extra" in sys.argv)
     if not data:
         log("인스타 채용정보: 소방 제외 뒤 공고가 2건 미만 — 건너뜀")
         return 0
