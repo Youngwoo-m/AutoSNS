@@ -397,6 +397,17 @@ def _save_state(jobs):
 
 
 def main():
+    if "--rewrite" in sys.argv:
+        # --rewrite <logNo> <초안.json> [--go]: 이미 올린 글을 초안 내용으로 고쳐 쓴다
+        i = sys.argv.index("--rewrite")
+        log_no, path = sys.argv[i + 1], sys.argv[i + 2]
+        saved = json.load(open(path, encoding="utf-8"))
+        jobs = saved.pop("jobs")
+        r = rewrite(log_no, saved, go="--go" in sys.argv)
+        if r.get("status") == "published":
+            _save_state(jobs)
+            log(f"✅ 채용정보 고쳐쓰기 발행: {saved['title']}")
+        return 0
     if "--publish" in sys.argv:
         # --list 로 만든 초안(posts/jobs_*.json)을 그대로 올린다 — 다시 고르면 모델이 다른
         # 공고를 고를 수 있어, 사람이 본 글과 올라가는 글이 달라진다.
@@ -435,6 +446,124 @@ def main():
         print("\n" + data["outro"])
         return 0
     return _publish(data, jobs, go=(mode == "--go"))
+
+
+def rewrite(log_no, data, go=False):
+    """이미 올린 채용정보 글의 제목과 본문(인사말부터 끝까지)을 새 목록으로 바꾼다.
+
+    상단 배너는 그대로 두고, '이번 주(' 로 시작하는 인사말 문단부터 글 끝까지 선택해
+    지운 뒤 발행 때와 같은 방식(요약 + 원본 링크)으로 다시 입력한다. 소방 공고를 빼고
+    다른 공고로 채울 때 썼다(2026-09-29). go=False 면 입력만 하고 발행 전에 멈춘다."""
+    from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    from publish_naver import (MOD_KEY, _type_text, build_driver, click_if_present,
+                               insert_link_blocks, shot, type_contenteditable)
+    driver = build_driver(load_config().get("publish", {}).get("headless", False))
+    try:
+        driver.get(f"https://blog.naver.com/PostUpdateForm.naver?blogId=studs23&logNo={log_no}")
+        time.sleep(5)
+        try:
+            driver.switch_to.alert.accept()
+        except Exception:
+            pass
+        try:
+            WebDriverWait(driver, 15).until(EC.frame_to_be_available_and_switch_to_it((By.ID, "mainFrame")))
+        except Exception:
+            pass
+        time.sleep(3)
+        click_if_present(driver, By.CSS_SELECTOR, ".se-popup-button-cancel", timeout=3)
+        click_if_present(driver, By.CSS_SELECTOR, ".se-help-panel-close-button", timeout=2)
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")))
+        time.sleep(1)
+        def select_span(a, b):
+            """a 요소의 왼쪽 위 첫 글자부터 b 요소의 오른쪽 아래 끝까지 마우스로 선택한다.
+            Cmd+A·Cmd+Shift+↓·줄 단위 이동은 에디터에서 문단 전체를 잡지 못했다(9/29)."""
+            ra, rb = a.rect, b.rect
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", a)
+            time.sleep(0.3)
+            ActionChains(driver).move_to_element_with_offset(
+                a, -ra["width"] / 2 + 1, -ra["height"] / 2 + 4).click().perform()
+            time.sleep(0.2)
+            # 클릭이 첫 글자 뒤에 떨어져 한 글자가 남았다('[[채용정보', '이이번 주') — 줄 맨 앞으로
+            ActionChains(driver).key_down(MOD_KEY).send_keys(Keys.ARROW_LEFT).key_up(MOD_KEY).perform()
+            time.sleep(0.2)
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", b)
+            time.sleep(0.3)
+            ActionChains(driver).key_down(Keys.SHIFT).move_to_element_with_offset(
+                b, rb["width"] / 2 - 1, rb["height"] / 2 - 4).click().key_up(Keys.SHIFT).perform()
+            time.sleep(0.2)
+            # 마지막 줄 끝까지 확실히
+            ActionChains(driver).key_down(Keys.SHIFT).key_down(MOD_KEY).send_keys(Keys.ARROW_RIGHT) \
+                .key_up(MOD_KEY).key_up(Keys.SHIFT).perform()
+            time.sleep(0.3)
+
+        # 제목: 제목 문단 전체를 선택해 지우고 새 제목으로
+        t = driver.find_element(By.CSS_SELECTOR, ".se-section-documentTitle .se-text-paragraph")
+        select_span(t, t)
+        ActionChains(driver).send_keys(Keys.BACKSPACE).perform()
+        time.sleep(0.3)
+        ActionChains(driver).send_keys(data["title"]).perform()
+        time.sleep(0.5)
+        # 본문: 인사말 문단 맨 앞 → 글 끝까지 선택 → 지우기
+        intro = next((p for p in driver.find_elements(
+            By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")
+            if (p.text or "").strip().startswith("이번 주(")), None)
+        if intro is None:
+            shot(driver, f"jobs_rewrite_nointro_{log_no}")
+            raise RuntimeError("인사말 문단('이번 주(')을 찾지 못해 고치지 않습니다.")
+        last = driver.find_elements(By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")[-1]
+        select_span(intro, last)
+        ActionChains(driver).send_keys(Keys.BACKSPACE).perform()
+        time.sleep(1)
+        left = " ".join(p.text for p in driver.find_elements(
+            By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph"))
+        if "원본 공고 보기" in left or "① " in left:
+            shot(driver, f"jobs_rewrite_notcleared_{log_no}")
+            raise RuntimeError("기존 목록이 다 지워지지 않아 멈춥니다(스크린샷 확인).")
+        _type_text(driver, data["body"])
+        insert_link_blocks(driver, data["link_blocks"], data.get("outro", ""))
+        time.sleep(1)
+        shot(driver, f"jobs_rewrite_typed_{log_no}")
+        # 입력 결과 점검 — 제목, 배너, 링크 수, 공고 수, 소방 흔적
+        doc = driver.execute_script(
+            "return document.querySelector('.se-section-documentTitle').innerText + '\\n=====\\n' +"
+            " [...document.querySelectorAll('.se-component')].map(c => c.classList.contains('se-image') ?"
+            " '[이미지]' : c.innerText).join('\\n')")
+        links = driver.execute_script(
+            "return [...document.querySelectorAll('.se-component.se-text *')]"
+            ".filter(e => /원본 공고 보기/.test(e.innerText||'') && (e.tagName==='A' || /link/.test(e.className))).length")
+        items = len(re.findall(r"^[①-⑮] ", doc, re.M))
+        log(f"고쳐쓰기 점검: 링크 {links}개, 공고 {items}건, 이미지 {doc.count('[이미지]')}장, "
+            f"'소방' {'있음' if '소방' in doc else '없음'}")
+        with open(os.path.join(POSTS_DIR, f"_rewrite_{log_no}.txt"), "w", encoding="utf-8") as f:
+            f.write(doc)
+        title_now = doc.split("\n=====")[0].strip()
+        if title_now != data["title"]:
+            log(f"고쳐쓰기 점검: 제목 불일치 → {title_now!r}")
+        if (items != len(data["link_blocks"]) or links < len(data["link_blocks"]) or "소방" in doc
+                or title_now != data["title"] or doc.count("이번 주(") != 1):
+            raise RuntimeError("고쳐쓴 본문 점검 실패 — 발행하지 않습니다(_rewrite_*.txt 확인)")
+        if not go:
+            log("채용정보 고쳐쓰기: [DRY] 입력까지 하고 발행 전에 멈춤")
+            return {"status": "dry"}
+        if not click_if_present(driver, By.XPATH,
+                "//button[contains(@class,'publish') and contains(.,'발행')]", 6):
+            click_if_present(driver, By.XPATH, "//*[contains(@class,'publish_btn')]", 6)
+        time.sleep(2)
+        shot(driver, f"jobs_rewrite_layer_{log_no}")
+        if not click_if_present(driver, By.XPATH,
+                "//div[contains(@class,'layer') or contains(@class,'option')]"
+                "//button[contains(@class,'confirm') and contains(.,'발행')]", 6):
+            click_if_present(driver, By.XPATH, "//button[contains(@class,'confirm_btn')]", 6)
+        time.sleep(6)
+        shot(driver, f"jobs_rewrite_done_{log_no}")
+        return {"status": "published"}
+    finally:
+        driver.quit()
 
 
 def _publish(data, jobs, go):
