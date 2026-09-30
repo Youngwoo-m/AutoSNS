@@ -113,6 +113,13 @@ DISASTER_TERMS = TAG_DISASTER_TERMS + EXTRA_TAG_TERMS
 REGION_TERMS = TAG_REGION_TERMS
 
 
+
+MIN_NEWS = 2
+
+
+class NoNewsError(RuntimeError):
+    """이 판의 주제로 모인 뉴스가 너무 적다(run_weekly 가 대체 판으로 바꾼다)."""
+
 def _detected_tags(subtitle, blocks, news):
     """부제·본문 소제목·뉴스 제목에서 지역/재난 키워드를 뽑아 검색 태그로 쓴다.
 
@@ -230,6 +237,10 @@ def generate():
 
     system = _fill(SYSTEM)
     news = fetch_news()
+    # 뉴스가 거의 없으면 글이 1,000자 남짓으로 끝나 분량 기준에 3번 떨어진다(9/3·9/10·9/22).
+    # 모델을 부르기 전에 알려 실행부가 다른 판(지역 재난안전)으로 바꿔 쓰게 한다.
+    if len(news) < MIN_NEWS:
+        raise NoNewsError(f"뉴스 {len(news)}건(기준 {MIN_NEWS}건) — 이 판으로는 글을 쓸 수 없음")
     user_msg = _fill(USER_TEMPLATE).format(
         topic=blog["topic"],
         tone=blog.get("tone", "친근한 블로그 말투"),

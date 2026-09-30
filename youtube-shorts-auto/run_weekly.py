@@ -78,6 +78,23 @@ def _publish_fallback(cfg, check_only=False):
     return p.returncode == 0
 
 
+def _threads_summary(data):
+    """스레드 본문 요약 한 문장 — 글로 쓴 설명문 첫 문장.
+
+    전에는 1장면 나레이션을 그대로 썼는데, 나레이션은 음성용이라 숫자가 한글로 풀려
+    있다('공장과 창고 천팔백오십구 동', 9/30 스레드). 설명문에는 '1,859동'으로 적혀 있다.
+    설명문이 없을 때만 나레이션을 쓴다."""
+    import re
+    desc = (data.get("description") or "").strip()
+    # 첫 문장이 '제천 재난안전 소식입니다.' 같은 인사말이면 내용이 없다 — 25자 넘는
+    # 첫 문장을 쓴다(앞 세 문장 안에서).
+    sents = [x.strip() for x in re.split(r"(?<=[.!?。])\s+", desc.split("\n")[0]) if x.strip()]
+    for x in sents[:3]:
+        if len(x) > 25:
+            return x
+    return (data.get("scenes") or [{}])[0].get("narration", "")
+
+
 def main(argv=()):
     check_only = "--check" in argv
     log("===== 주간 유튜브 Shorts + 인스타 + 틱톡 시작 ====="
@@ -184,7 +201,7 @@ def main(argv=()):
         url = result.get("url", "") if isinstance(result, dict) else ""
         if os.path.exists(os.path.join(ig_dir, "threads_cli.py")) and os.path.exists(ig_py):
             headline = data.get("title", "재난안전 소식")
-            summary = (data.get("scenes") or [{}])[0].get("narration", "")
+            summary = _threads_summary(data)
             tags = [t for t in (data.get("hashtags") or []) if t.lower() != "shorts"][:5]
             text = "\n\n".join(x for x in [
                 headline, summary, ("▶ " + url if url else ""),

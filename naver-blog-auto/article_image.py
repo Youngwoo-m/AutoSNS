@@ -84,6 +84,11 @@ def prepare_images(blocks, gamma_fallback=True):
     d = _driver()
     try:
         for i, blk in enumerate(blocks, 1):
+            # 손으로 고른 이미지는 그대로 둔다 — 출처가 법령 안내 사이트처럼 대표 이미지가
+            # 로고뿐인 경우 기사 이미지를 다시 받으면 로고가 들어간다(2026-09-29 수동 글).
+            if blk.get("keep_image") and blk.get("image") and os.path.exists(blk["image"]):
+                log(f"[{i}] 지정 이미지 유지")
+                continue
             blk["image"] = None
             blk["image_from"] = None
             try:

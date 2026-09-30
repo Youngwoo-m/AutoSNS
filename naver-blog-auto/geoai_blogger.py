@@ -247,6 +247,11 @@ def publish(title, html_body, labels, dry_run=False, cfg=None, pinned=()):
             dump = "(본문 저장 실패)"
         log(f"GeoAI 발행 실패: {type(e).__name__}: {msg[:600]}")
         log(f"  실패한 본문 저장: {dump}")
+        try:
+            from blogger_diag import describe
+            log(f"  요청 요약: {describe(body)}")
+        except Exception:
+            pass
         return {"error": msg[:300], "dump": dump}
 
 

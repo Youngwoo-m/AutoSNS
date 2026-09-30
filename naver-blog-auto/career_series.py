@@ -277,6 +277,11 @@ def main():
                 print(f"{ser['label']} {n}/{total} 발행: {r['url']}")
             except Exception as e:
                 print(f"{ser['label']} {n}/{total} 실패(다음 실행에서 재시도): {str(e)[:110]}")
+                try:
+                    from blogger_diag import describe
+                    print(f"  요청 요약: {describe(body)}")
+                except Exception:
+                    pass
                 stop = True
                 break          # 403·429 면 더 두드리지 않는다
             time.sleep(GAP_SECONDS)

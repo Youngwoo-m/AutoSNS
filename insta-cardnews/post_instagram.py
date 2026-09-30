@@ -708,6 +708,43 @@ def _try_enable_ai_label(driver):
     return False
 
 
+JS_CROP_BUTTON = """
+const svgs = [...document.querySelectorAll('div[role=dialog] svg[aria-label]')];
+const hit = svgs.find(v => /자르기 선택|Select crop|자르기|crop/i.test(v.getAttribute('aria-label')));
+if (!hit) return false;
+(hit.closest('button,[role=button]') || hit.parentElement).click();
+return hit.getAttribute('aria-label');
+"""
+JS_CROP_ORIGINAL = """
+const els = [...document.querySelectorAll('div[role=dialog] span, div[role=dialog] div')];
+const opt = els.find(e => e.childElementCount <= 1 && /^(원본|Original)$/.test((e.innerText || '').trim()));
+if (!opt) return false;
+(opt.closest('button,[role=button]') || opt).click();
+return true;
+"""
+
+
+def _select_original_crop(driver):
+    """자르기 화면에서 비율 메뉴를 열고 '원본'을 고른다. 성공 여부를 돌려준다."""
+    try:
+        label = driver.execute_script(JS_CROP_BUTTON)
+        if not label:
+            log("자르기 비율 버튼을 찾지 못함 → 기본 비율로 진행")
+            return False
+        time.sleep(1.2)
+        if not driver.execute_script(JS_CROP_ORIGINAL):
+            log("자르기 메뉴에 '원본' 없음 → 기본 비율로 진행")
+            shot(driver, "reel_crop_menu")
+            return False
+        time.sleep(1.5)
+        shot(driver, "reel_crop_original")
+        log("자르기 비율: 원본(9:16) 선택")
+        return True
+    except Exception as e:
+        log(f"자르기 비율 선택 실패({type(e).__name__}) → 기본 비율로 진행")
+        return False
+
+
 def post_reel(data, dry_run=None):
     """카드 슬라이드쇼 영상(data['reel'])을 인스타 릴로 게시한다. (음악은 영상에 포함됨)
 
@@ -777,6 +814,9 @@ def post_reel(data, dry_run=None):
         _click_by_labels(driver, ["확인", "OK"], timeout=6)
         time.sleep(4)
         shot(driver, "reel_after_upload")
+        # 2-2) 자르기 비율을 '원본'(9:16)으로 — 웹 업로드는 기본이 정사각형(1:1)이라 카드 위아래의
+        #      실사 배경이 잘려 나갔다(9/30 릴: 배경 영상이 거의 안 보임). 실패해도 게시는 계속.
+        _select_original_crop(driver)
 
         # 3) 캡션 화면까지 '다음' 전진 (영상 처리 대기 포함, 최대 5단계)
         advanced = False

@@ -308,8 +308,10 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
     .ox-x::before {{ transform:translate(-50%,-50%) rotate(45deg); }}
     .ox-x::after  {{ transform:translate(-50%,-50%) rotate(-45deg); }}
     .fit {{ font-size:40px; }}
-    .newsimg {{ width:100%; margin:6px 0 20px; }}
-    .newsimg img {{ width:100%; max-height:560px; object-fit:cover; border-radius:26px;
+    /* 사진 아래를 비워 사진이 나레이션 자막 띠(1920 기준 y≈1400~1490) 위에서 끝나게 한다.
+       전에는 사진이 푸터 바로 위(y≈1540)까지 내려와 자막이 사진 아래쪽을 덮었다(9/30 숏츠). */
+    .newsimg {{ width:100%; margin:6px 0 200px; }}
+    .newsimg img {{ width:100%; max-height:480px; object-fit:cover; border-radius:26px;
              box-shadow:0 8px 30px rgba(12,40,76,.18); }}
     .footer {{ display:flex; align-items:center; justify-content:center; gap:20px;
              width:100%; }}

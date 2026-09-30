@@ -201,6 +201,11 @@ def publish(data, dry_run=False, cfg=None):
         return {"status": "published", "url": r.get("url", "")}
     except Exception as e:
         log(f"Blogger 발행 실패(네이버 발행은 정상): {type(e).__name__}: {str(e)[:150]}")
+        try:
+            from blogger_diag import describe
+            log(f"  요청 요약: {describe(body)}")
+        except Exception:
+            pass
         return {"error": str(e)[:200]}
 
 

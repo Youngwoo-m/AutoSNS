@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 
 from common import log
+from generate_content import NoNewsError
 
 
 # 월=0 … 일=6. None = 기본(재난안전판).
@@ -81,13 +82,32 @@ def _run_one(edition):
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
 
 
+def _notify_fallback(ed, why):
+    try:
+        from kakao_notify import notify
+        notify(f"[SMUDS 대체 편성] 네이버 [{ed}] 판 뉴스 부족 → 지역 재난안전판으로 발행\n{why}",
+               "https://blog.naver.com")
+    except Exception:
+        pass
+
+
 def main():
     log("===== 주간 자동 포스팅 시작 =====")
     editions = _editions_for_today()
     ok = True
     for ed in editions:
         try:
-            _run_one(ed)
+            try:
+                _run_one(ed)
+            except NoNewsError as e:
+                if ed is None:
+                    raise
+                # 산업·재해영향평가처럼 뉴스가 적은 판은 그날 기사가 없을 수 있다. 그날 글을
+                # 비우지 않게 지역 재난안전판으로 바꿔 쓴다(9/3·9/10·9/22 결방 뒤 추가).
+                log(f"[{ed}] {e} → 오늘은 지역 재난안전판으로 대체")
+                _notify_fallback(ed, str(e))
+                ed = None
+                _run_one(None)
         except Exception as e:
             ok = False
             # 한 판이 실패해도 나머지 판은 계속 진행(목요일 2글 중 하나 실패 대비)

@@ -13,5 +13,8 @@ if [ "$#" -ne 0 ]; then
     exit 2
 fi
 cd "$(dirname "$0")" || exit 1
+# 발행 전 디스크 여유 점검(9/19 디스크 가득 참으로 전 매체 결방 뒤 추가). 모자라면 긴급
+# 정리·카톡 알림만 하고 발행은 그대로 진행한다.
+/usr/bin/python3 ../shared/diskguard.py GeoAI저녁 || true
 mkdir -p logs
 exec ./.venv/bin/python geoai_daily.py --go --no-video >> "logs/geoai.log" 2>&1
