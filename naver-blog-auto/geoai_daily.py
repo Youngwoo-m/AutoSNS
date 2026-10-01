@@ -317,6 +317,13 @@ def main():
         done = _posts_today_retry(cfg)
         if done is None:                      # 끝내 확인하지 못했다
             raise SystemExit(1)
+        # 따로 올리는 연재(예: 'NaGeoAI 실제 QGIS 실습')는 자동 편성 몫이 아니다 — 이것까지
+        # 세니 아침에 실습 글이 올라간 날은 저녁 자동 글이 상한에 걸려 빠졌다(9/30, 10/1).
+        skip = tuple(_gcfg(cfg).get("cap_exclude_prefixes", ["NaGeoAI 실제 QGIS 실습"]))
+        other = [t for t in done if skip and t.startswith(skip)]
+        if other:
+            log(f"GeoAI: 상한 계산에서 제외한 별도 연재 {len(other)}편 — {other[0][:40]}")
+            done = [t for t in done if not (skip and t.startswith(skip))]
         if len(done) >= cap:
             log(f"GeoAI: 오늘 이미 {len(done)}편 발행됨(상한 {cap}) — {done[0][:50]} (건너뜀)")
             return
