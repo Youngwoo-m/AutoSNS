@@ -11,7 +11,7 @@ from selenium.webdriver.chrome.options import Options
 
 from common import PROFILE_DIR, log
 
-TIMEOUT_SEC = 300  # 로그인 대기 최대 5분
+TIMEOUT_SEC = 600  # 로그인 대기 최대 10분
 
 
 def main():
@@ -28,14 +28,23 @@ def main():
         {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"},
     )
     driver.get("https://nid.naver.com/nidlogin.login")
-    log("브라우저에서 네이버에 직접 로그인하세요. (2단계 인증 포함) — 최대 5분 대기")
+    log("브라우저에서 네이버에 직접 로그인하세요. (2단계 인증 포함) — 최대 10분 대기. 반드시 '로그인 상태 유지'를 체크하세요")
 
     waited = 0
     while waited < TIMEOUT_SEC:
-        cookies = {c["name"] for c in driver.get_cookies()}
-        if "NID_AUT" in cookies and "NID_SES" in cookies:
-            log("로그인 성공 감지! 쿠키(프로필) 저장 중...")
-            time.sleep(2)
+        jar = {c["name"]: c for c in driver.get_cookies()}
+        if "NID_AUT" in jar and "NID_SES" in jar:
+            # '로그인 상태 유지'를 켜지 않으면 로그인 쿠키에 만료일이 없다(세션 쿠키) —
+            # 창을 닫는 순간 사라져 다음 발행에서 다시 '세션 만료'가 된다(2026-10-01 실제 발생).
+            if "expiry" not in jar["NID_AUT"]:
+                if waited % 20 == 0:
+                    log("⚠ 로그인은 됐지만 '로그인 상태 유지'가 꺼져 있어 창을 닫으면 풀립니다. "
+                        "로그아웃 후 '로그인 상태 유지'를 체크하고 다시 로그인해 주세요.")
+                time.sleep(2)
+                waited += 2
+                continue
+            log("로그인 성공 감지(로그인 상태 유지 확인)! 쿠키(프로필) 저장 중...")
+            time.sleep(6)                    # 쿠키가 디스크에 쓰일 시간을 준다
             driver.quit()
             log("저장 완료. 이제 publish_naver.py / run_weekly.py 를 쓸 수 있습니다.")
             return

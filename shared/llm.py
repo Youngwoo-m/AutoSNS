@@ -51,10 +51,16 @@ class _Messages:
         if self._gw is not None:
             gkw = dict(kw)
             gkw["model"] = self._map.get(kw.get("model"), kw.get("model"))
+            # 사고(thinking)를 끈다 — 우리 프롬프트는 모두 사고 없이 쓰도록 짜여 있고, 게이트웨이
+            # 쪽은 어려운 요청에 사고를 붙이다가 max_tokens 를 다 써 글 블록 없이 끝난 적이 있다
+            # (2026-10-01 GeoAI 영상 대본: 사고 블록만 와서 _text_first 로도 못 살렸다).
+            gkw.setdefault("thinking", {"type": "disabled"})
             try:
-                r = self._gw.messages.create(**gkw)
+                r = _text_first(self._gw.messages.create(**gkw))
+                if not any(getattr(b, "type", "") == "text" for b in r.content):
+                    raise RuntimeError(f"글 블록 없는 응답(stop={getattr(r, 'stop_reason', '')})")
                 _log(f"LLM: 학교 게이트웨이({gkw['model']})")
-                return _text_first(r)
+                return r
             except Exception as e:
                 if self._direct is None:
                     raise
