@@ -47,7 +47,10 @@ def fetch_bg(data):
         return illust_bg(query)
     try:
         ff = imageio_ffmpeg.get_ffmpeg_exe()
-        first = _sv.fetch(query, keys, OUT_DIR, ffmpeg=ff, log=log)
+        # 카드 사이사이에 배경 영상을 전체 화면으로 보여 주므로(2026-10-01) 어둡게·흐리게
+        # 가공하지 않는다 — 크기(1080x1920)만 맞춘 사본. 카드는 불투명이라 글자는 그대로 읽힌다.
+        clean = {"fx": "null", "suffix": "_clean"}
+        first = _sv.fetch(query, keys, OUT_DIR, ffmpeg=ff, log=log, **clean)
         # 7초(카드 2장)마다 배경을 다른 촬영자의 클립으로 바꾼다 — 한 클립을 28초 돌리면
         # 화면이 늘어진다. 같은 촬영자의 연속 영상은 컷을 바꿔도 같은 화면처럼 보여 피한다.
         clips, bys = [first["path"]], {first.get("by")}
@@ -55,7 +58,7 @@ def fetch_bg(data):
             if len(clips) >= MAX_CLIPS:
                 break
             try:
-                c = _sv.fetch(query, keys, OUT_DIR, pick=k, ffmpeg=ff, log=log)
+                c = _sv.fetch(query, keys, OUT_DIR, pick=k, ffmpeg=ff, log=log, **clean)
             except Exception:
                 break
             if c["path"] in clips:

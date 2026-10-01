@@ -38,6 +38,9 @@ def make_reel(data, audio_path=None):
 
     secs = float(rcfg.get("seconds_per_card", 3.5))
     bg = rcfg.get("bg_color", "0x0f2038")
+    # 카드 사이사이에 배경 영상을 전체 화면으로 보여 준다(2026-10-01): 카드가 사라졌다가
+    # 다음 카드가 나타난다. 실사 배경이 있을 때만 — 단색 배경이면 빈 화면이 될 뿐이다.
+    gap = float(rcfg.get("video_gap", 1.2))
     dur = round(secs * len(images), 2)
 
     stamp = data.get("stamp") or time.strftime("%Y%m%d_%H%M%S")
@@ -72,20 +75,41 @@ def make_reel(data, audio_path=None):
     if stock:
         top = (1920 - card) // 2
         labeled = stock.get("label", True)          # 일러스트 B롤이면 표기하지 않는다
-        inputs = ["-f", "concat", "-safe", "0", "-i", list_path,
-                  "-stream_loop", "-1", "-i", audio,
-                  "-stream_loop", "-1", "-i", stock["path"]]
-        graph = (f"[2:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
-                 f"setsar=1,fps=30[bg];"
-                 f"[0:v]scale={card}:{card}:force_original_aspect_ratio=decrease,setsar=1,fps=30[c];")
+        dur = round(secs * len(images) + gap * (len(images) - 1), 2)
+        afade = max(dur - 1.5, 0)
+        if stock.get("clips") and len(stock["clips"]) > 1:   # 길어진 길이에 맞춰 다시 컷
+            try:
+                stock["path"] = bg_sequence(stock["clips"], dur, work, FFMPEG)
+            except Exception:
+                pass
+        inputs = ["-stream_loop", "-1", "-i", audio,                 # 0: 음악
+                  "-stream_loop", "-1", "-i", stock["path"]]         # 1: 배경 영상
+        graph = (f"[1:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+                 f"setsar=1,fps=30[v0];")
+        fd = 0.35                                   # 카드가 나타나고 사라지는 시간
+        last = "v0"
+        for k, img in enumerate(images):
+            idx = 2 + k
+            inputs += ["-loop", "1", "-t", f"{secs:.2f}", "-i", img]
+            start = k * (secs + gap)
+            fx = [f"scale={card}:{card}:force_original_aspect_ratio=decrease", "setsar=1",
+                  "fps=30", "format=rgba"]
+            if k > 0:                                # 첫 카드는 곧바로(썸네일·첫 화면)
+                fx.append(f"fade=t=in:st=0:d={fd}:alpha=1")
+            if k < len(images) - 1:                  # 마지막 카드는 끝까지 남긴다
+                fx.append(f"fade=t=out:st={secs - fd:.2f}:d={fd}:alpha=1")
+            fx.append(f"setpts=PTS-STARTPTS+{start:.2f}/TB")
+            graph += f"[{idx}:v]{','.join(fx)}[c{k}];"
+            graph += f"[{last}][c{k}]overlay=(W-w)/2:(H-h)/2:eof_action=pass[v{k + 1}];"
+            last = f"v{k + 1}"
         if labeled:
+            li = 2 + len(images)
             inputs += ["-loop", "1", "-i", label_png(work)]
-            graph += (f"[bg][c]overlay=(W-w)/2:(H-h)/2[v1];"
-                      f"[v1][3:v]overlay={(1080 - card) // 2}:{top + card + 16}:shortest=1,"
+            graph += (f"[{last}][{li}:v]overlay={(1080 - card) // 2}:{top + card + 16}:shortest=1,"
                       f"format=yuv420p[v]")
         else:
-            graph += "[bg][c]overlay=(W-w)/2:(H-h)/2:shortest=1,format=yuv420p[v]"
-        vargs = ["-filter_complex", graph, "-map", "[v]", "-map", "1:a"]
+            graph += f"[{last}]format=yuv420p[v]"
+        vargs = ["-filter_complex", graph, "-map", "[v]", "-map", "0:a"]
         log(f"릴 배경: {'실사' if labeled else '일러스트'} '{stock['query']}' "
             f"({stock.get('source', '')} {stock['id']}, by {stock['by']})"
             + (" + '배경: 자료 화면' 표기" if labeled else ""))
@@ -101,12 +125,17 @@ def make_reel(data, audio_path=None):
         "-t", str(dur),
         *vargs,
         "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-r", "30",
+        # 실사 배경을 어둡게 가공하지 않으니 비트레이트가 7Mbps 까지 올랐다 — 웹 업로드가
+        # 느려지지 않게 상한을 둔다(인스타가 어차피 다시 압축한다).
+        "-crf", "23", "-maxrate", "4M", "-bufsize", "8M",
         "-c:a", "aac", "-b:a", "160k", "-ar", "44100",
         "-af", f"afade=t=in:st=0:d=0.6,afade=t=out:st={afade}:d=1.5",
         "-movflags", "+faststart",
         out,
     ]
-    log(f"릴 영상 합성 중... (카드 {len(images)}장 × {secs}s = {dur}s, 음악 {os.path.basename(audio)})")
+    log(f"릴 영상 합성 중... (카드 {len(images)}장 × {secs}s"
+        + (f" + 사이 영상 {gap}s × {len(images) - 1}" if stock else "")
+        + f" = {dur}s, 음악 {os.path.basename(audio)})")
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0 or not os.path.exists(out):
         raise RuntimeError(f"ffmpeg 실패:\n{r.stderr[-1500:]}")
