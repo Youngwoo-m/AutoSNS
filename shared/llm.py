@@ -8,7 +8,7 @@
 요청을 다시 보낸다 — 발행이 멈추지 않게. 어느 쪽으로 나갔는지 로그에 남긴다.
 
 설정(config.json):
-  "llm_gateway": {"enabled": true, "api_key": "...",
+  "llm_gateway": {"enabled": true, "api_key": "...", "extra_keys": ["..."],   # 추가 계정(차례로)
                   "base_url": "https://factchat-cloud.mindlogic.ai/v1/gateway/claude",
                   "model_map": {"claude-sonnet-4-6": "claude-sonnet-5"}}
   "anthropic_api_key": "..."      # 대비책
@@ -44,11 +44,13 @@ def _text_first(r):
 
 
 class _Messages:
-    def __init__(self, gw, direct, model_map):
-        self._gw, self._direct, self._map = gw, direct, model_map
+    def __init__(self, gws, direct, model_map):
+        self._gws, self._direct, self._map = gws, direct, model_map
 
     def create(self, **kw):
-        if self._gw is not None:
+        # 게이트웨이 키를 순서대로 쓴다(주 계정 → 추가 계정). 한 계정의 월 크레딧이 떨어지거나
+        # 오류가 나면 다음 키, 모두 안 되면 Anthropic 키(2026-10-01 추가 키 연결).
+        for n, (label, gw) in enumerate(self._gws):
             gkw = dict(kw)
             gkw["model"] = self._map.get(kw.get("model"), kw.get("model"))
             # 사고(thinking)를 끈다 — 우리 프롬프트는 모두 사고 없이 쓰도록 짜여 있고, 게이트웨이
@@ -56,31 +58,43 @@ class _Messages:
             # (2026-10-01 GeoAI 영상 대본: 사고 블록만 와서 _text_first 로도 못 살렸다).
             gkw.setdefault("thinking", {"type": "disabled"})
             try:
-                r = _text_first(self._gw.messages.create(**gkw))
+                r = _text_first(gw.messages.create(**gkw))
                 if not any(getattr(b, "type", "") == "text" for b in r.content):
                     raise RuntimeError(f"글 블록 없는 응답(stop={getattr(r, 'stop_reason', '')})")
-                _log(f"LLM: 학교 게이트웨이({gkw['model']})")
+                _log(f"LLM: 학교 게이트웨이{label}({gkw['model']})")
                 return r
             except Exception as e:
-                if self._direct is None:
+                last = n == len(self._gws) - 1
+                if last and self._direct is None:
                     raise
-                _log(f"LLM: 게이트웨이 실패 → Anthropic 키로 전환 ({type(e).__name__}: {str(e)[:120]})")
+                nxt = "Anthropic 키" if last else "다음 게이트웨이 키"
+                _log(f"LLM: 게이트웨이{label} 실패 → {nxt}로 전환 ({type(e).__name__}: {str(e)[:120]})")
         if self._direct is None:
-            raise RuntimeError("LLM 키가 없습니다(llm_gateway.api_key / anthropic_api_key).")
+            raise RuntimeError("LLM 키가 없습니다(llm_gateway.api_key / extra_keys / anthropic_api_key).")
         return self._direct.messages.create(**kw)
 
 
 class _Client:
-    def __init__(self, gw, direct, model_map):
-        self.messages = _Messages(gw, direct, model_map)
+    def __init__(self, gws, direct, model_map):
+        self.messages = _Messages(gws, direct, model_map)
+
+
+def gateway_keys(cfg):
+    """[주 키, 추가 키…] — 중복·빈 값 제외."""
+    g = cfg.get("llm_gateway") or {}
+    if not g.get("enabled", True):
+        return []
+    keys = [g.get("api_key")] + list(g.get("extra_keys") or [])
+    return list(dict.fromkeys(k for k in keys if k))
 
 
 def client(cfg):
     from anthropic import Anthropic
     g = cfg.get("llm_gateway") or {}
-    gw = None
-    if g.get("enabled", True) and g.get("api_key"):
-        gw = Anthropic(api_key=g["api_key"], base_url=g.get("base_url") or DEFAULT_BASE,
-                       max_retries=1, timeout=180)
+    base = g.get("base_url") or DEFAULT_BASE
+    keys = gateway_keys(cfg)
+    gws = [("" if i == 0 else f"[추가{i}]",
+            Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180))
+           for i, k in enumerate(keys)]
     direct = Anthropic(api_key=cfg["anthropic_api_key"]) if cfg.get("anthropic_api_key") else None
-    return _Client(gw, direct, {**DEFAULT_MAP, **(g.get("model_map") or {})})
+    return _Client(gws, direct, {**DEFAULT_MAP, **(g.get("model_map") or {})})
