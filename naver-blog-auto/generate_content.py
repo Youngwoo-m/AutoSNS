@@ -84,6 +84,10 @@ USER_TEMPLATE = """블로그 주제: {topic}
 ===요약===
 이 글의 핵심을 3줄로. 각 줄은 '· '로 시작하고 40자 내외, 한 줄에 하나의 사실만.
 수치·지역·기관이 들어가면 더 좋다. (검색 스니펫·AI 요약이 이 부분을 가져간다)
+===리드===
+검색 결과 미리보기에 쓰일 글 첫 문단. 1~2문장, 합쳐서 80~150자.
+부제 맨 앞의 검색어를 첫 문장 앞부분에 그대로 넣고, 이 글에서 무엇을 알 수 있는지 평서문으로 쓴다.
+인사·질문·'오늘은'·'이번 글에서는' 같은 머리말로 시작하지 않는다. 목록에 없는 수치는 넣지 않는다.
 ===인사===
 짧은 인사 + 이번 주 핵심 요약 (1~2단락).
 ★ 첫 문장에 이 글의 핵심 검색 키워드(__SUBKW__·'__DOMAIN__')를 자연스럽게 넣는다.
@@ -174,7 +178,8 @@ def _parse_structured(text, news):
     # 태그 구간 끝은 바로 다음 섹션(===요약===)이다. '===인사===' 로 두면 그 사이의
     # 요약 본문까지 태그로 빨려 들어간다(2026-09-16 '===요약===', '·', '40분' 이 태그로 저장됨).
     tags_raw = _section(text, "===태그===", "===요약===")
-    summary = _section(text, "===요약===", "===인사===")
+    # 요약 다음 칸은 ===리드=== 다. 모델이 리드를 빠뜨리면 예전처럼 ===인사=== 까지.
+    summary = _section(text, "===요약===", "===리드===" if "===리드===" in text else "===인사===")
     intro = _section(text, "===인사===", "===뉴스===")
     news_raw = _section(text, "===뉴스===", "===안전수칙===")
     tips = _section(text, "===안전수칙===", "===자주묻는질문===")
@@ -257,7 +262,7 @@ def generate():
             len(b.get("heading", "")) + len(b.get("paragraph", "")) for b in blocks)
 
     client = _llm_client(cfg)
-    subtitle = intro = tips = outro = summary = faq = ""
+    subtitle = intro = tips = outro = summary = faq = lead = ""
     tags, blocks = [], []
     best = None
     for attempt in range(1, 4):
@@ -272,12 +277,13 @@ def generate():
         text = msg.content[0].text.strip()
         (subtitle, tags, summary, intro, blocks,
          tips, faq, outro) = _parse_structured(text, news)
+        lead = _section(text, "===리드===", "===인사===")
         # 마무리까지 나와야 글이 끝까지 생성된 것이다(토큰 상한에 걸리면 뒤가 잘린다)
         ok_form = bool(subtitle and intro and outro) and len(blocks) >= 2
         length = _body_len(intro, blocks, tips, outro)
         # 가장 잘 나온 결과를 보관(전부 미달이면 이걸 쓴다)
         if ok_form and (best is None or length > best[-1]):
-            best = (subtitle, tags, summary, intro, blocks, tips, faq, outro, length)
+            best = (subtitle, tags, summary, intro, blocks, tips, faq, outro, lead, length)
         if ok_form and length >= min_chars and len(blocks) >= min_blocks:
             break
         log(f"분량/형식 미달(시도 {attempt}/3: 본문 {length}자 / 기준 {min_chars}자, "
@@ -286,7 +292,7 @@ def generate():
         if best is None:
             raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
         (subtitle, tags, summary, intro, blocks,
-         tips, faq, outro, _) = best
+         tips, faq, outro, lead, _) = best
         log("3회 시도 후 기준 미달 → 그중 가장 긴 결과로 진행합니다.")
     if not (subtitle and intro and len(blocks) >= 2):
         raise RuntimeError("글 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
@@ -313,6 +319,8 @@ def generate():
         "news_blocks": blocks, "tips": tips, "outro": outro, "tags": tags,
         # 검색 스니펫·AI 요약이 가져가기 좋은 블록(글 맨 위 3줄 요약 / 맨 아래 FAQ)
         "summary": summary, "faq": faq,
+        # 글 맨 첫 문단(검색어로 시작하는 1~2문장) — 검색 설명이 없을 때 미리보기에 쓰인다
+        "lead": " ".join(lead.split()),
     }
 
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"

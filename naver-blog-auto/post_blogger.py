@@ -75,6 +75,8 @@ def build_html(data, cfg=None):
     """네이버에 올린 것과 같은 구성의 HTML 본문(요약 → 인사 → 뉴스블록 → 안전수칙 → FAQ → 마무리 → CTA)."""
     cfg = cfg or load_config()
     parts = []
+    if data.get("lead"):                          # 검색어로 시작하는 첫 문단(검색 미리보기용)
+        parts.append(f"<p>{_esc(data['lead'])}</p>")
     if data.get("summary"):
         items = [l.lstrip("·-• ").strip() for l in data["summary"].splitlines() if l.strip()]
         parts.append("<h3>📌 3줄 요약</h3><ul>"

@@ -475,6 +475,10 @@ USER = """시리즈: '재난안전과 GeoAI' 블로그의 개념 시리즈 {n}�
 
 ===요약===
 이 글의 핵심 3줄. 각 줄은 '· '로 시작하고 40자 내외, 한 줄에 하나의 내용만.
+===리드===
+검색 결과 미리보기에 쓰일 글 첫 문단. 1~2문장, 합쳐서 80~150자.
+제목 맨 앞(' | ' 앞)의 검색어를 첫 문장 앞부분에 그대로 넣고, 이 글에서 무엇을 알 수 있는지 평서문으로 쓴다.
+인사·질문·'이번 글에서는' 같은 머리말로 시작하지 않는다. 확인되지 않은 수치는 넣지 않는다.
 ===도입===
 이 개념이 왜 필요한지 보여주는 짧은 장면이나 질문으로 시작하는 1~2단락(250자 이상).
 ===본문===
@@ -646,6 +650,7 @@ def generate(idx, topic, cfg=None, recent=()):
             "slug": slug, "title": post_title(topic), "index": SERIES_NO.get(slug, idx),
             "family": family_of(slug)[0], "family_total": len(family_of(slug)[1]),
             "summary": _lines(S.get("요약", ""))[:3],
+            "lead": " ".join(S.get("리드", "").split()),
             "intro": S.get("도입", ""), "sections": secs,
             "howto": _steps(S.get("따라하기", "")),
             "prompts": _prompts(S.get("프롬프트", "")),
@@ -729,6 +734,8 @@ def build_html(data, cfg=None, with_links=True, step_image="", shots=None):
     shots: 사람이 찍어 둔 실제 화면 캡처(geoai_shots.upload_for) — 있으면 도식보다 앞선다."""
     cfg = cfg or load_config()
     P = []
+    if data.get("lead"):                          # 검색어로 시작하는 첫 문단(검색 미리보기용)
+        P.append(f"<p>{_esc(data['lead'])}</p>")
     if data.get("summary"):
         P.append("<h3>📌 3줄 요약</h3><ul>"
                  + "".join(f"<li>{_esc(s)}</li>" for s in data["summary"]) + "</ul>")

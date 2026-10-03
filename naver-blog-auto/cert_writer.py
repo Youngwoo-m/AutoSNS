@@ -44,6 +44,10 @@ USER = """세명대학교 재난안전학과 블로그의 '재난안전 자격�
 
 ===요약===
 핵심 3줄. 각 줄 '· '로 시작, 40자 내외.
+===리드===
+검색 결과 미리보기에 쓰일 글 첫 문단. 1~2문장, 합쳐서 80~150자.
+제목 맨 앞(' | ' 앞)의 검색어를 첫 문장 앞부분에 그대로 넣고, 이 글에서 무엇을 알 수 있는지 평서문으로 쓴다.
+인사·질문·'이번 글에서는' 같은 머리말로 시작하지 않는다. 확인되지 않은 수치는 넣지 않는다.
 ===본문===
 문단 3~5개. 문단 사이는 빈 줄로 나눈다. 소제목은 쓰지 않는다.
 ===FAQ===
@@ -93,6 +97,10 @@ ADMISSION_USER = """세명대학교 재난안전학과 블로그의 '입시' 시
 
 ===요약===
 핵심 3줄. 각 줄 '· '로 시작, 40자 내외.
+===리드===
+검색 결과 미리보기에 쓰일 글 첫 문단. 1~2문장, 합쳐서 80~150자.
+제목 맨 앞(' | ' 앞)의 검색어를 첫 문장 앞부분에 그대로 넣고, 이 글에서 무엇을 알 수 있는지 평서문으로 쓴다.
+인사·질문·'이번 글에서는' 같은 머리말로 시작하지 않는다. 확인되지 않은 수치는 넣지 않는다.
 ===본문===
 문단 3~5개. 문단 사이는 빈 줄로 나눈다. 소제목은 쓰지 않는다.
 ===FAQ===
@@ -119,7 +127,7 @@ def _split(text):
 
 
 def write(n, total, title, angle, cfg=None, profile="cert"):
-    """→ {"summary": [3줄], "paras": [문단], "faq": [(q, a)]}  실패하면 예외.
+    """→ {"summary": [3줄], "paras": [문단], "faq": [(q, a)], "lead": 첫 문단}  실패하면 예외.
 
     profile 은 PROFILES 의 key — 시리즈마다 지킬 것이 달라서다. 모르는 key 가 오면
     자격증 지침으로 조용히 넘어가지 않고 멈춘다(입시 글에 큐넷 안내가 나가는 쪽이
@@ -139,6 +147,7 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
     summary = [re.sub(r"^[·\-•*]\s*", "", l).strip()
                for l in S.get("요약", "").splitlines() if l.strip()][:3]
     paras = [p.strip() for p in re.split(r"\n\s*\n", S.get("본문", "")) if p.strip()]
+    lead = " ".join(S.get("리드", "").split())   # 없으면 빈 문자열 — 글은 그대로 나간다
     faq = []
     for q, a in re.findall(r"Q\.\s*(.+?)\n\s*A\.\s*(.+?)(?=\nQ\.|\Z)",
                            S.get("FAQ", ""), flags=re.S):
@@ -146,7 +155,7 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
     if len(summary) < 2 or len(paras) < 3:
         raise RuntimeError(f"형식 미달(요약 {len(summary)}줄, 문단 {len(paras)}개)")
     log(f"{kind} 본문 생성: {sum(len(p) for p in paras)}자 / 문단 {len(paras)} / FAQ {len(faq)}")
-    return {"summary": summary, "paras": paras, "faq": faq[:3]}
+    return {"summary": summary, "paras": paras, "faq": faq[:3], "lead": lead}
 
 
 def _llm_client(cfg):

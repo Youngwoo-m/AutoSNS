@@ -182,11 +182,14 @@ def _episode_image(ser, ep, dry=False):
         return ""
 
 
-def build_html(summary, paras, faq, vid, hub, label, generated, image_url="", photo_html=""):
+def build_html(summary, paras, faq, vid, hub, label, generated, image_url="", photo_html="",
+               lead=""):
     """한 편의 본문. generated=True 면 문단을 걸러서 넣는다(모델이 쓴 글이라).
 
-    image_url 이 있으면 요약 바로 아래에 그림을 넣는다(입시 11편 인포그래픽 등)."""
-    P = ["<h3>📌 3줄 요약</h3><ul>"
+    image_url 이 있으면 요약 바로 아래에 그림을 넣는다(입시 11편 인포그래픽 등).
+    lead 는 검색어로 시작하는 첫 문단(검색 미리보기용) — 모델이 쓴 편에만 있다."""
+    P = [f"<p>{_esc(lead)}</p>" if lead else "",
+         "<h3>📌 3줄 요약</h3><ul>"
          + "".join(f"<li>{_esc(x)}</li>" for x in summary) + "</ul>"]
     if image_url:
         P.append('<p style="text-align:center"><img src="%s" alt="%s" '
@@ -233,6 +236,7 @@ def main():
                 slug, title, _angle, tags = ep
                 vid = (ser.get("videos") or {}).get(slug, "")   # 짝이 맞는 편만
             full_title = f"{title} [{n}/{total}]"
+            lead = ""
             if full_title in have:
                 continue
             if posted >= DAILY_LIMIT:
@@ -257,6 +261,7 @@ def main():
                           f"{type(e).__name__}: {str(e)[:90]}")
                     break
                 summary, paras, faq = w["summary"], w["paras"], w["faq"]
+                lead = w.get("lead", "")
             image_url = _episode_image(ser, ep, dry=False)
             photo = ""
             if not image_url:
@@ -264,7 +269,7 @@ def main():
                 photo = _photo(full_title, " ".join(summary or []), cfg)
             content = build_html(summary, paras, faq, vid, ser["hub"], ser["label"],
                                  generated=(ser["kind"] == "generated"),
-                                 image_url=image_url, photo_html=photo)
+                                 image_url=image_url, photo_html=photo, lead=lead)
             # 대표 라벨을 맨 앞에 — Blogger 사이드바에서 카테고리로 쓰인다
             labels = list(dict.fromkeys([ser["label"]] + list(tags)))[:maxn]
             body = {"title": full_title, "content": content, "labels": labels,
