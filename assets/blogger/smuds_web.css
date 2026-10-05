@@ -1,0 +1,24 @@
+/* ── 학과 블로그(smuds2026, Contempo) 웹 화면 다듬기 2026-10-06 ────────────
+   Contempo 는 이미 반응형이라 휴대폰은 그대로 둔다. 고친 것:
+   · 왼쪽 사이드바 맨 위 칸(#sidebar_top)이 가로 배치(flex)에 높이 480px 고정이라
+     '바로가기'·'카테고리'가 132px·88px 로 찌그러지고 아래가 비었다
+     → 세로로 쌓고 높이 고정을 풀고, 칸마다 옅은 카드로.
+   · 카테고리는 접혀 있어 눌러야 보였다 → 처음부터 펼친다(스크립트).
+   · PC 에서 본문·요약 글자 15px → 16~17px, 줄 간격 넓힘. 글 카드에 옅은 그림자.
+   넣은 곳: 레이아웃 → 사이드바 맨 위 숨긴 'HTML/자바스크립트' 가젯(smuds_web_gadget.html).
+   되돌리려면 그 가젯만 지우면 된다.
+   ─────────────────────────────────────────────────────────────── */
+#sidebar_top{display:block !important}
+#sidebar_top,.sidebar_top_wrapper{height:auto !important;min-height:0 !important}
+.sidebar_top_wrapper{background:transparent !important;padding:14px 12px 0 !important}
+.sidebar-container .section{box-sizing:border-box !important}
+.sidebar-container .section:not(#sidebar_top){padding:0 12px !important;margin:0 !important}
+.sidebar-container .widget{width:auto !important;margin:0 0 14px !important;background:#f7f9fc;border:1px solid #e3e8ef;border-radius:12px;padding:14px 16px !important;box-sizing:border-box}
+.sidebar-container .widget .title{font-size:15px !important;font-weight:700 !important;color:#1b2333 !important}
+.sidebar-container .widget li{padding:4px 0}
+@media (min-width:969px){
+  .centered{max-width:980px !important}
+  .post-outer-container{border-radius:14px;box-shadow:0 2px 12px rgba(27,35,51,.07)}
+  .snippet-item,.post-snippet{font-size:16px !important;line-height:1.75 !important}
+  .post-body{font-size:17px !important;line-height:1.9 !important}
+}
