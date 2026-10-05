@@ -11,9 +11,11 @@ X 에서는 링크 글보다 영상 글이 더 멀리 퍼지기도 한다. 링�
   4) GET  /2/media/upload?command=STATUS&media_id=…  (processing_info 가 있으면 끝날 때까지)
   5) POST /2/tweets  {text, media: {media_ids: [id]}}
 
-설정(config.json, git 제외):
-  "x": {"enabled": true, "api_key": "...", "api_secret": "...",
-        "access_token": "...", "access_secret": "..."}
+인증(git 제외 파일):
+  - OAuth 2.0(쓰는 방식): config.json "x": {"enabled", "username", "oauth2_client_id",
+    "oauth2_client_secret"} + x_token.json(접근·갱신 토큰, 2시간마다 자동 갱신). 권한은
+    tweet.read tweet.write users.read media.write offline.access 만(2026-10-06 승인).
+  - 또는 OAuth 1.0a 키 4개: "api_key", "api_secret", "access_token", "access_secret"
 
 부가 채널이라 실패해도 예외를 올리지 않는다 — 결과 dict 만 돌려준다(유튜브 발행은 그대로).
 수동 시험:  python x_post.py <영상.mp4> "글"        (기본 dry-run: 업로드 없이 본문만 점검)
@@ -68,12 +70,47 @@ def compose(title, summary="", tags=()):
     return _fit("\n\n".join(p for p in parts if p))
 
 
+TOKEN_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "x_token.json")
+
+
+def _refresh_token(x, tok):
+    """OAuth 2.0 접근 토큰(2시간)을 갱신 토큰으로 새로 받는다. 갱신 토큰도 매번 바뀌니 함께 저장한다
+    — 저장을 놓치면 다음 갱신이 실패해 다시 브라우저 승인을 받아야 한다."""
+    import requests
+    r = requests.post(f"{API}/oauth2/token", data={
+        "grant_type": "refresh_token", "refresh_token": tok["refresh_token"],
+        "client_id": x["oauth2_client_id"]},
+        auth=(x["oauth2_client_id"], x["oauth2_client_secret"]), timeout=30)
+    j = r.json() if r.content else {}
+    if r.status_code >= 300 or not j.get("access_token"):
+        raise RuntimeError(f"X 토큰 갱신 실패 http {r.status_code}: "
+                           f"{ {k: v for k, v in j.items() if 'token' not in k} } — 브라우저 승인을 다시 받아야 함")
+    tok = {"access_token": j["access_token"], "refresh_token": j.get("refresh_token") or tok["refresh_token"],
+           "scope": j.get("scope", tok.get("scope", "")), "expires_in": j.get("expires_in", 7200),
+           "saved_at": int(time.time())}
+    tmp = TOKEN_PATH + ".part"
+    with open(tmp, "w") as f:
+        json.dump(tok, f, indent=1)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, TOKEN_PATH)
+    return tok
+
+
 def _session(cfg):
-    from requests_oauthlib import OAuth1Session
+    """OAuth 2.0 사용자 토큰(x_token.json, 자동 갱신)이 있으면 그것을, 없으면 OAuth 1.0a 키 4개를 쓴다."""
     x = cfg.get("x") or {}
+    if os.path.exists(TOKEN_PATH) and x.get("oauth2_client_id"):
+        import requests
+        tok = json.load(open(TOKEN_PATH))
+        if time.time() > tok.get("saved_at", 0) + int(tok.get("expires_in") or 7200) - 300:
+            tok = _refresh_token(x, tok)
+        s = requests.Session()
+        s.headers["Authorization"] = f"Bearer {tok['access_token']}"
+        return s
+    from requests_oauthlib import OAuth1Session
     keys = [x.get(k) for k in ("api_key", "api_secret", "access_token", "access_secret")]
     if not all(keys):
-        raise RuntimeError("config.x 의 키 4개(api_key/api_secret/access_token/access_secret)가 없습니다.")
+        raise RuntimeError("X 인증 정보가 없습니다(x_token.json + oauth2_client_id, 또는 OAuth 1.0a 키 4개).")
     return OAuth1Session(*keys)
 
 

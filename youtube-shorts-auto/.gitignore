@@ -22,3 +22,7 @@ logs/
 *.mp4
 *.png
 kakao_token.json
+
+# X(트위터) OAuth 2.0 토큰(2시간마다 갱신, 갱신 토큰도 바뀜)
+x_token.json
+x_pkce.json
