@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from analytics.common import OUT_DIR, SNAP_DIR, log, load_part  # noqa: E402
 
-MED = ["유튜브", "인스타그램", "네이버 블로그", "학과 홈페이지"]
+MED = ["유튜브", "인스타그램", "스레드", "네이버 블로그", "블로거", "학과 홈페이지"]
 TYP = ["영상", "숏츠", "이미지", "카드뉴스", "게시글"]
-COLOR = {"유튜브": "#B0402F", "인스타그램": "#6B4E9E",
-         "네이버 블로그": "#2F6E4E", "학과 홈페이지": "#35617F"}
+COLOR = {"유튜브": "#B0402F", "인스타그램": "#6B4E9E", "스레드": "#4A4A6A",
+         "네이버 블로그": "#2F6E4E", "블로거": "#C77700", "학과 홈페이지": "#35617F"}
 
 
 def merge():
@@ -26,11 +26,14 @@ def merge():
     ig = load_part("instagram") or {"items": [], "profile": {}}
     bl = load_part("blog") or {"items": []}
     sm = load_part("smds") or {"items": []}
+    th = load_part("threads") or {"items": []}
+    bg = load_part("blogger") or {"items": []}
     warn = []
     if yt.get("degraded") == "quota":
         warn.append("유튜브 Data API 하루 할당량이 바닥나 RSS 로 받았습니다. "
                     "발행 목록은 정확하지만 조회수·구독자는 지난 집계 값입니다.")
-    for part, label in [(yt, "유튜브"), (ig, "인스타그램"), (bl, "네이버 블로그"), (sm, "학과 홈페이지")]:
+    for part, label in [(yt, "유튜브"), (ig, "인스타그램"), (th, "스레드"),
+                        (bl, "네이버 블로그"), (bg, "블로거"), (sm, "학과 홈페이지")]:
         its = part.get("items") or []
         if its:
             newest = max(x["date"] for x in its)
@@ -44,8 +47,12 @@ def merge():
         rows.append({**x, "media": "유튜브"})
     for x in ig["items"]:
         rows.append({**x, "media": "인스타그램"})
+    for x in th["items"]:
+        rows.append({**x, "media": "스레드"})
     for x in bl["items"]:
         rows.append({**x, "media": "네이버 블로그"})
+    for x in bg["items"]:
+        rows.append({**x, "media": "블로거"})
     for x in sm["items"]:
         rows.append({**x, "media": "학과 홈페이지"})
     rows.sort(key=lambda r: r["date"], reverse=True)
