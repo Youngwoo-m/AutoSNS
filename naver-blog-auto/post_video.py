@@ -34,6 +34,7 @@ def main():
         "video_url": url,
         "sources": p.get("sources", []),
         "category": p.get("category", "동영상뉴스"),
+        "tags": p.get("tags", []),   # 네이버 태그(최대 10개) — 없으면 예전처럼 태그 없이
         "no_banner": True,   # 배너 대신 동영상이 대표
     }
     dry = bool(p.get("dry_run", False))
