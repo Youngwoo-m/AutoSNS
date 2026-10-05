@@ -1,0 +1,37 @@
+/* ── 웹(PC) 화면 다듬기 2026-10-06 ─────────────────────────────
+   Simple 테마는 본문+사이드바를 960px 로 묶어 넓은 화면에서 글 카드가 570px 에 그쳤다.
+   1240px 이상이면 1200px, 그 사이면 화면 폭에 맞춰 넓힌다(사이드바 320px).
+   목록(홈·라벨·보관함)은 글 전체가 펼쳐져 페이지가 6만px 넘게 길어졌다 →
+   카드마다 본문 앞부분만 보이고 '계속 읽기' 로 넘어가게 한다.
+   목록 판정: 글이 두 편 이상인 페이지(.date-outer 또는 .post-outer 가 이어짐).
+   넣은 곳: 레이아웃 → sidebar-right-1 맨 위 'HTML/자바스크립트' 가젯(geoai_web_gadget.html 통째로).
+   가젯 자체는 .widget:has(#gx-mark) 로 숨긴다. 되돌리려면 그 가젯만 지우면 된다.
+   같은 날 테마 → 모바일 설정을 '데스크톱'으로 다시 바꿨다(간이 모바일판으로 돌아가 있었다).
+   ──────────────────────────────────────────────────────────── */
+.post-body img{box-sizing:border-box !important}  /* Simple 의 그림 테두리 여백 때문에 휴대폰에서 카드 밖으로 넘쳤다 */
+@media (min-width:1001px){
+  body{min-width:0 !important}
+  .content-outer,.content-fauxcolumn-outer,.region-inner{min-width:0 !important;max-width:1200px !important;width:calc(100% - 40px) !important;margin-left:auto !important;margin-right:auto !important}
+  .main-inner .columns{padding-right:320px !important}
+  .main-inner .column-right-outer{width:320px !important;margin-right:-320px !important}
+  .main-inner .fauxcolumn-right-outer{width:320px !important}
+  .main-inner .column-center-inner{padding-right:22px !important}
+  .post-outer{padding:34px 40px !important}
+  .post-title{font-size:26px !important;line-height:1.35 !important}
+  .post-body{font-size:17px !important;line-height:1.9 !important}
+  .post-body h3{font-size:20px;margin:1.8em 0 .6em}
+}
+/* 목록 카드 — 본문 앞부분만 */
+.blog-posts:has(.date-outer + .date-outer) .post-body,
+.blog-posts:has(.post-outer + .post-outer) .post-body{max-height:440px;overflow:hidden;position:relative}
+.blog-posts:has(.date-outer + .date-outer) .post-body::after,
+.blog-posts:has(.post-outer + .post-outer) .post-body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(255,255,255,0),#fff 85%);pointer-events:none}
+.blog-posts:has(.date-outer + .date-outer) .post-footer,
+.blog-posts:has(.post-outer + .post-outer) .post-footer{display:none !important}
+.gx-more{margin:14px 0 0;text-align:left}
+.gx-more a{display:inline-block;background:#0b1c3a;color:#fff !important;border-radius:999px;padding:9px 20px;text-decoration:none !important;font-size:14px;font-weight:600}
+.gx-more a:hover{background:#1d4ed8}
+@media (max-width:860px){
+  .blog-posts:has(.date-outer + .date-outer) .post-body,
+  .blog-posts:has(.post-outer + .post-outer) .post-body{max-height:360px}
+}

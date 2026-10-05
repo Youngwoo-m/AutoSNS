@@ -1,0 +1,31 @@
+<div id="gx-mark"></div><style>
+.widget:has(#gx-mark){display:none !important}
+.post-body img{box-sizing:border-box !important}
+@media (min-width:1001px){
+  body{min-width:0 !important}
+  .content-outer,.content-fauxcolumn-outer,.region-inner{min-width:0 !important;max-width:1200px !important;width:calc(100% - 40px) !important;margin-left:auto !important;margin-right:auto !important}
+  .main-inner .columns{padding-right:320px !important}
+  .main-inner .column-right-outer{width:320px !important;margin-right:-320px !important}
+  .main-inner .fauxcolumn-right-outer{width:320px !important}
+  .main-inner .column-center-inner{padding-right:22px !important}
+  .post-outer{padding:34px 40px !important}
+  .post-title{font-size:26px !important;line-height:1.35 !important}
+  .post-body{font-size:17px !important;line-height:1.9 !important}
+  .post-body h3{font-size:20px;margin:1.8em 0 .6em}
+}
+.blog-posts:has(.date-outer + .date-outer) .post-body,
+.blog-posts:has(.post-outer + .post-outer) .post-body{max-height:440px;overflow:hidden;position:relative}
+.blog-posts:has(.date-outer + .date-outer) .post-body::after,
+.blog-posts:has(.post-outer + .post-outer) .post-body::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(rgba(255,255,255,0),#fff 85%);pointer-events:none}
+.blog-posts:has(.date-outer + .date-outer) .post-footer,
+.blog-posts:has(.post-outer + .post-outer) .post-footer{display:none !important}
+.gx-more{margin:14px 0 0;text-align:left}
+.gx-more a{display:inline-block;background:#0b1c3a;color:#fff !important;border-radius:999px;padding:9px 20px;text-decoration:none !important;font-size:14px;font-weight:600}
+.gx-more a:hover{background:#1d4ed8}
+@media (max-width:860px){
+  .blog-posts:has(.date-outer + .date-outer) .post-body,
+  .blog-posts:has(.post-outer + .post-outer) .post-body{max-height:360px}
+}
+</style><script>
+(function(){var ps=document.querySelectorAll('.blog-posts .post-outer');if(ps.length<2)return;for(var i=0;i<ps.length;i++){var p=ps[i],a=p.querySelector('.post-title a'),b=p.querySelector('.post-body');if(!a||!b||p.querySelector('.gx-more'))continue;var d=document.createElement('div');d.className='gx-more';var l=document.createElement('a');l.href=a.href;l.textContent='계속 읽기 '+String.fromCharCode(8594);d.appendChild(l);b.parentNode.insertBefore(d,b.nextSibling);}})();
+</script>
