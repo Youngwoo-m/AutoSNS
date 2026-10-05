@@ -54,10 +54,11 @@ def _pixabay(query, key, per_page=20):
 PROVIDERS = {"pexels": _pexels, "pixabay": _pixabay}
 
 
-def find(queries, keys, skip=(), providers=("pexels", "pixabay"), log=print):
+def find(queries, keys, skip=(), providers=("pexels", "pixabay"), log=print, reject=None):
     """검색어를 앞에서부터 차례로, 공급처도 차례로 찾아 처음 맞는 사진 한 장을 준다.
 
     skip 에 든 uid(예: 'pexels:123')는 건너뛴다 — 같은 사진이 여러 글에 반복되지 않게.
+    reject(photo) 가 참이면 그 사진도 건너뛴다(예: 설명문에 사고 장면이 든 사진).
     못 찾으면 None."""
     skip = set(skip or ())
     for q in [q for q in queries if q and q.strip()]:
@@ -67,8 +68,9 @@ def find(queries, keys, skip=(), providers=("pexels", "pixabay"), log=print):
                 continue
             try:
                 for photo in PROVIDERS[name](q.strip(), key):
-                    if photo["uid"] not in skip:
-                        return photo
+                    if photo["uid"] in skip or (reject and reject(photo)):
+                        continue
+                    return photo
             except Exception as e:
                 log(f"  {name} 사진 검색 실패('{q}'): {type(e).__name__}: {str(e)[:80]}")
     return None

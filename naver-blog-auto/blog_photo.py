@@ -37,7 +37,30 @@ Rules:
 - The photo will be labelled as an illustrative stock photo, so NEVER name a specific
   event, date, place name, organisation, brand or real person.
 - Avoid gore, injured people, victims or anything distressing.
+- NEVER depict the accident or disaster moment itself, or anything that re-enacts it
+  (falling, crash, collision, collapse, explosion, drowning, a person in danger).
+  The post may be about a real accident where people died; a photo that looks like
+  that moment hurts readers and can be mistaken for the scene.
+  Show prevention and preparedness instead: safety equipment, inspection, barriers,
+  warning signs, responders training, monitoring screens, a calm general view of the place.
+  e.g. a festival accident -> "festival crowd safety barrier", not "performer falling".
 - Line 1 most specific to the topic, line 3 broad but still relevant."""
+
+# 위 지시를 어기고 나온 검색어는 버린다 — 사고 순간을 묘사하는 말이 든 것.
+# (2026-10-04 줄타기 공연자 추락 사망 브리핑에 'tightrope performer falling' 사진이 붙었다)
+BANNED = re.compile(
+    r"\b(fall|falls|falling|fallen|crash\w*|collision|collid\w*|collaps\w*|explo\w*|"
+    r"drown\w*|accident|injur\w*|victim\w*|dead|death|dying|wreck\w*|burning\s+(house|car|building)|"
+    r"blood\w*|corpse|rubble\s+person|trapped)\b", re.I)
+# 검색어가 멀쩡해도 사진이 엉뚱할 수 있다 — 'festival crowd safety barrier' 에 Pexels 가
+# 불 쇼·오토바이 스턴트 사진을 줬다. 사진 설명(alt)에 이런 말이 있으면 버린다.
+RISKY_ALT = re.compile(r"stunt|daredevil|acrobat|tightrope|slackline|fire (performance|show|breath)|"
+                       r"jump\w*|flip|extreme", re.I)
+
+
+def _risky(photo):
+    alt = photo.get("alt") or ""
+    return bool(BANNED.search(alt) or RISKY_ALT.search(alt))
 
 
 def _enabled(cfg):
@@ -61,6 +84,9 @@ def queries_for(title, summary="", cfg=None):
     for ln in lines:
         q = re.sub(r"^[\s\-\*\d\.\)]+", "", ln).strip().strip('"').strip()
         if q and re.fullmatch(r"[A-Za-z][A-Za-z \-']{2,40}", q):
+            if BANNED.search(q):
+                log(f"자료사진 검색어 버림(사고 장면 묘사): '{q}'")
+                continue
             out.append(q)
     return out[:3]
 
@@ -116,7 +142,8 @@ def photo_html(title, summary="", cfg=None, dry_run=False):
     if not queries:
         return ""
     hist = _history()
-    photo = stock_photo.find(queries, keys, skip=hist, providers=_order(hist), log=log)
+    photo = stock_photo.find(queries, keys, skip=hist, providers=_order(hist), log=log,
+                             reject=_risky)
     if not photo:
         log(f"자료사진 없음(검색어 {queries}) — 사진 없이 발행")
         return ""
