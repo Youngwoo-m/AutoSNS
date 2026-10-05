@@ -608,8 +608,10 @@ def _first_comment_text(data, cfg):
          "여러분 지역은 안전한가요? 겪은 일이나 궁금한 점을 댓글로 남겨주세요! 👇").strip()
     # 유튜브로 넘기는 한 줄(채널 간 순환). 인스타 댓글의 링크는 클릭되지 않으므로 채널명으로 안내.
     yt = (cfg.get("instagram", {}).get("youtube_cta") or "").strip()
+    # X 계정 안내(2026-10-06 X 개설). 인스타는 링크가 클릭되지 않아 아이디로 안내한다.
+    xc = (cfg.get("instagram", {}).get("x_cta") or "").strip()
     extras = _caption_extras(data, cfg)
-    return "\n\n".join(p for p in (q, yt, extras) if p).strip()
+    return "\n\n".join(p for p in (q, yt, xc, extras) if p).strip()
 
 
 def _build_caption(data, cfg):
@@ -617,7 +619,8 @@ def _build_caption(data, cfg):
     body, extras = _caption_body(data, cfg), _caption_extras(data, cfg)
     if cfg.get("instagram", {}).get("first_comment", False):
         return body          # 부속은 첫 댓글로
-    return "\n\n".join(p for p in (body, extras) if p).strip()
+    xc = (cfg.get("instagram", {}).get("x_cta") or "").strip()
+    return "\n\n".join(p for p in (body, xc, extras) if p).strip()
 
 
 def _post_first_comment(driver, username, text, dry=False):

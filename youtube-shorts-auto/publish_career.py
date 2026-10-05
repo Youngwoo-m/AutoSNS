@@ -71,18 +71,34 @@ def _upload(ep):
     video = os.path.join(BASE_DIR, ep["video"])
     if not os.path.exists(video):
         raise FileNotFoundError(f"영상 없음: {video}")
-    # 시리즈 몰아보기 링크를 설명 첫 부분에 붙여 연속 시청을 유도한다.
+    # 설명 = 본문 → 시리즈 몰아보기 → 채널 링크(인스타·블로그·스레드·X) → 해시태그.
+    # 해시태그 줄은 맨 끝에 둔다(유튜브가 마지막 해시태그를 제목 위에 띄운다). 채널 링크는
+    # 2026-10-06 X 개설 때 퀴즈·진로 설명에 하나도 없던 것을 뉴스 영상과 같게 채웠다.
     desc = ep["description"]
     try:
         from common import load_config
         yc = load_config().get("youtube", {})
+        lines = desc.rstrip().splitlines()
+        tags = []
+        while lines and (lines[-1].strip().startswith("#") or not lines[-1].strip()):
+            ln = lines.pop()
+            if ln.strip():
+                tags.insert(0, ln)
+        parts = ["\n".join(lines).rstrip()]
         kind = "quiz" if ep.get("series") == "quiz" else "career"
         pid = (yc.get("playlists", {}) or {}).get(kind)
         label = (yc.get("playlist_labels", {}) or {}).get(kind, "시리즈 전편 보기")
         if pid:
-            desc = f"{desc}\n\n▶ {label}: https://www.youtube.com/playlist?list={pid}"
+            parts.append(f"▶ {label}: https://www.youtube.com/playlist?list={pid}")
+        links = [f"{l.get('label', '').strip()}: {l['url'].strip()}"
+                 for l in (yc.get("channel_links") or []) if (l.get("url") or "").strip()]
+        if links:
+            parts.append("\n".join(links))
+        if tags:
+            parts.append("\n".join(tags))
+        desc = "\n\n".join(x for x in parts if x)
     except Exception:
-        pass
+        desc = ep["description"]
     body = {
         "snippet": {
             "title": ep["title"][:100],
