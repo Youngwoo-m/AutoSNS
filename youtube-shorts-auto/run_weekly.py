@@ -215,6 +215,15 @@ def main(argv=()):
     except Exception as e:
         log(f"쓰레드 크로스포스트 건너뜀(유튜브는 정상): {type(e).__name__}: {e}")
 
+    # X(트위터) — 영상을 직접 첨부한다(링크 글은 13배 비싸다, 2026-10-06). 실패해도 유튜브는 그대로.
+    try:
+        from x_post import crosspost as x_crosspost
+        xr = x_crosspost(data, summary=_threads_summary(data))
+        if xr.get("status") != "disabled":
+            log(f"X: {xr.get('status')} {xr.get('url', '')}")
+    except Exception as e:
+        log(f"X 크로스포스트 건너뜀(유튜브는 정상): {type(e).__name__}: {e}")
+
     # 카카오톡 '나에게 보내기' 발행 알림(실패해도 발행에는 영향 없음)
     try:
         from kakao_notify import notify

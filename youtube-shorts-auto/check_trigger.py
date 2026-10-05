@@ -241,6 +241,14 @@ def main(dry=False):
                           r.get("url", ""), data.get("hashtags") or []))
     except Exception as e:
         log(f"[트리거] 쓰레드 건너뜀(유튜브는 정상): {type(e).__name__}")
+    try:                                   # X — 영상 첨부(부가 채널)
+        from x_post import crosspost as x_crosspost
+        from run_weekly import _threads_summary
+        xr = x_crosspost(data, summary=_threads_summary(data))
+        if xr.get("status") != "disabled":
+            log(f"[트리거] X: {xr.get('status')} {xr.get('url', '')}")
+    except Exception as e:
+        log(f"[트리거] X 건너뜀(유튜브는 정상): {type(e).__name__}")
 
     # 상태 기록
     now = datetime.now(timezone.utc).isoformat()

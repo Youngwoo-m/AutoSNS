@@ -153,6 +153,21 @@ def _post_threads(ep, url):
     return status
 
 
+def _post_x(ep):
+    """X 에 영상을 첨부해 올린다. 예외를 올리지 않고 상태 문자열만 돌려준다."""
+    try:
+        from x_post import crosspost
+        v = ep.get("video") or ""
+        v = v if os.path.isabs(v) else os.path.join(BASE_DIR, v)
+        r = crosspost({"title": ep.get("title", ""), "tags": ep.get("tags") or []}, video=v)
+        if r.get("status") != "disabled":
+            log(f"  X 게시 상태: {r.get('status')} {r.get('url', '')}")
+        return r.get("status", "unknown")
+    except Exception as e:
+        log(f"  X 건너뜀(유튜브는 정상): {type(e).__name__}: {str(e)[:120]}")
+        return "error"
+
+
 def _post_instagram(ep, dry=False):
     """insta-cardnews venv 로 릴 게시(subprocess). 절대 예외를 올리지 않고 상태 문자열 반환.
 
@@ -237,15 +252,18 @@ def main(argv):
     ig_status = "skipped" if no_ig else _post_instagram(ep)
     # 3) 스레드(부가 채널) — 위와 같이 실패해도 유튜브 발행은 유지
     th_status = "skipped" if no_threads else _post_threads(ep, url)
+    # 4) X(부가 채널) — 영상 첨부. 설정이 꺼져 있으면 'disabled'
+    x_status = _post_x(ep)
 
     ep["published"] = {
         "youtube": url,
         "instagram": ig_status,
         "threads": th_status,
+        "x": x_status,
         "at": datetime.datetime.now().isoformat(timespec="seconds"),
     }
     _save(sched)
-    log(f"[{ep.get('label', ep['no'])}] 발행 완료 — YT:{url}  IG:{ig_status}  TH:{th_status}")
+    log(f"[{ep.get('label', ep['no'])}] 발행 완료 — YT:{url}  IG:{ig_status}  TH:{th_status}  X:{x_status}")
     try:                        # 카카오톡 발행 알림(실패 무시)
         from kakao_notify import notify
         notify(f"[SMUDS 발행완료] 진로/퀴즈 {ep.get('label', ep['no'])}\n"

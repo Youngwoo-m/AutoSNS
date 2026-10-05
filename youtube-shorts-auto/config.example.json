@@ -200,5 +200,13 @@
         "header_text": "SMU GeoAI 재난브리핑"
       }
     }
+  },
+  "x": {
+    "enabled": false,
+    "username": "학과 X 계정 아이디(@ 없이)",
+    "api_key": "",
+    "api_secret": "",
+    "access_token": "",
+    "access_secret": ""
   }
 }
