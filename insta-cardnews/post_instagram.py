@@ -745,6 +745,44 @@ def _select_original_crop(driver):
         return False
 
 
+COVER_LABELS = ["커버 사진", "Cover photo", "커버", "Cover"]
+COVER_PICK_LABELS = ["컴퓨터에서 선택", "Select from computer", "컴퓨터에서 업로드", "Upload from computer"]
+
+
+def _set_reel_cover(driver, path):
+    """편집 화면의 '커버 사진'에 이미지를 올린다(data['cover'] 가 있을 때만). best-effort.
+
+    웹 릴 편집 단계의 커버 영역에 이미지용 input[type=file] 이 숨어 있다. 바로 못 찾으면
+    '커버 사진'·'컴퓨터에서 선택'을 눌러 연 뒤 다시 찾는다. 성공하면 True."""
+    from selenium.webdriver.common.by import By
+
+    def _img_input():
+        for el in driver.find_elements(By.CSS_SELECTOR, "input[type='file']"):
+            acc = (el.get_attribute("accept") or "").lower()
+            if "image" in acc and "video" not in acc:
+                return el
+        return None
+
+    inp = _img_input()
+    if inp is None:
+        _click_by_labels(driver, COVER_LABELS, timeout=3)
+        time.sleep(1.5)
+        inp = _img_input()
+    if inp is None:
+        _click_by_labels(driver, COVER_PICK_LABELS, timeout=3)
+        time.sleep(1.5)
+        inp = _img_input()
+    if inp is None:
+        return False
+    inp.send_keys(os.path.abspath(path))
+    time.sleep(4)
+    _click_by_labels(driver, ["완료", "Done", "저장", "Save"], timeout=3)   # 커버 창이 따로 열리는 경우
+    time.sleep(1.5)
+    shot(driver, "reel_cover_set")
+    log("릴 커버 이미지 설정.")
+    return True
+
+
 def post_reel(data, dry_run=None):
     """카드 슬라이드쇼 영상(data['reel'])을 인스타 릴로 게시한다. (음악은 영상에 포함됨)
 
@@ -820,10 +858,17 @@ def post_reel(data, dry_run=None):
 
         # 3) 캡션 화면까지 '다음' 전진 (영상 처리 대기 포함, 최대 5단계)
         advanced = False
+        cover = data.get("cover")
+        cover_done = not (cover and os.path.exists(cover))
         for step in range(1, 6):
             if _caption_box(driver) is not None:
                 advanced = True
                 break
+            # 3-0) 편집 단계(자르기 다음 화면)에서 커버 이미지 — data['cover'] 가 있을 때만
+            if not cover_done and step >= 2:
+                cover_done = _set_reel_cover(driver, cover)
+                if not cover_done:
+                    shot(driver, f"reel_cover_try_{step}")
             if not _click_next(driver):
                 time.sleep(3)  # 아직 처리 중일 수 있으니 잠깐 더 대기
                 if not _click_next(driver):
@@ -838,6 +883,8 @@ def post_reel(data, dry_run=None):
             shot(driver, "reel_nav_stuck")
             raise RuntimeError("릴 캡션 화면까지 진행하지 못했습니다.")
         shot(driver, "reel_caption_screen")
+        if cover and not cover_done:
+            log("⚠ 릴 커버 이미지를 넣지 못함 — 인스타가 고른 기본 프레임으로 게시됩니다.")
 
         # 4) 캡션 입력
         if not _type_caption(driver, caption):
