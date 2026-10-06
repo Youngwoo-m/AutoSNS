@@ -154,6 +154,31 @@ def _upload_video(s, path):
     return mid
 
 
+def _x_ready(video):
+    """X 가 받는 형식(H.264 + AAC, yuv420p)이 아니면 H.264 로 바꾼 사본 경로를, 맞으면 원본을 준다.
+
+    유튜브에서 받은 영상 상당수가 AV1 이라 X 처리 단계가 99% 에서 'failed' 로 끝났다
+    (2026-10-06 학과 소개 1편). 우리가 만든 숏폼은 원래 H.264 라 그대로 간다."""
+    import subprocess
+    ff = "/usr/local/bin/ffmpeg" if os.path.exists("/usr/local/bin/ffmpeg") else "ffmpeg"
+    info = subprocess.run([ff, "-hide_banner", "-i", video], capture_output=True, text=True).stderr
+    vline = next((l for l in info.splitlines() if "Video:" in l), "")
+    aline = next((l for l in info.splitlines() if "Audio:" in l), "")
+    # yuvj420p(전체 범위)도 X 가 받는다 — 우리 숏폼이 이 형식이고 시험 게시가 정상이었다.
+    if " h264 " in vline and ("yuv420p" in vline or "yuvj420p" in vline) and (not aline or " aac " in aline):
+        return video
+    out = os.path.splitext(video)[0] + ".x264.mp4"
+    if not (os.path.exists(out) and os.path.getmtime(out) >= os.path.getmtime(video)):
+        r = subprocess.run([ff, "-hide_banner", "-loglevel", "error", "-y", "-i", video,
+                            "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
+                            "-profile:v", "high", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+                            "-movflags", "+faststart", out], capture_output=True, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(f"H.264 변환 실패: {r.stderr[-200:]}")
+        log(f"X: H.264 로 변환 — {os.path.basename(video)} ({vline.split('Video:')[-1].split(',')[0].strip()})")
+    return out
+
+
 def post_video(text, video, dry_run=None, cfg=None):
     """영상 첨부 글을 올린다. {'status': 'published'|'dry_run'|'disabled'|'error', ...}"""
     cfg = cfg or load_config()
@@ -169,7 +194,7 @@ def post_video(text, video, dry_run=None, cfg=None):
     try:
         s = _session(cfg)
         t0 = time.time()
-        mid = _upload_video(s, video)
+        mid = _upload_video(s, _x_ready(video))
         j = _check(s.post(f"{API}/tweets", json={"text": text, "media": {"media_ids": [str(mid)]}}),
                    "게시")
         tid = (j.get("data") or {}).get("id", "")
