@@ -13,10 +13,11 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from analytics.common import OUT_DIR, SNAP_DIR, log, load_part  # noqa: E402
 
-MED = ["유튜브", "인스타그램", "스레드", "네이버 블로그", "블로거", "학과 홈페이지"]
+MED = ["유튜브", "인스타그램", "스레드", "엑스", "네이버 블로그", "블로거", "학과 홈페이지"]
 TYP = ["영상", "숏츠", "이미지", "카드뉴스", "게시글"]
 COLOR = {"유튜브": "#B0402F", "인스타그램": "#6B4E9E", "스레드": "#4A4A6A",
-         "네이버 블로그": "#2F6E4E", "블로거": "#C77700", "학과 홈페이지": "#35617F"}
+         "엑스": "#1C1C1C", "네이버 블로그": "#2F6E4E", "블로거": "#C77700",
+         "학과 홈페이지": "#35617F"}
 
 
 def merge():
@@ -27,12 +28,13 @@ def merge():
     bl = load_part("blog") or {"items": []}
     sm = load_part("smds") or {"items": []}
     th = load_part("threads") or {"items": []}
+    xx = load_part("x") or {"items": []}
     bg = load_part("blogger") or {"items": []}
     warn = []
     if yt.get("degraded") == "quota":
         warn.append("유튜브 Data API 하루 할당량이 바닥나 RSS 로 받았습니다. "
                     "발행 목록은 정확하지만 조회수·구독자는 지난 집계 값입니다.")
-    for part, label in [(yt, "유튜브"), (ig, "인스타그램"), (th, "스레드"),
+    for part, label in [(yt, "유튜브"), (ig, "인스타그램"), (th, "스레드"), (xx, "엑스"),
                         (bl, "네이버 블로그"), (bg, "블로거"), (sm, "학과 홈페이지")]:
         its = part.get("items") or []
         if its:
@@ -49,6 +51,8 @@ def merge():
         rows.append({**x, "media": "인스타그램"})
     for x in th["items"]:
         rows.append({**x, "media": "스레드"})
+    for x in xx["items"]:
+        rows.append({**x, "media": "엑스"})
     for x in bl["items"]:
         rows.append({**x, "media": "네이버 블로그"})
     for x in bg["items"]:
@@ -61,15 +65,16 @@ def merge():
 
 
 def fill_missing_titles(rows):
-    """캡션 없이 올라간 인스타 릴스는 제목이 비어 "(제목 없음)" 으로 찍힌다.
-    같은 날(±1일) 유튜브 영상을 그대로 올린 것이라 그 제목을 빌려 쓰고 추정 표시를 단다.
+    """제목이 빈 글(캡션 없이 올라간 인스타 릴스, 본문 기록 전의 엑스 글)을 채운다.
+
+    둘 다 같은 날 유튜브 영상을 그대로 올린 것이라 그 제목을 빌려 쓰고 추정 표시를 단다.
     빌릴 것이 없으면 비운 채로 둔다."""
     yt = {}
     for r in rows:
         if r["media"] == "유튜브" and r["title"].strip():
             yt.setdefault(r["date"], r["title"])
     for r in rows:
-        if r["title"].strip() or r["media"] != "인스타그램":
+        if r["title"].strip() or r["media"] not in ("인스타그램", "엑스"):
             continue
         d = datetime.strptime(r["date"], "%Y-%m-%d")
         for off in (0, -1, 1):

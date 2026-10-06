@@ -179,6 +179,27 @@ def _x_ready(video):
     return out
 
 
+POSTS_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "x_posts.json")
+
+
+def _record(tid, url, text):
+    """올린 글을 남긴다(집계용).
+
+    X API 는 쓴 만큼 돈을 낸다 — 실적을 세자고 조회 API 를 때리면 크레딧이 샌다.
+    올리는 순간이 공짜로 아는 유일한 시점이라 여기서 적어 둔다."""
+    try:
+        rec = {}
+        if os.path.exists(POSTS_LOG):
+            with open(POSTS_LOG, "r", encoding="utf-8") as f:
+                rec = json.load(f)
+        rec[tid] = {"url": url, "text": text,
+                    "at": time.strftime("%Y-%m-%d %H:%M:%S")}
+        with open(POSTS_LOG, "w", encoding="utf-8") as f:
+            json.dump(rec, f, ensure_ascii=False, indent=1)
+    except Exception as e:
+        log(f"X: 게시 기록 실패({type(e).__name__}) — 게시에는 영향 없음")
+
+
 def post_video(text, video, dry_run=None, cfg=None):
     """영상 첨부 글을 올린다. {'status': 'published'|'dry_run'|'disabled'|'error', ...}"""
     cfg = cfg or load_config()
@@ -201,6 +222,7 @@ def post_video(text, video, dry_run=None, cfg=None):
         user = x.get("username", "i")
         url = f"https://x.com/{user}/status/{tid}" if tid else ""
         log(f"X: 게시 완료({time.time() - t0:.0f}초) {url}")
+        _record(tid, url, text)
         return {"status": "published", "id": tid, "url": url}
     except Exception as e:
         log(f"X: 게시 실패(유튜브는 정상): {type(e).__name__}: {str(e)[:200]}")
