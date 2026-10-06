@@ -12,6 +12,7 @@
   인스타 게시물          ← 이미지·카드뉴스
   인스타 릴스            ← 숏츠·영상
   블로그                 ← 네이버 블로그
+  엑스                   ← X(@smuds_official). 양식에 없던 구분이라 한 줄 더한다
   기타                   ← 블로거 smuds2026 (GeoAI 블로그 geoaina 는 제외)
   페이스북 칸            ← 스레드(Threads). 페이스북은 운영하지 않고 스레드를 쓰므로
                             칸 이름도 '페이스북(스레드)' 로 적어 오해가 없게 한다.
@@ -23,7 +24,7 @@ import shutil
 import sys
 from calendar import monthrange
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from analytics.common import OUT_DIR, load_part, log  # noqa: E402
@@ -45,13 +46,30 @@ def sections(rows, ym):
     """양식 순서대로 (구분, 분류, 항목들). 항목은 (내용, 업로드일자, 링크)."""
     cur = [r for r in rows if r["date"][:7] == ym]
 
-    # 블로거·스레드는 주간·월간 리포트의 4개 매체에 들어 있지 않아 따로 읽는다.
+    # 블로거·스레드·엑스는 리포트의 매체 목록과 별개라 따로 읽는다.
+    # 엑스는 본문 기록 전 발행분의 제목이 비는데, 같은 날 유튜브 영상을 그대로 올린
+    # 것이므로 그 제목을 빌린다(주간 리포트와 같은 방식).
+    yt_title = {}
+    for r in cur:
+        if r["media"] == "유튜브" and r["title"].strip():
+            yt_title.setdefault(r["date"], r["title"])
+
+    def _name(item):
+        if item["title"].strip():
+            return item["title"]
+        d = datetime.strptime(item["date"], "%Y-%m-%d")
+        for off in (0, -1, 1):
+            cand = yt_title.get((d + timedelta(days=off)).strftime("%Y-%m-%d"))
+            if cand:
+                return cand + " (제목 추정)"
+        return "(제목 없음)"
+
     def extra(part):
         got = [x for x in (load_part(part) or {}).get("items", []) if x["date"][:7] == ym]
-        return [(x["title"] or "(제목 없음)", x["date"], x.get("url", ""))
+        return [(_name(x), x["date"], x.get("url", ""))
                 for x in sorted(got, key=lambda a: a["date"])]
 
-    blogger, threads = extra("blogger"), extra("threads")
+    blogger, threads, xposts = extra("blogger"), extra("threads"), extra("x")
 
     def pick(media, types=None, sources=None):
         out = []
@@ -73,6 +91,7 @@ def sections(rows, ym):
         ("인스타", "게시물", pick("인스타그램", types=("이미지", "카드뉴스"))),
         ("인스타", "릴스", pick("인스타그램", types=("숏츠", "영상"))),
         ("페이스북(스레드)", None, threads),
+        ("엑스", None, xposts),
         ("블로그", None, pick("네이버 블로그")),
         ("기타", None, blogger),
     ]
