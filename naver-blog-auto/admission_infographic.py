@@ -18,15 +18,19 @@ from selenium.webdriver.common.by import By
 
 from common import BASE_DIR, log, start_chrome
 
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
 OUT_DIR = os.path.join(BASE_DIR, "assets", "admission")
 W = 1200
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
   body { margin:0; background:#fff; }
   #card {
     width:%(w)dpx; box-sizing:border-box; padding:44px 48px 34px;
     background:linear-gradient(160deg,#272C3C 0%%,#334A8E 100%%);
-    color:#fff; font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
   }
   .eyebrow { font-size:16px; letter-spacing:3px; color:#FFA500; font-weight:700; }
   h1 { margin:6px 0 30px; font-size:42px; line-height:1.25; }

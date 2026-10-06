@@ -19,6 +19,10 @@ from selenium.webdriver.common.by import By
 
 from common import POSTS_DIR
 
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
 S = 640
 NAVY, GOLD, SLATE = "#334A8E", "#FFA500", "#272C3C"
 
@@ -53,8 +57,8 @@ CARDS = {
 </div>""",
 }
 
-CSS = f"""
- body{{margin:0;background:#eee;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif}}
+CSS = kopub_bold_css() + f"""
+ body{{margin:0;background:#eee;font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic',sans-serif}}
  .card{{width:{S}px;height:{S}px;position:relative;overflow:hidden;color:#fff;
    display:flex;align-items:center;justify-content:center;margin:20px}}
  .inner{{position:relative;text-align:center;z-index:2}}

@@ -12,14 +12,18 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
 SC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "posts")
 BG = f"file://{SC}/header_bg_1600x400.jpg"
 W, H = 1600, 400
-HTML = f"""<!doctype html><html><head><meta charset="utf-8"><style>
+HTML = f"""<!doctype html><html><head><meta charset="utf-8"><style>{kopub_bold_css()}
  body{{margin:0;background:#fff}}
  #header{{width:{W}px;height:{H}px;position:relative;overflow:hidden;
    background:#07142c url('{BG}') right center/cover no-repeat;
-   font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#fff;
+   font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:#fff;
    display:flex;flex-direction:column;justify-content:center;padding:0 72px;box-sizing:border-box}}
  #header::before{{content:'';position:absolute;inset:0;
    background:linear-gradient(90deg,#07142c 0%,rgba(7,20,44,.92) 42%,rgba(7,20,44,0) 72%)}}

@@ -20,6 +20,23 @@ DOTUM_BOLD = "KoPubWorld Dotum_Pro Bold.otf"
 REQUIRED = (DOTUM_LIGHT, DOTUM_MEDIUM, DOTUM_BOLD)
 
 
+ROOT_FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "FONTS")
+
+
+def kopub_bold_css(font_dir=None, doubled=False):
+    """HTML 이미지에 넣을 @font-face — 글꼴 이름 'KoPub' 의 모든 굵기를 Dotum_Pro Bold 로.
+
+    사용자 지정(2026-10-06): 이미지 속 글자는 전부 KoPubWorld 돋움 Bold. 시스템 글꼴
+    (Apple SD Gothic Neo 등)에 맡기면 렌더 환경에 따라 한글이 깨지거나 글꼴이 바뀐다.
+    doubled=True 면 .format() 템플릿에 그대로 넣을 수 있게 중괄호를 두 겹으로 쓴다."""
+    path = os.path.join(font_dir or ROOT_FONT_DIR, DOTUM_BOLD)
+    if not os.path.exists(path):
+        require_fonts(font_dir or ROOT_FONT_DIR, (DOTUM_BOLD,))
+    css = ("@font-face{font-family:'KoPub';font-weight:100 900;font-style:normal;"
+           f"src:url('file://{path}') format('opentype');}}")
+    return css.replace("{", "{{").replace("}", "}}") if doubled else css
+
+
 def default_font_dir(base_dir):
     """프로젝트 폴더 한 단계 위의 공용 FONTS/."""
     return os.path.join(os.path.dirname(base_dir), "FONTS")

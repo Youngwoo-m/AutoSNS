@@ -15,14 +15,18 @@ from selenium.webdriver.common.by import By
 
 from common import POSTS_DIR, load_config, log, start_chrome
 
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
 DEFAULT_DEPT = "세명대학교 재난안전학과"
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
   body {{ margin:0; padding:0; background:#fff; }}
   #banner {{
     width:1000px; height:420px; box-sizing:border-box; padding:60px 64px 56px;
     background:#111827; color:#fff;
-    font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
   }}
   /* 위·아래 안전 테이프(노랑/검정 사선) */

@@ -18,7 +18,7 @@ from shared import stock_video as _sv  # noqa: E402
 from common import BASE_DIR, POSTS_DIR, load_config, log  # noqa: E402
 
 OUT_DIR = os.path.join(POSTS_DIR, "broll_pexels")
-FONT = os.path.join(os.path.dirname(BASE_DIR), "FONTS", "KoPubWorld Dotum_Pro Medium.otf")
+FONT = os.path.join(os.path.dirname(BASE_DIR), "FONTS", "KoPubWorld Dotum_Pro Bold.otf")  # 이미지 글자는 Bold(사용자 지정)
 
 TOPIC_QUERIES, DEFAULT_QUERY = _sv.TOPIC_QUERIES, _sv.DEFAULT_QUERY
 MAX_CLIPS = 3          # 릴 하나에 쓸 배경 클립 수(서로 다른 촬영자)

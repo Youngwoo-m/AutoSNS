@@ -3,13 +3,17 @@ import os, time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 W,H=2400,420; OUT="/tmp/smuds2026_header.png"
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
 HTML=f"""<!doctype html><html><head><meta charset="utf-8">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<style>
+<style>{kopub_bold_css()}
  body{{margin:0}}
  #h{{width:{W}px;height:{H}px;box-sizing:border-box;background:#fff;position:relative;
      display:flex;align-items:center;padding:0 120px;
-     font-family:'Noto Sans KR','Malgun Gothic',Dotum,sans-serif;
+     font-family:'KoPub','Noto Sans KR','Malgun Gothic',Dotum,sans-serif;
      border-bottom:10px solid #334A8E}}
  #h:after{{content:'';position:absolute;left:0;right:0;bottom:-10px;height:10px;
      background:linear-gradient(90deg,#334A8E 0 62%,#FFA500 62% 100%)}}

@@ -19,12 +19,16 @@ from common import POSTS_DIR, load_config, log
 
 W, H = 1200, 400          # 3:1 — 블로그 폭에 맞춰 얇게
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
+import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+_sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.fonts import kopub_bold_css  # noqa: E402
+
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
   body {{ margin:0; background:#fff; }}
   #banner {{
     width:{w}px; height:{h}px; box-sizing:border-box; padding:44px 52px;
     background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 60%,#0e5a6b 100%);
-    color:#fff; font-family:'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
     justify-content:space-between;
   }}
