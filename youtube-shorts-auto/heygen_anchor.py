@@ -14,6 +14,7 @@ import json
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 
 from common import BASE_DIR, POSTS_DIR, load_config, log
@@ -22,7 +23,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.fonts import DOTUM_BOLD, default_font_dir, require_fonts  # noqa: E402
 
 API = "https://api.heygen.com"
-UPLOAD = "https://upload.heygen.com/v1/talking_photo"
 W, H = 1080, 1920   # 9:16 세로(인스타 릴스·쇼츠 권장 해상도)
 LAYOUT_W = 720      # 레이아웃 좌표를 잡아둔 기준 폭. 실제 영상 폭에 맞춰 배율 환산한다.
 
@@ -35,83 +35,129 @@ def _key():
 
 
 def _req(method, url, body=None, headers=None, raw=None):
-    h = {"X-Api-Key": _key()}
+    h = {"X-Api-Key": _key(), "accept": "application/json"}
     if headers:
         h.update(headers)
     data = raw if raw is not None else (json.dumps(body).encode() if body else None)
     if body is not None:
         h["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=h, method=method)
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.loads(r.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as e:
+        # v3 는 오류 이유를 본문에 준다 — 그대로 보여 줘야 원인을 바로 안다
+        raise RuntimeError(f"HeyGen {method} {url.replace(API, '')} → http {e.code}: "
+                           f"{e.read().decode('utf-8', 'replace')[:300]}")
+
+
+# ── HeyGen API v3 (2026-10-08 이전) ──────────────────────────────────────────────
+# v1·v2 는 2026-10-31 에 종료된다(HeyGen 안내 메일 10/6). 대응:
+#   GET  /v2/voices                       → GET  /v3/voices
+#   POST upload.heygen.com/v1/asset       → POST /v3/assets   (multipart, 필드 file)
+#   POST upload.heygen.com/v1/talking_photo → POST /v3/assets + POST /v3/avatars(type photo)
+#   POST /v2/video/generate               → POST /v3/videos   (type avatar, avatar_id)
+#   GET  /v1/video_status.get?video_id=   → GET  /v3/videos/{video_id}
+# 예전 talking_photo_id 는 v3 '사진 아바타 룩' id 와 같다(GET /v3/avatars/looks 로 확인) —
+# 그대로 avatar_id 로 쓴다. 함수 이름·인자는 그대로 둬 호출부(뉴스·GeoAI·숏츠 시리즈)는 안 바꾼다.
+
+def _upload_asset(path, mime):
+    """파일 하나를 /v3/assets 에 올리고 asset_id 를 돌려준다(최대 32MB)."""
+    import uuid
+    with open(path, "rb") as f:
+        payload = f.read()
+    bnd = "----smuds" + uuid.uuid4().hex
+    raw = (f"--{bnd}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{os.path.basename(path)}\"\r\n"
+           f"Content-Type: {mime}\r\n\r\n").encode() + payload + f"\r\n--{bnd}--\r\n".encode()
+    data = _req("POST", f"{API}/v3/assets", raw=raw,
+                headers={"Content-Type": f"multipart/form-data; boundary={bnd}"})
+    d = data.get("data", data) or {}
+    aid = d.get("asset_id") or d.get("id")
+    if not aid:
+        raise RuntimeError(f"asset_id 없음: {str(data)[:200]}")
+    return aid
 
 
 def list_korean_voices():
     """한국어 보이스만 추려 voice_id 를 보여준다."""
-    data = _req("GET", f"{API}/v2/voices")
-    voices = data.get("data", {}).get("voices", [])
-    ko = [v for v in voices if (v.get("language", "") or "").lower().startswith("korean")
-          or "ko" in (v.get("language", "") or "").lower()]
+    data = _req("GET", f"{API}/v3/voices")
+    d = data.get("data", data)
+    voices = d if isinstance(d, list) else (d.get("voices") or d.get("items") or [])
+    ko = [v for v in voices if "ko" in str(v.get("language", "")).lower()
+          or "korean" in str(v.get("language", "")).lower()]
     for v in ko[:30]:
-        print(f"  {v.get('voice_id')}  {v.get('name')}  ({v.get('gender')}, {v.get('language')})")
+        print(f"  {v.get('voice_id') or v.get('id')}  {v.get('name')}  ({v.get('gender')}, {v.get('language')})")
     if not ko:
         print("한국어 보이스를 못 찾음 — 전체 목록에서 직접 확인하세요.")
 
 
-def upload_photo(path):
-    """정면 사진을 업로드해 talking_photo_id 를 받는다."""
-    with open(path, "rb") as f:
-        raw = f.read()
+def upload_photo(path, name=None):
+    """정면 사진으로 사진 아바타를 만들고 avatar_id(예전 talking_photo_id 자리)를 돌려준다."""
     ct = "image/png" if path.lower().endswith(".png") else "image/jpeg"
-    data = _req("POST", UPLOAD, raw=raw, headers={"Content-Type": ct})
-    tp = data.get("data", {}).get("talking_photo_id")
-    log(f"talking_photo_id = {tp}")
+    aid = _upload_asset(path, ct)
+    res = _req("POST", f"{API}/v3/avatars", body={
+        "type": "photo", "name": name or os.path.splitext(os.path.basename(path))[0],
+        "file": {"type": "asset_id", "asset_id": aid}})
+    d = res.get("data", res) or {}
+    tp = (d.get("avatar_item") or {}).get("id") or d.get("id")
+    for _ in range(60):                       # 사진 아바타 학습은 비동기 — 끝날 때까지
+        st = _req("GET", f"{API}/v3/avatars/looks/{tp}").get("data", {})
+        if st.get("status") == "completed":
+            break
+        if st.get("status") == "failed":
+            raise RuntimeError(f"사진 아바타 실패: {st.get('error')}")
+        time.sleep(5)
+    log(f"avatar_id(talking_photo_id) = {tp}")
     return tp
 
 
 def upload_audio(path):
-    """나레이션 오디오(mp3)를 업로드해 audio_asset_id 를 받는다(우리 남성 TTS 사용용)."""
-    with open(path, "rb") as f:
-        raw = f.read()
-    data = _req("POST", "https://upload.heygen.com/v1/asset", raw=raw,
-                headers={"Content-Type": "audio/mpeg"})
-    aid = (data.get("data", {}) or {}).get("id") or (data.get("data", {}) or {}).get("asset_id")
+    """나레이션 오디오(mp3·wav)를 올려 audio_asset_id 를 받는다(우리 목소리로 립싱크)."""
+    mime = "audio/wav" if path.lower().endswith(".wav") else "audio/mpeg"
+    aid = _upload_asset(path, mime)
     log(f"audio_asset_id = {aid}")
     return aid
+
+
+def _aspect(dimension):
+    """예전 dimension {width,height} → v3 aspect_ratio·resolution."""
+    w, h = (dimension or {}).get("width", W), (dimension or {}).get("height", H)
+    ar = "16:9" if w > h else ("1:1" if w == h else "9:16")
+    return ar, ("1080p" if max(w, h) >= 1920 else "720p")
 
 
 def generate(talking_photo_id, script=None, voice_id=None, audio_asset_id=None, wait=True,
              meta=None, dimension=None):
     """아나운서 영상 생성 → (선택)완료까지 대기 후 다운로드.
 
-    audio_asset_id 를 주면 그 오디오로 립싱크(우리 남성 TTS). 없으면 HeyGen TTS(text).
-    dimension 을 주면 그 크기로 요청한다 — 가로 토킹포토를 띠 화면에 넣을 때 1920x1080."""
+    audio_asset_id 를 주면 그 오디오로 립싱크(우리 목소리). 없으면 HeyGen TTS(script).
+    dimension 을 주면 그 비율로 요청한다 — 가로 토킹포토를 띠 화면에 넣을 때 1920x1080."""
     cfg = load_config().get("heygen", {})
+    ar, res_ = _aspect(dimension)
+    body = {"type": "avatar", "avatar_id": talking_photo_id,
+            "aspect_ratio": ar, "resolution": res_,
+            "title": ((meta or {}).get("title") or "SMU 재난안전뉴스")[:80]}
     if audio_asset_id:
-        voice = {"type": "audio", "audio_asset_id": audio_asset_id}
+        body["audio_asset_id"] = audio_asset_id
     else:
         voice_id = voice_id or cfg.get("voice_id")
         if not voice_id:
             raise SystemExit("voice_id 또는 audio_asset_id 가 필요합니다.")
-        voice = {"type": "text", "input_text": script, "voice_id": voice_id}
+        body["script"] = script
+        body["voice_id"] = voice_id
         # 말 속도(0.5~1.5, 기본 1.0). 낮을수록 천천히 — 뉴스 전달력·자막 가독성↑
         try:
             spd = float(cfg.get("voice_speed", 1.0))
         except (TypeError, ValueError):
             spd = 1.0
         if spd and abs(spd - 1.0) > 1e-6:
-            voice["speed"] = max(0.5, min(1.5, spd))
-    vin = {
-        "character": {"type": "talking_photo", "talking_photo_id": talking_photo_id},
-        "voice": voice,
-    }
-    bg = (load_config().get("heygen", {}) or {}).get("background")
-    if bg:                       # {"type":"color","value":"#008000"} 또는 image_asset_id
-        vin["background"] = bg
-    body = {"video_inputs": [vin], "dimension": dimension or {"width": W, "height": H}}
-    res = _req("POST", f"{API}/v2/video/generate", body=body)
-    vid = res.get("data", {}).get("video_id")
-    log(f"video_id = {vid} (생성 요청됨)")
+            body["voice_settings"] = {"speed": max(0.5, min(1.5, spd))}
+    bg = cfg.get("background")
+    if bg:                       # {"type":"color","value":"#008000"}
+        body["background"] = bg
+    res = _req("POST", f"{API}/v3/videos", body=body)
+    vid = (res.get("data") or {}).get("video_id")
+    log(f"video_id = {vid} (생성 요청됨, v3 {ar} {res_})")
     # 대본을 video_id 옆에 남긴다 — 나중에 이어받을 때 '실제로 녹음된 대본'으로 자막을
     # 달아야 말과 자막이 어긋나지 않는다(대본을 다시 생성하면 내용이 달라진다).
     if vid:
@@ -138,14 +184,13 @@ def await_video(vid, cfg=None):
         waits = 120
     url = None
     for _ in range(waits):
-        st = _req("GET", f"{API}/v1/video_status.get?video_id={vid}")
-        d = st.get("data", {})
+        d = _req("GET", f"{API}/v3/videos/{vid}").get("data", {}) or {}
         status = d.get("status")
         if status == "completed":
             url = d.get("video_url")
             break
         if status == "failed":
-            raise SystemExit(f"생성 실패: {d.get('error')}")
+            raise SystemExit(f"생성 실패: {d.get('failure_code')} {d.get('failure_message')}")
         log(f"  상태: {status}...")
         time.sleep(5)
     if not url:
