@@ -78,6 +78,18 @@ def _fetch_one(query, within_days):
     return items
 
 
+
+def _active_blocks(cfg):
+    """block_sources + 기한이 남은 임시 제외어(news.exclude_until = {"말": "YYYY-MM-DD"}).
+
+    큰 사건을 특별판으로 따로 다룬 날, 정기 발행·트리거가 같은 사건을 또 고르지 않게
+    그날까지만 뺀다(2026-10-07 누리호 5차 — 예고판·결과판을 따로 냈다). 기한 다음 날부터
+    저절로 다시 포함된다."""
+    from datetime import date
+    today = date.today().isoformat()
+    extra = [w for w, until in (cfg.get("exclude_until") or {}).items() if str(until) >= today]
+    return list(cfg.get("block_sources", [])) + extra
+
 def _is_blocked(item, block_sources):
     """외국/비한국 출처를 걸러낸다. (source 또는 title 에 차단 키워드 포함 시)"""
     hay = (item.get("source", "") + " " + item.get("title", "")).lower()
@@ -160,7 +172,7 @@ def fetch_recent_raw(within_days=2):
     """
     cfg = load_config().get("news", {})
     queries = cfg.get("queries", ["재난안전"])
-    block_sources = cfg.get("block_sources", [])
+    block_sources = _active_blocks(cfg)
     seen, results = set(), []
     for q in queries:
         try:
@@ -191,7 +203,7 @@ def fetch_news():
             log(f"구독채널 키워드 건너뜀({type(e).__name__})")
     within = cfg.get("within_days", 7)
     max_items = cfg.get("max_items", 8)
-    block_sources = cfg.get("block_sources", [])
+    block_sources = _active_blocks(cfg)
     region_priority = cfg.get("region_priority", [])
     region_exclude = cfg.get("region_exclude", [])
     dedup_similarity = cfg.get("dedup_similarity", 0.6)
