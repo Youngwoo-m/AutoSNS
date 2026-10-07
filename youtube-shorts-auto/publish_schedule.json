@@ -274,7 +274,13 @@
       "재난안전학과",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/OQEiGuPiZJI",
+      "instagram": "published",
+      "threads": "published",
+      "x": "published",
+      "at": "2026-10-06T19:02:53"
+    },
     "season_note": "환절기 감염병",
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
   },
