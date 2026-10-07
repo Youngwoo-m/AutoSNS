@@ -12,10 +12,10 @@
   인스타 게시물          ← 이미지·카드뉴스
   인스타 릴스            ← 숏츠·영상
   블로그                 ← 네이버 블로그
-  엑스                   ← X(@smuds_official). 양식에 없던 구분이라 한 줄 더한다
+  페이스북 칸            ← 스레드 + 엑스. 둘 다 짧은 글 채널이라 한 칸에 모은다
   기타                   ← 블로거 smuds2026 (GeoAI 블로그 geoaina 는 제외)
-  페이스북 칸            ← 스레드(Threads). 페이스북은 운영하지 않고 스레드를 쓰므로
-                            칸 이름도 '페이스북(스레드)' 로 적어 오해가 없게 한다.
+                            페이스북은 운영하지 않으므로 칸 이름을
+                            '페이스북(스레드·엑스)' 로 적어 오해가 없게 한다.
 
 사용: python build_promo_report.py [YYYY-MM] [출력경로]
 """
@@ -69,7 +69,9 @@ def sections(rows, ym):
         return [(_name(x), x["date"], x.get("url", ""))
                 for x in sorted(got, key=lambda a: a["date"])]
 
-    blogger, threads, xposts = extra("blogger"), extra("threads"), extra("x")
+    blogger = extra("blogger")
+    # 스레드와 엑스는 양식의 페이스북 칸에 함께 넣는다(둘 다 짧은 글 채널).
+    short_sns = sorted(extra("threads") + extra("x"), key=lambda t: t[1])
 
     def pick(media, types=None, sources=None):
         out = []
@@ -90,8 +92,7 @@ def sections(rows, ym):
         ("유튜브", "Shorts", pick("유튜브", types=("숏츠",))),
         ("인스타", "게시물", pick("인스타그램", types=("이미지", "카드뉴스"))),
         ("인스타", "릴스", pick("인스타그램", types=("숏츠", "영상"))),
-        ("페이스북(스레드)", None, threads),
-        ("엑스", None, xposts),
+        ("페이스북(스레드·엑스)", None, short_sns),
         ("블로그", None, pick("네이버 블로그")),
         ("기타", None, blogger),
     ]
