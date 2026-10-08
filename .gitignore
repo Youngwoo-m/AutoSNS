@@ -78,3 +78,5 @@ youtube-shorts-auto/drafts/
 chrome-profile-tistory/
 # 티스토리 로그인 쿠키(세션) — 비밀정보
 **/tistory_cookies.json
+# 티스토리 교차 발행 기록(실행 중 계속 바뀜)
+**/tistory_state.json
