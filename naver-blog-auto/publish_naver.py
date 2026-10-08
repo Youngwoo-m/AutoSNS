@@ -345,6 +345,12 @@ def type_structured_post(driver, data):
         if link:
             ActionChains(driver).send_keys(Keys.ENTER).perform()
             _link_line(driver, f"📰 기사 원문: {src.get('title','')}", link)
+        # 블록마다 관련 영상을 하나씩 둘 수 있다(수동 글에서 뉴스 영상 여러 편을 넣을 때).
+        if blk.get("video_url"):
+            ActionChains(driver).send_keys(Keys.ENTER).perform()
+            if blk.get("video_label"):
+                _type_text(driver, blk["video_label"])
+            _embed_video(driver, blk["video_url"])
     if data.get("tips"):
         ActionChains(driver).send_keys(Keys.ENTER, Keys.ENTER).perform()
         _type_text(driver, data["tips"])
@@ -629,8 +635,9 @@ def publish(data, dry_run=None):
                 time.sleep(1)
 
         # 영상 카드 위에 남은 주소 글자 줄을 지운다(본문 입력을 다 마친 뒤라 커서 위치가 무관하다).
-        if data.get("video_url"):
-            _strip_embed_url_lines(driver, data["video_url"])
+        for vurl in [data.get("video_url")] + [b.get("video_url") for b in data.get("news_blocks", [])]:
+            if vurl:
+                _strip_embed_url_lines(driver, vurl)
 
         shot(driver, "after_typing")
 
