@@ -20,5 +20,6 @@ done
 ./.venv/bin/python jobs_work24.py --go >> "logs/jobs.log" 2>&1 || exit $?
 # 같은 초안으로 인스타그램 카드뉴스도 올린다(소방 제외, 블로그 링크 안내). 방금 만든 초안이
 # 없으면(이번 주 블로그를 건너뛴 경우) jobs_insta.py 가 알아서 건너뛴다.
-cd ../insta-cardnews || exit 1
-exec ./.venv/bin/python jobs_insta.py --latest --go >> "../naver-blog-auto/logs/jobs.log" 2>&1
+(cd ../insta-cardnews && ./.venv/bin/python jobs_insta.py --latest --go) >> "logs/jobs.log" 2>&1
+# 티스토리(na-geoai '채용정보')에도 같은 초안으로. 인스타가 실패해도 이어서 한다.
+exec ./.venv/bin/python tistory_jobs.py --latest --go >> "logs/jobs.log" 2>&1

@@ -283,7 +283,8 @@ def find_url(title, tries=6):
             with urllib.request.urlopen(req, timeout=20) as r:
                 x = r.read().decode("utf-8", "ignore")
             for item in re.findall(r"<item>(.*?)</item>", x, re.S):
-                t = html.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", re.search(r"<title>(.*?)</title>", item, re.S).group(1))).strip()
+                # RSS 제목은 '·' 같은 문자가 두 번 이스케이프돼 온다(&amp;middot;) — 두 번 푼다
+                t = html.unescape(html.unescape(re.sub(r"<!\[CDATA\[|\]\]>", "", re.search(r"<title>(.*?)</title>", item, re.S).group(1)))).strip()
                 if t == title.strip():
                     return re.search(r"<link>(.*?)</link>", item, re.S).group(1).strip()
         except Exception:
