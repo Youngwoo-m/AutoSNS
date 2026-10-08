@@ -73,3 +73,8 @@ youtube-shorts-auto/chrome-profile-tiktok/
 # Local Netlify folder
 .netlify
 youtube-shorts-auto/drafts/
+
+# 티스토리 전용 로그인 프로필(tistory_crosspost.py)
+chrome-profile-tistory/
+# 티스토리 로그인 쿠키(세션) — 비밀정보
+**/tistory_cookies.json
