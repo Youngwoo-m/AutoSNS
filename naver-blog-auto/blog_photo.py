@@ -59,7 +59,8 @@ RISKY_ALT = re.compile(r"stunt|daredevil|acrobat|tightrope|slackline|fire (perfo
 
 
 def _risky(photo):
-    alt = photo.get("alt") or ""
+    # Pixabay 는 설명문이 없고 태그만 있다 — 태그(text)도 함께 본다.
+    alt = f'{photo.get("alt") or ""} {photo.get("text") or ""}'
     return bool(BANNED.search(alt) or RISKY_ALT.search(alt))
 
 
