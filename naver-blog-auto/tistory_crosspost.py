@@ -281,6 +281,10 @@ def write_post(d, post, body, category, tags, go):
     from selenium.webdriver.support.ui import WebDriverWait
     W = WebDriverWait(d, 25)
 
+    try:
+        d.set_window_size(1400, 1000)       # 두 번째 글부터 창이 낮아져 발행 버튼이 화면 밖으로 밀렸다(10/10)
+    except Exception:
+        pass
     d.get(f"{BLOG}/manage/newpost/")
     if "/manage/newpost" not in d.current_url and kakao_relogin(d):
         d.get(f"{BLOG}/manage/newpost/")
@@ -290,10 +294,17 @@ def write_post(d, post, body, category, tags, go):
     time.sleep(1)
 
     # 카테고리
-    d.find_element(By.ID, "category-btn").click()
-    opt = W.until(EC.element_to_be_clickable(
-        (By.CSS_SELECTOR, f'#category-list [role="option"][aria-label="{category}"]')))
-    opt.click()
+    # 화면이 다 뜨기 전에 누르면 목록이 안 열려 시간 초과가 났다(10/10) — 세 번까지 다시 연다
+    sel = f'#category-list [role="option"][aria-label="{category}"]'
+    for n in range(3):
+        try:
+            time.sleep(1 + n)
+            d.find_element(By.ID, "category-btn").click()
+            WebDriverWait(d, 6).until(EC.element_to_be_clickable((By.CSS_SELECTOR, sel))).click()
+            break
+        except Exception:
+            if n == 2:
+                raise RuntimeError(f"카테고리 '{category}' 를 고르지 못함")
 
     # 제목
     t = d.find_element(By.ID, "post-title-inp")
@@ -315,7 +326,7 @@ def write_post(d, post, body, category, tags, go):
         log(f"  태그 입력 실패(글은 진행): {type(e).__name__}")
 
     # 완료 → 발행 설정 창
-    d.find_element(By.ID, "publish-layer-btn").click()
+    d.execute_script("arguments[0].click();", d.find_element(By.ID, "publish-layer-btn"))
     W.until(EC.presence_of_element_located((By.ID, "open20")))
     d.execute_script("document.getElementById('open20').click();")      # 공개
     time.sleep(0.8)
@@ -323,9 +334,9 @@ def write_post(d, post, body, category, tags, go):
     if not go:
         _shot(d, "dry")
         log(f"  [DRY] 발행 직전 멈춤 — 버튼: {btn.text}")
-        d.find_element(By.ID, "unpublish-btn").click()
+        d.execute_script("arguments[0].click();", d.find_element(By.ID, "unpublish-btn"))
         return ""
-    btn.click()
+    d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();", btn)
     W.until(lambda x: "/manage/newpost" not in x.current_url)
     time.sleep(2)
     return find_url(post["title"])
