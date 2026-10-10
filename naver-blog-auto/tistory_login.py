@@ -22,16 +22,17 @@ def logged_in(d):
 
 def main():
     d = build_driver(headless=False)
-    if logged_in(d):
-        log("받아 둔 쿠키로 아직 로그인돼 있지만, 카카오 '로그인 상태 유지'를 다시 받기 위해 새로 로그인합니다.")
-        d.delete_all_cookies()
+    d.execute_cdp_cmd("Network.clearBrowserCookies", {})     # 받아 둔 옛 쿠키 없이 새로 로그인
     d.get("https://www.tistory.com/auth/login")
     log("열린 창에서 '카카오계정으로 로그인'으로 로그인하세요. 최대 10분")
     waited = 0
     while waited < TIMEOUT:
         time.sleep(5)
         waited += 5
-        if "TSSESSION" not in {c["name"] for c in d.get_cookies()}:
+        # 현재 페이지 도메인 쿠키만 보는 get_cookies() 로는 카카오→티스토리로 넘어온 직후
+        # TSSESSION 을 놓칠 수 있다(10/10 10분 동안 감지 못 함) — 브라우저 전체 쿠키를 본다.
+        allc = d.execute_cdp_cmd("Network.getAllCookies", {})["cookies"]
+        if "TSSESSION" not in {c["name"] for c in allc}:
             continue
         if not logged_in(d):
             d.get("https://www.tistory.com/auth/login")
