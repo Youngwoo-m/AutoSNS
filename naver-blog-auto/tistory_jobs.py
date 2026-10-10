@@ -130,7 +130,7 @@ def main():
         log(f"티스토리 채용정보 실패: {type(e).__name__}: {str(e)[:160]}")
         return 1
     finally:
-        d.quit()
+        T.close(d)          # 바뀐 로그인 쿠키를 받아 두고 닫는다
     if go:
         s["posted"][key] = {"tistory": url, "title": post["title"], "at": f"{datetime.now():%Y-%m-%d %H:%M}"}
         T.save_state(s)

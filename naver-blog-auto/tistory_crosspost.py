@@ -213,17 +213,44 @@ def kakao_relogin(d):
     if not btn:
         return False
     btn[0].click()
-    for _ in range(20):
+    picked = False
+    for _ in range(25):
         time.sleep(1)
         u = d.current_url
-        if "accounts.kakao.com/login" in u or d.find_elements(By.CSS_SELECTOR, "input[type=password]"):
-            log("  카카오가 비밀번호를 묻습니다 — 자동 재로그인 불가(tistory_login.py 로 다시 로그인)")
-            return False
         if "tistory.com" in u and "auth/login" not in u and "kauth" not in u:
             log("  티스토리 세션 만료 → 카카오 로그인으로 다시 들어옴")
             save_cookies(d)
             return True
+        # 카카오 '간편로그인' 화면 — 저장된 계정을 고르면 비밀번호 없이 넘어간다(10/10 확인)
+        if "accounts.kakao.com/login/simple" in u and not picked:
+            acc = [a for a in d.find_elements(By.CSS_SELECTOR, "a.wrap_profile")
+                   if "새로운 계정" not in a.text]
+            if acc:
+                acc[0].click()
+                picked = True
+                continue
+        # 비밀번호 칸이 '보이고' 간편로그인 화면이 아닐 때만 포기한다(화면이 넘어가는 중이거나
+        # 숨은 입력칸에 속지 않게 — 10/10 시험에서 중간 화면을 비밀번호 요구로 잘못 읽었다)
+        pw = [e for e in d.find_elements(By.CSS_SELECTOR, "input[type=password]") if e.is_displayed()]
+        if pw and "login/simple" not in u and _ > 6:
+            log("  카카오가 비밀번호를 묻습니다 — 자동 재로그인 불가(tistory_login.py 로 다시 로그인)")
+            return False
+    log(f"  카카오 재로그인 시간 초과: {d.current_url[:80]}")
     return False
+
+
+def close(d):
+    """드라이버를 닫기 전에 바뀐 로그인 쿠키를 받아 둔다 — 티스토리 Chrome 을 쓰는 곳은 모두 이걸로 닫는다.
+
+    카카오·티스토리 로그인 쿠키는 쓸 때마다 새 값으로 바뀐다(카카오 _kawlt 는 한 번 쓰면
+    옛 값이 무효 — 10/10 시험에서 바뀐 값을 안 받아 둬 로그인이 통째로 풀렸다)."""
+    try:
+        if any(c["name"] == "TSSESSION" for c in
+               d.execute_cdp_cmd("Network.getAllCookies", {})["cookies"]):
+            save_cookies(d)
+    except Exception:
+        pass
+    d.quit()
 
 
 def restore_cookies(d):
@@ -371,7 +398,7 @@ def main():
                 log(f"  티스토리 발행 완료: {url}")
                 time.sleep(20)          # 연달아 올리지 않는다
     finally:
-        d.quit()
+        close(d)
 
 
 if __name__ == "__main__":

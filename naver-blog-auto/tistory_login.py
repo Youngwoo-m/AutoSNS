@@ -8,7 +8,7 @@
 """
 import time
 
-from tistory_crosspost import BLOG, build_driver, save_cookies
+from tistory_crosspost import BLOG, build_driver, close, save_cookies
 from common import log
 
 TIMEOUT = 600
@@ -49,7 +49,7 @@ def main():
         d.quit()
         d = build_driver(headless=False)          # 받아 둔 쿠키를 넣고 뜬다
         ok = logged_in(d)
-        d.quit()
+        close(d)
         log("✅ 완료 — 새 창에서도 로그인돼 있습니다." if ok else
             "⚠ 새 창에서는 로그인이 안 됩니다. 다시 실행해 주세요.")
         return
