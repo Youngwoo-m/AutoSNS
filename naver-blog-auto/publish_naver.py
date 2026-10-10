@@ -110,17 +110,33 @@ def select_category(driver, name):
     )
     time.sleep(1)
     # 2) 이름이 일치하는 항목 클릭
+    # 네이버는 카테고리 이름의 띄어쓰기를 줄바꿈 없는 공백(U+00A0)으로 그린다('학과 자료실').
+    # normalize-space 는 이를 공백으로 보지 않아 이름이 안 맞았다 → 일반 공백으로 바꿔 비교.
+    nb = "translate({}, '\u00a0', ' ')"
     candidates = [
-        f"//label[normalize-space(text())='{name}']",
-        f"//span[normalize-space(text())='{name}']",
+        f"//label[normalize-space({nb.format('text()')})='{name}']",
+        f"//span[normalize-space({nb.format('text()')})='{name}']",
         f"//*[contains(@class,'option') or contains(@class,'item') or "
-        f"contains(@class,'category')][normalize-space(.)='{name}']",
-        f"//*[normalize-space(text())='{name}']",
+        f"contains(@class,'category')][normalize-space({nb.format('.')})='{name}']",
+        f"//*[normalize-space({nb.format('text()')})='{name}']",
     ]
     for xp in candidates:
         if click_if_present(driver, By.XPATH, xp, 2):
             log(f"카테고리 '{name}' 선택됨.")
             return True
+    # 3) 목록이 길면 드롭다운 안에서 스크롤돼 위·아래 항목이 가려진다(보이지 않아 클릭 실패).
+    #    2026-10-10 '학과 자료실'이 위로 가려져 기본값(학과진로)으로 발행됐다 → 화면에 끌어와 누른다.
+    for xp in candidates:
+        for el in driver.find_elements(By.XPATH, xp):
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", el)
+                time.sleep(0.4)
+                driver.execute_script("arguments[0].click();", el)
+                time.sleep(0.6)
+                log(f"카테고리 '{name}' 선택됨(목록 스크롤).")
+                return True
+            except Exception:
+                continue
     log(f"카테고리 '{name}' 자동 선택 실패 → 스크린샷 확인 후 셀렉터 조정 필요. "
         f"(드롭다운 열림={opened})")
     return False
