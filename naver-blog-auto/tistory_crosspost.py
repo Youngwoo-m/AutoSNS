@@ -199,6 +199,33 @@ def save_cookies(d):
     return len(keep)
 
 
+def kakao_relogin(d):
+    """티스토리 세션이 끊겼을 때 '카카오계정으로 로그인'만 눌러 다시 들어간다.
+
+    티스토리 로그인 쿠키(TSSESSION)는 서버에서 몇 시간이면 만료된다(2026-10-08 저녁부터
+    정기 실행이 전부 로그인 화면으로 튕겼다). 카카오 쪽 로그인(_kawlt)이 '로그인 상태 유지'로
+    살아 있으면 버튼 한 번에 비밀번호 없이 돌아온다. 비밀번호를 묻는 화면이 나오면
+    여기서 멈춘다 — 그때는 사람이 tistory_login.py 로 다시 로그인해야 한다."""
+    from selenium.webdriver.common.by import By
+    if "tistory.com/auth/login" not in d.current_url:
+        return False
+    btn = d.find_elements(By.CSS_SELECTOR, "a.link_kakao_id, .btn_login.link_kakao_id")
+    if not btn:
+        return False
+    btn[0].click()
+    for _ in range(20):
+        time.sleep(1)
+        u = d.current_url
+        if "accounts.kakao.com/login" in u or d.find_elements(By.CSS_SELECTOR, "input[type=password]"):
+            log("  카카오가 비밀번호를 묻습니다 — 자동 재로그인 불가(tistory_login.py 로 다시 로그인)")
+            return False
+        if "tistory.com" in u and "auth/login" not in u and "kauth" not in u:
+            log("  티스토리 세션 만료 → 카카오 로그인으로 다시 들어옴")
+            save_cookies(d)
+            return True
+    return False
+
+
 def restore_cookies(d):
     if not os.path.exists(COOKIES):
         return 0
@@ -228,6 +255,8 @@ def write_post(d, post, body, category, tags, go):
     W = WebDriverWait(d, 25)
 
     d.get(f"{BLOG}/manage/newpost/")
+    if "/manage/newpost" not in d.current_url and kakao_relogin(d):
+        d.get(f"{BLOG}/manage/newpost/")
     if "/manage/newpost" not in d.current_url:
         raise RuntimeError(f"글쓰기 화면이 아님(로그인 풀림?): {d.current_url} — tistory_login.py 로 다시 로그인")
     W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
@@ -326,6 +355,14 @@ def main():
             except Exception as e:
                 _shot(d, "fail")
                 log(f"  티스토리 실패: {type(e).__name__}: {str(e)[:160]}")
+                if go and "로그인" in str(e):
+                    try:                        # 사람이 다시 로그인해야 풀린다 — 알린다
+                        from kakao_notify import notify
+                        notify("[티스토리] 로그인이 풀려 교차 발행을 못 했습니다.\n"
+                               "맥에서 tistory_login.py 를 실행해 다시 로그인해 주세요"
+                               "(카카오 '로그인 상태 유지' 켜기).", BLOG)
+                    except Exception:
+                        pass
                 break
             if go:
                 s["posted"][p["url"]] = {"tistory": url, "title": p["title"],

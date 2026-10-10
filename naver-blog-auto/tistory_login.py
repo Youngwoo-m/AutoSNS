@@ -23,10 +23,8 @@ def logged_in(d):
 def main():
     d = build_driver(headless=False)
     if logged_in(d):
-        log("이미 로그인돼 있습니다(받아 둔 쿠키로). 쿠키를 새로 받아 둡니다.")
-        save_cookies(d)
-        d.quit()
-        return
+        log("받아 둔 쿠키로 아직 로그인돼 있지만, 카카오 '로그인 상태 유지'를 다시 받기 위해 새로 로그인합니다.")
+        d.delete_all_cookies()
     d.get("https://www.tistory.com/auth/login")
     log("열린 창에서 '카카오계정으로 로그인'으로 로그인하세요. 최대 10분")
     waited = 0
@@ -37,6 +35,14 @@ def main():
             continue
         if not logged_in(d):
             d.get("https://www.tistory.com/auth/login")
+            continue
+        kawlt = [c for c in d.execute_cdp_cmd("Network.getAllCookies", {})["cookies"]
+                 if c["name"] == "_kawlt"]
+        if not kawlt or kawlt[0].get("expires", -1) in (-1, 0):
+            log("⚠ 카카오 '로그인 상태 유지'가 꺼져 있습니다. 티스토리 세션은 몇 시간이면 끊기고, "
+                "그때 카카오 로그인으로 자동 재진입하려면 이게 켜져 있어야 합니다. "
+                "티스토리에서 로그아웃 → 카카오 로그인 화면의 '로그인 상태 유지'를 켜고 다시 로그인해 주세요.")
+            time.sleep(10)
             continue
         n = save_cookies(d)
         log(f"로그인 확인 — 쿠키 {n}개를 받아 뒀습니다. 창을 새로 열어 확인합니다...")
