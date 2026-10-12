@@ -25,6 +25,8 @@ def build():
     o.add_experimental_option("excludeSwitches", ["enable-automation"])
     o.add_argument("--window-size=1280,1000")
     o.set_capability("unhandledPromptBehavior", "accept")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    o.add_argument("--disable-features=MacAppCodeSignClone")
     return webdriver.Chrome(options=o)
 
 

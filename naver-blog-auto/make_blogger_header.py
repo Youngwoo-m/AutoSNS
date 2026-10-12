@@ -42,6 +42,8 @@ HTML=f"""<!doctype html><html><head><meta charset="utf-8">
 open("/tmp/_h2.html","w",encoding="utf-8").write(HTML)
 o=Options(); o.add_argument("--headless=new"); o.add_argument(f"--window-size={W},{H+300}")
 o.add_argument("--hide-scrollbars"); o.add_argument("--force-device-scale-factor=1")
+# 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+o.add_argument("--disable-features=MacAppCodeSignClone")
 d=webdriver.Chrome(options=o)
 try:
     d.get("file:///tmp/_h2.html"); time.sleep(3); d.set_window_size(W,H+300)

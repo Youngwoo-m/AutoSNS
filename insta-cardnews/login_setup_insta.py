@@ -20,6 +20,8 @@ def main():
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
     opts.add_argument("--lang=ko-KR")
     opts.add_argument("--window-size=1280,1000")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    opts.add_argument("--disable-features=MacAppCodeSignClone")
     driver = webdriver.Chrome(options=opts)
     try:
         driver.get("https://www.instagram.com/accounts/login/")

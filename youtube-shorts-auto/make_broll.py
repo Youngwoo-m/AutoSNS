@@ -278,6 +278,8 @@ def render(name, seconds=8.0, fps=24):
     o.add_argument(f"--window-size={W+60},{H+120}")
     o.add_argument("--hide-scrollbars")
     o.add_argument("--force-device-scale-factor=1")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    o.add_argument("--disable-features=MacAppCodeSignClone")
     d = webdriver.Chrome(options=o)
     try:
         # 뷰포트를 정확히 1080x1920 으로 고정한다. 창 크기만 키우면 크롬이 여백만큼

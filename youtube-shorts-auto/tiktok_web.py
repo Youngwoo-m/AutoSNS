@@ -59,7 +59,8 @@ def launch_chrome(url=None, port=DEBUG_PORT):
         return None                      # 이미 떠 있으면 그대로 쓴다
     args = [CHROME, f"--user-data-dir={PROFILE_DIR}", f"--remote-debugging-port={port}",
             "--no-first-run", "--no-default-browser-check", "--lang=ko-KR",
-            "--window-size=1400,1000"]
+            "--window-size=1400,1000",
+            "--disable-features=MacAppCodeSignClone"]  # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     if url:
         args.append(url)
     proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

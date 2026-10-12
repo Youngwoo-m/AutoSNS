@@ -41,6 +41,8 @@ def _driver():
     o.add_argument(
         "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    o.add_argument("--disable-features=MacAppCodeSignClone")
     return webdriver.Chrome(options=o)
 
 

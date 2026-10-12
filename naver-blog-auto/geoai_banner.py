@@ -102,6 +102,8 @@ def make_banner(data, cfg=None, size=None):
     o.add_argument(f"--window-size={w + 100},{h + 160}")
     o.add_argument("--force-device-scale-factor=2")     # 2배로 찍어 선명하게
     o.add_argument("--hide-scrollbars")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    o.add_argument("--disable-features=MacAppCodeSignClone")
     d = webdriver.Chrome(options=o)
     try:
         d.get("file:///" + html_path.replace("\\", "/"))

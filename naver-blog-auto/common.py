@@ -72,6 +72,8 @@ def start_chrome(options, tries=3, wait=90):
     """
     from selenium import webdriver
     from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    options.add_argument("--disable-features=MacAppCodeSignClone")
     last = None
     for n in range(1, tries + 1):
         try:

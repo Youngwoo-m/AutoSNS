@@ -92,6 +92,8 @@ def main():
     for arg in ("--headless=new", f"--window-size={S + 80},{S * 3 + 200}", "--hide-scrollbars",
                 "--allow-file-access-from-files", "--force-device-scale-factor=1"):
         opts.add_argument(arg)
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    opts.add_argument("--disable-features=MacAppCodeSignClone")
     d = webdriver.Chrome(options=opts)
     try:
         d.get("file://" + page)

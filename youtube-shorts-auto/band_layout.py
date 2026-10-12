@@ -197,6 +197,8 @@ def _start(size):
     o.add_argument("--allow-file-access-from-files")
     o.add_argument("--lang=ko-KR")
     o.add_argument("--force-device-scale-factor=1")
+    # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
+    o.add_argument("--disable-features=MacAppCodeSignClone")
     d = webdriver.Chrome(options=o)
     try:                                   # 창 테두리만큼 늘려 안쪽이 size 가 되게
         dh = d.execute_script("return window.outerHeight - window.innerHeight") or 0
