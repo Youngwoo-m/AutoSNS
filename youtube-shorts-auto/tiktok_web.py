@@ -221,6 +221,46 @@ def _confirm_posted(d, caption, timeout=150):
     return False
 
 
+def _set_location(d, name="충북제천"):
+    """위치를 name 으로 정한다. 정해졌으면 True.
+
+    업로드·편집 화면의 '위치' 칸 아래 추천 칩에 '충북제천'이 뜬다 — 칩을 누르고,
+    없으면 검색칸에 쳐서 첫 결과를 고른다."""
+    from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.keys import Keys
+
+    def chosen():
+        return bool(d.execute_script(
+            "const n=arguments[0];return [...document.querySelectorAll('input')].some(i=>i.placeholder&&/위치/.test(i.placeholder)&&i.value===n)"
+            "||[...document.querySelectorAll('div,span')].some(e=>e.children.length===0&&e.textContent.trim()===n&&e.closest('[class*=select],[class*=Select],[class*=location],[class*=Location]'));",
+            name))
+    for e in d.find_elements(By.XPATH, f"//*[normalize-space(text())='{name}']"):
+        try:
+            d.execute_script("arguments[0].scrollIntoView({block:'center'});", e)
+            ActionChains(d).move_to_element(e).click().perform()
+            time.sleep(1.5)
+            break
+        except Exception:
+            continue
+    if chosen():
+        return True
+    inp = next((i for i in d.find_elements(By.CSS_SELECTOR, "input") if "위치" in (i.get_attribute("placeholder") or "")), None)
+    if inp is None:
+        return False
+    ActionChains(d).move_to_element(inp).click().perform()
+    inp.send_keys(name)
+    time.sleep(3)
+    for e in d.find_elements(By.XPATH, f"//*[contains(normalize-space(text()),'{name}')]"):
+        if e != inp:
+            try:
+                ActionChains(d).move_to_element(e).click().perform()
+                time.sleep(1.5)
+                break
+            except Exception:
+                continue
+    return chosen()
+
+
 def _set_ai_generated(d):
     """'AI 생성 콘텐츠' 표시를 켠다. 켜졌으면 True.
 
@@ -251,7 +291,7 @@ def _set_ai_generated(d):
     return on()
 
 
-def upload(video, caption, post=False, ai_generated=False):
+def upload(video, caption, post=False, ai_generated=False, location="충북제천"):
     if not os.path.exists(video):
         raise SystemExit(f"mp4 가 없습니다: {video}")
     if post and already_posted(video):
@@ -279,6 +319,8 @@ def upload(video, caption, post=False, ai_generated=False):
             raise SystemExit("캡션 입력칸을 못 찾았습니다")
         got = _type_caption(d, box, caption)
         log(f"캡션 입력됨({len(got)}자): {got[:60]}…")
+        if location:
+            log(f"위치 '{location}' " + ("지정" if _set_location(d, location) else "지정 실패(위치 없이 진행)"))
         if ai_generated:
             if not _set_ai_generated(d):
                 shot(d, "no_ai_label")
