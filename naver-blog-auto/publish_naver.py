@@ -272,23 +272,41 @@ def _send_text(driver, text):
     if IS_MAC and any(ord(ch) > 0xFFFF for ch in text):
         r = subprocess.run(["pbcopy"], input=text, text=True)
         if r.returncode == 0:
+            time.sleep(0.15)                 # 클립보드에 실제로 올라갈 틈을 준다
             ActionChains(driver).key_down(MOD_KEY).send_keys("v")\
                 .key_up(MOD_KEY).perform()
-            time.sleep(0.3)
+            # 붙여넣기는 에디터가 비동기로 처리한다. 0.3초로는 다음 입력과 겹쳐
+            # 그 줄이 통째로 사라지는 일이 있었다(2026-10-12).
+            time.sleep(0.9)
             return
         log("pbcopy 실패 → send_keys 로 대체(이모지 깨질 수 있음).")
     ActionChains(driver).send_keys(text).perform()
 
 
 def _type_text(driver, text):
-    """현재 커서 위치에 여러 줄 텍스트를 입력(줄바꿈은 ENTER)."""
+    """현재 커서 위치에 여러 줄 텍스트를 입력(줄바꿈은 ENTER).
+
+    줄마다 들어갔는지 확인하고, 통째로 빠졌으면 한 번 더 넣는다. 이모지가 든 줄은
+    클립보드 붙여넣기로 들어가는데(맥 ChromeDriver 가 이모지를 깨뜨린다) 에디터가
+    붙여넣기를 처리하기 전에 다음 입력이 겹치면 그 줄이 사라진다. 2026-10-12 WBGT
+    글에서 요약 3줄과 인사말이 두 번 연속 통째로 날아갔다.
+
+    길이가 조금 모자란 정도면 다시 넣지 않는다 — 덧쓰면 글자가 겹쳐 더 나빠진다."""
     lines = text.split("\n")
     for i, line in enumerate(lines):
         if line.strip():
+            before = len(_doc_text(driver))
             _send_text(driver, line)
+            grew = len(_doc_text(driver)) - before
+            if grew < min(3, len(line)):          # 아무것도 안 들어갔다
+                log(f"입력 누락 감지 → 다시 넣는다: {line[:24]}")
+                time.sleep(0.8)
+                _send_text(driver, line)
+                if len(_doc_text(driver)) - before < min(3, len(line)):
+                    log(f"⚠ 두 번째도 들어가지 않음: {line[:24]}")
         if i < len(lines) - 1:
             ActionChains(driver).send_keys(Keys.ENTER).perform()
-        time.sleep(0.03)
+        time.sleep(0.05)
 
 
 def _upload_error_present(driver):
