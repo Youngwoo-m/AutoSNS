@@ -1,0 +1,224 @@
+<title>홍보 자동화 패키지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;800;900&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* 레이아웃: 한 줄 기둥(최대 1040px) — 머리말 · 하루 시간표(이 페이지의 핵심) · 흐름 · 사례 · 패키지 · 순서 · 질문 */
+:root{
+  --bg:#f5f7fb; --surface:#ffffff; --ink:#0d1a33; --muted:#55627a; --line:#dde3ee;
+  --accent:#e0a100; --accent-ink:#0b1c3a; --signal:#e63946; --soft:#eaf0fa;
+  --f-display:"Gothic A1","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1324; --surface:#121d33; --ink:#e8edf7; --muted:#9aa8c1; --line:#24324d;
+  --accent:#ffc83d; --accent-ink:#0b1c3a; --signal:#ff6b74; --soft:#17233d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1324; --surface:#121d33; --ink:#e8edf7; --muted:#9aa8c1; --line:#24324d;
+  --accent:#ffc83d; --accent-ink:#0b1c3a; --signal:#ff6b74; --soft:#17233d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:40px 64px;display:grid;gap:72px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h2{font-size:clamp(24px,3.4vw,32px);font-weight:800}
+h3{font-size:18px;font-weight:800}
+p{margin:0;max-width:62ch}
+a{color:inherit;text-underline-offset:3px}
+a:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:4px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+.lead{color:var(--muted);font-size:17px}
+section{display:grid;gap:22px;min-width:0}
+
+/* 머리말 */
+header{display:grid;gap:18px;padding-top:12px}
+header h1{font-size:clamp(34px,6vw,58px);font-weight:900;line-height:1.15}
+header h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--accent) 62%);padding:0 .1em}
+.facts{display:flex;flex-wrap:wrap;gap:28px 40px;margin-top:10px;padding-top:20px;border-top:1px solid var(--line)}
+.fact b{display:block;font-family:var(--f-display);font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.fact span{color:var(--muted);font-size:14px}
+
+/* 하루 시간표 */
+.clock{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.clock ol{list-style:none;margin:0;padding:0}
+.clock li{display:grid;grid-template-columns:88px 1fr auto;gap:16px;align-items:baseline;padding:13px 20px;border-top:1px solid var(--line)}
+.clock li:first-child{border-top:0}
+.clock time{font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.clock .what{min-width:0}
+.clock .what b{font-weight:600}
+.clock .what small{display:block;color:var(--muted);font-size:13.5px}
+.tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.tag.pub{background:var(--accent);color:var(--accent-ink)}
+.clock .now{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 14%,transparent),transparent 60%)}
+.week{display:flex;flex-wrap:wrap;gap:10px}
+.week span{font-size:14px;padding:6px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.note{font-size:13.5px;color:var(--muted)}
+
+/* 흐름 */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.flow div{padding:12px 16px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-weight:600}
+.flow div small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.flow i{font-style:normal;color:var(--signal);font-weight:800}
+
+/* 사례 */
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.case{padding:18px;border-top:3px solid var(--ink);background:var(--surface);display:grid;gap:6px;align-content:start}
+.case .url{font-family:var(--f-mono);font-size:13px;color:var(--muted);word-break:break-all}
+
+/* 패키지 */
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:stretch}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;gap:14px;align-content:start}
+.plan.pick{border:2px solid var(--accent)}
+.plan .price{font-family:var(--f-display);font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.plan .price small{font-size:14px;font-weight:500;color:var(--muted)}
+.plan ul{margin:0;padding-left:1.1em;display:grid;gap:4px}
+.plan .meta{font-size:13.5px;color:var(--muted)}
+.badge{justify-self:start;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--accent);color:var(--accent-ink)}
+.extra{display:grid;gap:6px;font-size:15px}
+.extra div{display:flex;justify-content:space-between;gap:16px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.extra b{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* 순서 · 질문 */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;counter-reset:s}
+.steps li{counter-increment:s;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;display:grid;gap:4px}
+.steps li::before{content:counter(s);font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--accent)}
+.steps li small{color:var(--muted);font-size:14px}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+summary{cursor:pointer;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"Q. ";color:var(--signal);font-weight:800}
+details p{margin-top:8px;color:var(--muted)}
+.contact{background:var(--accent-ink);color:#fff;border-radius:14px;padding:28px;display:grid;gap:10px}
+.contact h2{color:#fff}
+.contact p{color:#cdd6e6}
+.contact code{font-family:var(--f-body);font-weight:600;background:rgba(255,255,255,.1);padding:3px 8px;border-radius:6px;color:#ffd23f}
+
+@media (max-width:560px){
+  .clock li{grid-template-columns:62px 1fr;padding:12px 14px}
+  .clock .tag{grid-column:2;justify-self:start}
+}
+@media (prefers-reduced-motion:no-preference){.plan{transition:transform .15s}.plan:hover{transform:translateY(-2px)}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">학과 · 연구실 · 기관 홍보 자동화 패키지</div>
+  <h1>홍보 글과 숏츠가<br><em>매일 아침 알아서</em> 올라갑니다</h1>
+  <p class="lead">글을 쓰고, 1분 영상으로 바꾸고, 블로그·유튜브·SNS에 올리는 일을 정해진 시각에 스스로 돌아가는 시스템으로 만들어 드립니다. 아래는 지금 실제로 돌고 있는 시스템의 기록입니다.</p>
+  <div class="facts">
+    <div class="fact"><b>100편+</b><span>자동 발행된 블로그 글</span></div>
+    <div class="fact"><b>22개</b><span>정해진 시각에 도는 작업</span></div>
+    <div class="fact"><b>7곳</b><span>연결된 채널</span></div>
+    <div class="fact"><b>0명</b><span>매일 손으로 올리는 사람</span></div>
+  </div>
+</header>
+
+<section aria-labelledby="h-day">
+  <div class="eyebrow">실제 운영 기록</div>
+  <h2 id="h-day">자동화의 하루</h2>
+  <p class="lead">운영 중인 '재난안전과 GeoAI'와 학과 채널에서 매일 돌아가는 작업입니다. 사람은 카카오톡으로 결과만 받습니다.</p>
+  <div class="clock">
+    <ol>
+      <li><time>04:30</time><div class="what"><b>저장 공간 정리</b><small>지난 작업의 임시 파일과 캐시를 지웁니다</small></div><span class="tag">관리</span></li>
+      <li><time>07:00</time><div class="what"><b>자막 점검</b><small>올라간 영상의 자막이 비었거나 틀렸으면 고칩니다</small></div><span class="tag">관리</span></li>
+      <li class="now"><time>07:40</time><div class="what"><b>오늘의 글 + 1분 숏츠 발행</b><small>주제 선정 → 글 작성 → 블로그 발행 → 영상 제작 → 유튜브 업로드·재생목록 분류</small></div><span class="tag pub">발행</span></li>
+      <li><time>08:30</time><div class="what"><b>진로 안내 글 발행</b><small>학과 블로그의 시리즈 글을 순서대로 올립니다</small></div><span class="tag pub">발행</span></li>
+      <li><time>08:50</time><div class="what"><b>티스토리 교차 발행</b><small>블로그 글을 요약하고 숏츠를 붙여 티스토리에 올립니다</small></div><span class="tag pub">발행</span></li>
+      <li><time>08~20시</time><div class="what"><b>속보 감시 (3시간마다)</b><small>재난 뉴스가 몰리면 긴급 숏츠를 만들어 올립니다</small></div><span class="tag">감시</span></li>
+      <li><time>12:30</time><div class="what"><b>X(트위터) 소식 게시</b><small>그날 글을 X 형식에 맞춰 올립니다</small></div><span class="tag pub">발행</span></li>
+      <li><time>18:00</time><div class="what"><b>저녁 글 발행</b><small>하루 두 번째 블로그 글</small></div><span class="tag pub">발행</span></li>
+      <li><time>18:50</time><div class="what"><b>티스토리 교차 발행</b><small>저녁 몫 요약 글</small></div><span class="tag pub">발행</span></li>
+      <li><time>19:00</time><div class="what"><b>네이버 블로그 발행</b><small>네이버 검색용 글을 따로 올립니다</small></div><span class="tag pub">발행</span></li>
+    </ol>
+  </div>
+  <div class="week" aria-label="주간·월간 작업">
+    <span>화·금 08:00 재난 숏츠 다른 채널에 교차 게시</span>
+    <span>수·토 08:30 인스타 카드뉴스</span>
+    <span>수·토 20:00 주간 숏츠 제작</span>
+    <span>월 08:00 주간 성과 리포트</span>
+    <span>매월 1일 월간 리포트</span>
+  </div>
+  <p class="note">기관에 맞출 때는 이 가운데 필요한 작업만 골라 시간과 빈도를 정합니다.</p>
+</section>
+
+<section aria-labelledby="h-flow">
+  <h2 id="h-flow">글 한 편이 일곱 곳으로 갑니다</h2>
+  <div class="flow">
+    <div>주제 선정<small>뉴스·일정·시리즈</small></div><i>→</i>
+    <div>글 작성<small>사실 확인·금지어 규칙</small></div><i>→</i>
+    <div>블로그 발행<small>Blogger·티스토리·네이버</small></div><i>→</i>
+    <div>1분 숏츠<small>대본·화면·음성·자막</small></div><i>→</i>
+    <div>유튜브<small>제목·썸네일·재생목록</small></div><i>→</i>
+    <div>인스타·스레드·X<small>채널별 형식</small></div><i>→</i>
+    <div>카톡 알림<small>결과·오류 보고</small></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-cases">
+  <h2 id="h-cases">운영 사례</h2>
+  <div class="cases">
+    <div class="case"><h3>재난안전과 GeoAI 블로그</h3><p>재난안전·공간정보·생성형 AI 글을 하루 두 편 자동 발행. 59편.</p><a class="url" href="https://geoaina.blogspot.com/" target="_blank" rel="noopener">geoaina.blogspot.com</a></div>
+    <div class="case"><h3>대학 학과 블로그</h3><p>학과 소식·진로·자격증 시리즈와 지역 재난 뉴스 해설. 41편.</p><a class="url" href="https://smuds2026.blogspot.com/" target="_blank" rel="noopener">smuds2026.blogspot.com</a></div>
+    <div class="case"><h3>유튜브 숏츠 채널</h3><p>블로그 글을 1분 숏츠로 바꿔 매일 업로드, 재생목록 자동 분류.</p><a class="url" href="https://www.youtube.com/@geoai-safety" target="_blank" rel="noopener">youtube.com/@geoai-safety</a></div>
+    <div class="case"><h3>티스토리 교차 발행</h3><p>요약 글과 숏츠를 하루 두 번 자동으로 다시 싣습니다.</p><a class="url" href="https://na-geoai.tistory.com/" target="_blank" rel="noopener">na-geoai.tistory.com</a></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-plans">
+  <h2 id="h-plans">패키지</h2>
+  <div class="plans">
+    <div class="plan">
+      <h3>블로그 자동 발행</h3>
+      <div class="price">50만 원<small> · 14일</small></div>
+      <ul><li>기관 주제 맞춤 글 자동 작성</li><li>블로그 1곳 매일 발행</li><li>Google·네이버·다음 검색 등록</li><li>수정 2회</li></ul>
+      <div class="meta">홍보 글을 꾸준히 쌓고 싶은 곳</div>
+    </div>
+    <div class="plan pick">
+      <span class="badge">추천 구성</span>
+      <h3>블로그 + 숏츠</h3>
+      <div class="price">150만 원<small> · 21일</small></div>
+      <ul><li>블로그 2곳 + 교차 발행</li><li>글 → 1분 숏츠 자동 제작</li><li>유튜브 업로드·재생목록·썸네일</li><li>카카오톡 결과 알림</li><li>수정 3회</li></ul>
+      <div class="meta">유튜브를 만들어 놓고 멈춘 곳</div>
+    </div>
+    <div class="plan">
+      <h3>전 채널 자동화</h3>
+      <div class="price">300만 원<small> · 30일</small></div>
+      <ul><li>블로그·숏츠 매일 발행</li><li>인스타·스레드·X 동시 게시</li><li>속보 감시 긴급 숏츠</li><li>주간 성과 리포트</li><li>수정 5회</li></ul>
+      <div class="meta">홍보 채널을 한 번에 정리하고 싶은 곳</div>
+    </div>
+  </div>
+  <div class="extra">
+    <div><span>월 관리 (오류 대응 · 주제 조정 · 월간 점검)</span><b>10 / 20 / 30만 원</b></div>
+    <div><span>기존 채널 정리 (제목 규칙 · 재생목록 · 썸네일 일괄 정리)</span><b>20만 원</b></div>
+    <div><span>AI 아나운서 영상</span><b>별도 견적</b></div>
+  </div>
+  <p class="note">글 작성 AI 등 외부 서비스 사용료는 쓴 만큼 기관이 직접 결제합니다(보통 월 1~5만 원). 견적 때 미리 계산해 드립니다.</p>
+</section>
+
+<section aria-labelledby="h-steps">
+  <h2 id="h-steps">진행 순서</h2>
+  <ol class="steps">
+    <li><b>상담</b><small>주제·채널·발행 빈도를 정합니다</small></li>
+    <li><b>계정 연결</b><small>계정은 기관 소유 그대로, 공식 API 권한만 받습니다</small></li>
+    <li><b>시범 발행 1주</b><small>매 글을 담당자가 확인한 뒤 공개합니다</small></li>
+    <li><b>자동 운영 전환</b><small>사용 설명서와 인수인계 문서를 드립니다</small></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-faq">
+  <h2 id="h-faq">자주 묻는 질문</h2>
+  <div>
+    <details><summary>AI가 쓴 글이라 검색에서 불리하지 않나요?</summary><p>주제별 사실 확인 규칙, 금지 표현, 출처 표기를 넣어 사람이 읽기 좋은 글로 만듭니다. 처음 1주는 담당자가 확인한 뒤 공개합니다.</p></details>
+    <details><summary>계정 비밀번호를 넘겨야 하나요?</summary><p>아닙니다. 블로그와 유튜브는 공식 API 권한으로 연결하며, 기관이 언제든 권한을 취소할 수 있습니다.</p></details>
+    <details><summary>자동화가 멈추면 어떻게 하나요?</summary><p>실패하면 카카오톡으로 바로 알림이 갑니다. 월 관리를 신청하시면 제가 고칩니다.</p></details>
+    <details><summary>학교·기관 내부 승인이 필요합니다.</summary><p>견적서, 작업 범위서, 개인정보·보안 안내 문서를 드립니다.</p></details>
+  </div>
+</section>
+
+<section class="contact" aria-labelledby="h-contact">
+  <h2 id="h-contact">문의</h2>
+  <p>크몽에서 <code>학과·기관 블로그·숏츠·SNS 매일 자동 발행 구축</code>을 검색해 메시지를 보내 주세요. 기관 상황을 듣고 맞는 구성과 예상 운영비를 먼저 알려 드립니다.</p>
+</section>
+
+</div>
