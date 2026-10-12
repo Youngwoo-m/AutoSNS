@@ -98,14 +98,18 @@ def _state():
 
 def _mark(video):
     s = _state()
-    s["posted"].append({"video": os.path.basename(video),
+    # 파일 이름만 적으면 재난 숏츠처럼 편마다 이름이 같은(final.mp4) 영상이 '이미 올림'으로
+    # 막힌다 — 전체 경로(path)도 함께 적고, 비교는 경로가 있으면 경로로 한다.
+    s["posted"].append({"video": os.path.basename(video), "path": os.path.abspath(video),
                         "at": datetime.now().isoformat(timespec="seconds")})
     with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
 
 
 def already_posted(video):
-    return any(x["video"] == os.path.basename(video) for x in _state()["posted"])
+    full = os.path.abspath(video)
+    return any((x["path"] == full) if x.get("path") else (x["video"] == os.path.basename(video))
+               for x in _state()["posted"])
 
 
 def logged_in(d):
@@ -177,7 +181,77 @@ def _click_post(d):
     return None
 
 
-def upload(video, caption, post=False):
+def _wait_uploaded(d, timeout=300):
+    """영상 전송이 끝날 때까지 기다린다(상단 진행률 'NN%'·'N초 남음'이 사라질 때까지)."""
+    import re as _re
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        top = d.execute_script("return (document.body.innerText||'').slice(0,600);") or ""
+        if not _re.search(r"\d+(\.\d+)?%|남음|remaining", top):
+            return True
+        time.sleep(3)
+    return False
+
+
+def _confirm_posted(d, caption, timeout=150):
+    """게시가 실제로 끝났는지 게시물 목록에서 확인한다.
+
+    10/12: '게시' 클릭 20초 뒤 다음 영상으로 넘어가자 산불·퀴즈 2편이 조용히 사라졌다
+    (전송·검사가 덜 끝난 상태). 끝날 때까지 기다리고, 목록에 제목이 보여야 성공으로 친다."""
+    title = (caption.split("\n")[0] or "").strip()[:14]
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        for lb in ("지금 게시", "Post now"):
+            for e in d.find_elements(By.XPATH, f"//button[normalize-space()='{lb}']"):
+                try:
+                    d.execute_script("arguments[0].click();", e)
+                    log(f"'{lb}' 확인 창 누름")
+                except Exception:
+                    pass
+        if "/tiktokstudio/content" in d.current_url:
+            break
+        time.sleep(3)
+    for _ in range(6):
+        if "/tiktokstudio/content" not in d.current_url:
+            d.get("https://www.tiktok.com/tiktokstudio/content")
+        time.sleep(10)
+        if title and title in (d.execute_script("return document.body.innerText||'';") or ""):
+            return True
+        d.get("https://www.tiktok.com/tiktokstudio/content")
+    return False
+
+
+def _set_ai_generated(d):
+    """'AI 생성 콘텐츠' 표시를 켠다. 켜졌으면 True.
+
+    AI 아바타(HeyGen)처럼 실제 사람처럼 보이는 합성 영상은 틱톡 정책상 표시해야 한다.
+    스위치는 '더 보기'를 펼쳐야 보인다(2026-10-12 TikTok Studio 기준)."""
+    for e in d.find_elements(By.XPATH, "//*[normalize-space(text())='더 보기' or normalize-space(text())='Show more']"):
+        try:
+            d.execute_script("arguments[0].click();", e)
+            time.sleep(1)
+        except Exception:
+            pass
+    js = """return [...document.querySelectorAll('[role=switch],input[type=checkbox]')].find(e=>{
+        let p=e; for(let i=0;i<6&&p;i++){ if(/AI 생성 콘텐츠|AI-generated content/.test(p.textContent||'')
+            && (p.textContent||'').length<120) return true; p=p.parentElement; } return false; }) || null;"""
+    sw = d.execute_script(js)
+    if sw is None:
+        return False
+    on = lambda: str(sw.get_attribute("aria-checked") or sw.get_attribute("checked") or "").lower() in ("true", "checked")
+    if not on():
+        d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();", sw)
+        time.sleep(1.5)
+        for b in d.find_elements(By.XPATH, "//button[.//text()[normalize-space()='켜기' or normalize-space()='Turn on']]"):
+            try:
+                d.execute_script("arguments[0].click();", b)
+                time.sleep(1)
+            except Exception:
+                pass
+    return on()
+
+
+def upload(video, caption, post=False, ai_generated=False):
     if not os.path.exists(video):
         raise SystemExit(f"mp4 가 없습니다: {video}")
     if post and already_posted(video):
@@ -205,23 +279,39 @@ def upload(video, caption, post=False):
             raise SystemExit("캡션 입력칸을 못 찾았습니다")
         got = _type_caption(d, box, caption)
         log(f"캡션 입력됨({len(got)}자): {got[:60]}…")
+        if ai_generated:
+            if not _set_ai_generated(d):
+                shot(d, "no_ai_label")
+                raise SystemExit("'AI 생성 콘텐츠' 표시를 켜지 못해 게시하지 않습니다")
+            log("'AI 생성 콘텐츠' 표시 켬")
 
         if not post:
             p = shot(d, "dryrun")
             log("DRY-RUN: '게시' 를 누르지 않고 멈춥니다. 화면을 확인하세요.")
             log("실제 게시는 --post 를 붙여 다시 실행하세요.")
-            input("확인했으면 Enter 를 눌러 창을 닫습니다... ")
+            if sys.stdin.isatty():
+                input("확인했으면 Enter 를 눌러 창을 닫습니다... ")
             return {"status": "dry_run", "shot": p}
 
+        if not _wait_uploaded(d):
+            shot(d, "upload_timeout")
+            raise SystemExit("영상 전송이 5분 안에 끝나지 않아 게시하지 않습니다")
+        # AI 표시 스위치를 누르면 설명칸이 다시 그려지는 일이 있어, 게시 직전에 한 번 더 확인
+        box = _caption_box(d, timeout=10)
+        if box is not None and (caption.split("\n")[0][:10] not in (box.text or "")):
+            got = _type_caption(d, box, caption)
+            log(f"설명이 비어 다시 입력({len(got)}자)")
         lb = _click_post(d)
         if lb is None:
             shot(d, "no_post_button")
             raise SystemExit("'게시' 버튼을 못 찾았습니다")
-        log(f"'{lb}' 클릭 — 업로드 마무리를 기다립니다")
-        time.sleep(20)
-        p = shot(d, "posted")
+        log(f"'{lb}' 클릭 — 게시물 목록에 나타날 때까지 기다립니다")
+        ok = _confirm_posted(d, caption)
+        p = shot(d, "posted" if ok else "post_unconfirmed")
+        if not ok:
+            raise SystemExit("게시물 목록에서 확인되지 않았습니다(게시 실패 가능)")
         _mark(video)
-        log("✅ 게시 완료(화면 스크린샷으로 확인하세요)")
+        log("✅ 게시 완료(게시물 목록에서 확인)")
         return {"status": "posted", "shot": p}
     finally:
         # 붙어 있는 브라우저는 닫지 않는다 — 닫으면 다음 실행 때 다시 띄워야 하고,
