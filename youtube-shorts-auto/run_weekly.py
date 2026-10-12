@@ -125,8 +125,11 @@ def main(argv=()):
         return
 
     try:
-        data = generate()                 # 1) 뉴스 → 대본(장면+나레이션)
         cfg = load_config()
+        _h = cfg.get("heygen", {})
+        anchor_today = bool(_h.get("anchor_news", False)
+                            and datetime.now().weekday() in _h.get("anchor_days", [5]))
+        data = generate(anchor=anchor_today)   # 1) 뉴스 → 대본(아나운서 날은 이어 읽는 말투)
 
         # 2~5) 영상 만들기 — 아나운서 발행일(기본 토요일)만 'AI 아나운서', 그 외(수)엔 카드.
         #      아나운서 실패(크레딧·오류) 시에도 카드로 자동 폴백(발행이 멈추지 않게).
