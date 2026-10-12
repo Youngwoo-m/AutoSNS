@@ -3,6 +3,7 @@
 # 주석은 반드시 별도 줄에 쓸 것.
 
 # ── 자격증명·비밀정보 — 절대 커밋 금지 ──────────────────────────
+.env
 # api.txt: 계정 ID/비밀번호 평문 메모
 api.txt
 # config.json: Anthropic·Gamma·네이버 검색 API 키 포함
