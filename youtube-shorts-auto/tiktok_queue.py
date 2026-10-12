@@ -4,7 +4,7 @@
   - youtube_upload.upload (수·토 뉴스, 속보, 수동 업로드) — 학과 채널·공개일 때만
   - publish_career.py (화 퀴즈·진로)
   - /Volumes/USB256/shorts-disaster/tools/publish.py (재난 숏츠 — 예약 공개 시각 + 30분, AI 아바타 표시)
-  GeoAI 개인 채널 영상은 담지 않는다(학과 계정이 아니다).
+  개인 GeoAI 채널 숏츠도 담는다(2026-10-12 사용자 요청). 제휴(쿠팡) 고지가 있는 영상은 빼고 담는다.
 
 올리기(main): 게시 시각이 지난 것 중 가장 오래된 1편. 틱톡끼리는 3시간 이상 띄운다(같은 날
 여러 편이 몰리면 서로 노출을 나눠 갖는다 — 화요일은 재난 숏츠·퀴즈가 겹친다). 14일 넘은 것은 버린다.
@@ -27,7 +27,9 @@ QUEUE = os.path.join(BASE_DIR, "posts", "tiktok_queue.json")
 MAX_AGE_DAYS = 14
 MAX_TRIES = 3
 DELAY_MIN = 30          # 유튜브 공개 뒤 틱톡까지
-GAP_HOURS = 3           # 틱톡 게시 사이 최소 간격
+GAP_HOURS = 3           # 틱톡 게시 사이 최소 간격(밀린 영상 기준)
+GAP_FRESH_HOURS = 1     # 새 영상끼리는 1시간 — 화요일 GeoAI(08:10)·재난 숏츠(08:30)가 붙는다
+HOURS = (7, 23)         # 이 시간대에만 올린다(간격 때문에 새벽으로 밀리지 않게)
 
 CAPTION_SYSTEM = """너는 세명대학교 재난안전학과 틱톡 계정의 캡션 작성자다.
 주어진 영상 제목·설명만 근거로 쓴다. 없는 수치·장소·사실을 만들지 않는다. 짧을수록 좋다.
@@ -64,7 +66,7 @@ def _save(q):
     os.replace(tmp, QUEUE)
 
 
-def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source=""):
+def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source="", backfill=False, notice=""):
     """대기열에 한 편 넣는다. 어떤 경우에도 예외를 올리지 않는다(발행 흐름을 막지 않게)."""
     try:
         if not ((load_config().get("tiktok_web") or {}).get("daily", True)):
@@ -83,7 +85,8 @@ def add(video, title, description="", hashtags=(), ai_generated=False, not_befor
                   "ai_generated": bool(ai_generated),
                   "not_before": ((dt.datetime.fromisoformat(not_before) if not_before else dt.datetime.now())
                                  + dt.timedelta(minutes=DELAY_MIN)).isoformat(timespec="seconds"),
-                  "source": source, "added": dt.datetime.now().isoformat(timespec="seconds"),
+                  "source": source, "backfill": bool(backfill), "notice": (notice or "").strip(),
+                  "added": dt.datetime.now().isoformat(timespec="seconds"),
                   "posted": None, "tries": 0})
         _save(q)
         log(f"틱톡 대기열에 추가: {os.path.basename(video)} — {title[:40]}")
@@ -119,6 +122,10 @@ def make_caption(e, cfg=None):
     except Exception as ex:  # noqa: BLE001
         log(f"틱톡 설명 생성 실패 → 기본 형식: {type(ex).__name__}")
     text = text or _fallback_caption(e)
+    if e.get("notice"):                    # 제휴 고지 등 반드시 실릴 문구 — 해시태그 바로 위
+        lines = text.split("\n")
+        lines.insert(len(lines) - 1, e["notice"])
+        text = "\n".join(lines)
     if e.get("ai_generated"):
         lines = text.split("\n")
         lines.insert(len(lines) - 1, "※ 진행자 모습과 목소리는 AI로 합성한 아바타입니다.")
@@ -128,9 +135,12 @@ def make_caption(e, cfg=None):
 
 def pick(q, now=None):
     now = now or dt.datetime.now()
+    if not (HOURS[0] <= now.hour < HOURS[1]):
+        return None, f"게시 시간대({HOURS[0]}~{HOURS[1]}시) 밖"
     last = max(((e.get("posted") or {}).get("at", "") for e in q), default="")
-    if last and dt.datetime.fromisoformat(last) > now - dt.timedelta(hours=GAP_HOURS):
-        return None, f"직전 게시({last[11:16]}) 뒤 {GAP_HOURS}시간이 안 지남"
+    since = (now - dt.datetime.fromisoformat(last)) if last else dt.timedelta(days=99)
+    if since < dt.timedelta(hours=GAP_FRESH_HOURS):
+        return None, f"직전 게시({last[11:16]}) 뒤 {GAP_FRESH_HOURS}시간이 안 지남"
     cutoff = (now - dt.timedelta(days=MAX_AGE_DAYS)).isoformat()
     ready = [e for e in q if not e.get("posted") and e.get("tries", 0) < MAX_TRIES
              and e["added"] >= cutoff and (e.get("not_before") or "") <= now.isoformat()
@@ -138,7 +148,16 @@ def pick(q, now=None):
     if not ready:
         left = [e for e in q if not e.get("posted")]
         return None, f"올릴 편 없음(대기 {len(left)}편)"
-    return sorted(ready, key=lambda e: e["added"])[0], ""
+    # 새로 올라온 영상(유튜브 공개 30분 뒤)이 먼저, 밀린 영상(backfill)은 빈 시간에.
+    e = sorted(ready, key=lambda e: (e.get("backfill", False), e["not_before"]))[0]
+    if e.get("backfill") and since < dt.timedelta(hours=GAP_HOURS):
+        return None, f"직전 게시({last[11:16]}) 뒤 {GAP_HOURS}시간이 안 지나 밀린 영상은 쉼"
+    if e.get("backfill"):
+        soon = (now + dt.timedelta(hours=GAP_HOURS)).isoformat()
+        if any(not x.get("posted") and not x.get("backfill") and now.isoformat() < x["not_before"] <= soon
+               for x in q):
+            return None, f"{GAP_HOURS}시간 안에 새 영상이 올라갈 차례 — 밀린 영상은 쉼"
+    return e, ""
 
 
 def main(argv):
