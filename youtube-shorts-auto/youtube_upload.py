@@ -329,6 +329,15 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
                 log(f"재생목록 추가: {pl}")
         except Exception as e:  # noqa: BLE001
             log(f"재생목록 추가 실패(업로드는 정상): {type(e).__name__}: {str(e)[:120]}")
+    # 학과 채널 공개 숏츠는 틱톡 하루 1편 대기열에도 넣는다(개인 GeoAI 채널은 제외).
+    if vid and privacy == "public" and (not token_path or os.path.abspath(token_path) == os.path.abspath(TOKEN_PATH)):
+        try:
+            from tiktok_queue import add as tiktok_add
+            tiktok_add(video_path, data.get("title", ""), data.get("description", ""),
+                       data.get("hashtags") or [], ai_generated=bool(status.get("containsSyntheticMedia")),
+                       source="youtube_upload")
+        except Exception as e:  # noqa: BLE001
+            log(f"틱톡 대기열 건너뜀: {type(e).__name__}")
     return {"status": "uploaded", "video_id": vid, "url": url, "privacy": privacy}
 
 

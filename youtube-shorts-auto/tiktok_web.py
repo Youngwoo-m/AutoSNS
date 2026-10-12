@@ -261,6 +261,75 @@ def _set_location(d, name="충북제천"):
     return chosen()
 
 
+# 인기 음원에서 피할 이름 — 뉴스·시사 음원이나 남의 '오리지널 사운드'는 재난안전 영상과 맞지 않는다.
+SOUND_SKIP = ("뉴스", "속보", "계엄", "비상", "전쟁", "정치", "original sound", "오리지널 사운드")
+
+
+def _add_popular_sound(d, volume_db=-20):
+    # ※ 기본으로 쓰지 않는다(upload(popular_sound=False)). 웹 편집기는 음원을 영상 소리에 섞어
+    #   넣을 뿐 그 음원 페이지와 연결하지 않아('오리지널 사운드'로 남는다) 인기 음원의 추천 효과가
+    #   없고, 우리 영상의 나레이션·배경음악 위에 음악이 겹친다(2026-10-12 확인).
+    """업로드 화면의 '사운드' 편집기에서 추천(인기) 음원 하나를 낮은 볼륨으로 깐다. 넣은 음원 이름(실패면 "").
+
+    우리 영상에는 나레이션·배경음악이 이미 있다 — 음원은 추천 노출을 위한 것이라
+    -20dB 로 아주 작게 둔다. 어느 단계든 실패하면 편집을 취소하고 음원 없이 진행한다."""
+    from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.keys import Keys
+    try:
+        btn = [b for b in d.find_elements(By.XPATH, "//button[normalize-space()='사운드']")]
+        if not btn:
+            return ""
+        ActionChains(d).move_to_element(btn[0]).click().perform()
+        time.sleep(8)
+        for b in d.find_elements(By.XPATH, "//button[normalize-space()='확인']"):   # 'Phone mode' 안내
+            try:
+                ActionChains(d).move_to_element(b).click().perform()
+                time.sleep(1)
+                break
+            except Exception:
+                pass
+        # 추천 목록: 이름 + 오른쪽 '+' 버튼
+        items = d.execute_script("""return [...document.querySelectorAll('div')].filter(e=>{
+            const t=(e.innerText||'').split('\\n'); return e.offsetParent && t.length>=2 && t.length<=3
+              && /\\d\\d:\\d\\d ·/.test(t[1]||'') && e.querySelectorAll('button').length>=1 && e.getBoundingClientRect().x<500;})
+            .map(e=>[e, (e.innerText||'').split('\\n')[0]]);""")
+        name, plus = "", None
+        for el, nm in items:
+            if any(k.lower() in nm.lower() for k in SOUND_SKIP):
+                continue
+            bs = el.find_elements(By.TAG_NAME, "button")
+            if bs:
+                name, plus = nm, bs[-1]
+                break
+        if plus is None:
+            raise RuntimeError("추천 음원 없음")
+        ActionChains(d).move_to_element(plus).click().perform()
+        time.sleep(5)
+        vol = d.execute_script("""return [...document.querySelectorAll('input[type=text]')].find(i=>i.offsetParent
+            && (i.closest('[class*=PropSetting]')) && i.getBoundingClientRect().y<220) || null;""")
+        if vol is None:
+            raise RuntimeError("볼륨 칸 없음")
+        ActionChains(d).move_to_element(vol).click().key_down(Keys.COMMAND).send_keys("a").key_up(Keys.COMMAND)\
+            .send_keys(str(volume_db)).send_keys(Keys.ENTER).perform()
+        time.sleep(1)
+        save = d.execute_script("""return [...document.querySelectorAll('button')].find(b=>b.offsetParent
+            && b.textContent.trim()==='저장' && b.getBoundingClientRect().y<60) || null;""")
+        d.execute_script("arguments[0].click();", save)
+        time.sleep(8)
+        return name if name in (d.execute_script("return document.body.innerText||'';") or "") else ""
+    except Exception as e:  # noqa: BLE001
+        log(f"인기 음원 넣기 실패(음원 없이 진행): {type(e).__name__}: {str(e)[:80]}")
+        for b in d.find_elements(By.XPATH, "//button[normalize-space()='취소']"):
+            try:
+                if b.location.get("y", 999) < 60:
+                    d.execute_script("arguments[0].click();", b)
+                    time.sleep(3)
+                    break
+            except Exception:
+                pass
+        return ""
+
+
 def _set_ai_generated(d):
     """'AI 생성 콘텐츠' 표시를 켠다. 켜졌으면 True.
 
@@ -291,7 +360,7 @@ def _set_ai_generated(d):
     return on()
 
 
-def upload(video, caption, post=False, ai_generated=False, location="충북제천"):
+def upload(video, caption, post=False, ai_generated=False, location="충북제천", popular_sound=False):
     if not os.path.exists(video):
         raise SystemExit(f"mp4 가 없습니다: {video}")
     if post and already_posted(video):
@@ -313,6 +382,9 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
         log(f"영상 전송: {os.path.basename(video)}")
         time.sleep(10)
 
+        if popular_sound and not video.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+            snd = _add_popular_sound(d)
+            log(f"인기 음원: {snd} (-20dB)" if snd else "인기 음원 없이 진행")
         box = _caption_box(d)
         if box is None:
             shot(d, "no_caption_box")

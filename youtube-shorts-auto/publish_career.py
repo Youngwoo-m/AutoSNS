@@ -243,6 +243,12 @@ def main(argv):
 
     # 1) 유튜브(기준 채널) — 성공해야 published 기록 → 중복 발행 방지
     url = _upload(ep)
+    try:                                   # 틱톡 하루 1편 대기열(실패해도 발행은 계속)
+        from tiktok_queue import add as tiktok_add
+        tiktok_add(ep["video"] if os.path.isabs(ep["video"]) else os.path.join(BASE_DIR, ep["video"]),
+                   ep["title"], ep.get("description", ""), ep.get("tags", []), source="publish_career")
+    except Exception as e:  # noqa: BLE001
+        log(f"틱톡 대기열 건너뜀: {type(e).__name__}")
     # 1-0') 자막 업로드 — 편 정보에 대본(scenes)이 있으면 그대로 자막으로 만든다.
     try:
         if ep.get("scenes"):
