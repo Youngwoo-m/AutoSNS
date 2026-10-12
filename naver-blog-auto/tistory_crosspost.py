@@ -38,7 +38,7 @@ STATE = os.path.join(BASE_DIR, "tistory_state.json")
 COOKIES = os.path.join(BASE_DIR, "tistory_cookies.json")
 
 # 티스토리 카테고리(관리 화면에서 만들어 둔 이름과 같아야 한다)
-CATEGORIES = ("GeoAI 개념", "GIS 도구", "재난 현장 활용", "생성형AI 사용법",
+CATEGORIES = ("GeoAI 개념및실습", "GIS 도구", "재난 현장 활용", "생성형AI 사용법",
               "안전한국훈련 실무", "QGIS 실습", "GeoAI 브리핑")
 # 원본 라벨 중 태그로 옮기지 않을 것(모든 글에 붙는 지역·소속 라벨)
 SKIP_TAGS = {"세명대학교", "재난안전학과", "제천", "충북"}
@@ -75,7 +75,7 @@ def category_of(post):
         return "생성형AI 사용법"
     if "안전한국훈련 실무" in t:
         return "안전한국훈련 실무"
-    return "GeoAI 개념"
+    return "GeoAI 개념및실습"
 
 
 def tags_of(post):
@@ -89,6 +89,22 @@ _BLOCK = re.compile(r"<(h[23]|p|ul|ol|figure)\b[^>]*>(.*?)</\1>", re.S | re.I)
 
 def _text(fragment):
     return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment)).split())
+
+
+YT_EMBED = re.compile(r'youtube(?:-nocookie)?\.com/embed/([\w-]{11})')
+
+
+def shorts_html(video_id):
+    """세로 숏츠 임베드(폭 315, 9:16). 영상이 안 뜨는 환경을 위해 아래에 링크도 둔다."""
+    v = html.escape(video_id)
+    return ('<h3>▶ 1분 영상으로 보기</h3>'
+            '<p style="text-align:center"><iframe width="315" height="560" '
+            f'src="https://www.youtube.com/embed/{v}" title="재난안전과 GeoAI 숏츠" frameborder="0" '
+            'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '
+            'allowfullscreen style="max-width:100%;border-radius:12px"></iframe></p>'
+            f'<p style="text-align:center;font-size:13px"><a href="https://youtube.com/shorts/{v}" '
+            'target="_blank" rel="noopener">유튜브에서 보기</a> · '
+            '<a href="https://www.youtube.com/@geoai-safety" target="_blank" rel="noopener">채널 구독</a></p>')
 
 
 def summary_html(post):
@@ -105,6 +121,11 @@ def summary_html(post):
                  and "자료사진" not in t and "실습일" not in t), "")
     if lead:
         P.append(f"<p>{html.escape(lead)}</p>")
+
+    # 원문에 붙은 숏츠가 있으면 같이 싣는다 — 티스토리는 색인이 잘 돼서 영상 유입 통로가 된다
+    yt = YT_EMBED.search(c)
+    if yt:
+        P.append(shorts_html(yt.group(1)))
 
     # 3줄 요약(있으면) — 제목 블록 바로 다음 목록
     for i, (tag, raw, t) in enumerate(blocks):
@@ -360,9 +381,120 @@ def find_url(title, tries=6):
     return f"{BLOG}/ (주소 확인 실패)"
 
 
+def video_block(video_id):
+    """가로 해설 영상(기술사 등) 임베드 — 16:9, 화면 폭에 맞춘다."""
+    v = html.escape(video_id)
+    return ('<h3>▶ 2분 요약 영상</h3>'
+            '<p style="text-align:center"><iframe width="640" height="360" '
+            f'src="https://www.youtube.com/embed/{v}" title="재난안전과 GeoAI 해설 영상" frameborder="0" '
+            'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" '
+            'allowfullscreen style="max-width:100%;aspect-ratio:16/9;height:auto;border-radius:12px"></iframe></p>')
+
+
+def add_shorts(d, tistory_url, video_id, go, block=None, anchor=None, h2=None, move=False):
+    """이미 올린 티스토리 글에 영상 칸을 끼워 넣는다. anchor 글자가 든 요소 앞, 없으면 첫 소제목 앞,
+    그것도 없으면 '전체 글 보기' 앞. 편집기가 iframe 을 지우면 저장하지 않고 멈춘다."""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    W = WebDriverWait(d, 25)
+    num = tistory_url.rstrip("/").rsplit("/", 1)[-1]
+    d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
+    if "/manage/newpost" not in d.current_url and kakao_relogin(d):
+        d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
+    W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
+    time.sleep(1.5)
+    cur = d.execute_script("return tinymce.activeEditor.getContent();")
+    moved = False
+    if move:                                # 자리 옮기기: 이미 넣은 영상 칸을 빼고 다시 넣는다
+        cut = re.compile(r"<h3[^>]*>[^<]*(?:요약 영상|영상으로 보기)[^<]*</h3>\s*<p[^>]*>\s*<iframe[^>]*embed/"
+                         + re.escape(video_id) + r"[^>]*>\s*</iframe>\s*</p>", re.S)
+        cur, moved = cut.subn("", cur, count=1)
+    if video_id in cur:
+        return "already"
+    block = block or shorts_html(video_id)
+    i = -1
+    if h2 is not None:                      # h2 글자에 h2 가 든 첫 소제목 앞('' 이면 첫 h2 앞)
+        m = re.search(r"<h2\b[^>]*>(?:(?!</h2>).)*" + re.escape(h2), cur, re.S) \
+            or re.search(r"<h2\b", cur)       # 그 소제목이 없으면 첫 h2 앞(도입 다음)
+        i = m.start() if m else -1
+    if i < 0 and anchor and anchor in cur:
+        i = cur.rfind("<", 0, cur.find(anchor))
+        while i > 0 and cur[i + 1] not in "hp":     # 감싼 h2/h3/p 시작 태그까지 거슬러 간다
+            i = cur.rfind("<", 0, i)
+    if i < 0:
+        i = cur.find("<h3")
+    if i < 0:
+        i = cur.find("전체 글 보기")
+        i = cur.rfind("<p", 0, i) if i >= 0 else len(cur)
+    new = cur[:i] + block + cur[i:]
+    d.execute_script("tinymce.activeEditor.setContent(arguments[0]);"
+                     "tinymce.activeEditor.fire('change'); tinymce.activeEditor.save();", new)
+    kept = d.execute_script("return tinymce.activeEditor.getContent();")
+    if f"embed/{video_id}" not in kept:
+        raise RuntimeError("편집기가 iframe 을 지움 — 저장하지 않음")
+    if not go:
+        return "dry-ok" + (" (옮김)" if moved else "")
+    d.execute_script("arguments[0].click();", d.find_element(By.ID, "publish-layer-btn"))
+    W.until(EC.presence_of_element_located((By.ID, "publish-btn")))
+    time.sleep(0.8)
+    btn = d.find_element(By.ID, "publish-btn")
+    d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();", btn)
+    W.until(lambda x: "/manage/newpost" not in x.current_url)
+    time.sleep(2)
+    return "saved"
+
+
+def update_shorts(go):
+    """state 의 기존 교차 발행 글 중 원문에 숏츠가 있는 글에 숏츠 칸을 넣는다."""
+    s = state()
+    src = {p["url"]: p for p in fetch_posts()}
+    todo = []
+    for url, v in s["posted"].items():
+        m = YT_EMBED.search((src.get(url) or {}).get("content", ""))
+        if m:
+            todo.append((v["tistory"], m.group(1), v["title"]))
+    d = build_driver(headless=False)
+    try:
+        for turl, vid, title in todo:
+            try:
+                r = add_shorts(d, turl, vid, go)
+            except Exception as e:
+                _shot(d, "shorts_fail")
+                r = f"실패 {type(e).__name__}: {str(e)[:120]}"
+            log(f"  숏츠 {r}: {turl} ← {vid} | {title[:40]}")
+            if go and r == "saved":
+                time.sleep(8)
+    finally:
+        close(d)
+
+
 # ─── 실행 ────────────────────────────────────────────────────────────────────
 def main():
     args = sys.argv[1:]
+    if "--move-video" in args:              # --move-video 글번호 영상ID 소제목글자 [--go]
+        k = args.index("--move-video")
+        num, vid, head = args[k + 1], args[k + 2], (args[k + 3] if len(args) > k + 3 and not args[k + 3].startswith("--") else "")
+        d = build_driver(headless=False)
+        try:
+            r = add_shorts(d, f"{BLOG}/{num}", vid, "--go" in args, block=video_block(vid), h2=head, move=True)
+            log(f"  영상 옮김 {r}: {BLOG}/{num} ← {vid} (h2 '{head}' 앞)")
+        finally:
+            close(d)
+        return
+    if "--add-video" in args:               # --add-video 글번호 영상ID [--go] — 기술사 글 등에 가로 영상
+        k = args.index("--add-video")
+        num, vid = args[k + 1], args[k + 2]
+        d = build_driver(headless=False)
+        try:
+            r = add_shorts(d, f"{BLOG}/{num}", vid, "--go" in args, block=video_block(vid), h2="모범답안")
+            log(f"  영상 {r}: {BLOG}/{num} ← {vid}")
+        finally:
+            close(d)
+        return
+    if "--add-shorts" in args:              # 기존 글에 숏츠 넣기(--go 없으면 저장 전 확인만)
+        update_shorts("--go" in args)
+        return
     cfg = load_config()
     tc = cfg.get("tistory") or {}
     if tc.get("enabled") is False:

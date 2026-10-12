@@ -359,7 +359,7 @@ def family_of(slug):
 # 가젯에 띄우면 카테고리 메뉴가 된다.
 # 계열(FAMILIES)과 따로 두는 이유: GeoAI 계열 42편을 한 칸에 넣으면 카테고리 하나에
 # 글이 몰린다. 그래서 GeoAI 계열만 개념 / 도구 / 현장 셋으로 나눈다.
-CATEGORIES = ("GeoAI 개념", "GIS 도구", "재난 현장 활용",
+CATEGORIES = ("GeoAI 개념및실습", "GIS 도구", "재난 현장 활용",
               "생성형AI 사용법", "안전한국훈련 실무")
 
 _CAT_CONCEPT = {
@@ -392,7 +392,8 @@ def category_of(slug):
         return "GIS 도구"
     if slug in _CAT_FIELD:
         return "재난 현장 활용"
-    return "GeoAI 개념"          # 분류에서 빠진 GeoAI 편의 기본값
+    # 2026-10-12 'GeoAI 개념' → 'GeoAI 개념및실습' 으로 이름을 바꿨다(블로그 라벨·티스토리 카테고리 함께)
+    return "GeoAI 개념및실습"    # 분류에서 빠진 GeoAI 편의 기본값
 
 FAMILY_HINT = {
     "safetydoc-": (
