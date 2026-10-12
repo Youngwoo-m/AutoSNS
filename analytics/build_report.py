@@ -42,6 +42,12 @@ def merge():
             if newest < (datetime.now() - timedelta(days=8)).strftime("%Y-%m-%d"):
                 warn.append(f"{label} 수집이 {newest} 에서 멈춰 있습니다. "
                             "이번 집계에 최근 발행분이 빠졌을 수 있습니다.")
+    idx = load_part("indexing") or {}
+    pend = idx.get("pending") or []
+    if pend:
+        warn.append(f"구글 색인이 안 된 주소가 {len(pend)}건입니다"
+                    f"(블로그·사이트 {len(idx.get('per_site') or [])}곳 점검). "
+                    "새 글은 발견까지 며칠 걸리는 것이 보통입니다.")
     if ig.get("skipped"):
         warn.append("인스타그램 세션이 만료되어 이번 수치가 빠져 있습니다. "
                     "크롬 프로필로 다시 로그인해 주세요.")
