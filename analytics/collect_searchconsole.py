@@ -28,15 +28,28 @@ DAYS = 28            # 서치콘솔은 2~3일 지연이 있어 넉넉히 본다
 TOP_N = 20
 
 
-def _creds():
+def _token_paths():
+    """token_searchconsole.json 과 token_searchconsole_<계정>.json 전부.
+
+    속성은 계정별로 등록되므로(학과 계정·개인 계정) 토큰도 계정마다 둔다.
+    searchconsole_auth_setup.py <이름> 으로 추가한다."""
+    import glob
+    first = TOKEN_PATH if os.path.exists(TOKEN_PATH) else None
+    rest = sorted(p for p in glob.glob(TOKEN_PATH.replace(".json", "_*.json"))
+                  if p != TOKEN_PATH)
+    return [p for p in [first] + rest if p]
+
+
+def _creds(path=None):
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
-    if not os.path.exists(TOKEN_PATH):
+    path = path or TOKEN_PATH
+    if not os.path.exists(path):
         raise RuntimeError("서치콘솔 토큰 없음 — python searchconsole_auth_setup.py 로 인증하세요.")
-    c = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+    c = Credentials.from_authorized_user_file(path, SCOPES)
     if not c.valid and c.expired and c.refresh_token:
         c.refresh(Request())
-        with open(TOKEN_PATH, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             f.write(c.to_json())
     return c
 
@@ -60,11 +73,26 @@ def collect(sites=None, days=DAYS):
     from googleapiclient.discovery import build
     end = datetime.date.today()
     start = end - datetime.timedelta(days=days)
-    svc = build("searchconsole", "v1", credentials=_creds(), cache_discovery=False)
-    sites = sites or _sites(svc)
+
+    # 계정(토큰)마다 속성 목록이 다르다. 같은 속성을 두 계정이 함께 가진 경우 먼저 나온
+    # 계정으로만 조회해 중복 집계를 막는다.
+    targets, seen = [], set()
+    for tp in _token_paths():
+        try:
+            svc = build("searchconsole", "v1", credentials=_creds(tp), cache_discovery=False)
+            found = sites or _sites(svc)
+        except Exception as e:
+            log(f"  {os.path.basename(tp)}: 인증·속성 조회 실패({type(e).__name__}) — 건너뜀")
+            continue
+        for site in found:
+            if site not in seen:
+                seen.add(site)
+                targets.append((svc, site))
+        log(f"  {os.path.basename(tp)}: 속성 {len(found)}곳")
+    sites = [site for _, site in targets]
 
     items, pages, per_site = [], [], []
-    for site in sites:
+    for svc, site in targets:
         try:
             q = _query(svc, site, str(start), str(end), "query", TOP_N)
             p = _query(svc, site, str(start), str(end), "page", 10)
