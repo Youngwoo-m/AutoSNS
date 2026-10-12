@@ -486,6 +486,39 @@ def _embed_video(driver, url, wait=7):
     return True
 
 
+def _doc_text(driver):
+    """에디터 본문 글자(제목 포함). 글자 수 비교·내용 확인용."""
+    # body.innerText 는 링크 도구막대 같은 에디터 UI 글자까지 들어가 커서 위치에 따라 달라진다
+    # (주소 줄 하나 지울 때마다 121자 차이). 본문 문단 글자만 모은다.
+    return driver.execute_script(
+        "return [...document.querySelectorAll('.se-text-paragraph')]"
+        ".map(e=>e.innerText).join('\\n');") or ""
+
+
+def _verify_document(driver, data):
+    """발행 직전, 넣으려던 내용이 에디터에 다 있는지 확인한다. 빠진 것 목록을 돌려준다.
+
+    10/12 WBGT 글 시험에서 요약·인사·첫 소제목·첫 그림이 통째로 사라진 채 다음 단계로
+    넘어갔다(재현되지 않는 간헐적 현상). 빠진 채 발행되지 않게 여기서 막는다."""
+    import re
+    txt = re.sub(r"\s+", " ", _doc_text(driver))
+    want = []
+    if data.get("summary"):
+        want += [l.strip() for l in data["summary"].splitlines() if l.strip()]
+    want.append((data.get("intro") or "").splitlines()[0] if data.get("intro") else "")
+    for b in data.get("news_blocks", []):
+        want.append(b.get("heading", ""))
+        want.append((b.get("paragraph") or "").strip().splitlines()[0] if b.get("paragraph") else "")
+    missing = [w for w in want if w and re.sub(r"\s+", " ", w)[:25] not in txt]
+    imgs = sum(1 for b in data.get("news_blocks", []) if b.get("image"))
+    have = len(driver.find_elements(By.CSS_SELECTOR, ".se-component.se-image"))
+    if data.get("banner"):
+        imgs += 1
+    if have < imgs:
+        missing.append(f"그림 {imgs}장 중 {have}장만 있음")
+    return missing
+
+
 def _strip_embed_url_lines(driver, url):
     """유튜브 주소를 붙여넣으면 에디터가 영상 카드를 만들면서 주소 글자도 한 줄 남긴다.
     그 줄을 지운다. 본문 입력을 모두 마친 뒤(발행 직전)에 부른다.
@@ -507,16 +540,28 @@ def _strip_embed_url_lines(driver, url):
         p = lines[-1]
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", p)
         time.sleep(0.3)
+        # 줄의 글자(링크) 끝 바로 오른쪽을 누른다 — 줄 폭의 오른쪽 끝을 누르면 그 자리가
+        # 다른 요소(글감 검색창 등)에 가려 커서가 엉뚱한 줄에 남는 일이 있었다.
+        span = (p.find_elements(By.CSS_SELECTOR, "span") or [p])[-1]
         ActionChains(driver).move_to_element_with_offset(
-            p, p.size["width"] // 2 - 4, 0).click().perform()
+            span, span.size["width"] // 2 + 2, 0).click().perform()
         time.sleep(0.6)
-        ActionChains(driver).key_down(MOD_KEY).send_keys(Keys.ARROW_RIGHT).key_up(MOD_KEY).perform()
+        ActionChains(driver).send_keys(Keys.END).perform()
         time.sleep(0.2)
-        ActionChains(driver).key_down(Keys.SHIFT).key_down(MOD_KEY).send_keys(Keys.ARROW_LEFT)\
-            .key_up(MOD_KEY).key_up(Keys.SHIFT).perform()
+        ActionChains(driver).key_down(Keys.SHIFT).send_keys(Keys.HOME).key_up(Keys.SHIFT).perform()
         time.sleep(0.3)
+        # 지운 뒤 본문 글자가 주소 길이보다 많이 줄었으면 다른 줄(본문)을 지운 것 — 되돌린다.
+        # 10/12 WBGT 글의 3줄 요약 앞부분이 이렇게 사라졌다. (에디터는 자체 선택을 써서
+        # window.getSelection 으로는 선택 내용을 읽을 수 없다.)
+        text_before = len(_doc_text(driver))
         ActionChains(driver).send_keys(Keys.BACK_SPACE).perform()
         time.sleep(0.6)
+        lost = text_before - len(_doc_text(driver))
+        if lost > len(url) + 3:
+            ActionChains(driver).key_down(MOD_KEY).send_keys("z").key_up(MOD_KEY).perform()
+            time.sleep(0.8)
+            log(f"⚠ 주소 줄 지우기가 본문 {lost}자를 지워 되돌렸습니다(주소 줄은 남음).")
+            break
         if len(driver.find_elements(By.CSS_SELECTOR, card_sel)) < before:
             ActionChains(driver).key_down(MOD_KEY).send_keys("z").key_up(MOD_KEY).perform()
             time.sleep(0.8)
@@ -656,6 +701,12 @@ def publish(data, dry_run=None):
                 _strip_embed_url_lines(driver, vurl)
 
         shot(driver, "after_typing")
+        if structured:
+            missing = _verify_document(driver, data)
+            if missing:
+                shot(driver, "content_missing")
+                raise RuntimeError("본문 일부가 에디터에서 빠져 발행을 멈춥니다: "
+                                   + " / ".join(m[:30] for m in missing[:5]))
 
         # 상단(배너) 미리보기 스크린샷 — 발행 레이어 열기 전에
         # 제목 요소를 화면에 노출시켜 최상단으로 스크롤
@@ -673,11 +724,24 @@ def publish(data, dry_run=None):
         dismiss_upload_error(driver)
 
         # 5) 상단 '발행' 버튼 클릭 -> 발행 설정 레이어 열림
-        if not click_if_present(driver, By.XPATH,
-                "//button[contains(@class,'publish') and contains(.,'발행')]", 6):
-            click_if_present(driver, By.XPATH,
-                "//*[contains(@class,'publish_btn')]", 6)
-        time.sleep(2)
+        def _layer_open():
+            return bool(driver.find_elements(
+                By.XPATH, "//*[normalize-space(text())='공개 설정' or normalize-space(text())='발행 시간']"))
+        for _try in range(2):
+            if not click_if_present(driver, By.XPATH,
+                    "//button[contains(@class,'publish') and contains(.,'발행')]", 6):
+                click_if_present(driver, By.XPATH,
+                    "//*[contains(@class,'publish_btn')]", 6)
+            time.sleep(2)
+            if _layer_open():
+                break
+            # 10/12: 발행 레이어가 안 열린 채 다음 단계로 넘어가 '발행 완료(추정)'만 남기고
+            # 글은 임시저장 상태로 남았다. 열린 팝업을 닫고 한 번 더 누른다.
+            ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+            time.sleep(1)
+        if not _layer_open():
+            shot(driver, "no_publish_layer")
+            raise RuntimeError("발행 설정 레이어가 열리지 않았습니다(발행 안 됨).")
 
         # 6) 카테고리 선택 (글별 지정 → config 기본값)
         select_category(driver, category)
