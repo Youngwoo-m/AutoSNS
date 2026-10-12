@@ -98,12 +98,41 @@ TITLE_LIMIT = 100
 
 
 def _build_title(data, ycfg):
-    """제목 앞에 [SMU 재난안전뉴스] 등 접두사를 붙인다(중복/100자 초과 방지)."""
+    """제목 앞에 [SMU 재난안전뉴스] 등 접두사, 또는 뒤에 '| 채널명' 접미사를 붙인다(중복/100자 초과 방지).
+
+    숏츠 피드는 제목 앞 20자 남짓만 보여서, 검색어가 앞에 와야 하는 채널은 접미사를 쓴다."""
     title = (data.get("title") or "재난안전 Shorts").strip()
     prefix = ycfg.get("title_prefix", "").strip()
+    suffix = ycfg.get("title_suffix", "").strip()
     if prefix and not title.startswith(prefix):
         title = f"{prefix} {title}"
+    if suffix and not title.endswith(suffix):
+        # 잘려도 본 제목이 남도록 접미사 자리를 먼저 뺀다
+        title = f"{title[:TITLE_LIMIT - len(suffix) - 1].rstrip()} {suffix}"
     return _sanitize(title)[:TITLE_LIMIT]
+
+
+def pick_playlist(title, ycfg):
+    """제목 키워드로 넣을 재생목록 id 를 고른다. 규칙(playlist_rules)은 위에서부터 먼저 맞는 것,
+    아무것도 안 맞으면 playlist_default. 둘 다 없으면 None(재생목록에 넣지 않음)."""
+    for rule in ycfg.get("playlist_rules", []):
+        if any(k in title for k in rule.get("match", [])):
+            return rule.get("playlist")
+    return ycfg.get("playlist_default") or None
+
+
+def put_in_playlist(youtube, video_id, playlist_id):
+    """영상을 재생목록 맨 위에 넣는다. 이미 들어 있으면 건너뛴다(재실행해도 중복되지 않음)."""
+    if not (video_id and playlist_id):
+        return False
+    have = youtube.playlistItems().list(part="id", playlistId=playlist_id,
+                                        videoId=video_id).execute().get("items")
+    if have:
+        return False
+    youtube.playlistItems().insert(part="snippet", body={"snippet": {
+        "playlistId": playlist_id, "position": 0,
+        "resourceId": {"kind": "youtube#video", "videoId": video_id}}}).execute()
+    return True
 
 
 def _build_description(data, cfg):
@@ -292,6 +321,14 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
     vid = response.get("id")
     url = f"https://youtu.be/{vid}" if vid else "(id 없음)"
     log(f"업로드 완료: {url}  (privacy={privacy})")
+    # 재생목록 분류는 부가 작업 — 실패해도 업로드 결과는 그대로 둔다
+    pl = pick_playlist(title, ycfg)
+    if vid and pl:
+        try:
+            if put_in_playlist(youtube, vid, pl):
+                log(f"재생목록 추가: {pl}")
+        except Exception as e:  # noqa: BLE001
+            log(f"재생목록 추가 실패(업로드는 정상): {type(e).__name__}: {str(e)[:120]}")
     return {"status": "uploaded", "video_id": vid, "url": url, "privacy": privacy}
 
 
