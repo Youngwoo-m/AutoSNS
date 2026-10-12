@@ -59,15 +59,24 @@ def _fit(text, limit=MAX_WEIGHT):
     return text.rstrip() + ("…" if _weight(text) < limit else "")
 
 
-def compose(title, summary="", tags=()):
-    """제목 + 요약 한 문장 + 해시태그 2~3개. 링크는 넣지 않는다(링크 글은 13배 비싸다)."""
+# 채널 간 상호 언급. X 는 URL 이 든 글의 과금이 13배라 주소를 넣지 않고, 다른 채널은
+# 계정명으로만 가리킨다(전 채널 모음 단축주소는 프로필 링크에 둔다).
+CROSS_LINE = "🎬 영상 전체는 유튜브 @smds2023 · 전 채널은 프로필 링크"
+
+
+def compose(title, summary="", tags=(), cross=CROSS_LINE):
+    """제목 + 요약 한 문장 + 해시태그 2~3개 + 다른 채널 안내. 링크는 넣지 않는다(링크 글은 13배 비싸다)."""
     title = re.sub(r"\s*#\S+", "", title or "").strip()
     title = re.sub(r"\s*\|\s*세명대 재난안전학과.*$", "", title)       # 시리즈 꼬리표 정리
     tag_line = " ".join("#" + t.replace(" ", "") for t in list(tags)
                         if t and t.lower() != "shorts")
     tag_line = " ".join(tag_line.split()[:3])
     parts = [title, (summary or "").strip(), tag_line]
-    return _fit("\n\n".join(p for p in parts if p))
+    cross = str(cross or "").strip()
+    # 상호 언급 줄은 자리를 먼저 떼어 둔다 — 뒤에 붙이면 _fit 이 이 줄부터 덜어낸다.
+    body = _fit("\n\n".join(p for p in parts if p),
+                MAX_WEIGHT - (_weight(cross) + 2 if cross else 0))
+    return "\n\n".join(p for p in (body, cross) if p)
 
 
 TOKEN_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "x_token.json")

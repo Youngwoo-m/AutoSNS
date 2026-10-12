@@ -15,7 +15,11 @@ IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python")
 TIMEOUT = 300
 
 
-def compose(title, summary="", url="", tags=(), limit=500, notice=""):
+# 채널 간 상호 언급 — 스레드만 보고 지나가지 않도록 전 채널 모음(단축주소)을 한 줄 붙인다.
+CHANNELS_LINE = "📌 학과·GeoAI 전 채널 모음 👉 https://url.kr/gitdat"
+
+
+def compose(title, summary="", url="", tags=(), limit=500, notice="", channels=CHANNELS_LINE):
     """제목 + 요약 한 줄 + 링크 + 해시태그(최대 5개) + 고정 문구. '#Shorts' 는 유튜브용이라 뺀다.
 
     summary 는 글 종류에 따라 문자열일 수도 문단 리스트일 수도 있다. 요약은 첫 줄만 쓴다.
@@ -28,14 +32,15 @@ def compose(title, summary="", url="", tags=(), limit=500, notice=""):
     title = re.sub(r"\s*#shorts\b", "", str(title or ""), flags=re.I).strip()
     picked = [t for t in (tags or []) if t.lower() != "shorts"][:5]
     notice = str(notice or "").strip()
-    tail = [("▶ " + url) if url else "", " ".join("#" + t for t in picked), notice]
+    tail = [("▶ " + url) if url else "", str(channels or "").strip(),
+            " ".join("#" + t for t in picked), notice]
     text = "\n\n".join(x for x in [title, summary] + tail if x)
     if len(text) > limit and summary:          # 넘치면 요약부터 줄인다(고지·링크는 그대로)
         cut = max(0, len(summary) - (len(text) - limit) - 1)
         summary = summary[:cut].rstrip() + "…" if cut else ""
         text = "\n\n".join(x for x in [title, summary] + tail if x)
     if len(text) > limit and notice:           # 그래도 넘치면 고지는 남기고 앞부분을 자른다
-        rest = "\n\n".join(x for x in [title, summary] + tail[:2] if x)
+        rest = "\n\n".join(x for x in [title, summary] + tail[:3] if x)
         return rest[:max(0, limit - len(notice) - 2)].rstrip() + "\n\n" + notice
     return text[:limit]
 

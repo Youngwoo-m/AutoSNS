@@ -96,6 +96,9 @@ def add(video, title, description="", hashtags=(), ai_generated=False, not_befor
         return False
 
 
+CROSS_LINE = "📌 유튜브·블로그 등 전 채널 모음 👉 url.kr/gitdat"
+
+
 def _fallback_caption(e):
     title = re.sub(r"\s*\|.*$", "", re.sub(r"\s*#Shorts\b", "", e["title"], flags=re.I)).strip()
     first = re.split(r"(?<=[.!?。])\s+", (e.get("description") or "").strip())[0][:45]
@@ -129,6 +132,11 @@ def make_caption(e, cfg=None):
     if e.get("ai_generated"):
         lines = text.split("\n")
         lines.insert(len(lines) - 1, "※ 진행자 모습과 목소리는 AI로 합성한 아바타입니다.")
+        text = "\n".join(lines)
+    # 채널 간 상호 언급. 틱톡 캡션의 주소는 클릭되지 않으므로 외우기 쉬운 단축주소로 적는다.
+    if CROSS_LINE and CROSS_LINE not in text:
+        lines = text.split("\n")
+        lines.insert(len(lines) - 1, CROSS_LINE)
         text = "\n".join(lines)
     return text
 
