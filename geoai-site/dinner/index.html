@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>오늘 저녁 뭐 먹지?</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="룰렛을 돌려 오늘 저녁 메뉴를 정하고, 내 주변 맛집을 바로 찾아보세요.">
+<meta property="og:title" content="오늘 저녁 뭐 먹지? 🎡 메뉴 룰렛">
+<meta property="og:description" content="룰렛으로 메뉴 정하고 주변 맛집까지 한 번에">
+<meta property="og:image" content="https://geoai-na.netlify.app/dinner/og.jpg">
+<meta property="og:url" content="https://geoai-na.netlify.app/dinner/">
+<meta name="apple-mobile-web-app-title" content="저녁 룰렛">
+<meta name="theme-color" content="#ff6b3d">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#fff7f0;--card:#ffffff;--ink:#2b1d16;--sub:#7a6458;--line:#f0dfd3;
+  --accent:#ff6b3d;--accent2:#ffb03a;--good:#1f9d6b;--safe:#eaf3ff;--safe-ink:#1d4f91;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1b1412;--card:#271d19;--ink:#fbefe7;--sub:#bba395;--line:#3a2b25;--safe:#17222e;--safe-ink:#9cc4f5;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  -webkit-tap-highlight-color:transparent}
+main{max-width:480px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+header{text-align:center;margin:8px 0 14px}
+h1{font-size:clamp(18px,5.4vw,26px);margin:0;letter-spacing:-.5px;white-space:nowrap}
+header p{margin:6px 0 0;color:var(--sub);font-size:14px}
+.titlerow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px}
+.titlerow a{display:flex}
+.dept{display:block;height:clamp(18px,5.6vw,28px);width:auto}
+.ages{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:360px;margin:0 auto 16px}
+.ages button{padding:9px 4px;border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
+.ages button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ages .emg-btn{grid-column:1/-1;border-style:dashed}
+.ages .emg-btn.on{background:#1d3557;border-color:#1d3557;border-style:solid}
+.emg .maps,.emg .delivery,.emg #eatsTip{display:none}
+.info{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--bg);text-align:left;font-size:14px;line-height:1.6}
+.info b{color:var(--accent)}
+.checks{list-style:none;margin:6px 0 0;padding:0}
+.checks li{border-top:1px solid var(--line)}
+.checks li:first-child{border-top:0}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;font-size:14.5px;cursor:pointer}
+.checks input{width:18px;height:18px;margin-top:2px;accent-color:var(--good);flex:none}
+.checks small{display:block;color:var(--sub);font-size:12px}
+.prog{height:8px;border-radius:8px;background:var(--bg);overflow:hidden;margin:4px 0 2px}
+.prog i{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
+.wheel-wrap{position:relative;width:100%;aspect-ratio:1;max-width:320px;margin:0 auto}
+canvas{width:100%;height:100%;display:block;filter:drop-shadow(0 8px 20px rgba(120,50,20,.18))}
+.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;
+  border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--ink);z-index:2}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;aspect-ratio:1;border-radius:50%;
+  background:var(--card);border:4px solid var(--ink);display:grid;place-items:center;font-size:24px;pointer-events:none}
+button{font:inherit;border:0;cursor:pointer}
+.spin{display:block;width:100%;max-width:320px;margin:18px auto 0;padding:16px;border-radius:16px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:20px;font-weight:800;
+  box-shadow:0 6px 16px rgba(255,107,61,.35)}
+.spin:disabled{opacity:.6}
+.browse-btn{display:block;width:100%;max-width:320px;margin:10px auto 0;padding:12px;border-radius:14px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;border:1px solid var(--line)}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.cats button{padding:8px 2px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:600;font-size:13.5px;border:1px solid var(--line)}
+.cats button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.more{display:block;width:100%;margin-top:8px;padding:10px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:18px}
+.result{text-align:center}
+.result .label{color:var(--sub);font-size:14px}
+.result .menu{font-size:34px;font-weight:900;margin:4px 0 12px}
+.maps{display:flex;gap:8px}
+.maps a{flex:1;text-align:center;padding:12px 8px;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px}
+.kakao{background:#fee500;color:#191919}
+.naver{background:#03c75a;color:#fff}
+.delivery{display:flex;gap:8px;margin-top:8px}
+.delivery a{flex:1;text-align:center;padding:12px 8px;border-radius:12px;text-decoration:none;font-weight:700;font-size:15px;color:#fff}
+.eats{background:#00a5f8}
+.baemin{background:#2ac1bc}
+.eats-tip{margin:6px 0 0;color:var(--sub);font-size:12px}
+.orders{margin-top:10px}
+.order-q{margin:0 0 6px;font-size:13px;color:var(--sub)}
+.order-row{display:flex;gap:8px}
+.order{flex:1;display:block;padding:12px 8px;border-radius:12px;color:#fff;font-weight:800;font-size:15px;text-align:center;text-decoration:none}
+.order.cp{background:#e8344e}
+.order.nv{background:#03c75a}
+.shop .ad{width:100%;max-width:300px;margin:0 auto}
+.kit{display:block;margin:0 0 12px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:inherit;text-decoration:none}
+.kit b{display:block;font-size:15px}
+.kit span{display:block;margin-top:3px;color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kit.hidden{display:none}
+.disclose{margin:8px 0 0;text-align:center;color:var(--sub);font-size:11.5px;line-height:1.5}
+h2{font-size:17px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+h2 small{font-weight:500;color:var(--sub);font-size:12px}
+.status{color:var(--sub);font-size:14px;padding:8px 0;text-align:center}
+.list{list-style:none;margin:0;padding:0}
+.list li{border-top:1px solid var(--line)}
+.list li:first-child{border-top:0}
+.list a{display:flex;gap:12px;align-items:center;padding:12px 2px;color:inherit;text-decoration:none}
+.rank{flex:none;width:28px;height:28px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-weight:800;font-size:13px}
+.info{flex:1;min-width:0}
+.name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{color:var(--sub);font-size:13px;margin-top:2px}
+.dist{flex:none;font-weight:700;color:var(--accent);font-size:14px}
+.tag{display:inline-block;background:var(--good);color:#fff;font-size:11px;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
+.radius{display:flex;gap:6px;margin-bottom:10px}
+.wxbar{max-width:360px;margin:0 auto 12px;padding:10px 12px;border-radius:12px;background:#fde8e4;color:#8a1f11;font-size:14px;line-height:1.5}
+.wxbar b{font-weight:800}
+.safe .wx{padding:2px 0 6px;margin-bottom:4px;border-bottom:1px dashed var(--line)}
+.safe .wx.on{color:#c2410c;font-weight:700}
+.safe{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--safe);color:var(--ink);font-size:13.5px;line-height:1.5}
+.safe:empty{display:none}
+.safe .st{font-weight:800;color:var(--safe-ink);margin-bottom:4px}
+.safe .row{display:flex;gap:6px;align-items:baseline;padding:3px 0}
+.safe .row b{flex:none}
+.safe .row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.safe .row a{flex:none;color:var(--safe-ink);font-weight:700;text-decoration:none}
+.safe .tip{margin-top:4px;color:var(--sub);font-size:12px}
+.locbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--sub)}
+.locbar #loc.warn{color:#c2410c}
+.locbar button{flex:none;padding:7px 10px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:700;font-size:12.5px;border:1px solid var(--line)}
+.radius button{flex:1;padding:8px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:600;font-size:14px;border:1px solid var(--line)}
+.radius button.on{background:var(--ink);color:var(--bg)}
+details summary{cursor:pointer;font-weight:700;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:" ▾";color:var(--sub)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.chip{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:14px;color:var(--ink)}
+.chip b{margin-left:6px;color:var(--sub)}
+.add{display:flex;gap:6px}
+.add input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+.add button,.reset{padding:10px 14px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:700}
+.reset{background:transparent;color:var(--sub);padding:8px 0;font-size:13px;text-decoration:underline}
+footer{text-align:center;color:var(--sub);font-size:12px;margin-top:22px;line-height:1.6}
+footer a{color:var(--sub)}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="titlerow">
+      <a href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener" title="세명대학교 재난안전학과 홈페이지"><img class="dept" src="smu_logo.png" width="131" height="28" alt="세명대학교 재난안전학과"></a>
+      <h1 id="title">🍽️ 오늘 저녁 뭐 먹지?</h1>
+    </div>
+    <p id="subtitle">고민은 룰렛에게 맡기고, 맛집은 바로 찾아요</p>
+  </header>
+
+  <div class="wxbar hidden" id="wxbar"></div>
+
+  <div class="ages" id="ages">
+    <button data-p="all">전체</button><button data-p="10">10대</button><button data-p="20">20대</button>
+    <button data-p="3040">30·40대</button><button data-p="50">50대 이상</button><button data-p="night">🌙 야식</button>
+    <button data-p="emergency" class="emg-btn">🔦 비상식량 (정전·재난 대비)</button>
+  </div>
+
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <canvas id="wheel" width="800" height="800"></canvas>
+    <div class="hub">🍚</div>
+  </div>
+  <button class="spin" id="spin">룰렛 돌리기</button>
+  <button class="browse-btn" id="browseBtn" type="button">🔍 룰렛 없이 주변 맛집 바로 보기</button>
+
+  <section class="card hidden" id="browse">
+    <h2>🔍 주변 맛집 둘러보기 <small id="bsrc"></small></h2>
+    <div class="cats" id="bcats">
+      <button data-q="" class="on">전체</button><button data-q="한식">한식</button><button data-q="중식">중식</button><button data-q="일식">일식</button>
+      <button data-q="양식">양식</button><button data-q="분식">분식</button><button data-q="치킨">치킨</button><button data-q="카페">카페</button>
+    </div>
+    <div class="radius" id="bradius">
+      <button data-r="500">500m</button><button data-r="1000" class="on">1km</button><button data-r="2000">2km</button>
+    </div>
+    <div class="status" id="bstatus"></div>
+    <ul class="list" id="blist"></ul>
+    <button class="more hidden" id="bmore" type="button">더 보기</button>
+    <div class="safe"></div>
+    <div class="locbar"><span class="locmsg"></span><button type="button" id="brelocate">📍 위치 다시 찾기</button></div>
+  </section>
+
+  <section class="card result hidden" id="result">
+    <div class="label" id="label">오늘 저녁은</div>
+    <div class="menu" id="menu"></div>
+    <div class="maps">
+      <a class="kakao" id="kakao" target="_blank" rel="noopener">카카오맵 검색</a>
+      <a class="naver" id="naver" target="_blank" rel="noopener">네이버지도 검색</a>
+    </div>
+    <div class="delivery">
+      <a class="eats" href="https://www.coupangeats.com/" target="_blank" rel="noopener">🛵 쿠팡이츠</a>
+      <a class="baemin" href="https://www.baemin.com/" target="_blank" rel="noopener">🛵 배달의민족</a>
+    </div>
+    <p class="eats-tip" id="eatsTip"></p>
+    <div class="orders">
+      <p class="order-q" id="orderq"></p>
+      <div class="order-row">
+        <a class="order cp" id="order" target="_blank" rel="noopener">🛒 쿠팡</a>
+        <a class="order nv" id="norder" target="_blank" rel="noopener">🛒 네이버쇼핑</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="prep">
+    <h2>🎒 3일 비상용품 체크리스트 <small id="pcount"></small></h2>
+    <div class="prog"><i id="pbar"></i></div>
+    <ul class="checks" id="checks"></ul>
+    <p class="disclose">1인 3일 기준 예시예요. 행정안전부 국민재난안전포털의 비상용품 안내를 참고해 가족 수에 맞게 준비하세요.</p>
+    <div class="safe"></div>
+    <div class="locbar"><span class="locmsg" id="pstatus">재난 땐 가까운 대피소부터 확인해 두세요.</span><button type="button" id="psafety">🏠 가까운 대피소·AED</button></div>
+  </section>
+
+  <section class="card hidden" id="nearby">
+    <h2>📍 주변 맛집 <small id="src"></small></h2>
+    <div class="radius" id="radius">
+      <button data-r="500">500m</button><button data-r="1000" class="on">1km</button><button data-r="2000">2km</button>
+    </div>
+    <div class="status" id="status"></div>
+    <ul class="list" id="list"></ul>
+    <div class="safe"></div>
+    <div class="locbar"><span class="locmsg" id="loc"></span><button type="button" id="relocate">📍 위치 다시 찾기</button></div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>메뉴 편집</summary>
+      <div class="chips" id="chips"></div>
+      <form class="add" id="addForm">
+        <input id="addInput" maxlength="10" placeholder="메뉴 추가 (예: 마라탕)" enterkeyhint="done">
+        <button type="submit">추가</button>
+      </form>
+      <button class="reset" id="reset" type="button">기본 메뉴로 되돌리기</button>
+    </details>
+  </section>
+
+  <section class="card shop hidden" id="shop">
+    <h2>🛒 집에서 해 먹는다면</h2>
+    <a class="kit hidden" id="kit" target="_blank" rel="sponsored noopener" referrerpolicy="unsafe-url"></a>
+    <div class="ad">
+      <script src="https://ads-partners.coupang.com/g.js"></script>
+      <script>
+        new PartnersCoupang.G({"id":1037669,"template":"carousel","trackingCode":"AF2456793","width":"100%","height":"250","tsource":""});
+      </script>
+    </div>
+    <p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
+  </section>
+
+  <footer>
+    주변 식당 정보: 카카오맵<br>
+    위치 정보는 주변 검색에만 쓰이고 저장되지 않아요 · <a href="/">geoai-na</a>
+  </footer>
+</main>
+
+<script>
+const DEFAULT_MENUS = ['김치찌개','짜장면','초밥','치킨','피자','삼겹살','떡볶이','국밥','돈까스','햄버거','쌀국수','족발'];
+// 연령대·야식별 메뉴 묶음 (통계가 아니라 흔한 인식 기반 예시)
+const PRESETS = {
+  all:{menus:DEFAULT_MENUS},
+  '10':{menus:['떡볶이','마라탕','햄버거','치킨','피자','탕후루','돈까스','라면','김밥','짜장면']},
+  '20':{menus:['마라탕','쌀국수','초밥','파스타','삼겹살','포케','라멘','곱창','치킨','덮밥','샐러드','타코']},
+  '3040':{menus:['김치찌개','국밥','삼겹살','족발','초밥','짜장면','냉면','갈비','회','비빔밥','부대찌개','칼국수']},
+  '50':{menus:['국밥','생선구이','칼국수','백반','순두부','보쌈','추어탕','한정식','갈비탕','냉면','오리고기','청국장']},
+  emergency:{menus:['참치캔','즉석밥','3분카레','컵라면','건빵','에너지바','스팸','과일 통조림','견과류','육포','발열 도시락','생수'],emergency:true},
+  night:{menus:['치킨','피자','족발','보쌈','떡볶이','라면','곱창','닭발','순대','햄버거','마라탕','편의점'],night:true},
+};
+// 메뉴 이름에 키워드가 들어 있으면 그 아이콘, 없으면 기본 접시 (앞쪽 키워드가 우선)
+const ICONS = [['참치','🥫'],['즉석밥','🍚'],['컵라면','🍜'],['건빵','🍘'],['에너지바','🍫'],['스팸','🥫'],['과일','🍑'],['견과','🥜'],['육포','🥓'],['발열','🔥'],['생수','💧'],['편의점','🏪'],['순대','🌭'],['갈비탕','🥣'],['오리','🦆'],['탕후루','🍡'],['라면','🍜'],['포케','🥗'],['생선','🐟'],['백반','🍚'],['순두부','🍲'],
+  ['추어탕','🍲'],['한정식','🍱'],['청국장','🍲'],['중국','🥡'],['해물','🦐'],['샤브','🍲'],['김치찌개','🍲'],['찌개','🍲'],['짜장','🥡'],['짬뽕','🥡'],['탕수육','🥡'],['초밥','🍣'],['스시','🍣'],['회','🐟'],
+  ['치킨','🍗'],['닭','🍗'],['피자','🍕'],['삼겹','🥓'],['고기','🥩'],['갈비','🥩'],['스테이크','🥩'],['떡볶이','🍢'],['분식','🍢'],
+  ['국밥','🥣'],['해장','🥣'],['돈까스','🍱'],['돈가스','🍱'],['도시락','🍱'],['버거','🍔'],['쌀국수','🍜'],['라멘','🍥'],['우동','🍜'],
+  ['국수','🍜'],['냉면','🍜'],['족발','🍖'],['보쌈','🍖'],['마라','🌶️'],['파스타','🍝'],['스파게티','🍝'],['카레','🍛'],['김밥','🍙'],
+  ['주먹밥','🍙'],['만두','🥟'],['샐러드','🥗'],['샌드위치','🥪'],['타코','🌮'],['비빔밥','🍚'],['덮밥','🍚'],['곱창','🔥'],['빵','🥐']];
+const iconOf = m => (ICONS.find(([k])=>m.includes(k))||[,'🍽️'])[1];
+// 메뉴 이름에 키워드가 들어 있으면 그 쿠팡 파트너스 상품을 '집에서 해 먹는다면' 칸에 보여 준다
+const KITS = [
+  ['국밥', 'https://link.coupang.com/a/hJjs8fzQMC', '[목촌] 부산돼지국밥 밀키트 600g × 5개'],
+  ['떡볶이', 'https://link.coupang.com/a/hJjElISrMO', '국대떡볶이 떡+소스 세트 345g × 5세트 (실온보관)'],
+  ['찌개', 'https://link.coupang.com/a/hJjAI9m1Po', '남선생홈푸드 국·찌개 밀키트 5종 세트 (김치찌개·된장찌개 등 10인분)'],
+];
+// 비상식량 한 줄 정보(보관 기간은 대략 — 제품 포장의 유통기한 확인)
+const EMG_INFO = {
+  '참치캔':'실온 2~3년 · <b>조리 없이</b> · 원터치 캔이면 따개가 필요 없어요',
+  '즉석밥':'실온 6~9개월 · 데우지 않아도 먹을 수 있어요(찬물에 잠시 불리면 덜 딱딱해요)',
+  '3분카레':'실온 1~2년 · <b>데우지 않고</b> 즉석밥에 부어 먹어도 돼요',
+  '컵라면':'실온 5~6개월 · 뜨거운 물이 필요해요 — 정전·단수 땐 <b>생으로 부숴</b> 먹기',
+  '건빵':'실온 1년 이상 · <b>조리 없이</b> · 목이 마르니 물과 함께',
+  '에너지바':'실온 1년 안팎 · <b>조리 없이</b> · 열량이 높아 대피·이동 중에 좋아요',
+  '스팸':'실온 2~3년 · <b>조리 없이</b>도 먹을 수 있어요 · 짜니 물을 넉넉히',
+  '과일 통조림':'실온 2년 안팎 · <b>조리 없이</b> · 수분·당분 보충',
+  '견과류':'실온 6개월~1년 · <b>조리 없이</b> · 뜯은 뒤엔 꼭 밀봉',
+  '육포':'실온 6개월~1년 · <b>조리 없이</b> · 짜니 물을 넉넉히',
+  '발열 도시락':'실온 1년 이상 · 물만 부으면 데워져요 · <b>환기되는 곳</b>에서',
+  '생수':'1인 하루 <b>3L</b>(마시는 물 2L) · 3일이면 9L, 2L 병 5개쯤',
+};
+const PREP_LIST = [
+  ['물','1인 하루 3L × 3일 = 9L'], ['비상식량','즉석밥·통조림 등 조리 없이 먹을 수 있는 3일치'],
+  ['간식','에너지바·건빵·견과류'], ['손전등·건전지','휴대전화 불빛은 배터리를 빨리 써요'],
+  ['휴대용 라디오','정전·통신 장애 때 재난방송 듣기'], ['보조배터리','완충해 두기'],
+  ['구급약·상비약','평소 먹는 약 3일치 포함'], ['물티슈·위생용품','단수 대비'],
+  ['휴대용 버너·가스','또는 발열 도시락'], ['중요 서류 사본','신분증·통장 사본, 비상 연락처'],
+];
+const COLORS = ['#ff6b3d','#ffb03a','#ffd35c','#7bc96f','#3fb8af','#4a90e2','#8e6fd8','#e86fa6'];
+
+// 편집한 메뉴는 묶음별로 따로 저장 ('전체'는 예전 키 그대로)
+let preset = (()=>{try{const p=localStorage.getItem('dinner-preset');return PRESETS[p]?p:'all'}catch(e){return 'all'}})();
+const menuKey = () => preset==='all' ? 'dinner-menus' : 'dinner-menus-'+preset;
+const store = {
+  get(){try{const v=JSON.parse(localStorage.getItem(menuKey()));return Array.isArray(v)&&v.length>=2?v:null}catch(e){return null}},
+  set(v){try{localStorage.setItem(menuKey(),JSON.stringify(v))}catch(e){}}
+};
+let menus = store.get() || PRESETS[preset].menus.slice();
+let angle = 0, spinning = false, picked = null, radius = 1000, pos = null;
+
+const $ = id => document.getElementById(id);
+const cv = $('wheel'), ctx = cv.getContext('2d');
+
+function draw(){
+  const n = menus.length, R = 390, cx = 400, cy = 400, seg = Math.PI*2/n;
+  ctx.clearRect(0,0,800,800);
+  for(let i=0;i<n;i++){
+    const a0 = angle + i*seg - Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a0,a0+seg); ctx.closePath();
+    // 개수가 색 수의 배수+1이면 첫·끝 조각 색이 겹치지 않게 조정
+    let ci = i % COLORS.length; if(i===n-1 && ci===0 && n>1) ci = 2;
+    ctx.fillStyle = COLORS[ci]; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.stroke();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(a0+seg/2);
+    ctx.fillStyle = '#2b1d16'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    const fs = Math.max(26, Math.min(44, 520/n));
+    ctx.font = `800 ${fs}px Pretendard, sans-serif`;
+    ctx.font = `${Math.round(fs*1.2)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.fillText(iconOf(menus[i]), R-20, 0);
+    // 긴 이름은 가운데 원에 닿지 않게 글자를 줄인다
+    const fn = Math.min(fs, 230/[...menus[i]].length);
+    ctx.font = `800 ${fn}px Pretendard, sans-serif`;
+    ctx.fillText(menus[i], R-30-fs*1.35, 0);
+    ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.lineWidth=10; ctx.strokeStyle='#2b1d16'; ctx.stroke();
+}
+
+function spin(){
+  if(spinning || menus.length<2) return;
+  spinning = true; $('spin').disabled = true; $('spin').textContent = '두구두구…';
+  const n = menus.length, seg = Math.PI*2/n;
+  const target = Math.floor(Math.random()*n);
+  // 포인터(12시) 아래에 target 조각 중앙이 오도록 최종 각도 계산, 조각 안에서 살짝 흔들기
+  const jitter = (Math.random()-.5)*seg*.7;
+  const base = -(target*seg + seg/2) + jitter;
+  const turns = 6 + Math.floor(Math.random()*3);
+  const start = angle, norm = ((base - start) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const end = start + turns*Math.PI*2 + norm;
+  const dur = 4200, t0 = performance.now();
+  if(navigator.vibrate) navigator.vibrate(20);
+  (function step(t){
+    const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,4);
+    angle = start + (end-start)*e; draw();
+    if(p<1) requestAnimationFrame(step);
+    else { angle = end % (Math.PI*2); spinning=false; $('spin').disabled=false; $('spin').textContent='다시 돌리기'; done(menus[target]); }
+  })(t0);
+}
+
+function done(menu){
+  picked = menu;
+  if(navigator.vibrate) navigator.vibrate([40,40,80]);
+  $('menu').textContent = iconOf(menu) + ' ' + menu;
+  const q = encodeURIComponent(menu + ' 맛집');
+  $('kakao').href = 'https://map.kakao.com/link/search/' + q;
+  $('naver').href = 'https://map.naver.com/p/search/' + q;
+  $('eatsTip').textContent = `배달 앱이 열리면 ‘${menu}’로 검색해 보세요`;
+  $('result').classList.remove('hidden');
+  $('shop').classList.remove('hidden');
+  $('einfo')?.remove();
+  if(PRESETS[preset].emergency){
+    $('menu').insertAdjacentHTML('afterend', `<p class="info" id="einfo">${EMG_INFO[menu] || '포장의 유통기한과 보관 방법을 확인하세요.'}</p>`);
+    $('prep').classList.remove('hidden'); prepChecks();
+    $('shop').querySelector('h2').textContent = '🛒 비상식량 미리 준비하기';
+    $('kit').classList.add('hidden');
+    setOrder(menu);
+    $('result').scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  $('shop').querySelector('h2').textContent = '🛒 집에서 해 먹는다면';
+  $('nearby').classList.remove('hidden');
+  const kit = KITS.find(([k])=>menu.includes(k));
+  $('kit').classList.toggle('hidden', !kit);
+  if(kit){ $('kit').href = kit[1]; $('kit').innerHTML = `<b>${iconOf(menu)} ${esc(menu)} 밀키트 쿠팡에서 보기 →</b><span>${esc(kit[2])}</span>`; }
+  setOrder(menu);
+  $('result').scrollIntoView({behavior:'smooth',block:'start'});
+  findNearby();
+}
+
+// GPS 위치: 저장된 옛 위치(maximumAge)를 쓰지 않고, 정확도가 50m 안쪽이 될 때까지(최대 15초)
+// 계속 받아 가장 정확한 값을 쓴다. 첫 응답은 IP·와이파이 기반의 대략 위치인 경우가 많다.
+const GPS_GOOD = 50, GPS_WAIT = 15000, GPS_ROUGH = 1000;
+function locate(force, stEl){
+  return new Promise((ok,fail)=>{
+    if(pos && !force) return ok(pos);
+    if(!navigator.geolocation) return fail(new Error('이 브라우저는 위치 정보를 지원하지 않아요.'));
+    let best = null, id = null, timer = null, ended = false;
+    const finish = ()=>{
+      if(ended) return; ended = true;
+      navigator.geolocation.clearWatch(id); clearTimeout(timer);
+      if(best){ pos = best; ok(pos); } else fail(new Error('현재 위치를 찾지 못했어요. 휴대폰의 위치(GPS)를 켜고 다시 시도해 주세요.'));
+    };
+    id = navigator.geolocation.watchPosition(p=>{
+      const c = p.coords;
+      if(!best || c.accuracy < best.acc) best = {lat:c.latitude, lon:c.longitude, acc:Math.round(c.accuracy)};
+      (stEl||$('status')).textContent = `🛰️ GPS로 현재 위치를 맞추는 중… (오차 약 ${fmtM(best.acc)})`;
+      if(best.acc <= GPS_GOOD) finish();
+    }, e=>{
+      if(e.code===1){ ended = true; navigator.geolocation.clearWatch(id); clearTimeout(timer);
+        return fail(new Error('위치 권한이 꺼져 있어요. 위의 지도 검색 버튼을 이용해 주세요.')); }
+      // 시간 초과 등은 그때까지 받은 가장 좋은 값으로 진행
+    }, {enableHighAccuracy:true, maximumAge:0, timeout:GPS_WAIT});
+    timer = setTimeout(finish, GPS_WAIT);
+  });
+}
+// 기상특보: /api/wthr(Netlify 함수, 공공데이터포털 특보현황 10분 캐시) + 카카오로 내 시·도/시·군 확인
+const SIDO = {서울:'서울특별시',부산:'부산광역시',대구:'대구광역시',인천:'인천광역시',광주:'광주광역시',대전:'대전광역시',울산:'울산광역시',
+  세종:'세종특별자치시',경기:'경기도',강원:'강원특별자치도',충북:'충청북도',충남:'충청남도',전북:'전북특별자치도',전남:'전라남도',
+  경북:'경상북도',경남:'경상남도',제주:'제주특별자치도'};
+const WX_TIP = [['폭염','물 자주 마시고, 야외 대기 줄보다 실내 식당·배달을 추천해요'],['한파','이동은 짧게, 따뜻한 국물 메뉴 어때요 · 수도 동파 주의'],
+  ['호우','이동을 줄이고 배달은 여유 있게 — 배달 기사님 안전도 생각해 주세요'],['대설','미끄럼 주의, 가까운 곳·배달 추천'],
+  ['태풍','외출을 삼가고 비상식량·손전등을 확인하세요'],['강풍','간판·낙하물 주의, 가까운 곳 추천'],['황사','마스크 쓰고 실내에서 드세요'],
+  ['건조','불씨·화기 주의(버너·숯불 조심)'],['풍랑','바닷가 나들이는 미루세요']];
+const SIDO_EXTRA = {'전북특별자치도':['전북자치도','전라북도'],'강원특별자치도':['강원도'],'제주특별자치도':['제주도']};
+// 긴 이름부터: 정식 이름 → 옛·줄인 이름 → 두 글자(충북)
+function sidoNames(full){
+  const short = Object.keys(SIDO).find(k=>SIDO[k]===full);
+  return [full, ...(SIDO_EXTRA[full]||[]), short].filter(Boolean);
+}
+let wxData = null, region = null;
+const loadWx = () => wxData || (wxData = fetch('/.netlify/functions/wthr').then(r=>r.ok ? r.json() : null).catch(()=>null));
+async function myRegion(){
+  if(region && region.lat===pos.lat && region.lon===pos.lon) return region;
+  try{
+    const k = await loadKakao();
+    const res = await new Promise(ok=>new k.maps.services.Geocoder().coord2RegionCode(pos.lon, pos.lat, (r,st)=>ok(st===k.maps.services.Status.OK ? r : [])));
+    const h = res.find(x=>x.region_type==='H') || res[0]; if(!h) return null;
+    const sido = SIDO[h.region_1depth_name] || h.region_1depth_name;
+    return region = {lat:pos.lat, lon:pos.lon, sido, sgg:(h.region_2depth_name||'').split(' ')[0]};
+  }catch(e){ return null; }
+}
+// "o 폭염경보 : 충청북도(청주, 제천), 강원도(...)" 에서 내 시·군에 걸린 특보만
+function wxMatch(lines, r){
+  const out = [], short = r.sgg.replace(/(특별자치시|특별자치도|시|군|구)$/,'');
+  for(const l of lines||[]){
+    const m = l.match(/^o\s*([^:]+?)\s*:\s*(.*)$/); if(!m) continue;
+    // 기상청은 '제주도·강원도·전북자치도'처럼 카카오('제주특별자치도' 등)와 다르게 쓰기도 해서 여러 이름으로 찾는다
+    const name = sidoNames(r.sido).find(n=>m[2].includes(n)); if(!name) continue;
+    const after = m[2].slice(m[2].indexOf(name) + name.length);
+    if(after.startsWith('(')){
+      const inner = after.slice(1, after.indexOf(')'));
+      if(short && !inner.includes(short)) continue;
+    }
+    out.push(m[1].replace(/\s+/g,''));
+  }
+  return out;
+}
+async function showWeather(){
+  if(!pos) return '';
+  const [w, r] = await Promise.all([loadWx(), myRegion()]);
+  if(!w || !w.ok || !r) return '';
+  const now = wxMatch(w.now, r), pre = wxMatch(w.pre, r), place = r.sgg || r.sido;
+  const t = w.tmFc ? `${w.tmFc.slice(8,10)}:${w.tmFc.slice(10,12)} 발표` : '';
+  const preLine = `<div class="wx">🌥️ ${esc(place)} 예비특보: ${esc(pre.join(' · '))} (${t})</div>`;
+  if(now.length){
+    const tip = (WX_TIP.find(([k])=>now.some(x=>x.includes(k)))||[,'기상 정보를 확인하고 이동에 주의하세요'])[1];
+    $('wxbar').innerHTML = `⚠️ <b>${esc(place)} ${esc(now.join(' · '))}</b> 발효 중<br>${tip}`;
+    $('wxbar').classList.remove('hidden');
+    return `<div class="wx on">⚠️ ${esc(place)} 기상특보: ${esc(now.join(' · '))} (${t})</div>` + (pre.length ? preLine : '');
+  }
+  $('wxbar').classList.add('hidden');
+  if(pre.length) return preLine;
+  return `<div class="wx">🌤️ ${esc(place)} 기상특보 없음 (${t})</div>`;
+}
+// 내 주변 안전시설: 충북 AED·민방위 대피소(공공데이터포털, data/*.json 로 미리 받아 둠)
+let safetyData = null;
+const loadSafety = () => safetyData || (safetyData = Promise.all(['data/aed.json','data/shelter.json']
+  .map(u=>fetch(u).then(r=>r.json()))).catch(()=>{ safetyData = null; return null; }));
+function distM(a, b){
+  const R=6371000, r=Math.PI/180, dLa=(b.lat-a.lat)*r, dLo=(b.lon-a.lon)*r;
+  return 2*R*Math.asin(Math.sqrt(Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2));
+}
+// 같은 건물(이름·좌표가 같은 곳)에 여러 대가 있으면 한 줄로 묶는다
+function nearest(items, n){
+  const seen = new Map();
+  for(const x of items.map(x=>({...x, d:distM(pos,x)})).sort((a,b)=>a.d-b.d)){
+    const k = x.n+'|'+x.lat+'|'+x.lon;
+    if(seen.has(k)){ seen.get(k).cnt++; continue; }
+    if(seen.size >= n) break;
+    seen.set(k, {...x, cnt:1});
+  }
+  return [...seen.values()];
+}
+const mapLink = x => `https://map.kakao.com/link/map/${encodeURIComponent(x.n)},${x.lat},${x.lon}`;
+const SAFE_FAR = 5000;
+async function showSafety(){
+  if(!pos) return;
+  const [data, wx] = await Promise.all([loadSafety(), showWeather()]); if(!data) return;
+  const [aed, sh] = data, a = nearest(aed.items, 2), s = nearest(sh.items, 2);
+  let html;
+  if(!a.length || a[0].d > SAFE_FAR && (!s.length || s[0].d > SAFE_FAR)){
+    html = wx + `<div class="st">🛟 내 주변 안전시설</div><div class="tip">아직 ${aed.region} 지역 AED·대피소만 안내해요.</div>`;
+  } else {
+    const row = (icon, x, extra) => `<div class="row"><b>${icon} ${fmtM(Math.round(x.d))}</b><span>${esc(x.n)}${extra?' · '+esc(extra):''}</span><a href="${mapLink(x)}" target="_blank" rel="noopener">지도</a></div>`;
+    html = wx + `<div class="st">🛟 내 주변 안전시설</div>`
+      + a.map(x=>row('🫀 AED', x, x.p + (x.cnt>1 ? ` 외 ${x.cnt-1}대` : '') + (x.h24 ? ' · 24시간' : ''))).join('')
+      + s.map(x=>row('🏠 대피소', x, x.ug)).join('')
+      + `<div class="tip">쓰러진 사람을 보면: ① 119 신고 ② 가슴압박 ③ AED 가져오기 · 자료: 공공데이터포털(${aed.updated})</div>`;
+  }
+  document.querySelectorAll('.safe').forEach(el=>el.innerHTML = html);
+}
+// 카카오 검색은 최대 45곳까지만 알려 줘서 45는 '45곳 이상'으로 표시
+const fmtN = n => n>=45 ? '45곳 이상' : n+'곳';
+const fmtM = m => m>=1000 ? (m/1000).toFixed(1)+'km' : m+'m';
+function showLoc(){
+  if(!pos) return;
+  const rough = pos.acc > GPS_ROUGH;
+  document.querySelectorAll('.locmsg').forEach(el=>{
+    el.innerHTML = rough
+      ? `⚠️ 위치 오차가 커요(약 ${fmtM(pos.acc)}). 휴대폰 설정에서 <b>위치(GPS)·정확한 위치</b>를 켜고 다시 찾아 주세요.`
+      : `📍 내 위치 오차 약 ${fmtM(pos.acc)}`;
+    el.classList.toggle('warn', rough);
+  });
+  showSafety();
+}
+
+// 카카오맵 장소 검색(음식점 FD6)으로 메뉴 키워드를 현재 위치 기준 거리순 조회
+const KAKAO_JS_KEY = 'f27e2da08431ef8d983a83fccfcf1eb7';
+let kakaoReady = null;
+function loadKakao(){
+  if(kakaoReady) return kakaoReady;
+  kakaoReady = new Promise((ok,fail)=>{
+    const s = document.createElement('script');
+    s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&libraries=services&autoload=false`;
+    s.onload = ()=>kakao.maps.load(()=>ok(kakao));
+    s.onerror = ()=>{ kakaoReady=null; fail(new Error('카카오 지도를 불러오지 못했어요.')); };
+    document.head.appendChild(s);
+  });
+  return kakaoReady;
+}
+
+function searchPage(ps, query, opts, page){
+  return new Promise(ok=>ps.keywordSearch(query,(data,status,pg)=>ok({data:status===kakao.maps.services.Status.OK?data:[],pg}),{...opts,page}));
+}
+
+const SHOW_N = 5;
+async function fetchPlaces(p, menu, r){
+  const k = await loadKakao();
+  const ps = new k.maps.services.Places();
+  // 가까운 5곳만 받아 오고, 반경 안 전체 개수는 따로 표시
+  const opts = {location:new k.maps.LatLng(p.lat,p.lon), radius:r, sort:k.maps.services.SortBy.DISTANCE, category_group_code:menu==='편의점'?'CS2':'FD6', size:SHOW_N};
+  const {data,pg} = await searchPage(ps, menu, opts, 1);
+  return {places:data, total:pg ? pg.totalCount : data.length};
+}
+
+let cache = {};
+async function findNearby(force){
+  const st = $('status'), list = $('list');
+  list.innerHTML = ''; st.textContent = '🛰️ GPS로 현재 위치를 찾는 중…';
+  try{
+    const p = await locate(force);
+    if(force) cache = {};
+    showLoc();
+    const key = picked+'|'+radius;
+    if(!cache[key]){ st.textContent = `🔎 주변 ‘${picked}’ 식당을 찾는 중…`; cache[key] = await fetchPlaces(p, picked, radius); }
+    render(cache[key]);
+  }catch(e){
+    st.textContent = e.message || '식당 정보를 불러오지 못했어요. 지도 검색 버튼을 이용해 주세요.';
+  }
+}
+
+function render({places,total}){
+  const st = $('status'), list = $('list');
+  $('src').textContent = `반경 ${radius>=1000?radius/1000+'km':radius+'m'} · ${fmtN(total)} 중 가까운 ${places.length}곳`;
+  if(!places.length){ st.textContent = `이 반경에는 ‘${picked}’ 식당이 없어요. 반경을 넓혀 보세요.`; list.innerHTML=''; return; }
+  st.textContent = PRESETS[preset].night ? `가까운 순 · 영업 여부는 카카오맵에서 확인하세요` : `가까운 순으로 보여드려요 · 누르면 카카오맵 상세`;
+  list.innerHTML = places.map(placeHTML).join('');
+}
+function placeHTML(x,i){
+  const dist = +x.distance;
+  const d = dist<1000 ? dist+'m' : (dist/1000).toFixed(1)+'km';
+  const cat = (x.category_name||'').split('>').map(s=>s.trim()).slice(-1)[0] || '음식점';
+  return `<li><a href="${esc(x.place_url)}" target="_blank" rel="noopener"><span class="rank">${i+1}</span>
+    <span class="info"><div class="name">${esc(x.place_name)}</div>
+    <div class="meta">${esc(cat)} · 도보 약 ${Math.max(1,Math.round(dist/67))}분${x.road_address_name?' · '+esc(x.road_address_name.split(' ').slice(-2).join(' ')):''}</div></span>
+    <span class="dist">${d}</span></a></li>`;
+}
+
+// 룰렛 없이 주변 맛집 둘러보기: 분류(전체·한식…·카페)별 가까운 순, 5곳씩 '더 보기'
+let bq = '', bradius = 1000, bpage = 0, bitems = [], busy = false;
+async function browse(reset, force){
+  if(busy) return; busy = true;
+  const st = $('bstatus');
+  if(reset){ bpage = 0; bitems = []; $('blist').innerHTML = ''; $('bmore').classList.add('hidden'); }
+  try{
+    if(!pos || force) st.textContent = '🛰️ GPS로 현재 위치를 찾는 중…';
+    const p = await locate(force, st); showLoc();
+    st.textContent = '🔎 주변 맛집을 찾는 중…';
+    const k = await loadKakao(), ps = new k.maps.services.Places();
+    const opts = {location:new k.maps.LatLng(p.lat,p.lon), radius:bradius, sort:k.maps.services.SortBy.DISTANCE, size:SHOW_N, page:bpage+1};
+    const done = (data,status,pg)=>({data:status===k.maps.services.Status.OK?data:[], pg});
+    const {data,pg} = await new Promise(ok=>{
+      if(!bq || bq==='카페') ps.categorySearch(bq ? 'CE7' : 'FD6', (a,b,c)=>ok(done(a,b,c)), opts);
+      else ps.keywordSearch(bq, (a,b,c)=>ok(done(a,b,c)), {...opts, category_group_code:'FD6'});
+    });
+    bpage++; bitems = bitems.concat(data);
+    const total = pg ? pg.totalCount : bitems.length;
+    $('bsrc').textContent = `반경 ${bradius>=1000?bradius/1000+'km':bradius+'m'} · ${fmtN(total)}`;
+    $('blist').innerHTML = bitems.map(placeHTML).join('');
+    $('bmore').classList.toggle('hidden', !(pg && pg.hasNextPage));
+    st.textContent = bitems.length ? '가까운 순 · 누르면 카카오맵 상세(영업 여부도 확인)' : '이 반경에는 찾는 가게가 없어요. 반경을 넓혀 보세요.';
+  }catch(e){
+    st.textContent = e.message || '맛집 정보를 불러오지 못했어요.';
+  }finally{ busy = false; }
+}
+$('browseBtn').addEventListener('click',()=>{
+  $('browse').classList.remove('hidden');
+  $('browse').scrollIntoView({behavior:'smooth',block:'start'});
+  if(!bitems.length) browse(true);
+});
+$('bcats').addEventListener('click',e=>{
+  const q = e.target.dataset.q; if(q===undefined || busy) return;
+  bq = q; [...$('bcats').children].forEach(b=>b.classList.toggle('on',b===e.target)); browse(true);
+});
+$('bradius').addEventListener('click',e=>{
+  const r = e.target.dataset.r; if(!r || busy) return;
+  bradius = +r; [...$('bradius').children].forEach(b=>b.classList.toggle('on',b===e.target)); browse(true);
+});
+$('bmore').addEventListener('click',()=>browse(false));
+$('brelocate').addEventListener('click',()=>browse(true,true));
+const esc = s => s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function chips(){
+  $('chips').innerHTML = menus.map((m,i)=>`<span class="chip">${iconOf(m)} ${esc(m)}<b data-i="${i}" role="button" aria-label="삭제">✕</b></span>`).join('');
+}
+$('chips').addEventListener('click',e=>{
+  const i = e.target.dataset.i; if(i===undefined||spinning) return;
+  if(menus.length<=2){ alert('메뉴는 2개 이상 있어야 해요.'); return; }
+  menus.splice(+i,1); store.set(menus); chips(); draw();
+});
+$('addForm').addEventListener('submit',e=>{
+  e.preventDefault(); const v = $('addInput').value.trim();
+  if(!v||spinning) return;
+  if(menus.includes(v)){ $('addInput').value=''; return; }
+  if(menus.length>=20){ alert('메뉴는 20개까지 넣을 수 있어요.'); return; }
+  menus.push(v); store.set(menus); $('addInput').value=''; chips(); draw();
+});
+$('reset').addEventListener('click',()=>{ if(spinning) return; menus=PRESETS[preset].menus.slice(); store.set(menus); chips(); draw(); });
+function prepChecks(){
+  let saved = {}; try{ saved = JSON.parse(localStorage.getItem('prep-checks')) || {}; }catch(e){}
+  $('checks').innerHTML = PREP_LIST.map(([t,d],i)=>`<li><label><input type="checkbox" data-i="${i}" ${saved[i]?'checked':''}><span>${t}<small>${d}</small></span></label></li>`).join('');
+  const n = Object.values(saved).filter(Boolean).length;
+  $('pcount').textContent = `${n}/${PREP_LIST.length} 준비됨`;
+  $('pbar').style.width = (n/PREP_LIST.length*100)+'%';
+}
+$('checks').addEventListener('change',e=>{
+  let saved = {}; try{ saved = JSON.parse(localStorage.getItem('prep-checks')) || {}; }catch(err){}
+  saved[e.target.dataset.i] = e.target.checked;
+  try{ localStorage.setItem('prep-checks', JSON.stringify(saved)); }catch(err){}
+  prepChecks();
+});
+$('psafety').addEventListener('click', async ()=>{
+  try{ await locate(false, $('pstatus')); showLoc(); }catch(e){ $('pstatus').textContent = e.message; }
+});
+function setOrder(menu){
+  const q = PRESETS[preset].emergency || ['편의점','생수'].includes(menu) ? menu : menu + ' 밀키트';
+  $('order').href = 'https://www.coupang.com/np/search?q=' + encodeURIComponent(q);
+  $('norder').href = 'https://search.shopping.naver.com/search/all?query=' + encodeURIComponent(q);
+  $('orderq').textContent = `‘${q}’ 주문하기`;
+}
+function applyPreset(){
+  const night = !!PRESETS[preset].night, emg = !!PRESETS[preset].emergency;
+  $('title').textContent = emg ? '🔦 비상식량 뭐 챙기지?' : night ? '🌙 오늘 야식 뭐 먹지?' : '🍽️ 오늘 저녁 뭐 먹지?';
+  $('label').textContent = emg ? '오늘 챙길 비상식량은' : night ? '오늘 야식은' : '오늘 저녁은';
+  document.body.classList.toggle('emg', emg);
+  $('subtitle').textContent = emg ? '정전·재난 때 먹을 것, 룰렛으로 하나씩 챙겨 두세요' : '고민은 룰렛에게 맡기고, 맛집은 바로 찾아요';
+  if(emg){ $('nearby').classList.add('hidden'); }
+  else { $('prep').classList.add('hidden'); $('einfo')?.remove(); }
+  [...$('ages').children].forEach(b=>b.classList.toggle('on', b.dataset.p===preset));
+}
+$('ages').addEventListener('click',e=>{
+  const p = e.target.dataset.p; if(!p || spinning || p===preset) return;
+  preset = p; try{localStorage.setItem('dinner-preset',p)}catch(err){}
+  menus = store.get() || PRESETS[p].menus.slice();
+  angle = 0; applyPreset(); chips(); draw();
+});
+$('radius').addEventListener('click',e=>{
+  const r = e.target.dataset.r; if(!r) return;
+  radius = +r; [...$('radius').children].forEach(b=>b.classList.toggle('on',b===e.target));
+  if(picked && !spinning) findNearby();
+});
+$('relocate').addEventListener('click',()=>{ if(picked && !spinning) findNearby(true); });
+$('spin').addEventListener('click',spin);
+cv.addEventListener('click',spin);
+
+applyPreset(); chips(); draw();
+document.fonts && document.fonts.ready.then(draw);
+</script>
+</body>
+</html>
