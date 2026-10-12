@@ -1,0 +1,71 @@
+{
+  "items": [
+    {
+      "title": "최소제곱조정과 관측 가중치",
+      "url": "https://na-geoai.tistory.com/42",
+      "kind": "daily",
+      "date": "2026-10-12",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 5
+    },
+    {
+      "title": "코드 의사거리·반송파 위상과 이중차분",
+      "url": "https://na-geoai.tistory.com/34",
+      "kind": "daily",
+      "date": "2026-10-11",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 4
+    },
+    {
+      "title": "좌표참조계와 좌표 변환",
+      "url": "https://na-geoai.tistory.com/28",
+      "kind": "daily",
+      "date": "2026-10-10",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 3
+    },
+    {
+      "title": "GNSS 위치보정정보 OSR·SSR 비교 (2024년 제134회 기출)",
+      "url": "https://na-geoai.tistory.com/20",
+      "kind": "request",
+      "date": "2026-10-09",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "온톨로지 기반 공간정보 구축·활용 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/19",
+      "kind": "daily",
+      "date": "2026-10-09",
+      "tags": [
+        "GIS·공간정보",
+        "온톨로지"
+      ],
+      "tracingPdf": true,
+      "day": 2
+    },
+    {
+      "title": "타원체고·정표고·지오이드고와 GNSS 높이측량",
+      "url": "https://na-geoai.tistory.com/7",
+      "date": "2026-10-08",
+      "kind": "daily",
+      "day": 1,
+      "tags": [
+        "GNSS",
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    }
+  ]
+}
