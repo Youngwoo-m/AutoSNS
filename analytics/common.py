@@ -28,16 +28,19 @@ def log(msg):
         f.write(line + "\n")
 
 
-def save_part(name, data):
+def save_part(name, data, allow_empty=False):
     """수집기 하나의 결과를 snapshots/parts/<name>.json 에 쓴다.
 
     수집이 빈손으로 끝났는데 직전 결과가 남아 있으면 덮어쓰지 않는다. 세션 만료나
     일시적 오류로 0건이 나올 때 멀쩡한 과거 수집분이 날아가는 걸 막는다.
+
+    allow_empty=True 는 0건 자체가 뜻이 있는 수집기용이다(서치콘솔은 '이번 주 검색
+    노출 없음'이 사실이고, 그걸 옛 수치로 가리면 안 된다).
     """
     d = os.path.join(SNAP_DIR, "parts")
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, f"{name}.json")
-    if not data.get("items"):
+    if not data.get("items") and not allow_empty:
         old = load_part(name)
         if old and old.get("items"):
             log(f"{name}: 수집 0건 — 직전 결과({len(old['items'])}건)를 유지한다")
