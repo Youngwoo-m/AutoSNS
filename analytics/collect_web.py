@@ -3,6 +3,7 @@
 둘 다 로그인 없이 공개 목록을 읽는다.
 """
 import html
+from datetime import datetime, timedelta
 import json
 import os
 import re
@@ -33,6 +34,29 @@ def _clean(x):
     return html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", x))).strip()
 
 
+def _blog_date(add, now=None):
+    """addDate 를 YYYY-MM-DD 로. 네이버는 최근 24시간 글을 '방금 전'·'20시간 전' 으로 준다.
+
+    이걸 못 읽어 날짜가 비면 기간 필터에서 탈락해, 어제·오늘 글이 주간 집계에서
+    통째로 빠졌다(2026-10-12 확인). 상대 표기는 수집 시각에서 빼서 날짜를 만든다."""
+    add = (add or "").strip()
+    m = re.match(r"(\d{4})\.\s*(\d+)\.\s*(\d+)\.", add)
+    if m:
+        return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+    now = now or datetime.now()
+    if "방금" in add:
+        return now.strftime("%Y-%m-%d")
+    if "어제" in add:
+        return (now - timedelta(days=1)).strftime("%Y-%m-%d")
+    m = re.match(r"(\d+)\s*(분|시간|일)\s*전", add)
+    if m:
+        n, unit = int(m.group(1)), m.group(2)
+        delta = (timedelta(minutes=n) if unit == "분"
+                 else timedelta(hours=n) if unit == "시간" else timedelta(days=n))
+        return (now - delta).strftime("%Y-%m-%d")
+    return ""
+
+
 def collect_blog(since):
     """PostTitleListAsync 는 제목이 URL 인코딩돼 있고 응답에 잘못된 이스케이프가 섞여
     json.loads 가 실패한다. 정규식으로 직접 뽑는다."""
@@ -45,8 +69,7 @@ def collect_blog(since):
             break
         oldest = "9999"
         for log_no, title, add in found:
-            m = re.match(r"(\d{4})\.\s*(\d+)\.\s*(\d+)\.", add.strip())
-            date = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
+            date = _blog_date(add)
             oldest = min(oldest, date or "9999")
             items.append({
                 "title": urllib.parse.unquote_plus(title.replace("\\", "")),
