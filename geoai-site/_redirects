@@ -1,1 +1,6 @@
+# 채널 모음 단축 경로 — SNS 프로필 한 줄 링크용. 규칙은 위에서부터 먼저 맞는 것이 쓰이므로
+# 아래 SPA 폴백(/* → index.html)보다 반드시 앞에 둔다.
+/ch        /links/   301
+/channels  /links/   301
+
 /*  /index.html  200
