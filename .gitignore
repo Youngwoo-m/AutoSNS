@@ -81,3 +81,6 @@ chrome-profile-tistory/
 **/tistory_cookies.json
 # 티스토리 교차 발행 기록(실행 중 계속 바뀜)
 **/tistory_state.json
+
+# 엔지니어 시리즈 영상 생성물(음성·영상·썸네일) — 다시 만들 수 있다
+engineer-video-output/
