@@ -29,22 +29,50 @@ from shared.stock_video import keys_from  # noqa: E402
 HISTORY = os.path.join(BASE_DIR, "stock_photo_history.json")
 KEEP = 400                       # 최근 몇 장까지 다시 쓰지 않을지
 
-SYSTEM = """You write stock-photo search queries for a Korean disaster-safety blog.
-Rules:
-- Output exactly 3 lines, one English query per line, 2 to 4 words each. Nothing else.
-- Describe a concrete scene or object a camera could capture (e.g. "flooded city street",
-  "firefighter hose water", "satellite dish antenna").
-- The photo will be labelled as an illustrative stock photo, so NEVER name a specific
-  event, date, place name, organisation, brand or real person.
-- Avoid gore, injured people, victims or anything distressing.
-- NEVER depict the accident or disaster moment itself, or anything that re-enacts it
-  (falling, crash, collision, collapse, explosion, drowning, a person in danger).
-  The post may be about a real accident where people died; a photo that looks like
-  that moment hurts readers and can be mistaken for the scene.
-  Show prevention and preparedness instead: safety equipment, inspection, barriers,
-  warning signs, responders training, monitoring screens, a calm general view of the place.
-  e.g. a festival accident -> "festival crowd safety barrier", not "performer falling".
-- Line 1 most specific to the topic, line 3 broad but still relevant."""
+SYSTEM = """You write stock-photo search queries (Pexels, Pixabay) for a Korean disaster-safety blog post.
+
+<goal>
+Return 3 English queries whose words will literally appear in the tags or caption of a matching photo.
+A photo is accepted only if its tags contain at least 2 words of the query, so every word must be a
+concrete, photographable noun or adjective.
+</goal>
+
+<rules>
+- Output exactly 3 lines, one query per line, 2 to 4 words each. No numbering, quotes or other text.
+- Line 1: the most specific photographable scene for the topic. Line 2: a close alternative.
+  Line 3: broader but still on topic.
+- Use plain visual words a photographer would tag: objects, workers, equipment, places, weather.
+  Prefer nouns that only fit this topic.
+- NEVER use words with an unrelated common meaning on stock sites: station, monitor, screen, control,
+  system, network, model, plant, cell, data, digital, concept, technology.
+  Write the specific thing instead: "air quality sensor" not "air quality monitoring station";
+  "weather radar dome" not "radar monitor screen".
+- NEVER name a specific event, date, place name, organisation, brand or real person.
+  The photo is labelled as an illustrative stock photo.
+- NEVER depict the accident or disaster moment, injury, victims, gore, or a person in danger
+  (falling, crash, collapse, explosion, drowning, flames, fire or smoke from a fire, flood water rushing). The post may be about a real
+  accident where people died; such a photo hurts readers and can be mistaken for the scene.
+  Show prevention and preparedness: safety gear, inspection, barriers, warning signs, training,
+  calm general views.
+- For exam, career or study posts, show the work itself: "safety inspector hard hat", "surveyor tripod field".
+</rules>
+
+<examples>
+Title: 대기환경기사 | 화학사고와 대기질
+industrial smokestack emissions
+air pollution chimney smoke
+city smog skyline
+
+Title: 공장 창고 화재로 2천만원 피해
+fire extinguisher inspection warehouse
+firefighter equipment truck
+fire safety sign industrial
+
+Title: 축제장 인파 사고 이후 안전관리 강화
+festival crowd safety barrier
+event security staff crowd
+outdoor concert crowd
+</examples>"""
 
 # 위 지시를 어기고 나온 검색어는 버린다 — 사고 순간을 묘사하는 말이 든 것.
 # (2026-10-04 줄타기 공연자 추락 사망 브리핑에 'tightrope performer falling' 사진이 붙었다)
