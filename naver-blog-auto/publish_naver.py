@@ -4,6 +4,7 @@
 logs/ 에 스크린샷(.png)을 남기니 그걸 보고 SELECTORS 를 수정하면 된다.
 config.publish.dry_run=true 면 '발행' 직전에 멈추고 스크린샷만 남긴다.
 """
+import json
 import os
 import subprocess
 import sys
@@ -19,7 +20,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from common import LOGS_DIR, PROFILE_DIR, load_config, log, start_chrome
+from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
 from make_banner import make_banner
 from gamma_image import make_gamma_image
 
@@ -573,6 +574,27 @@ def _strip_embed_url_lines(driver, url):
     return removed
 
 
+def _save_payload(data, dry_run):
+    """발행에 넣은 원고를 posts/ 에 남긴다.
+
+    파일을 거치지 않고 메모리에서 바로 publish() 를 부르는 호출자가 있어, 발행이
+    엎어지면 원고가 통째로 사라진다. 10/12 '더위지수(WBGT)' 글이 발행도 임시저장도
+    못 된 채 날아갔고 어디에도 남지 않아 다시 올릴 수 없었다.
+
+    실패해도 발행은 그대로 진행한다 — 기록 때문에 글을 못 올리는 일은 없어야 한다."""
+    try:
+        os.makedirs(POSTS_DIR, exist_ok=True)
+        name = f"naver_{datetime.now():%Y%m%d_%H%M%S}{'_dry' if dry_run else ''}.json"
+        path = os.path.join(POSTS_DIR, name)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=1)
+        log(f"원고 보관: {os.path.basename(path)}")
+        return path
+    except Exception as e:
+        log(f"원고 보관 실패({type(e).__name__}) — 발행은 계속한다")
+        return None
+
+
 def publish(data, dry_run=None):
     cfg = load_config()
     naver_id = cfg["naver_id"]
@@ -580,6 +602,7 @@ def publish(data, dry_run=None):
     if dry_run is None:
         dry_run = pub.get("dry_run", True)
     headless = pub.get("headless", False)
+    _save_payload(data, dry_run)
 
     # 글별 카테고리 우선(data["category"]) → 없으면 config 기본값
     category = data.get("category") or cfg.get("blog", {}).get("category", "")
@@ -790,11 +813,14 @@ if __name__ == "__main__":
     import json
     import sys
     from common import POSTS_DIR
-    # 인자로 posts/xxx.json 을 받거나, 가장 최근 글을 발행
+    # 인자로 posts/xxx.json 을 받거나, 가장 최근 글을 발행.
+    # naver_*.json 은 발행할 때 남긴 원고 보관본이라 '최근 글' 자동 선택에서 뺀다
+    # (이름이 뒤에 와서 그냥 두면 옛 글이 다시 발행된다).
     if len(sys.argv) > 1:
         path = sys.argv[1]
     else:
-        files = sorted(f for f in os.listdir(POSTS_DIR) if f.endswith(".json"))
+        files = sorted(f for f in os.listdir(POSTS_DIR)
+                       if f.endswith(".json") and not f.startswith("naver_"))
         if not files:
             raise SystemExit("발행할 글이 없습니다. 먼저 generate_content.py 실행.")
         path = os.path.join(POSTS_DIR, files[-1])
