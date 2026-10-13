@@ -24,13 +24,17 @@ TOKENS = {"dept": os.path.join(ROOT_DIR, "youtube-shorts-auto", "token.json"),
 
 
 def _creds(path):
+    """토큰 파일은 읽기만 한다 — 갱신 결과를 덮어쓰지 않는다.
+
+    여기서 c.to_json() 을 그대로 저장했더니 token.json 의 scopes 가 이 파일의
+    SCOPES(읽기 2개)로 좁혀져, 같은 토큰을 쓰는 업로드·썸네일 설정이 403
+    'insufficient authentication scopes' 로 막혔다(2026-10-14). 분석용 스크립트가
+    발행용 자격 증명을 건드리면 안 된다."""
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
     c = Credentials.from_authorized_user_file(path, SCOPES)
     if not c.valid and c.expired and c.refresh_token:
         c.refresh(Request())
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
     return c
 
 

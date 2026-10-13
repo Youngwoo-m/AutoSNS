@@ -101,11 +101,11 @@ def collect_via_rss():
 
 
 def collect():
+    # 토큰 파일은 읽기만 한다. 갱신 결과를 덮어쓰면 이 파일의 SCOPES(force-ssl 없음)로
+    # 범위가 좁혀져, 같은 토큰을 쓰는 업로드·썸네일 설정이 403 으로 막힌다(2026-10-14).
     creds = Credentials.from_authorized_user_file(TOKEN, SCOPES)
     if not creds.valid:
         creds.refresh(Request())
-        with open(TOKEN, "w", encoding="utf-8") as f:
-            f.write(creds.to_json())
     yt = build("youtube", "v3", credentials=creds)
 
     ch = yt.channels().list(part="snippet,contentDetails,statistics", mine=True).execute()
