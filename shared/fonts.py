@@ -56,3 +56,38 @@ def require_fonts(font_dir, needed=REQUIRED):
             "              다른 경로를 쓰려면 config 의 local_render.font_dir 지정."
         )
     return font_dir
+
+# ── 제목용 굵은 글꼴(2026-10-14) ────────────────────────────────────────────
+# KoPubWorld 돋움 Bold 는 본문용이라 썸네일·배너 제목에서는 획이 가늘어 보인다.
+# 제목은 '검은고딕'(제목 전용, OFL), 보조 글자는 Pretendard 로 쓴다. 둘 다 상업용 무료다.
+# 영상 프레임·인스타 카드는 글자 수에 맞춰 칸을 짜 두어 더 두꺼운 글꼴로 바꾸면
+# 넘칠 수 있으므로 손대지 않았다(바꾸려면 렌더 결과를 먼저 확인할 것).
+DISPLAY = "BlackHanSans-Regular.ttf"      # 검은고딕 — 제목
+BODY_BOLD = "Pretendard-Bold.otf"         # 보조·설명
+BODY_BLACK = "Pretendard-Black.otf"       # 강조·라벨
+HEAVY_ALT = "SCDream9Black.otf"           # 에스코어드림 9 Black — 대체 제목용
+
+
+def font_path(name, font_dir=None):
+    """FONTS/ 안의 글꼴 경로. 없으면 KoPub Bold 로 떨어뜨린다(렌더는 계속된다)."""
+    d = font_dir or ROOT_FONT_DIR
+    p = os.path.join(d, name)
+    if os.path.exists(p):
+        return p
+    return os.path.join(d, DOTUM_BOLD)
+
+
+def display_css(font_dir=None, doubled=False):
+    """HTML 이미지용 @font-face — 'Display'(검은고딕)와 'Body'(Pretendard).
+
+    kopub_bold_css() 와 함께 넣으면 제목만 굵은 글꼴로 바꿀 수 있다."""
+    disp = font_path(DISPLAY, font_dir)
+    body = font_path(BODY_BOLD, font_dir)
+    black = font_path(BODY_BLACK, font_dir)
+    css = (f"@font-face{{font-family:'Display';font-weight:100 900;"
+           f"src:url('file://{disp}') format('truetype');}}"
+           f"@font-face{{font-family:'Body';font-weight:100 700;"
+           f"src:url('file://{body}') format('opentype');}}"
+           f"@font-face{{font-family:'Body';font-weight:800 900;"
+           f"src:url('file://{black}') format('opentype');}}")
+    return css.replace("{", "{{").replace("}", "}}") if doubled else css

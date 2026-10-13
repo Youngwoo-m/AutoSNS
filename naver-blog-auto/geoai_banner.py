@@ -26,9 +26,9 @@ W, H = 1200, 600          # 2:1 — 정사각으로 잘려도 제목이 남는 �
 
 import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared.fonts import kopub_bold_css  # noqa: E402
+from shared.fonts import display_css, kopub_bold_css  # noqa: E402
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
   body {{ margin:0; background:#fff; }}
   #banner {{
     width:{w}px; height:{h}px; box-sizing:border-box; padding:44px 52px;
@@ -48,17 +48,17 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
     position:absolute; right:-80px; top:-120px; width:420px; height:420px;
     border-radius:50%; background:radial-gradient(circle,rgba(56,189,248,.35),transparent 70%);
   }}
-  .kicker {{
+  .kicker {{ font-family:'Body';
     position:relative; border:2px solid #38bdf8; color:#7dd3fc;
     font-weight:800; padding:6px 16px; font-size:18px; letter-spacing:2px; border-radius:4px;
   }}
   /* 가운데 정사각(가로의 50%)에 들어오도록 폭을 묶는다 — 잘려도 제목이 살아남는다. */
   .title {{
-    position:relative; font-size:{size}px; font-weight:800; line-height:1.3;
+    font-family:'Display'; position:relative; font-size:{size}px; font-weight:400; line-height:1.3;
     max-width:{tw}px; letter-spacing:-.5px; word-break:keep-all;
     display:flex; align-items:center; flex:1;
   }}
-  .foot {{ position:relative; font-size:20px; color:#9fb3c8; }}
+  .foot {{ font-family:'Body'; position:relative; font-size:20px; color:#9fb3c8; }}
   .brand {{ color:#7dd3fc; font-weight:700; }}
 </style></head><body>
   <div id="banner">
@@ -74,10 +74,10 @@ def _title_size(t):
     """폭이 절반으로 좁아졌으므로 글자도 그만큼 줄여 3줄 안에 들어오게 한다."""
     n = len(t)
     if n <= 14:
-        return 48
+        return 56
     if n <= 22:
-        return 42
-    return 36 if n <= 32 else 31
+        return 49
+    return 42 if n <= 32 else 36
 
 
 def _short_title(title):

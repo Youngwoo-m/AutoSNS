@@ -21,8 +21,16 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FONT_DIR = os.path.join(os.path.dirname(BASE_DIR), "FONTS")
-FONT_BOLD = os.path.join(FONT_DIR, "KoPubWorld Dotum_Pro Bold.otf")
-FONT_MED = os.path.join(FONT_DIR, "KoPubWorld Dotum_Pro Medium.otf")
+
+import sys as _sys  # noqa: E402
+_sys.path.insert(0, os.path.dirname(BASE_DIR))
+from shared.fonts import BODY_BLACK, BODY_BOLD, DISPLAY, font_path  # noqa: E402
+
+# 제목은 '검은고딕'(제목 전용 글꼴), 강조·보조는 Pretendard. KoPub 돋움은 본문용이라
+# 썸네일처럼 작게 줄어드는 자리에서는 획이 가늘어 눈에 걸리지 않았다(2026-10-14).
+FONT_BOLD = font_path(DISPLAY, FONT_DIR)          # 제목
+FONT_BLACK = font_path(BODY_BLACK, FONT_DIR)      # 라벨·강조줄
+FONT_MED = font_path(BODY_BOLD, FONT_DIR)         # 학과명·보조
 POSTS_DIR = os.path.join(BASE_DIR, "posts")
 
 SIZES = {"shorts": (1080, 1920), "video": (1280, 720)}
@@ -194,7 +202,7 @@ def make_thumbnail(data, shape="shorts", out_path=None, label=None):
     _tape(d, W, 0, tape_h, int(W * 0.028), brand)              # 위 경보 테이프
 
     # 라벨 배지 — 모서리를 비스듬히 깎아 '속보 자막' 느낌을 준다.
-    lf = _font(FONT_BOLD, int(H * 0.027) if shape == "shorts" else int(H * 0.047))
+    lf = _font(FONT_BLACK, int(H * 0.027) if shape == "shorts" else int(H * 0.047))
     lw = d.textlength(label, font=lf)
     bh = int(lf.size * 1.95)
     top = int(H * (0.075 if shape == "shorts" else 0.09))
@@ -216,7 +224,7 @@ def make_thumbnail(data, shape="shorts", out_path=None, label=None):
 
     # 강조줄 — 형광펜 박스 위에 검은 글자. 숫자가 있으면 그 줄이 가장 세게 읽힌다.
     if sub:
-        sf, slines = _fit(d, sub, FONT_BOLD, text_w - int(W * 0.04), 2,
+        sf, slines = _fit(d, sub, FONT_BLACK, text_w - int(W * 0.04), 2,
                           int(W * (0.068 if shape == "shorts" else 0.046)))
         y += int(H * 0.018)
         for ln in slines:
@@ -229,7 +237,7 @@ def make_thumbnail(data, shape="shorts", out_path=None, label=None):
 
     # 학과명. 16:9 는 방송 자막처럼 아래 띠로, 숏츠는 글자 묶음 바로 아래 작은 꼬리표로
     # 둔다(가로 띠를 화면 한가운데 그으면 사진을 두 동강 내 어수선해 보인다).
-    df = _font(FONT_BOLD, int(W * (0.030 if shape == "shorts" else 0.029)))
+    df = _font(FONT_MED, int(W * (0.030 if shape == "shorts" else 0.029)))
     if shape == "shorts":
         ty = min(int(H * 0.62), y + int(H * 0.028))
         tw = d.textlength(dept, font=df)

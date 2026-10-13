@@ -22,12 +22,12 @@ from common import POSTS_DIR, load_config, log, start_chrome
 
 import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared.fonts import kopub_bold_css  # noqa: E402
+from shared.fonts import display_css, kopub_bold_css  # noqa: E402
 
 DEFAULT_DEPT = "세명대학교 재난안전학과"
 DEFAULT_SHAPE = "square"
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
   body {{ margin:0; padding:0; background:#fff; }}
   #banner {{
     width:1000px; height:420px; box-sizing:border-box; padding:60px 64px 56px;
@@ -41,16 +41,16 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
     background:repeating-linear-gradient(45deg,#facc15 0 26px,#111827 26px 52px);
   }}
   .tape.b {{ top:auto; bottom:0; }}
-  .badge {{
+  .badge {{ font-family:'Body';
     display:inline-block; align-self:flex-start; border:3px solid #facc15; color:#facc15;
     font-weight:800; padding:8px 20px; font-size:23px; letter-spacing:3px;
   }}
   .mid {{ flex:1; display:flex; align-items:center; }}
   .title {{
-    font-size:{size}px; font-weight:800; line-height:1.26; max-width:660px;
+    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.26; max-width:660px;
     letter-spacing:-.5px; word-break:keep-all;   /* 한글이 단어 중간에서 끊기지 않게 */
   }}
-  .foot {{ font-size:24px; color:#9ca3af; }}
+  .foot {{ font-family:'Body'; font-size:24px; color:#9ca3af; }}
   .dept {{ color:#facc15; font-weight:700; }}
   .icon {{
     position:absolute; right:52px; top:50%; transform:translateY(-50%);
@@ -68,7 +68,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
 </body></html>"""
 
 
-SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
+SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
   body {{ margin:0; padding:0; background:#fff; }}
   #banner {{
     width:540px; height:540px; box-sizing:border-box; padding:54px 48px 46px;
@@ -81,17 +81,17 @@ SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + k
     background:repeating-linear-gradient(45deg,#facc15 0 18px,#111827 18px 36px);
   }}
   .tape.b {{ top:auto; bottom:0; }}
-  .badge {{
+  .badge {{ font-family:'Body';
     display:inline-block; align-self:flex-start; border:2px solid #facc15; color:#facc15;
     font-weight:800; padding:5px 13px; font-size:15px; letter-spacing:2px;
   }}
   /* 제목은 가운데에 크게. 어디서 잘려도 읽히도록 좌우 여백을 넉넉히 둔다. */
   .mid {{ flex:1; display:flex; align-items:center; }}
   .title {{
-    font-size:{size}px; font-weight:800; line-height:1.3; max-width:430px;
+    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.3; max-width:430px;
     letter-spacing:-.5px; word-break:keep-all;
   }}
-  .foot {{ font-size:16px; color:#9ca3af; }}
+  .foot {{ font-family:'Body'; font-size:16px; color:#9ca3af; }}
   .dept {{ color:#facc15; font-weight:700; }}
   .icon {{
     position:absolute; right:-34px; bottom:18px; font-size:170px; opacity:.09;
@@ -109,23 +109,26 @@ SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + k
 
 
 def _square_size(title):
-    """정사각은 가로가 좁아 글자를 더 줄여야 세 줄 안에 들어온다."""
+    """정사각은 가로가 좁아 글자를 줄여야 세 줄 안에 들어온다.
+
+    검은고딕은 같은 px 에서 KoPub 보다 작아 보여(글자 폭이 넓고 높이가 낮다)
+    2026-10-14 에 한 단계씩 키웠다."""
     n = len(title)
     if n <= 14:
-        return 46
+        return 54
     if n <= 22:
-        return 40
+        return 47
     if n <= 30:
-        return 34
-    return 29
+        return 40
+    return 34
 
 
 def _title_size(title):
     """제목이 길면 글자를 줄여 두 줄 안에 들어오게 한다."""
     n = len(title)
     if n <= 20:
-        return 54
-    return 48 if n <= 26 else 42
+        return 62
+    return 55 if n <= 26 else 48
 
 
 def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):
