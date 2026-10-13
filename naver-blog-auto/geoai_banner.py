@@ -1,10 +1,15 @@
 """GeoAI 블로그 글 머리에 넣을 가로 배너(PNG)를 만든다.
 
 왜 Gamma 카드 대신 배너인가: 카드뉴스(16:9 다섯 장)는 글에서 차지하는 자리가 너무
-컸다. 배너는 3:1 로 납작해 글 흐름을 끊지 않고, 헤드리스 Chrome 으로 직접 그리므로
+컸다. 배너는 납작해 글 흐름을 끊지 않고, 헤드리스 Chrome 으로 직접 그리므로
 Gamma 크레딧도 들지 않는다(make_banner.py 와 같은 방식, 디자인만 GeoAI 판).
 
-디자인: 짙은 남색 바탕 + 격자(위성 격자 느낌) + 왼쪽 제목 / 아래 계열·날짜.
+비율을 3:1 에서 2:1 로 바꾸고 글자를 가운데로 옮겼다(2026-10-14). 구글 검색 썸네일,
+카카오톡·트위터 공유 카드, 블로거 인기글 위젯이 가운데를 정사각으로 잘라 쓰는데,
+3:1 은 가운데 33%만 남아 제목 앞뒤와 날짜·계열이 통째로 사라졌다. 2:1 에 가운데
+정렬이면 잘린 정사각 안에 제목이 그대로 들어온다.
+
+디자인: 짙은 남색 바탕 + 격자(위성 격자 느낌) + 가운데 제목 / 아래 계열·날짜.
 """
 import os
 import re
@@ -17,7 +22,7 @@ from selenium.webdriver.common.by import By
 
 from common import POSTS_DIR, load_config, log
 
-W, H = 1200, 400          # 3:1 — 블로그 폭에 맞춰 얇게
+W, H = 1200, 600          # 2:1 — 정사각으로 잘려도 제목이 남는 가장 납작한 비율
 
 import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,7 +35,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
     background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 60%,#0e5a6b 100%);
     color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
-    justify-content:space-between;
+    justify-content:space-between; align-items:center; text-align:center;
   }}
   /* 위성 격자 느낌의 옅은 그리드 */
   .grid {{
@@ -44,12 +49,14 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
     border-radius:50%; background:radial-gradient(circle,rgba(56,189,248,.35),transparent 70%);
   }}
   .kicker {{
-    position:relative; align-self:flex-start; border:2px solid #38bdf8; color:#7dd3fc;
+    position:relative; border:2px solid #38bdf8; color:#7dd3fc;
     font-weight:800; padding:6px 16px; font-size:18px; letter-spacing:2px; border-radius:4px;
   }}
+  /* 가운데 정사각(가로의 50%)에 들어오도록 폭을 묶는다 — 잘려도 제목이 살아남는다. */
   .title {{
-    position:relative; font-size:{size}px; font-weight:800; line-height:1.25;
-    max-width:900px; letter-spacing:-.5px; word-break:keep-all;
+    position:relative; font-size:{size}px; font-weight:800; line-height:1.3;
+    max-width:{tw}px; letter-spacing:-.5px; word-break:keep-all;
+    display:flex; align-items:center; flex:1;
   }}
   .foot {{ position:relative; font-size:20px; color:#9fb3c8; }}
   .brand {{ color:#7dd3fc; font-weight:700; }}
@@ -64,10 +71,13 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
 
 
 def _title_size(t):
+    """폭이 절반으로 좁아졌으므로 글자도 그만큼 줄여 3줄 안에 들어오게 한다."""
     n = len(t)
+    if n <= 14:
+        return 48
     if n <= 22:
-        return 52
-    return 46 if n <= 32 else 40
+        return 42
+    return 36 if n <= 32 else 31
 
 
 def _short_title(title):
@@ -90,6 +100,7 @@ def make_banner(data, cfg=None, size=None):
     title = _short_title(data.get("title", ""))
     kicker = data.get("family") or ("GeoAI 브리핑" if data.get("news_blocks") else "GeoAI 기초")
     html = HTML.format(w=w, h=h, title=title, size=_title_size(title),
+                       tw=int(w * 0.46),          # 가운데 정사각(50%) 안쪽
                        kicker=b.get("kicker", kicker),
                        brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")
