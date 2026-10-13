@@ -1,4 +1,8 @@
-"""블로그 글 → 40초 이내 뉴스브리핑 영상 대본(장면별 나레이션)을 만든다.
+"""블로그 글 → 22~26초 뉴스브리핑 영상 대본(장면별 나레이션)을 만든다.
+
+2026-10-13 채널 분석: GeoAI 채널 상위 5편이 모두 8.4~9.4초에 시청자 절반을 잃었다.
+영상이 32~40초로 길고 첫 장면이 길었다. 그래서 길이를 22~26초로 줄이고, 첫 문장을
+짧게 묶고, 끝이 처음으로 이어지는 고리 구조로 바꿨다.
 
 영상은 글과 같은 내용을 다뤄야 하므로, 뉴스를 다시 모으지 않고 이미 만든 글에서 뽑는다.
 결과는 youtube-shorts-auto/geoai_video.py 가 그대로 받아 쓰는 payload 다.
@@ -29,13 +33,17 @@ USER = """아래 블로그 글을 40초 이내 뉴스 브리핑 영상 대본으
 요구사항
 - 장면은 정확히 3개. 각 장면은 '## 장면제목' 한 줄, '[화면]' 한 줄, 나레이션 한 단락.
 - 나레이션 분량은 문장 수로 지킨다(전체 {budget}자, 상한 {hard}자 — 넘치면 프로그램이 뒤 문장을 잘라 낸다):
-  · 장면 1: 2문장 — 상황·질문 하나, 핵심 답 하나.
-  · 장면 2: 3문장 — 가장 중요한 원리나 방법 하나를 이유·예시와 함께.
+  · 장면 1: 2문장 — 상황·질문 하나, 핵심 답 하나. **첫 문장은 25자 이내**로 끊는다.
+  · 장면 2: 2문장 — 가장 중요한 원리나 방법 하나를 이유·예시와 함께.
   · 장면 3: 2문장 — 기억할 점 하나, 그리고 블로그 안내 문장.
-  · 모든 문장은 35~42자. 한 문장에 쉼표로 두 내용을 잇지 않는다.
-  · 다 쓴 뒤 문장 수(2·3·2)를 확인한다. 더 많은 장면은 문장을 지운다.
+  · 모든 문장은 25~32자. 한 문장에 쉼표로 두 내용을 잇지 않는다.
+  · 다 쓴 뒤 문장 수(2·2·2)를 확인한다. 더 많은 장면은 문장을 지운다.
   짧은 영상이라 곁가지(예외·역사·여러 사례 나열)는 빼고 핵심만 남긴다.
-- 첫 장면 첫 문장은 시청자를 붙잡는 질문이나 상황 제시로 시작한다.
+- 첫 장면 첫 문장은 시청자를 붙잡는 질문이나 상황 제시로 시작하되 25자를 넘기지 않는다.
+  (시청자 절반이 8~9초에 떠난다. 첫 문장이 길면 두 번째 장면을 보지도 못하고 나간다.)
+- 장면마다 새로운 내용을 더한다. 앞 장면에서 말한 개념을 말만 바꿔 되풀이하지 않는다.
+- 끝이 처음으로 이어지는 고리 구조로 쓴다: 장면 3의 첫 문장에 장면 1의 질문·핵심어를
+  한 번 되받아 답한다. "이상입니다" 같은 끝맺음 표현은 쓰지 않는다.
 - 장면 3의 마지막 문장은 "자세한 내용은 블로그 재난안전과 지오에이아이에서 확인하실 수 있습니다"
   처럼, 블로그에서 더 볼 수 있다는 안내로 끝낸다(영문 약어는 소리 나는 대로 쓴다).
 - 장면제목은 영상 화면에 큰 글씨로 뜨는 제목이다. 3~10자의 핵심어로 쓴다.
@@ -98,6 +106,35 @@ def _body_digest(data, limit=5):
     return "\n".join(rows)
 
 
+def _script_issues(scenes):
+    """이탈 요인(긴 첫 문장·반복·끊긴 고리)을 대본에서 찾아 경고만 남긴다.
+
+    여기서 생성을 실패시키지는 않는다 — 영상 한 편을 못 올리는 손해가 더 크다."""
+    out = []
+    if not scenes:
+        return ["장면이 없다"]
+    first = re.split(r"(?<=[.!?])\s+", (scenes[0].get("narration") or "").strip())[0]
+    if len(first) > 30:
+        out.append(f"첫 문장이 {len(first)}자다(25자 이내로 — 8~9초 이탈 구간 전에 끊어야 한다)")
+
+    def words(t):
+        return {w for w in re.findall(r"[가-힣A-Za-z0-9]{2,}", t or "")}
+
+    def shared(a, b):
+        return {x for x in a for y in b if x.startswith(y) or y.startswith(x)}
+
+    for i in range(len(scenes)):
+        for j in range(i + 1, len(scenes)):
+            a, b = words(scenes[i].get("narration")), words(scenes[j].get("narration"))
+            same = shared(a, b)
+            if a and b and len(same) / min(len(a), len(b)) > 0.55:
+                out.append(f"{i + 1}장면과 {j + 1}장면이 같은 내용을 되풀이한다")
+    head, tail = words(scenes[0].get("narration")), words(scenes[-1].get("narration"))
+    if head and tail and not shared(head, tail):
+        out.append("마지막 장면이 1장면의 핵심어를 되받지 않는다(고리가 끊긴다)")
+    return out
+
+
 def _fit_budget(scenes, hard):
     """나레이션 합계를 상한 안으로 줄인다(문장 단위로 뒤에서 덜어낸다).
 
@@ -129,7 +166,7 @@ def make_payload(data, cfg=None):
     cfg = cfg or load_config()
     client = _llm_client(cfg)
     summary = "\n".join(f"- {s}" for s in (data.get("summary") or [])) or "- (없음)"
-    hard = int((cfg.get("geoai") or {}).get("video_max_chars", 290))
+    hard = int((cfg.get("geoai") or {}).get("video_max_chars", 190))
     msg = client.messages.create(
         model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=2000, system=SYSTEM,
         messages=[{"role": "user", "content": USER.format(
@@ -160,7 +197,9 @@ def make_payload(data, cfg=None):
         raise RuntimeError("영상 대본 장면을 파싱하지 못했습니다.")
     scenes = _fit_budget(scenes, hard)
     chars = sum(len(s["narration"]) for s in scenes)
-    log(f"영상 대본 {len(scenes)}장면 / 나레이션 {chars}자 (상한 {hard}자 ≈ 40초)")
+    log(f"영상 대본 {len(scenes)}장면 / 나레이션 {chars}자 (상한 {hard}자 ≈ {hard // 7}초)")
+    for m in _script_issues(scenes):
+        log(f"대본 경고: {m}")
     sources = []
     for blk in (data.get("news_blocks") or []):
         src = blk.get("source") or {}
