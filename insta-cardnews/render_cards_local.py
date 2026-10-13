@@ -270,6 +270,19 @@ def _font_face(font_dir):
         p = os.path.join(font_dir, f)
         if os.path.exists(p):
             faces.append(f"@font-face{{font-family:'KoPub';src:url('{_url(p)}');font-weight:{w};}}")
+    # 표지 제목만 '검은고딕'으로(2026-10-14). 본문은 KoPub 그대로 — 카드가 글자 수에 따라
+    # 자동 축소되긴 하지만, 본문까지 두꺼워지면 읽기가 불편하다.
+    import sys as _s
+    _s.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        from shared.fonts import BODY_BOLD, DISPLAY, font_path
+        faces.append(f"@font-face{{font-family:'Display';src:url('{_url(font_path(DISPLAY, font_dir))}');}}")
+        faces.append(f"@font-face{{font-family:'Body';font-weight:100 800;"
+                     f"src:url('{_url(font_path(BODY_BOLD, font_dir))}');}}")
+        faces.append(".ctitle{font-family:'Display','KoPub',sans-serif;font-weight:400;}")
+        faces.append(".chip,.csub{font-family:'Body','KoPub',sans-serif;}")
+    except Exception:
+        pass
     return "\n".join(faces)
 
 

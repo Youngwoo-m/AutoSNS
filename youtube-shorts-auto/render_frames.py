@@ -20,7 +20,7 @@ from selenium.webdriver.common.by import By
 from common import BASE_DIR, POSTS_DIR, load_config, log
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared.fonts import require_fonts  # noqa: E402
+from shared.fonts import BODY_BOLD, DISPLAY, font_path, require_fonts  # noqa: E402
 
 W, H = 1080, 1920  # Shorts 9:16
 
@@ -37,10 +37,24 @@ def _file_url(path):
 
 
 def _font_face(font_dir):
+    """글꼴 정의 + 역할 배정.
+
+    제목(표지 제목·장면 머리말·상단 띠)은 '검은고딕', 자막 본문·푸터는 Pretendard,
+    나머지는 KoPub 돋움을 그대로 쓴다(2026-10-14). 본문용 KoPub 은 제목 크기로 키우면
+    획이 가늘어 보였다. 글자가 칸을 넘칠 걱정은 하지 않아도 된다 — 아래 오토핏
+    스크립트가 높이에 맞춰 글자를 줄인다(드라이런으로 확인).
+    """
     # 폰트가 없으면 크롬이 조용히 다른 글꼴로 렌더하므로 여기서 막는다.
     require_fonts(font_dir)
     d = font_dir.replace("\\", "/")
-    return f"""
+    disp, body = font_path(DISPLAY, font_dir), font_path(BODY_BOLD, font_dir)
+    extra = f"""
+    @font-face {{ font-family:'Display'; src:url("file://{disp}"); }}
+    @font-face {{ font-family:'Body'; font-weight:100 800; src:url("file://{body}"); }}
+    .ctitle, .th, .heading {{ font-family:'Display','KoPub',sans-serif; font-weight:400; }}
+    .sent, .csub, .foottext {{ font-family:'Body','KoPub',sans-serif; }}
+    """
+    return extra + f"""
     @font-face {{ font-family:'KoPub'; font-weight:300; font-style:normal;
       src:url("file:///{d}/KoPubWorld Dotum_Pro Light.otf"); }}
     @font-face {{ font-family:'KoPub'; font-weight:500; font-style:normal;
