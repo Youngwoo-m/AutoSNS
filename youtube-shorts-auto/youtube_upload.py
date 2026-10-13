@@ -321,6 +321,19 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
     vid = response.get("id")
     url = f"https://youtu.be/{vid}" if vid else "(id 없음)"
     log(f"업로드 완료: {url}  (privacy={privacy})")
+    # 썸네일 — 올리지 않으면 유튜브가 표지 프레임(회색 카드)을 골라 쓴다. 검색·채널 목록에서
+    # 다른 영상과 구분이 안 되므로 직접 만든 것을 올린다. 맞춤 썸네일은 전화 인증된
+    # 채널만 되므로 실패해도 업로드 결과는 그대로 둔다.
+    if vid and ycfg.get("thumbnail", True):
+        try:
+            from make_thumbnail import make_thumbnail
+            shape = "shorts" if data.get("video_seconds", 60) <= 180 else "video"
+            thumb = make_thumbnail(data, shape=shape)
+            youtube.thumbnails().set(videoId=vid, media_body=thumb).execute()
+            log(f"썸네일 적용({shape}): {os.path.basename(thumb)}")
+        except Exception as e:  # noqa: BLE001
+            log(f"썸네일 적용 실패(업로드는 정상): {type(e).__name__}: {str(e)[:120]}")
+
     # 재생목록 분류는 부가 작업 — 실패해도 업로드 결과는 그대로 둔다
     pl = pick_playlist(title, ycfg)
     if vid and pl:
