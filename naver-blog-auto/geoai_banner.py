@@ -74,10 +74,10 @@ def _title_size(t):
     """폭이 절반으로 좁아졌으므로 글자도 그만큼 줄여 3줄 안에 들어오게 한다."""
     n = len(t)
     if n <= 14:
-        return 56
+        return 50
     if n <= 22:
-        return 49
-    return 42 if n <= 32 else 36
+        return 44
+    return 38 if n <= 32 else 33
 
 
 def _short_title(title):

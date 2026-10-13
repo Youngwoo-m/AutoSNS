@@ -111,24 +111,23 @@ SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + k
 def _square_size(title):
     """정사각은 가로가 좁아 글자를 줄여야 세 줄 안에 들어온다.
 
-    검은고딕은 같은 px 에서 KoPub 보다 작아 보여(글자 폭이 넓고 높이가 낮다)
-    2026-10-14 에 한 단계씩 키웠다."""
+    제목 글꼴(Pretendard Black)은 KoPub 과 크기가 비슷해 원래 값으로 돌렸다(2026-10-14)."""
     n = len(title)
     if n <= 14:
-        return 54
+        return 48
     if n <= 22:
-        return 47
+        return 42
     if n <= 30:
-        return 40
-    return 34
+        return 36
+    return 31
 
 
 def _title_size(title):
     """제목이 길면 글자를 줄여 두 줄 안에 들어오게 한다."""
     n = len(title)
     if n <= 20:
-        return 62
-    return 55 if n <= 26 else 48
+        return 56
+    return 50 if n <= 26 else 44
 
 
 def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):

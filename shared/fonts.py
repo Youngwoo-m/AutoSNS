@@ -62,9 +62,13 @@ def require_fonts(font_dir, needed=REQUIRED):
 # 제목은 '검은고딕'(제목 전용, OFL), 보조 글자는 Pretendard 로 쓴다. 둘 다 상업용 무료다.
 # 영상 프레임·인스타 카드는 글자 수에 맞춰 칸을 짜 두어 더 두꺼운 글꼴로 바꾸면
 # 넘칠 수 있으므로 손대지 않았다(바꾸려면 렌더 결과를 먼저 확인할 것).
-DISPLAY = "BlackHanSans-Regular.ttf"      # 검은고딕 — 제목
+# 2026-10-14 2차: 검은고딕은 획이 너무 굵고 속공간이 좁아 "읽기 어렵다"는 지적을 받았다.
+# 제목 글꼴을 Pretendard Black 으로 내린다 — KoPub 보다 확실히 굵으면서 글자 속이
+# 트여 있어 길게 읽어도 피로하지 않다. 검은고딕은 필요할 때만 골라 쓴다(PUNCH).
+DISPLAY = "Pretendard-Black.otf"          # 제목
 BODY_BOLD = "Pretendard-Bold.otf"         # 보조·설명
 BODY_BLACK = "Pretendard-Black.otf"       # 강조·라벨
+PUNCH = "BlackHanSans-Regular.ttf"        # 검은고딕 — 아주 짧은 문구에만
 HEAVY_ALT = "SCDream9Black.otf"           # 에스코어드림 9 Black — 대체 제목용
 
 
@@ -84,8 +88,9 @@ def display_css(font_dir=None, doubled=False):
     disp = font_path(DISPLAY, font_dir)
     body = font_path(BODY_BOLD, font_dir)
     black = font_path(BODY_BLACK, font_dir)
+    fmt = "truetype" if disp.lower().endswith(".ttf") else "opentype"
     css = (f"@font-face{{font-family:'Display';font-weight:100 900;"
-           f"src:url('file://{disp}') format('truetype');}}"
+           f"src:url('file://{disp}') format('{fmt}');}}"
            f"@font-face{{font-family:'Body';font-weight:100 700;"
            f"src:url('file://{body}') format('opentype');}}"
            f"@font-face{{font-family:'Body';font-weight:800 900;"
