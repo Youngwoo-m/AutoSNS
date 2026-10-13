@@ -29,7 +29,7 @@ from shared.fonts import BODY_BLACK, BODY_BOLD, DISPLAY, font_path  # noqa: E402
 # 제목은 '검은고딕'(제목 전용 글꼴), 강조·보조는 Pretendard. KoPub 돋움은 본문용이라
 # 썸네일처럼 작게 줄어드는 자리에서는 획이 가늘어 눈에 걸리지 않았다(2026-10-14).
 FONT_BOLD = font_path(DISPLAY, FONT_DIR)          # 제목
-FONT_BLACK = font_path(BODY_BLACK, FONT_DIR)      # 라벨·강조줄
+FONT_BLACK = font_path(BODY_BLACK, FONT_DIR)      # 작은 라벨만(크게 쓰면 제목보다 굵어진다)
 FONT_MED = font_path(BODY_BOLD, FONT_DIR)         # 학과명·보조
 POSTS_DIR = os.path.join(BASE_DIR, "posts")
 
@@ -224,7 +224,7 @@ def make_thumbnail(data, shape="shorts", out_path=None, label=None):
 
     # 강조줄 — 형광펜 박스 위에 검은 글자. 숫자가 있으면 그 줄이 가장 세게 읽힌다.
     if sub:
-        sf, slines = _fit(d, sub, FONT_BLACK, text_w - int(W * 0.04), 2,
+        sf, slines = _fit(d, sub, FONT_MED, text_w - int(W * 0.04), 2,
                           int(W * (0.068 if shape == "shorts" else 0.046)))
         y += int(H * 0.018)
         for ln in slines:

@@ -63,9 +63,9 @@ def require_fonts(font_dir, needed=REQUIRED):
 # 영상 프레임·인스타 카드는 글자 수에 맞춰 칸을 짜 두어 더 두꺼운 글꼴로 바꾸면
 # 넘칠 수 있으므로 손대지 않았다(바꾸려면 렌더 결과를 먼저 확인할 것).
 # 2026-10-14 2차: 검은고딕은 획이 너무 굵고 속공간이 좁아 "읽기 어렵다"는 지적을 받았다.
-# 제목 글꼴을 Pretendard Black 으로 내린다 — KoPub 보다 확실히 굵으면서 글자 속이
+# 제목 글꼴을 Pretendard 로 내린다 — KoPub 보다 확실히 굵으면서 글자 속이
 # 트여 있어 길게 읽어도 피로하지 않다. 검은고딕은 필요할 때만 골라 쓴다(PUNCH).
-DISPLAY = "Pretendard-Black.otf"          # 제목
+DISPLAY = "Pretendard-Bold.otf"           # 제목(2026-10-14 3차: Black 도 두껍다는 지적)
 BODY_BOLD = "Pretendard-Bold.otf"         # 보조·설명
 BODY_BLACK = "Pretendard-Black.otf"       # 강조·라벨
 PUNCH = "BlackHanSans-Regular.ttf"        # 검은고딕 — 아주 짧은 문구에만
