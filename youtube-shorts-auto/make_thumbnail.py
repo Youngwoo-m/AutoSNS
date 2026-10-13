@@ -165,7 +165,11 @@ def _texts(data):
     if scenes and scenes[0].get("lines"):
         sub = scenes[0]["lines"][0]
     if not head:
-        head = re.split(r"[|·–—]", data.get("title", ""))[0].strip()
+        # 대본이 없으면 제목에서 만든다. 해시태그·시리즈 꼬리표를 떼지 않으면
+        # 썸네일에 '#세명대 #릴스' 가 그대로 박힌다(2026-10-14 소급 작업에서 확인).
+        t = re.sub(r"#\S+", " ", data.get("title", ""))
+        t = re.split(r"[|·–—]", t)[0]
+        head = re.sub(r"\s+", " ", t).strip()
     return head.strip(), sub.strip()
 
 
