@@ -30,6 +30,7 @@ INK = (255, 255, 255)
 ACCENT = (250, 204, 21)          # 숫자·강조어(노랑)
 LABEL_BG = (220, 38, 38)         # 학과 채널 라벨(빨강 — 속보 느낌)
 LABEL_BG_GEOAI = (2, 132, 199)   # GeoAI 채널 라벨(파랑 — 블로그·배너와 같은 계열)
+ACCENT_GEOAI = (56, 189, 248)    # GeoAI 강조색(하늘 — 노랑 경보색은 재난 채널 것)
 BG_TOP = (11, 21, 46)
 BG_BOTTOM = (23, 54, 86)
 
@@ -76,19 +77,29 @@ def _fit(draw, text, font_path, max_w, max_lines, start, floor=40):
 
 
 def _background(size, photo=None):
-    """뉴스 사진이 있으면 어둡게 깔고, 없으면 남색 그라데이션."""
+    """뉴스 사진은 살리고 글자가 놓일 위쪽만 어둡게 덮는다.
+
+    전체를 고르게 어둡게 하면 사진이 뭉개져 '글자만 있는 판'처럼 보인다.
+    위 65%는 진하게, 아래는 거의 그대로 둬 사진이 보이게 한다."""
     W, H = size
     if photo and os.path.exists(photo):
         try:
             im = Image.open(photo).convert("RGB")
-            # 짧은 변을 맞춰 가운데를 잘라 채운다(비율 유지).
             r = max(W / im.width, H / im.height)
             im = im.resize((max(1, int(im.width * r)), max(1, int(im.height * r))))
             im = im.crop(((im.width - W) // 2, (im.height - H) // 2,
                           (im.width - W) // 2 + W, (im.height - H) // 2 + H))
-            im = im.filter(ImageFilter.GaussianBlur(3))
-            dark = Image.new("RGB", (W, H), (8, 14, 30))
-            return Image.blend(im, dark, 0.52)
+            im = im.filter(ImageFilter.GaussianBlur(1.5))
+            # 위→아래로 옅어지는 검정 장막(알파 마스크)
+            veil = Image.new("RGB", (W, H), (6, 10, 24))
+            mask = Image.new("L", (1, H))
+            md = ImageDraw.Draw(mask)
+            for y in range(H):
+                t = y / max(1, H - 1)
+                a = 214 if t < 0.58 else max(70, int(214 - (t - 0.58) * 430))
+                md.point((0, y), fill=a)
+            im.paste(veil, (0, 0), mask.resize((W, H)))
+            return im
         except Exception:
             pass
     bg = Image.new("RGB", (W, H))
@@ -97,11 +108,30 @@ def _background(size, photo=None):
         t = y / max(1, H - 1)
         d.line([(0, y), (W, y)],
                fill=tuple(int(a + (b - a) * t) for a, b in zip(BG_TOP, BG_BOTTOM)))
-    return bg
+    # 바탕만 있을 때는 비어 보이므로 옅은 격자를 깐다(블로그 배너와 같은 모티브).
+    for x in range(0, W, int(W * 0.11)):
+        d.line([(x, 0), (x, H)], fill=(255, 255, 255), width=1)
+    for y in range(0, H, int(W * 0.11)):
+        d.line([(0, y), (W, y)], fill=(255, 255, 255), width=1)
+    return Image.blend(bg, Image.new("RGB", (W, H), BG_TOP), 0.12)
 
 
-def _draw_lines(d, lines, font, x, y, line_h, highlight=True):
-    """숫자가 든 조각만 노랑으로 칠해 눈이 먼저 가게 한다."""
+def _tape(d, W, y, h, step, color=ACCENT):
+    """경보 테이프(사선 띠) — 블로그 배너와 같은 아이덴티티. 색은 채널마다 다르다."""
+    for i in range(-h, W + h * 2, step * 2):
+        d.polygon([(i, y + h), (i + step, y), (i + step * 2, y), (i + step, y + h)],
+                  fill=color)
+    d.rectangle([0, y, W, y + 2], fill=(17, 24, 39))
+
+
+def _marker(d, box, color=ACCENT):
+    """형광펜 느낌의 강조 박스(모서리를 살짝 비스듬히)."""
+    x0, y0, x1, y1 = box
+    d.polygon([(x0, y0 + 4), (x1, y0), (x1, y1 - 4), (x0, y1)], fill=color)
+
+
+def _draw_lines(d, lines, font, x, y, line_h, highlight=True, stroke=0):
+    """숫자가 든 조각만 노랑으로 칠하고, 사진 위에서도 읽히게 외곽선을 두른다."""
     for ln in lines:
         cx = x
         parts = re.split(r"([0-9][0-9,.]*[가-힣%]*)", ln) if highlight else [ln]
@@ -109,7 +139,11 @@ def _draw_lines(d, lines, font, x, y, line_h, highlight=True):
             if not p:
                 continue
             color = ACCENT if (highlight and re.match(r"^[0-9]", p)) else INK
-            d.text((cx, y), p, font=font, fill=color)
+            if stroke:
+                d.text((cx, y), p, font=font, fill=color,
+                       stroke_width=stroke, stroke_fill=(10, 14, 28))
+            else:
+                d.text((cx, y), p, font=font, fill=color)
             cx += d.textlength(p, font=font)
         y += line_h
     return y
@@ -137,46 +171,82 @@ def _photo(data):
 
 
 def make_thumbnail(data, shape="shorts", out_path=None, label=None):
+    """클릭을 끌 요소를 쌓아 올린다: 경보 테이프 → 라벨 → 세로 강조 바 → 큰 제목
+    (외곽선) → 형광 강조줄 → 학과 띠. 배경 사진은 아래쪽을 살려 '사진 위의 뉴스
+    자막' 처럼 보이게 한다."""
     W, H = SIZES.get(shape, SIZES["shorts"])
     head, sub = _texts(data)
     # 같은 함수를 학과 채널과 개인 GeoAI 채널이 함께 쓴다 — 브랜드가 섞이지 않게 구분한다.
     geoai = str(data.get("stamp", "")).startswith("geoai") or bool(data.get("family"))
     if geoai:
         label = label or (data.get("family") or "GeoAI")
-        dept, label_bg = "재난안전과 GeoAI", LABEL_BG_GEOAI
+        dept, label_bg, brand = "재난안전과 GeoAI", LABEL_BG_GEOAI, ACCENT_GEOAI
     else:
         label = label or "재난안전뉴스"
-        dept, label_bg = "세명대학교 재난안전학과", LABEL_BG
+        dept, label_bg, brand = "세명대학교 재난안전학과", LABEL_BG, ACCENT
 
     im = _background((W, H), _photo(data))
     d = ImageDraw.Draw(im)
     pad = int(W * 0.075)
-    text_w = W - pad * 2 if shape == "shorts" else int(W * 0.62)
+    text_w = W - pad * 2 - int(W * 0.035) if shape == "shorts" else int(W * 0.60)
+    tape_h = int(H * (0.012 if shape == "shorts" else 0.022))
 
-    # 라벨 배지
-    lf = _font(FONT_BOLD, int(H * 0.028) if shape == "shorts" else int(H * 0.05))
+    _tape(d, W, 0, tape_h, int(W * 0.028), brand)              # 위 경보 테이프
+
+    # 라벨 배지 — 모서리를 비스듬히 깎아 '속보 자막' 느낌을 준다.
+    lf = _font(FONT_BOLD, int(H * 0.027) if shape == "shorts" else int(H * 0.047))
     lw = d.textlength(label, font=lf)
-    bh = int(lf.size * 1.9)
-    top = int(H * (0.10 if shape == "shorts" else 0.10))
-    d.rectangle([pad, top, pad + lw + lf.size * 1.2, top + bh], fill=label_bg)
-    d.text((pad + lf.size * 0.6, top + (bh - lf.size * 1.25) / 2), label, font=lf, fill=INK)
+    bh = int(lf.size * 1.95)
+    top = int(H * (0.075 if shape == "shorts" else 0.09))
+    skew = int(bh * 0.22)
+    d.polygon([(pad, top), (pad + lw + lf.size * 1.4, top),
+               (pad + lw + lf.size * 1.4 - skew, top + bh), (pad, top + bh)], fill=label_bg)
+    d.text((pad + lf.size * 0.7, top + (bh - lf.size * 1.3) / 2), label, font=lf, fill=INK)
 
-    # 후킹 문구 — 숏츠는 아래 25%가 UI 에 가리므로 위쪽에 몰아 둔다.
+    # 제목 — 왼쪽 세로 강조 바 + 큰 글자(외곽선). 사진 위에서도 읽히게 한다.
     hf, hlines = _fit(d, head, FONT_BOLD, text_w, 3,
-                      int(W * (0.135 if shape == "shorts" else 0.085)))
-    y = top + bh + int(H * 0.045)
-    y = _draw_lines(d, hlines, hf, pad, y, int(hf.size * 1.26))
+                      int(W * (0.145 if shape == "shorts" else 0.092)))
+    line_h = int(hf.size * 1.24)
+    y0 = top + bh + int(H * 0.042)
+    bar_w = int(W * 0.014)
+    d.rectangle([pad, y0 + int(hf.size * 0.12), pad + bar_w,
+                 y0 + line_h * len(hlines) - int(hf.size * 0.18)], fill=brand)
+    tx = pad + bar_w + int(W * 0.028)
+    y = _draw_lines(d, hlines, hf, tx, y0, line_h, stroke=max(3, int(hf.size * 0.055)))
 
+    # 강조줄 — 형광펜 박스 위에 검은 글자. 숫자가 있으면 그 줄이 가장 세게 읽힌다.
     if sub:
-        sf, slines = _fit(d, sub, FONT_MED, text_w, 2,
-                          int(W * (0.062 if shape == "shorts" else 0.042)))
-        y += int(H * 0.012)
-        _draw_lines(d, slines, sf, pad, y, int(sf.size * 1.3))
+        sf, slines = _fit(d, sub, FONT_BOLD, text_w - int(W * 0.04), 2,
+                          int(W * (0.068 if shape == "shorts" else 0.046)))
+        y += int(H * 0.018)
+        for ln in slines:
+            tw = d.textlength(ln, font=sf)
+            box = (tx - int(sf.size * 0.3), y - int(sf.size * 0.12),
+                   tx + tw + int(sf.size * 0.45), y + int(sf.size * 1.32))
+            _marker(d, box, brand)
+            d.text((tx, y), ln, font=sf, fill=(17, 24, 39))
+            y += int(sf.size * 1.62)
 
-    # 학과명 — 숏츠는 UI 가리는 영역 위(=60% 지점 아래쪽 여유)에 작게.
-    df = _font(FONT_MED, int(W * (0.034 if shape == "shorts" else 0.030)))
-    dy = int(H * (0.63 if shape == "shorts" else 0.86))
-    d.text((pad, dy), dept, font=df, fill=(203, 213, 225))
+    # 학과명. 16:9 는 방송 자막처럼 아래 띠로, 숏츠는 글자 묶음 바로 아래 작은 꼬리표로
+    # 둔다(가로 띠를 화면 한가운데 그으면 사진을 두 동강 내 어수선해 보인다).
+    df = _font(FONT_BOLD, int(W * (0.030 if shape == "shorts" else 0.029)))
+    if shape == "shorts":
+        ty = min(int(H * 0.62), y + int(H * 0.028))
+        tw = d.textlength(dept, font=df)
+        pill_h = int(df.size * 1.95)
+        d.rectangle([pad, ty, pad + tw + df.size * 1.5, ty + pill_h], fill=(10, 16, 32))
+        d.rectangle([pad, ty, pad + int(W * 0.009), ty + pill_h], fill=brand)
+        d.text((pad + df.size * 0.75, ty + (pill_h - df.size * 1.3) / 2),
+               dept, font=df, fill=(226, 232, 240))
+    else:
+        by = int(H * 0.855)
+        band_h = int(df.size * 2.1)
+        d.rectangle([0, by, W, by + band_h], fill=(10, 16, 32))
+        d.rectangle([0, by, W, by + max(3, int(band_h * 0.07))], fill=brand)
+        d.text((pad, by + (band_h - df.size * 1.3) / 2), dept, font=df, fill=(226, 232, 240))
+
+    if shape == "shorts":                                      # 아래 경보 테이프
+        _tape(d, W, H - tape_h, tape_h, int(W * 0.028), brand)
 
     out_path = out_path or os.path.join(
         POSTS_DIR, f"thumb_{data.get('stamp', 'x')}_{shape}.jpg")
