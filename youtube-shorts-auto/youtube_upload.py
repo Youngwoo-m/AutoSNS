@@ -282,6 +282,7 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
     # 배경에 AI 실사 클립을 쓴 뉴스도 같다 — 실제 현장처럼 보이는 합성 영상이다.
     if data.get("ai_disclosure") or data.get("ai_broll"):
         status["containsSyntheticMedia"] = True
+    synthetic = bool(status.get("containsSyntheticMedia"))   # 아래 업로드 루프가 status 를 덮어쓴다
 
     if dry_run:
         log("DRY_RUN: 업로드하지 않습니다. 아래 메타데이터/영상 경로를 확인하세요.")
@@ -349,7 +350,7 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
             from tiktok_queue import add as tiktok_add
             geo = bool(token_path) and os.path.abspath(token_path) != os.path.abspath(TOKEN_PATH)
             tiktok_add(video_path, data.get("title", ""), data.get("description", ""),
-                       data.get("hashtags") or [], ai_generated=bool(status.get("containsSyntheticMedia")),
+                       data.get("hashtags") or [], ai_generated=synthetic,
                        source="geoai" if geo else "youtube_upload")
         except Exception as e:  # noqa: BLE001
             log(f"틱톡 대기열 건너뜀: {type(e).__name__}")

@@ -185,13 +185,20 @@ def main(argv):
         return 0
     from tiktok_web import upload
     caption = make_caption(e)
-    log(f"===== 틱톡 하루 1편: {os.path.basename(e['video'])} =====")
-    e["tries"] = e.get("tries", 0) + 1
-    _save(q)
+    log(f"===== 틱톡 게시: {os.path.basename(e['video'])} =====")
     try:
         r = upload(e["video"], caption, post=True, ai_generated=e.get("ai_generated", False))
-    except SystemExit as ex:
-        log(f"===== 틱톡 게시 실패({e['tries']}/{MAX_TRIES}, 다음 실행에서 다시): {ex} =====")
+    except BaseException as ex:  # noqa: BLE001
+        # 크롬·연결 문제는 영상 탓이 아니다 — 시도 횟수에 넣지 않는다(10/12~15 크롬이 멈춰
+        # 대기열 전체가 3회 실패로 멈췄다). 화면·게시 단계 실패만 센다.
+        infra = type(ex).__name__ in ("SessionNotCreatedException", "WebDriverException",
+                                      "ConnectionRefusedError", "MaxRetryError") \
+            or "Chrome 디버깅 포트" in str(ex)
+        if not infra:
+            e["tries"] = e.get("tries", 0) + 1
+            _save(q)
+        why = "크롬 연결" if infra else f"{e.get('tries', 0)}/{MAX_TRIES}"
+        log(f"===== 틱톡 게시 실패({why}, 다음 실행에서 다시): {type(ex).__name__}: {str(ex)[:150]} =====")
         return 1
     e["posted"] = {"at": dt.datetime.now().isoformat(timespec="seconds"), "caption": caption,
                    "status": r.get("status")}

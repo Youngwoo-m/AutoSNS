@@ -59,10 +59,12 @@ def launch_chrome(url=None, port=DEBUG_PORT):
         return None                      # 이미 떠 있으면 그대로 쓴다
     args = [CHROME, f"--user-data-dir={PROFILE_DIR}", f"--remote-debugging-port={port}",
             "--no-first-run", "--no-default-browser-check", "--lang=ko-KR",
+            # 크롬 155 부터 이 프로필로 띄우면 '사용자 선택' 창만 열려 Selenium 이 붙을 페이지가
+            # 없었다(10/12~15 틱톡 게시 중단). 프로필을 지정하고 빈 탭을 하나 연다.
+            "--profile-directory=Default",
             "--window-size=1400,1000",
             "--disable-features=MacAppCodeSignClone"]  # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
-    if url:
-        args.append(url)
+    args.append(url or "about:blank")
     proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(40):
         if _port_open(port):
@@ -71,12 +73,32 @@ def launch_chrome(url=None, port=DEBUG_PORT):
     raise SystemExit("Chrome 디버깅 포트가 열리지 않았습니다.")
 
 
+def _kill_debug_chrome(port=DEBUG_PORT):
+    """디버깅 포트에 떠 있는 틱톡 전용 Chrome 만 끈다(사용자의 다른 Chrome 은 건드리지 않는다)."""
+    subprocess.run(["pkill", "-f", f"remote-debugging-port={port}"], stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL)
+    for _ in range(20):
+        if not _port_open(port):
+            return
+        time.sleep(0.5)
+
+
 def build_driver(headless=False, port=DEBUG_PORT):
-    """평범하게 띄운 Chrome 에 붙는다(headless 는 틱톡에서 쓰지 않는다)."""
-    launch_chrome(port=port)
-    o = Options()
-    o.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
-    return webdriver.Chrome(options=o)
+    """평범하게 띄운 Chrome 에 붙는다(headless 는 틱톡에서 쓰지 않는다).
+
+    10/12~10/15: 떠 있던 Chrome 이 멈춰 'cannot connect to chrome / unable to discover open
+    pages' 로 사흘 동안 한 편도 못 올렸다. 붙지 못하면 그 Chrome 을 끄고 새로 띄워 한 번 더 붙는다."""
+    for attempt in (1, 2):
+        launch_chrome(port=port)
+        o = Options()
+        o.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+        try:
+            return webdriver.Chrome(options=o)
+        except Exception as e:  # noqa: BLE001
+            if attempt == 2:
+                raise
+            log(f"틱톡 Chrome 에 붙지 못함({type(e).__name__}) — 끄고 다시 띄웁니다")
+            _kill_debug_chrome(port)
 
 
 def shot(d, name):
@@ -370,6 +392,10 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
     try:
         d.get(UPLOAD_URL)
         time.sleep(8)
+        for _ in range(11):        # 방금 띄운 Chrome 은 업로드 화면이 늦게 뜬다(10/15 첫 시도 실패)
+            if d.find_elements(By.CSS_SELECTOR, "input[type=file]"):
+                break
+            time.sleep(2)
         if not logged_in(d):
             shot(d, "not_logged_in")
             raise SystemExit("로그인이 안 돼 있습니다 — tiktok_web_login.py 를 먼저 실행하세요.")
