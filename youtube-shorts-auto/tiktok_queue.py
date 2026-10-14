@@ -157,7 +157,8 @@ def pick(q, now=None):
         left = [e for e in q if not e.get("posted")]
         return None, f"올릴 편 없음(대기 {len(left)}편)"
     # 새로 올라온 영상(유튜브 공개 30분 뒤)이 먼저, 밀린 영상(backfill)은 빈 시간에.
-    e = sorted(ready, key=lambda e: (e.get("backfill", False), e["not_before"]))[0]
+    # priority: 사용자가 바로 올리라고 한 영상(10/15 홍보 영상) — 밀린 새 영상보다 먼저.
+    e = sorted(ready, key=lambda e: (e.get("backfill", False), not e.get("priority"), e["not_before"]))[0]
     if e.get("backfill") and since < dt.timedelta(hours=GAP_HOURS):
         return None, f"직전 게시({last[11:16]}) 뒤 {GAP_HOURS}시간이 안 지나 밀린 영상은 쉼"
     if e.get("backfill"):
