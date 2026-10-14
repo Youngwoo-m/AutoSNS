@@ -62,7 +62,8 @@ def run(go=False, limit=None):
             data = json.load(open(f, encoding="utf-8"))
         except Exception:
             continue
-        if not data.get("scenes"):
+        # posts/ 에는 대본이 아닌 JSON(목록 형태 등)도 섞인다 — 10/12 그런 파일 하나에 걸려 작업 전체가 멈췄다
+        if not isinstance(data, dict) or not data.get("scenes"):
             continue
         vid = data.get("video_id")
         if not vid:
