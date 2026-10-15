@@ -25,7 +25,7 @@ from common import BASE_DIR, load_config, log
 
 QUEUE = os.path.join(BASE_DIR, "posts", "tiktok_queue.json")
 MAX_AGE_DAYS = 14
-MAX_TRIES = 3
+MAX_TRIES = 5          # 틱톡 화면이 간헐적으로 늦게 떠 3번으로는 멀쩡한 영상도 멈췄다(10/15)
 DELAY_MIN = 30          # 유튜브 공개 뒤 틱톡까지
 GAP_HOURS = 3           # 틱톡 게시 사이 최소 간격(밀린 영상 기준)
 GAP_FRESH_HOURS = 1     # 새 영상끼리는 1시간 — 화요일 GeoAI(08:10)·재난 숏츠(08:30)가 붙는다
