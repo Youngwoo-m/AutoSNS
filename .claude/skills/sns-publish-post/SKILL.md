@@ -16,7 +16,7 @@ description: AutoSNS 에서 주제·링크를 받아 학과 채널(네이버 블
 
 ## 지킬 것
 - 사실은 확인한 출처(공식 발표·기사)로만 쓴다. 법령·기준 수치는 원문 또는 정부 보도자료로 교차 확인하고 출처 링크를 본문에 남긴다.
-- 이미지 속 글자는 KoPubWorld 돋움 Bold(`shared.fonts.kopub_bold_css`). AI 가 한글을 그리게 하지 않는다. 헤드리스 렌더는 `Emulation.setDeviceMetricsOverride` 로 크기를 고정한다(창 크기만 주면 높이가 모자란다).
+- 이미지 속 글자: 제목 Pretendard Black, 보조 Pretendard Bold(`shared.fonts.display_css`), 자막·카드 본문 KoPub 돋움 Bold(`shared.fonts.kopub_bold_css`). AI 가 한글을 그리게 하지 않는다. 헤드리스 렌더는 `Emulation.setDeviceMetricsOverride` 로 크기를 고정한다(창 크기만 주면 높이가 모자란다).
 - 쿠팡 파트너스 등 제휴가 걸린 내용은 고지문을 넣고, 학과 해시태그(#세명대학교 #재난안전학과)는 붙이지 않는다. 스레드는 `threads_post.compose(..., notice=고지문)` 로 넣는다.
 - 네이버 카테고리는 실제 목록 이름 그대로 쓴다: `https://m.blog.naver.com/api/blogs/studs23/category-list`.
 - Blogger 는 하루 2편 상한(`post_blogger._posted_today`). 수동 글 때문에 저녁 자동 글이 밀리면 사용자에게 알린다.
