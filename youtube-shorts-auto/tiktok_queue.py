@@ -150,7 +150,7 @@ def pick(q, now=None):
     if since < dt.timedelta(hours=GAP_FRESH_HOURS):
         return None, f"직전 게시({last[11:16]}) 뒤 {GAP_FRESH_HOURS}시간이 안 지남"
     cutoff = (now - dt.timedelta(days=MAX_AGE_DAYS)).isoformat()
-    ready = [e for e in q if not e.get("posted") and e.get("tries", 0) < MAX_TRIES
+    ready = [e for e in q if not e.get("posted") and not e.get("skipped") and e.get("tries", 0) < MAX_TRIES
              and e["added"] >= cutoff and (e.get("not_before") or "") <= now.isoformat()
              and os.path.exists(e["video"])]
     if not ready:

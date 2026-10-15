@@ -6,7 +6,7 @@ deploy.py(zip 업로드)는 함수를 올리지 못해서, 기상특보 중계 �
   python3 deploy_full.py          # 배포
   python3 deploy_full.py --check  # 무엇이 올라갈지만 보고 끝(배포 안 함)
 
-함수가 쓰는 공공데이터포털 키(DATA_GO_KR_KEY)는 AutoSNS/.env 에서 읽어
+함수가 쓰는 키(공공데이터포털 DATA_GO_KR_KEY, 카카오 KAKAO_REST_KEY)는 AutoSNS/.env 에서 읽어
 Netlify 사이트 환경변수로 한 번 넣어 둔다 — 사이트 파일에는 들어가지 않는다.
 """
 import hashlib, io, json, sys, time, urllib.parse, zipfile
@@ -37,20 +37,27 @@ def function_zips():
     return out
 
 
+ENV_KEYS = ("DATA_GO_KR_KEY", "KAKAO_REST_KEY")   # 기상특보(wthr) · 카카오 대중교통 길찾기(kroute)
+
+
 def ensure_env():
-    """함수용 환경변수 DATA_GO_KR_KEY 가 사이트에 없으면 넣는다."""
-    key = next((l.strip().split("=", 1)[1] for l in ENV_FILE.read_text(encoding="utf-8").splitlines()
-                if l.startswith("DATA_GO_KR_KEY=")), None)
-    if not key:
-        raise SystemExit("AutoSNS/.env 에 DATA_GO_KR_KEY 가 없습니다")
+    """함수용 환경변수(ENV_KEYS)가 사이트에 없으면 AutoSNS/.env 값으로 넣는다."""
+    env = dict(l.strip().split("=", 1) for l in ENV_FILE.read_text(encoding="utf-8").splitlines()
+               if "=" in l and not l.lstrip().startswith("#"))
     account = api("/sites/" + SITE_ID)["account_id"]
-    have = api(f"/accounts/{account}/env?site_id={SITE_ID}") or []
-    if any(v.get("key") == "DATA_GO_KR_KEY" for v in have):
-        return "있음"
-    api(f"/accounts/{account}/env?site_id={SITE_ID}", "POST",
-        # 무료 플랜은 scopes(함수 전용) 지정이 막혀 있어 기본 범위로 넣는다 — 그래도 사이트 파일엔 안 들어간다
-        json.dumps([{"key": "DATA_GO_KR_KEY", "values": [{"value": key, "context": "all"}]}]).encode())
-    return "새로 넣음"
+    have = {v.get("key") for v in (api(f"/accounts/{account}/env?site_id={SITE_ID}") or [])}
+    out = {}
+    for k in ENV_KEYS:
+        val = env.get(k, "").strip().strip('"').strip("'")
+        if not val:
+            raise SystemExit(f"AutoSNS/.env 에 {k} 가 없습니다")
+        if k in have:
+            out[k] = "있음"; continue
+        api(f"/accounts/{account}/env?site_id={SITE_ID}", "POST",
+            # 무료 플랜은 scopes(함수 전용) 지정이 막혀 있어 기본 범위로 넣는다 — 그래도 사이트 파일엔 안 들어간다
+            json.dumps([{"key": k, "values": [{"value": val, "context": "all"}]}]).encode())
+        out[k] = "새로 넣음"
+    return out
 
 
 def deploy(check=False):
@@ -61,7 +68,7 @@ def deploy(check=False):
     print(f"파일 {len(files)}개, 함수 {list(funcs)}")
     if check:
         return
-    print("환경변수 DATA_GO_KR_KEY:", ensure_env())
+    print("환경변수:", ensure_env())
     d = api(f"/sites/{SITE_ID}/deploys?title=" + urllib.parse.quote("dinner-roulette+functions"), "POST",
             {"files": digests, "functions": fdig})
     did = d["id"]
