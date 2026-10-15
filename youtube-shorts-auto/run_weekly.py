@@ -166,12 +166,26 @@ def main(argv=()):
         except Exception as e:
             log(f"재생목록 편입 건너뜀: {type(e).__name__}")
         # 6-0) 자동 첫 댓글(구독 유도·참여 마중물). enabled 이고 업로드 성공 시에만.
-        if cfg.get("youtube", {}).get("auto_comment", {}).get("enabled", True):
+        ac = cfg.get("youtube", {}).get("auto_comment", {})
+        if ac.get("enabled", True):
             try:
                 from youtube_upload import post_top_comment
-                post_top_comment(result.get("video_id"), data=data)
+                post_top_comment(result.get("video_id"), data=data, cfg=cfg)
             except Exception as e:
                 log(f"자동 댓글 건너뜀(유튜브는 정상): {type(e).__name__}: {e}")
+            # 상단 고정은 API 에 없어 로그인된 크롬으로 누른다. 학과 계정 프로필이 있어야
+            # 메뉴에 '고정'이 나온다(없으면 조용히 건너뛴다 — 발행은 이미 끝났다).
+            if ac.get("pin") and result.get("video_id"):
+                try:
+                    from pin_comment import DEPT_PROFILE, pin
+                    import os as _os
+                    if _os.path.exists(DEPT_PROFILE):
+                        log(f"첫 댓글 고정: {pin(result['video_id'], go=True).get('status')}")
+                    else:
+                        log("첫 댓글 고정 건너뜀 — 학과 계정 크롬 프로필이 없습니다"
+                            " (python pin_comment.py --login 으로 1회 로그인).")
+                except Exception as e:
+                    log(f"첫 댓글 고정 실패(발행은 정상): {type(e).__name__}: {str(e)[:100]}")
         # 6-1) 같은 영상을 네이버 '동영상뉴스' 카테고리에도 발행(설정 시)
         try:
             from crosspost import crosspost_naver_video

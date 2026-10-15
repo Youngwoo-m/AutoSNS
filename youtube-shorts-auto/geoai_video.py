@@ -75,6 +75,16 @@ def run(payload):
     out = {"status": r.get("status"), "style": style, "video_id": r.get("video_id", ""),
            "url": r.get("url", ""), "video": data.get("video"),
            "seconds": data.get("video_seconds")}
+    # 첫 댓글(질문 한 줄 + 채널 모음 링크). 학과 채널에만 있던 것을 GeoAI 채널에도 붙인다.
+    # 댓글은 이 채널 토큰으로 달아야 한다 — 학과 계정으로 달리면 채널이 섞인다.
+    ac = (cfg.get("youtube", {}) or {}).get("auto_comment", {}) or {}
+    if r.get("video_id") and ac.get("enabled", False):
+        try:
+            from youtube_upload import post_top_comment
+            post_top_comment(r["video_id"], data=data, cfg=cfg, token_path=TOKEN_PATH,
+                             dry_run=bool(payload.get("dry_run", True)))
+        except Exception as e:  # noqa: BLE001
+            log(f"첫 댓글 건너뜀(영상은 정상): {type(e).__name__}: {str(e)[:100]}")
     if r.get("video_id") and data.get("captions_unreliable"):
         log("자막 업로드 건너뜀 — 녹음된 대본을 확인할 수 없는 영상입니다.")
     elif r.get("video_id"):

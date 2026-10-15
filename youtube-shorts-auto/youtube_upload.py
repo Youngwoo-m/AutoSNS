@@ -372,7 +372,7 @@ def comment_text(data, cfg=None):
         return tmpl
 
 
-def post_top_comment(video_id, text=None, data=None, dry_run=False):
+def post_top_comment(video_id, text=None, data=None, dry_run=False, token_path=None, cfg=None):
     """업로드한 영상에 최상위 댓글을 자동 작성(구독 유도·참여 마중물).
 
     youtube.force-ssl 스코프 필요 → 없으면 403(재인증 안내). 실패해도 예외를 삼켜
@@ -380,12 +380,13 @@ def post_top_comment(video_id, text=None, data=None, dry_run=False):
     """
     if not video_id:
         return {"skipped": "no video_id"}
-    text = text or comment_text(data)
+    text = text or comment_text(data, cfg)
     if dry_run:
         log(f"DRY_RUN 자동댓글: {text[:60]}...")
         return {"dry_run": text}
     try:
-        yt = build("youtube", "v3", credentials=_creds(), cache_discovery=False)
+        # 채널마다 토큰이 다르다 — GeoAI 영상에 학과 계정으로 댓글이 달리면 안 된다.
+        yt = build("youtube", "v3", credentials=_creds(token_path), cache_discovery=False)
         body = {"snippet": {"videoId": video_id,
                             "topLevelComment": {"snippet": {"textOriginal": text}}}}
         res = yt.commentThreads().insert(part="snippet", body=body).execute()
