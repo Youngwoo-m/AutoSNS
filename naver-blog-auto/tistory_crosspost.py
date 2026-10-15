@@ -220,6 +220,27 @@ def save_cookies(d):
     return len(keep)
 
 
+def _cur_url(d):
+    """지금 창의 주소. 붙어 있던 창이 닫혔으면(카카오 로그인 창이 열렸다 닫히는 경우) 살아 있는
+    창으로 옮겨서 읽는다 — 그대로 읽으면 None 이 와서 `"…" in 주소` 가 TypeError 로 죽었다
+    (10/15 18:50 'argument of type NoneType is not iterable', 세션 만료 → 재로그인 직후)."""
+    try:
+        u = d.current_url
+        if u:
+            return u
+    except Exception:
+        pass
+    for h in reversed(d.window_handles):
+        try:
+            d.switch_to.window(h)
+            u = d.current_url
+            if u:
+                return u
+        except Exception:
+            continue
+    return ""
+
+
 def kakao_relogin(d):
     """티스토리 세션이 끊겼을 때 '카카오계정으로 로그인'만 눌러 다시 들어간다.
 
@@ -228,7 +249,7 @@ def kakao_relogin(d):
     살아 있으면 버튼 한 번에 비밀번호 없이 돌아온다. 비밀번호를 묻는 화면이 나오면
     여기서 멈춘다 — 그때는 사람이 tistory_login.py 로 다시 로그인해야 한다."""
     from selenium.webdriver.common.by import By
-    if "tistory.com/auth/login" not in d.current_url:
+    if "tistory.com/auth/login" not in _cur_url(d):
         return False
     btn = d.find_elements(By.CSS_SELECTOR, "a.link_kakao_id, .btn_login.link_kakao_id")
     if not btn:
@@ -237,7 +258,7 @@ def kakao_relogin(d):
     picked = False
     for _ in range(25):
         time.sleep(1)
-        u = d.current_url
+        u = _cur_url(d)
         if "tistory.com" in u and "auth/login" not in u and "kauth" not in u:
             log("  티스토리 세션 만료 → 카카오 로그인으로 다시 들어옴")
             save_cookies(d)
@@ -256,7 +277,7 @@ def kakao_relogin(d):
         if pw and "login/simple" not in u and _ > 6:
             log("  카카오가 비밀번호를 묻습니다 — 자동 재로그인 불가(tistory_login.py 로 다시 로그인)")
             return False
-    log(f"  카카오 재로그인 시간 초과: {d.current_url[:80]}")
+    log(f"  카카오 재로그인 시간 초과: {_cur_url(d)[:80]}")
     return False
 
 
@@ -307,10 +328,10 @@ def write_post(d, post, body, category, tags, go):
     except Exception:
         pass
     d.get(f"{BLOG}/manage/newpost/")
-    if "/manage/newpost" not in d.current_url and kakao_relogin(d):
+    if "/manage/newpost" not in _cur_url(d) and kakao_relogin(d):
         d.get(f"{BLOG}/manage/newpost/")
-    if "/manage/newpost" not in d.current_url:
-        raise RuntimeError(f"글쓰기 화면이 아님(로그인 풀림?): {d.current_url} — tistory_login.py 로 다시 로그인")
+    if "/manage/newpost" not in _cur_url(d):
+        raise RuntimeError(f"글쓰기 화면이 아님(로그인 풀림?): {_cur_url(d)} — tistory_login.py 로 다시 로그인")
     W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
     time.sleep(1)
 
@@ -400,7 +421,7 @@ def add_shorts(d, tistory_url, video_id, go, block=None, anchor=None, h2=None, m
     W = WebDriverWait(d, 25)
     num = tistory_url.rstrip("/").rsplit("/", 1)[-1]
     d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
-    if "/manage/newpost" not in d.current_url and kakao_relogin(d):
+    if "/manage/newpost" not in _cur_url(d) and kakao_relogin(d):
         d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
     W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
     time.sleep(1.5)
