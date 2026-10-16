@@ -194,7 +194,7 @@ def main(argv):
         # 대기열 전체가 3회 실패로 멈췄다). 화면·게시 단계 실패만 센다.
         infra = type(ex).__name__ in ("SessionNotCreatedException", "WebDriverException",
                                       "ConnectionRefusedError", "MaxRetryError") \
-            or "Chrome 디버깅 포트" in str(ex)
+            or "Chrome 디버깅 포트" in str(ex) or "Chrome 재시작함" in str(ex)
         if not infra:
             e["tries"] = e.get("tries", 0) + 1
             _save(q)

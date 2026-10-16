@@ -414,7 +414,10 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
         box = _caption_box(d)
         if box is None:
             shot(d, "no_caption_box")
-            raise SystemExit("캡션 입력칸을 못 찾았습니다")
+            # 10/16 08:13~16:32: 업로드 화면이 멈춘 Chrome 에 계속 붙어 33번 연속 실패했다.
+            # 새로 띄운 Chrome 에선 바로 됐으므로, 다음 실행이 새 Chrome 으로 시작하게 끈다.
+            _kill_debug_chrome()
+            raise SystemExit("캡션 입력칸을 못 찾았습니다(Chrome 재시작함)")
         got = _type_caption(d, box, caption)
         log(f"캡션 입력됨({len(got)}자): {got[:60]}…")
         if location:
