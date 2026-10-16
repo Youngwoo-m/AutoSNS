@@ -70,16 +70,36 @@ def _options(profile_dir, headless=True):
     return o2
 
 
-def login(profile_dir=None):
-    """사람이 직접 로그인할 창을 띄운다. 비밀번호는 이 코드가 다루지 않는다."""
+def login(profile_dir=None, timeout_sec=420):
+    """사람이 직접 로그인할 창을 띄우고, 로그인 쿠키가 생기면 저장하고 닫는다.
+
+    Enter 를 기다리던 방식은 쿠키가 저장되기 전에 창이 닫히거나 로그인 실패를
+    알아채지 못했다(2026-10-17: 프로필은 생겼는데 로그인 안 된 상태로 남았다).
+    geoai_community_login.py 와 같이 SAPISID 쿠키가 보일 때까지 기다린다.
+    비밀번호는 저장하지 않는다 — 쿠키만 남는다."""
     from selenium import webdriver
     profile_dir = profile_dir or DEPT_PROFILE
     d = webdriver.Chrome(options=_options(profile_dir, headless=False))
+    # 구글은 자동화 표시가 있는 창의 로그인을 막는다 — 표시를 지운다.
+    d.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",
+                      {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"})
     d.get("https://www.youtube.com/")
-    log(f"창에서 학과 계정으로 로그인하세요. 프로필: {profile_dir}")
-    input("로그인을 마쳤으면 Enter 를 누르세요... ")
-    log(f"로그인 계정: {who(d)}")
-    d.quit()
+    log(f"창에서 학과 계정(@smds2023)으로 로그인하세요. 최대 {timeout_sec // 60}분 기다립니다.")
+    log(f"프로필: {profile_dir}")
+    waited = 0
+    try:
+        while waited < timeout_sec:
+            names = {c["name"] for c in d.get_cookies()}
+            if "SAPISID" in names or "__Secure-3PAPISID" in names:
+                time.sleep(3)          # 쿠키가 디스크에 내려갈 틈
+                log("로그인 감지 — 프로필 저장 완료")
+                return True
+            time.sleep(3)
+            waited += 3
+        log("시간이 지나 중단합니다(로그인 감지 못 함).")
+        return False
+    finally:
+        d.quit()
 
 
 def pin(video_id, go=False, headless=True, profile_dir=None):
