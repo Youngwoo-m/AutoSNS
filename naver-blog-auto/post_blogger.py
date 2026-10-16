@@ -102,6 +102,8 @@ def build_html(data, cfg=None):
     # 네이버 글의 CTA 링크(홈페이지·유튜브 검색)보다 우선한다 — 여기선 전 채널 안내가 목적.
     links = [l for l in ((cfg.get("blogger", {}) or {}).get("links")
                          or cta.get("links") or []) if (l.get("url") or "").strip()]
+    from follow_box import follow_box_html
+    parts.append(follow_box_html(cfg, "blogger"))  # 새 글 받아보기(팔로우·구독)
     if cta.get("text") or links:
         parts.append("<hr>")
         parts.append(_para(cta.get("text") or "세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요."))

@@ -163,7 +163,8 @@ def channel_links_html(cfg=None):
     if not links:
         return ""
     text = gcfg(cfg).get("cta_text") or "GeoAI·생성형AI 이야기를 더 보고 싶다면 아래 채널도 함께 보세요."
-    return ("<hr><p>" + _esc(text) + "</p><p><strong>📌 바로가기</strong></p><ul>"
+    from follow_box import follow_box_html
+    return (follow_box_html(cfg, "geoai") + "<hr><p>" + _esc(text) + "</p><p><strong>📌 바로가기</strong></p><ul>"
             + "".join(f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">'
                       f'{_esc(l.get("label", l["url"]))}</a></li>' for l in links)
             + "</ul>")

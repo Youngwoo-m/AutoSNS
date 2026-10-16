@@ -159,6 +159,9 @@ def summary_html(post):
     P.append('<p style="font-size:13px;color:#7b8794;text-align:center">이 글은 '
              f'<a href="{SOURCE}/" target="_blank" rel="noopener">재난안전과 GeoAI</a> '
              '블로그 글을 요약한 것입니다. 따라하기 그림·영상·프롬프트 예시는 원문에 있습니다.</p>')
+    P.append('<p style="font-size:13px;color:#7b8794;text-align:center">🔔 원문 블로그를 '
+             f'<a href="{SOURCE}/#Followers1" target="_blank" rel="noopener">팔로우</a>하면 '
+             '새 글을 먼저 받아볼 수 있습니다.</p>')
     return "\n".join(P)
 
 

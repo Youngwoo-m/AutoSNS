@@ -143,7 +143,8 @@ def _video_html(vid):
 
 
 def _links_html():
-    return ("<hr><p>세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요.</p>"
+    from follow_box import follow_box_html
+    return (follow_box_html(cfg, "blogger") + "<hr><p>세명대학교 재난안전학과의 채널에서 더 많은 소식을 만나보세요.</p>"
             "<p><strong>📌 채널 바로가기</strong></p><ul>" + "".join(
                 f'<li><a href="{_url(l["url"])}" target="_blank" rel="noopener">'
                 f'{_esc(l["label"])}</a></li>' for l in LINKS) + "</ul>")
