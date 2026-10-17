@@ -1,0 +1,21 @@
+{
+  "status": "published_verified",
+  "title": "최근 5년 기출 유형과 출제 경향 분석: 310문항으로 정한 학습 우선순위 | 측량및지형공간정보기술사",
+  "scope": "2022~2026",
+  "questions": 310,
+  "source_pdfs_downloaded": 10,
+  "daily_day_not_consumed": true,
+  "url": "https://na-geoai.tistory.com/98",
+  "published_kst": "2026-10-17T11:08:00+09:00",
+  "csv_download_verified": true,
+  "chart_public_verified": true,
+  "official_source_links_verified": true,
+  "tables_verified": true,
+  "automations_updated": [
+    "automation",
+    "automation-2",
+    "7"
+  ],
+  "topic_priority_file": "/Volumes/USB256/devAPP/AutoSNS/engineer-question-worker/exam-topic-priorities.json",
+  "completed_at": "2026-10-17T02:12:49.184713+00:00"
+}

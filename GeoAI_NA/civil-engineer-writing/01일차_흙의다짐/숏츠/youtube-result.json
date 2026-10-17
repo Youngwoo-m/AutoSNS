@@ -1,0 +1,53 @@
+{
+  "kind": "youtube#video",
+  "etag": "43GDdGlsj5f4S007s1tC46ctD-0",
+  "id": "NM8QhUG7mR8",
+  "snippet": {
+    "publishedAt": "2026-10-17T05:14:06Z",
+    "channelId": "UCbHDlxMFIackeJRwW2iTYew",
+    "title": "다짐은 무엇을 줄일까? | 토목시공기술사 1일차 #Shorts",
+    "description": "https://na-geoai.tistory.com/99\n개인 Blogger: https://geoaina.blogspot.com/2026/10/1.html\n\n다짐은 흙 속 공기를 줄여 치밀하게 만드는 작업입니다. 함수비와 층 두께를 함께 관리하고, 현장 시험으로 다짐 상태를 확인합니다.\n\n답안지 요청: https://geoai-na.netlify.app/civil-questions/\n창작 연습문제의 개념 요약 · 학습용 예시이며 공식 채점기준이 아닙니다.\n관련 기출: 2022년 제126회 토목시공기술사 제3교시 6번\n공식 문제지: https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209527&brdId=Q006&gSite=Q\n기본 원리: https://www.fhwa.dot.gov/engineering/geotech/pubs/05037/05a.cfm\n\n그림은 AI로 생성한 디오라마이며 실제 현장 사진이 아닙니다. 음성은 Voicebox의 사용자 지정 프로필로 합성했습니다.\n#토목시공기술사 #흙의다짐 #토공 #Shorts",
+    "thumbnails": {
+      "default": {
+        "url": "https://i9.ytimg.com/vi/NM8QhUG7mR8/default.jpg?sqp=CKiGzNYG&rs=AOn4CLDiHmp1pd245ysxHMEVNhHMYmt8-A",
+        "width": 120,
+        "height": 90
+      },
+      "medium": {
+        "url": "https://i9.ytimg.com/vi/NM8QhUG7mR8/mqdefault.jpg?sqp=CKiGzNYG&rs=AOn4CLB4boAvwEFwMoPLir-i9wZmazrGJg",
+        "width": 320,
+        "height": 180
+      },
+      "high": {
+        "url": "https://i9.ytimg.com/vi/NM8QhUG7mR8/hqdefault.jpg?sqp=CKiGzNYG&rs=AOn4CLAVFo_ynFk66piXlGh58sRrKVKYtQ",
+        "width": 480,
+        "height": 360
+      }
+    },
+    "channelTitle": "재난안전과 GeoAI",
+    "tags": [
+      "Shorts",
+      "기술사답안",
+      "토공",
+      "토목시공기술사",
+      "흙의다짐"
+    ],
+    "categoryId": "27",
+    "liveBroadcastContent": "none",
+    "defaultLanguage": "ko",
+    "localized": {
+      "title": "다짐은 무엇을 줄일까? | 토목시공기술사 1일차 #Shorts",
+      "description": "https://na-geoai.tistory.com/99\n개인 Blogger: https://geoaina.blogspot.com/2026/10/1.html\n\n다짐은 흙 속 공기를 줄여 치밀하게 만드는 작업입니다. 함수비와 층 두께를 함께 관리하고, 현장 시험으로 다짐 상태를 확인합니다.\n\n답안지 요청: https://geoai-na.netlify.app/civil-questions/\n창작 연습문제의 개념 요약 · 학습용 예시이며 공식 채점기준이 아닙니다.\n관련 기출: 2022년 제126회 토목시공기술사 제3교시 6번\n공식 문제지: https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209527&brdId=Q006&gSite=Q\n기본 원리: https://www.fhwa.dot.gov/engineering/geotech/pubs/05037/05a.cfm\n\n그림은 AI로 생성한 디오라마이며 실제 현장 사진이 아닙니다. 음성은 Voicebox의 사용자 지정 프로필로 합성했습니다.\n#토목시공기술사 #흙의다짐 #토공 #Shorts"
+    },
+    "defaultAudioLanguage": "ko"
+  },
+  "status": {
+    "uploadStatus": "uploaded",
+    "privacyStatus": "private",
+    "license": "youtube",
+    "embeddable": true,
+    "publicStatsViewable": true,
+    "selfDeclaredMadeForKids": false,
+    "containsSyntheticMedia": true
+  }
+}

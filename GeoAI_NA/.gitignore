@@ -1,0 +1,114 @@
+# 주의: .gitignore 는 줄 끝 인라인 주석을 지원하지 않는다.
+# (`api.txt  # 메모` 처럼 쓰면 주석까지 파일명으로 취급되어 무시가 안 된다)
+# 주석은 반드시 별도 줄에 쓸 것.
+
+# ── 자격증명·비밀정보 — 절대 커밋 금지 ──────────────────────────
+.env
+# api.txt: 계정 ID/비밀번호 평문 메모
+api.txt
+# config.json: Anthropic·Gamma·네이버 검색 API 키 포함
+**/config.json
+# config.json 백업본도 같은 키를 담는다(예: config.json.bak_extrakey, 2026-10-05 발견)
+**/config.json.bak*
+**/config*.bak*
+# Google OAuth 클라이언트 / 각종 토큰
+**/client_secret.json
+**/token.json
+**/tiktok_token.json
+**/token_manage.json
+**/token*.bak.json
+*_token.json
+*.bak.*
+
+# ── 로그인 세션(쿠키·프로필) ────────────────────────────────
+chrome-profile/
+chrome-profile-insta/
+_profile_backup_*/
+
+# ── 가상환경 / 캐시 ────────────────────────────────────────
+.venv/
+.venv-windows/
+__pycache__/
+*.pyc
+
+# ── 생성 산출물(대본·프레임·음성·영상·카드) / 로그 ──────────────
+posts/
+logs/
+netlify_deploy/
+TikTok_업로드/
+*.mp4
+*.png
+*.jpg
+*.zip
+
+# 직접 찍은 화면 캡처는 손으로 만든 자산이라 남긴다(위 *.png/*.jpg 예외).
+!naver-blog-auto/shots/**
+
+# ── 실행 상태 파일(머신마다 다름) ────────────────────────────
+trigger_state.json
+title_history.json
+
+# ── 폰트 ──────────────────────────────────────────────────
+# 렌더링에 필요하지만 용량이 크고(22MB) 재배포 라이선스 제약이 있어 제외.
+# 새 환경에서는 KoPubWorld 폰트를 내려받아 FONTS/ 에 넣을 것.
+FONTS/
+
+# ── OS ────────────────────────────────────────────────────
+.DS_Store
+.state-backups/
+caption_boost_state.json
+
+# 외부에서 받은 배경음악 원본(용량 큼, 재다운로드 가능) — 출처는 assets/music/SOURCES.md
+assets/music/*.mp3
+assets/music/preview/
+naver-blog-auto/token_blogger.json
+analytics/token_searchconsole.json
+# 계정별 토큰(searchconsole_auth_setup.py <이름> 이 만든다)
+analytics/token_searchconsole_*.json
+
+# GeoAI 블로그(geoaina) 토큰·발행 상태
+naver-blog-auto/token_blogger_geoai.json
+naver-blog-auto/geoai_state.json
+youtube-shorts-auto/token_youtube_geoai.json
+youtube-shorts-auto/chrome-profile-youtube/
+youtube-shorts-auto/chrome-profile-tiktok/
+
+# Local Netlify folder
+.netlify
+youtube-shorts-auto/drafts/
+
+# 티스토리 전용 로그인 프로필(tistory_crosspost.py)
+chrome-profile-tistory/
+# 티스토리 로그인 쿠키(세션) — 비밀정보
+**/tistory_cookies.json
+# 티스토리 교차 발행 기록(실행 중 계속 바뀜)
+**/tistory_state.json
+
+# 엔지니어 시리즈 영상 생성물(음성·영상·썸네일) — 다시 만들 수 있다
+engineer-video-output/
+youtube-shorts-auto/thumbnail_backfill.json
+
+# 암호화된 환경설정(열쇠는 키체인) — 암호문이라도 저장소엔 올리지 않는다
+secrets.env.enc
+secrets.env.enc.tmp
+youtube-shorts-auto/comment_backfill.json
+
+# 로그인 쿠키가 든 크롬 프로필(고정 작업용 학과 계정)
+youtube-shorts-auto/chrome-profile-youtube-dept/
+
+# 비밀값 저장소 잠금 파일
+secrets.env.enc.lock
+
+# Remotion 작업 폴더의 빌드 산출물·의존성
+remotion-shorts/node_modules/
+remotion-shorts/out/
+
+# 이동한 티스토리 로그
+naver-blog-auto/tistory-logs/
+
+# 원래 폴더를 가리키는 실행 환경·산출물 링크와 업로드 세션은 올리지 않는다
+naver-blog-auto/.venv
+naver-blog-auto/chrome-profile
+naver-blog-auto/logs
+naver-blog-auto/posts
+**/upload-session.json

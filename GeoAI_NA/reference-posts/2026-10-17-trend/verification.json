@@ -1,0 +1,13 @@
+{
+  "url": "https://na-geoai.tistory.com/98",
+  "official_pdfs": 10,
+  "questions": 310,
+  "short": 130,
+  "essay": 180,
+  "each_year": 62,
+  "csv_download_bytes": 5530,
+  "csv_sha256": "9d86f32720a8dd99bc56b224ad00b2306203e3c40d239f9eedd6878ac12f1e41",
+  "theme_count": 23,
+  "cross_group_overlap_disclosed": true,
+  "question_type_analysis_denominator": 180
+}

@@ -1,0 +1,19 @@
+{
+  "id": "b5c69aeb-40b9-4991-8fca-70730ed55a3a",
+  "profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+  "profile_name": "내 목소리 (1샘플)",
+  "text": "흙 속의 공기를 줄여 치밀하게 만듭니다.",
+  "language": "ko",
+  "audio_path": "generations/b5c69aeb-40b9-4991-8fca-70730ed55a3a.wav",
+  "duration": 4.32,
+  "seed": 18002,
+  "instruct": null,
+  "engine": "qwen",
+  "model_size": "0.6B",
+  "status": "completed",
+  "error": null,
+  "is_favorited": false,
+  "created_at": "2026-10-17T05:08:38.904725",
+  "versions": null,
+  "active_version_id": null
+}

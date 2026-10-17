@@ -1,0 +1,19 @@
+{
+  "url": "https://geoai-na.netlify.app/civil-questions/",
+  "deploy_id": "6ad2d8cfe74b3e33510ba6a4",
+  "state": "ready",
+  "form": "civil-engineer-questions",
+  "test_submission": "6ad2d80c2cea9eb390da6261",
+  "test_topic": "콘크리트공",
+  "queue_received": true,
+  "test_ignored": true,
+  "blog": "https://na-geoai.tistory.com/97",
+  "blog_notice_verified": true,
+  "tables_preserved": 5,
+  "official_source_links_preserved": 31,
+  "daily_draft_notice_added": true,
+  "draft_published": false,
+  "reciprocal_navigation_verified": true,
+  "request_filter_verified": true,
+  "receipt_page_verified": true
+}

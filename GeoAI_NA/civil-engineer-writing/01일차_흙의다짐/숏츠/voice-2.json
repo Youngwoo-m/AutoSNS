@@ -1,0 +1,19 @@
+{
+  "id": "3fa3390f-3736-41d4-a2fa-ac6b57f4ea58",
+  "profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+  "profile_name": "내 목소리 (1샘플)",
+  "text": "함수비와 층 두께를 함께 관리하세요.",
+  "language": "ko",
+  "audio_path": "generations/3fa3390f-3736-41d4-a2fa-ac6b57f4ea58.wav",
+  "duration": 2.96,
+  "seed": 17003,
+  "instruct": null,
+  "engine": "qwen",
+  "model_size": "0.6B",
+  "status": "completed",
+  "error": null,
+  "is_favorited": false,
+  "created_at": "2026-10-17T05:02:10.142332",
+  "versions": null,
+  "active_version_id": null
+}

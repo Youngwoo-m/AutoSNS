@@ -1,0 +1,3 @@
+Tistory writing files moved here. Original paths are symlinks for compatibility.
+16 shared dependencies remain in their original locations and are linked here. This folder is not standalone.
+See migration-manifest.json for the complete move list. No publishing or deployment was performed.

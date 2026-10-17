@@ -1,0 +1,15 @@
+{
+  "duration": 19.52,
+  "video_duration": 19.5,
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "visual_qa_verified": true,
+  "audio_qa_verified": true,
+  "complete_decode_verified": true,
+  "visual_evidence": "final-video-review.jpg",
+  "audio_evidence": "audio-transcripts.json",
+  "audio_validation": "All four final voice clips transcribed and matched to script; each fits its scene.",
+  "decode_validation": "ffmpeg -v error full decode returned exit code 0 with no errors.",
+  "checked_at": "2026-10-17T05:14:01.556420+00:00"
+}

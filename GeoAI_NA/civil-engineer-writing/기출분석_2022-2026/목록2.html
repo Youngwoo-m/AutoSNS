@@ -1,0 +1,370 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+<!-- https 아닐경우  -->
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+function cst006Report(jmCd, mcrtrNo){
+	
+	var frm = document.cstFrm;
+// 	cstFrm.innerHTML = xmlHttp.responseText;
+	cstFrm.jmCd.value 		= jmCd;
+	cstFrm.mcrtrNo.value 	= mcrtrNo;
+	var target = "UBIWin";
+	var onbank_w = "1024";	//690
+	var onbank_h = "960";	//650
+	var LeftPosition = (screen.width) ? (screen.width-onbank_w)/2 : 0;
+	var TopPosition = (screen.height) ? (screen.height-onbank_h)/2 : 0;
+	var hWnd =  window.open('',target,'tollbar=no,locaion=no,directories=no,staus=no,menubar=no,scrollbars=no,resizable=no,top='+TopPosition+',left='+LeftPosition+',width='+onbank_w+',height='+onbank_h+'');
+	if(hWnd == null){
+		alert(" ※ 윈도우 XP SP2 또는 인터넷 익스플로러 7 사용자일 경우에는 \n    화면 상단에 있는 팝업 차단 알림줄을 클릭하여 팝업을 허용해 주시기 바랍니다. \n\n※ MSN,야후,구글 팝업 차단 툴바가 설치된 경우 팝업허용을 해주시기 바랍니다.");
+		return;
+	}	
+	hWnd.focus();
+	frm.action = "/pageLink.do?link=cst/cstReport";
+	frm.target = "UBIWin";		
+	frm.submit();
+}
+
+//웹접근성 추가 2025 03 31 
+bbsList();
+
+function bbsList(){
+	$(".BBSlist").each(function(){
+		var $this = $(this);
+		var removedElement = $this.find('caption');
+		if($(window).width() < 1041){	
+			removedElement.detach();
+		}
+	});
+}
+
+
+</script>
+						<!-- 리스트(기본) -->
+                    <div class="bbs_list">
+                        <table class="BBSlist">
+                            <caption class="scHdn">번호,제목,작성자,최종수정일자 항목 순으로 기출문제(기술사) 안내표</caption><!-- 접근성 2차 수정 -->
+							<colgroup><col><col><col style="width:20%"><col style="width:160px"></colgroup>
+                            <thead>
+                                <!-- 게시판 테이블 th 클래스명 (이외 기타 타입은 빈 class로 두고 colgroup으로 영역 조절 혹은 퍼블에서 개별 타입 지정) 
+                                    * 번호 : headNum
+                                    * 제목 : headTxt
+                                    * 분류 : headSort
+                                    * 첨부파일 : headFile
+                                    * 등록일(수정일 등 날짜 입력영역) : headDate
+                                    * 조회수 : headView
+                                    * 작성자 : typeWriter
+                                -->
+                                <tr>
+                                    <th scope="col" class="headNum">번호</th>
+                                    <th scope="col" class="headTxt">제목</th>
+                                    <th scope="col" class="typeWriter">작성자</th>
+                                    <th scope="col" class="headDate">최종수정일자</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- 게시판 테이블 tbody 클래스명 (이외 타입은 빈 class로 유지 혹은 퍼블에서 개별 타입 지정)
+                                    * tr : 게시판 공지일 경우 : typeNotice
+                                        카테고리가 있을 경우 : typeSort
+                                    * td : 작성자, 담당부서 : tbodyWriter
+                                        첨부파일 : tbodyFile
+                                        분류(카테고리) : tbodySort
+                                        날짜 : tbodyDate
+                                        조회수 : tbodyView
+                                -->
+
+
+						
+								<tr>
+										<td class="tbodyView">11</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제130회 토목시공기술사 문제지">
+											<a href="#" onclick="goNext('5211903', '2','Q006','1203', 'Y')">
+												
+												제130회 토목시공기술사 문제지
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2023.05.22</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">12</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제129회 토목시공기술사 문제지">
+											<a href="#" onclick="goNext('5211642', '2','Q006','1203', 'Y')">
+												
+												제129회 토목시공기술사 문제지
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2023.02.06</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">13</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제128회 토목시공기술사(2022년)">
+											<a href="#" onclick="goNext('5210610', '2','Q006','1203', 'Y')">
+												
+												제128회 토목시공기술사(2022년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2022.07.04</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">14</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제127회 토목시공기술사(2022년)">
+											<a href="#" onclick="goNext('5210073', '2','Q006','1203', 'Y')">
+												
+												제127회 토목시공기술사(2022년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2022.04.18</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">15</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제126회 토목시공기술사(2022년)">
+											<a href="#" onclick="goNext('5209527', '2','Q006','1203', 'Y')">
+												
+												제126회 토목시공기술사(2022년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2022.02.03</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">16</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제125회 토목시공기술사(2021년)">
+											<a href="#" onclick="goNext('5208954', '2','Q006','1203', 'Y')">
+												
+												제125회 토목시공기술사(2021년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2021.08.02</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">17</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제124회 토목시공기술사(2021년)">
+											<a href="#" onclick="goNext('5208483', '2','Q006','1203', 'Y')">
+												
+												제124회 토목시공기술사(2021년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2021.05.24</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">18</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제123회 토목시공기술사(2021년)">
+											<a href="#" onclick="goNext('5208203', '2','Q006','1203', 'Y')">
+												
+												제123회 토목시공기술사(2021년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2021.02.01</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">19</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제122회 토목시공기술사(2020년)">
+											<a href="#" onclick="goNext('5207312', '2','Q006','1203', 'Y')">
+												
+												제122회 토목시공기술사(2020년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2020.07.06</span></td>
+									</tr>
+									
+
+
+						
+								<tr>
+										<td class="tbodyView">20</td>
+									
+<!-- 								<tr> -->
+<!-- 									<tr class="typeNoti"> -->
+<!-- 										<td><span class="markNotice">공지</span></td> -->
+
+										<td class="txtL " title="제121회 토목시공기술사(2020년)">
+											<a href="#" onclick="goNext('5207002', '2','Q006','1203', 'Y')">
+												
+												제121회 토목시공기술사(2020년)
+
+											
+
+											</a>
+
+										
+										</td>
+										<td class="tbodyWriter" >기술자격출제실 ..</td>
+										<td class="tbodyDate"><span class="date">2020.05.11</span></td>
+									</tr>
+									
+
+								</tbody>
+							</table>
+						</div>
+						  <!-- //리스트(기본) -->
+											<div class="numberPagination ">
+						<button type="button" class=" prev" onclick="goPage(1);" title="이전 페이지" ><span class="scHdn">이전 페이지</span></button>
+						<ul class="paging">
+							<li><button type="button"  onclick="goPage(1);" title="1페이지">1</button></li>
+							<li><button type="button" class="on" title="현재 페이지">2</button></li>
+							<li><button type="button"  onclick="goPage(3);" title="3페이지">3</button></li>
+							<li><button type="button"  onclick="goPage(4);" title="4페이지">4</button></li>
+							<li><button type="button"  onclick="goPage(5);" title="5페이지">5</button></li>
+							<li><button type="button"  onclick="goPage(6);" title="6페이지">6</button></li>
+							<li><button type="button"  onclick="goPage(7);" title="7페이지">7</button></li>
+							<li><button type="button"  onclick="goPage(8);" title="8페이지">8</button></li>
+						</ul>
+						<button type="button" class=" next" onclick="goPage(3);" title="다음 페이지" ><span class="scHdn">다음 페이지</span></button>
+					</div>

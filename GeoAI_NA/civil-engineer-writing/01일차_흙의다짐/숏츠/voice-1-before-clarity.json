@@ -1,0 +1,19 @@
+{
+  "id": "6e5d2c87-c8c9-4ebd-a64a-3679dea441b2",
+  "profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+  "profile_name": "내 목소리 (1샘플)",
+  "text": "다짐은 흙 속 공기를 줄이는 작업입니다.",
+  "language": "ko",
+  "audio_path": "generations/6e5d2c87-c8c9-4ebd-a64a-3679dea441b2.wav",
+  "duration": 3.84,
+  "seed": 17002,
+  "instruct": null,
+  "engine": "qwen",
+  "model_size": "0.6B",
+  "status": "completed",
+  "error": null,
+  "is_favorited": false,
+  "created_at": "2026-10-17T04:59:17.410517",
+  "versions": null,
+  "active_version_id": null
+}

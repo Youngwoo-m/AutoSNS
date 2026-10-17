@@ -1,0 +1,243 @@
+{
+  "status": "daily_video_scheduled_in_existing_automation",
+  "channel_url": "https://www.youtube.com/@geoai-safety",
+  "included_post_kinds": [
+    "daily",
+    "friend_request"
+  ],
+  "publication_delay_seconds": 3600,
+  "timing_basis": "verified_blog_publication_time",
+  "format": "daily_5min_landscape_shorts_and_exam_compilation",
+  "layout": {
+    "left": "model_answer_page",
+    "right": "narration_synced_typewriter_explanation",
+    "initial_width_ratio": [
+      0.6,
+      0.4
+    ],
+    "applies_to": "long_form_only"
+  },
+  "blog_link_placement": [
+    "description_first_line",
+    "closing_call_to_action"
+  ],
+  "cost_policy": {
+    "reuse_blog_script_and_assets": true,
+    "local_voicebox_and_ffmpeg": true,
+    "paid_video_or_voice_api": false,
+    "cache_by_content_hash": true,
+    "agent_execution": "recommend_native_single_agent",
+    "empty_queue_agent_wakeup": false
+  },
+  "language": "ko",
+  "narration_provider": "Voicebox",
+  "voice_profile": "내 목소리 (1샘플)",
+  "content": [
+    "question",
+    "model_answer",
+    "korean_captions",
+    "original_diagrams",
+    "comparison_tables"
+  ],
+  "blog_top_link": {
+    "label": "함께 푸는 측량및지형공간정보기술사 답안지 요청",
+    "url": "https://geoai-na.netlify.app/questions/",
+    "display_url": false,
+    "style": "heading2_or_bold_24px_minimum",
+    "description": "요청한 문제는 매일 밤 11시부터 접수 순서대로 검토해 정답 예시를 블로그에 게시합니다."
+  },
+  "installation_check": {
+    "app_exists": true,
+    "path": "/Applications/Voicebox.app",
+    "local_api_reachable": true
+  },
+  "notes": [
+    "사용자 지정: 숏츠 최대 50초, 회차별 기출 가로형 5~10분, 질문형 썸네일, 제공한 볼드 글꼴.",
+    "첫 긴 영상은 2026년 제140회. 기존 공개 영상 썸네일은 변경하지 않음.",
+    "기존 2~3분 렌더러는 과거 제작용이며 새 형식 자동 제작기는 아직 활성화되지 않음.",
+    "2026-10-11 추가 승인: 하루 한 문제 5분 가로형 영상을 다음 일일 자동화부터 제작하여 블로그 공개 검증 1시간 뒤 예약 공개. 기존 개별 영상 렌더러는 과거 제작용; 다음 실행에서 새 길이 검증 필요.",
+    "2026-10-12 사용자 승인: 오전 6시 사전 제작, 블로그 오전 7시·영상 오전 8시 공개 유지. 오전 8시 확인 실행은 당일 공개 검증과 숏츠 연결 후처리만 하며 새 문제를 발행하지 않음."
+  ],
+  "voice_profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+  "thumbnail": {
+    "background_path": "/Volumes/USB256/devAPP/AutoSNS/assets/engineer-series/thumbnail-background-v2.png",
+    "reuse_same_background": true,
+    "per_question_changes": "local_text_overlay_only",
+    "title_area": "left",
+    "series_label": "측량및지형공간정보기술사",
+    "output_size": [
+      1280,
+      720
+    ],
+    "regenerate_background_per_post": false,
+    "elements": [
+      "total_station",
+      "GNSS_receiver",
+      "survey_drone",
+      "LiDAR_point_cloud",
+      "earth_observation_satellite"
+    ],
+    "style": "question_based",
+    "font_path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "apply_to": "future_videos_only",
+    "existing_public_videos": "unchanged",
+    "main_copy": "영상에서 답하는 질문 1개, 짧고 큰 글씨",
+    "long_form_exam_badge": "확인된 YYYY년 제NNN회",
+    "shorts_first_frame": "동일 질문형 첫 화면을 세로 안전영역에 배치",
+    "examples": [
+      "타원체고와 정표고, 왜 다를까?",
+      "제140회 기출, 답안은 어떻게 쓸까?"
+    ]
+  },
+  "first_screen_hook": {
+    "field": "content.json 의 hook",
+    "rule": "영상마다 수험생이 멈출 질문 한 줄(물음표로 끝, 24자 안팎)을 hook 에 넣는다. 영상 안에서 답하는 질문만 — 낚시성 금지.",
+    "examples": [
+      "좌표 지정과 좌표 변환, 같은 걸까?",
+      "타원체고와 정표고, 왜 다를까?",
+      "OSR과 SSR, 무엇이 다를까?"
+    ],
+    "rendered_on": [
+      "첫 장면 큰 제목('오늘의 문제' 대신)",
+      "썸네일 둘째 줄"
+    ],
+    "narration": "첫 장면 나레이션도 이 질문으로 시작한다(예: '좌표 지정과 좌표 변환, 같은 걸까요? 측량및지형공간정보기술사 하루 한 문제…').",
+    "since": "2026-10-11"
+  },
+  "shorts": {
+    "resolution": [
+      1080,
+      1920
+    ],
+    "aspect_ratio": "9:16",
+    "target_seconds": [
+      30,
+      45
+    ],
+    "max_seconds": 50,
+    "scope": "one_question_one_core_point",
+    "structure": [
+      "질문 0~3초",
+      "핵심 정의·차이·수식 3~35초",
+      "암기어와 관련 동영상 안내, 50초 이내 종료"
+    ],
+    "example_title": "타원체고 vs 정표고, 30초 정리",
+    "duration_validation": "ffprobe로 실제 길이 확인, 50초 초과 시 대본을 줄여 재제작; 과속으로 맞추지 않음",
+    "layout": "큰 질문과 핵심 도식·자막을 세로 화면에 배치; 긴 답안 전체를 축소하지 않음"
+  },
+  "long_form": {
+    "resolution": [
+      1920,
+      1080
+    ],
+    "aspect_ratio": "16:9",
+    "target_minutes": [
+      5,
+      10
+    ],
+    "scope": "verified_past_exam_questions_by_year_and_round",
+    "selection": "동일 회차의 확인된 문항을 묶어 핵심 원리와 답안 목차를 설명; 선정 문항 모음임을 명시",
+    "first_exam": {
+      "year": 2026,
+      "round": 140,
+      "source_pdf": "/Volumes/USB256/기술사/02일차_온톨로지/Qnet_제140회_공식문제지.pdf"
+    },
+    "title_template": "측량및지형공간정보기술사 | YYYY년 제NNN회 기출 모음 · 주요 주제",
+    "chapters": "문항별 타임스탬프; 연도·회차·교시·문항 및 Q-net 출처 표시",
+    "search_metadata": "전체 명칭·검증된 연도와 회차·선정 주제어를 제목과 설명에 포함; 검증되지 않은 기출 표기 금지",
+    "duration_validation": "실제 재생 길이 300~600초와 음성·자막 동기화 확인"
+  },
+  "related_video": {
+    "required_for_shorts": true,
+    "target": "하루 한 문제 숏츠 → 같은 문제의 5분 해설 우선; 회차별 기출 숏츠 → 해당 회차 기출 모음",
+    "method": "YouTube Studio의 관련 동영상 메뉴로 설정하고 저장 후 대상 영상 ID 검증",
+    "sequence": "긴 영상 공개 검증 → 숏츠 업로드 → 관련 동영상 설정 → 숏츠 재생 화면 검증",
+    "eligibility": "고급 기능 액세스, 대상 영상 공개 또는 일부 공개",
+    "verification_fields": [
+      "short_video_id",
+      "long_video_id",
+      "studio_saved",
+      "public_link_verified"
+    ],
+    "failure": "연결 미완료 상태를 보존; 설명란 URL만으로 연결 완료 처리하지 않음",
+    "official_help": "https://support.google.com/youtube/answer/14075157?hl=ko"
+  },
+  "font": {
+    "path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "family": "KoPubWorld Dotum_Pro Bold",
+    "scope": [
+      "영상 제목",
+      "핵심 설명",
+      "한국어 자막",
+      "썸네일"
+    ],
+    "missing_policy": "글꼴이 없으면 중단하고 알림; 임의의 일반체로 대체하지 않음"
+  },
+  "publication_delay_seconds_applies_to": "daily_video; shorts link only after matching long video verified",
+  "updated_date": "2026-10-12",
+  "daily_video": {
+    "enabled": true,
+    "activation": "existing_daily_automation_next_run",
+    "automation_id": "automation",
+    "scope": "one_daily_question_full_explanation",
+    "resolution": [
+      1920,
+      1080
+    ],
+    "target_seconds": 300,
+    "duration_policy": "約5분 자연스러운 해설; 목표 300초, 불필요한 무음·반복이나 과속으로 맞추지 않음",
+    "publication_delay_seconds": 3600,
+    "timing_basis": "normal_publication_08:00_KST; delayed_run_actual_time_verified",
+    "normal_publication_time_kst": "08:00",
+    "font_path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "thumbnail": "question_based_with_full_exam_name_day_topic_and_provided_bold_font",
+    "status_tracking": "blog_url -> video_id -> scheduled_publication_at -> public_verified",
+    "first_run": "2026-10-12 07:00 Asia/Seoul",
+    "retroactive_existing_posts": false,
+    "companion_short": {
+      "enabled": true,
+      "target_seconds": [
+        30,
+        45
+      ],
+      "max_seconds": 50,
+      "resolution": [
+        1080,
+        1920
+      ],
+      "first_frame": "question_based_provided_bold_font",
+      "related_video_target": "matching_daily_5min_video",
+      "required_verification": [
+        "long_video_id",
+        "short_video_id",
+        "studio_saved",
+        "short_player_link_destination_verified"
+      ],
+      "recovery": "preserve_ids_retry_link_only_no_duplicate_upload"
+    },
+    "preparation_time_kst": "06:00",
+    "normal_blog_publication_time_kst": "07:00",
+    "preparation_before_blog_publication": true,
+    "public_verification_followup_time_kst": "08:00",
+    "first_preparation_run": "2026-10-13 06:00 Asia/Seoul"
+  },
+  "exam_compilation_schedule": {
+    "enabled": true,
+    "automation_id": "7",
+    "timezone": "Asia/Seoul",
+    "preparation_time": "17:00",
+    "public_time": "19:00",
+    "frequency": "daily",
+    "publication_method": "YouTube scheduled publication",
+    "first_exam": {
+      "year": 2026,
+      "round": 140
+    },
+    "continuation": "동일 회차 선정 문항을 편별로 분할, 완료 후 공식 원문이 확인된 이전 회차 역순",
+    "duration_seconds": [
+      300,
+      600
+    ],
+    "state_directory": "/Volumes/USB256/devAPP/AutoSNS/engineer-video-output/exam-compilations/"
+  }
+}
