@@ -92,3 +92,13 @@ youtube-shorts-auto/thumbnail_backfill.json
 secrets.env.enc
 secrets.env.enc.tmp
 youtube-shorts-auto/comment_backfill.json
+
+# 로그인 쿠키가 든 크롬 프로필(고정 작업용 학과 계정)
+youtube-shorts-auto/chrome-profile-youtube-dept/
+
+# 비밀값 저장소 잠금 파일
+secrets.env.enc.lock
+
+# Remotion 작업 폴더의 빌드 산출물·의존성
+remotion-shorts/node_modules/
+remotion-shorts/out/
