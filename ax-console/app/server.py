@@ -119,6 +119,8 @@ def run_task(tid, manual=False):
             return
         t['status'] = 'running'
         save(tasks)
+    if t.get('action') == 'publish':
+        return run_publish(t, manual)
     act = find_action(t['account'], t['channel'], t['action'])
     start = now()
     day = RUNS / start.strftime('%Y-%m-%d')
@@ -812,8 +814,9 @@ def content_approve(cid, b):
         with LOCK:
             tasks = load()
             for ch in c['channels']:
+                auto = (b.get('modes') or {}).get(ch) == 'auto' and (c['account'], ch) in AUTO_PUBLISH
                 t = {'id': uuid.uuid4().hex[:8], 'created': now().isoformat(), 'runs': [], 'account': c['account'],
-                     'channel': ch, 'title': f"[콘텐츠] {c.get('title') or c['topic']}", 'action': 'memo',
+                     'channel': ch, 'title': f"[콘텐츠] {c.get('title') or c['topic']}", 'action': 'publish' if auto else 'memo',
                      'body': c['variants'].get(ch, ''), 'schedule': when[ch], 'repeat': '', 'status': 'scheduled',
                      'content': cid}
                 tasks.append(t)
@@ -823,6 +826,65 @@ def content_approve(cid, b):
         c['history'].append({'at': now().isoformat(), 'what': '승인·예약 (' + ', '.join(f'{k} {v[5:16]}' for k, v in when.items() if k in tids) + ')'})
         csave(c)
         return c
+
+
+# ---- ⑥ 자동 발행: 승인된 콘텐츠를 채널별 기존 발행 코드로 ----
+AUTO_PUBLISH = {  # (계정, 채널) → 실행할 모듈 폴더
+    ('dept', 'blogger'): 'naver-blog-auto', ('personal', 'blogger'): 'naver-blog-auto',
+    ('dept', 'naver_blog'): 'naver-blog-auto', ('dept', 'x'): 'youtube-shorts-auto',
+}
+
+
+def publish_call(cid, account, channel, dry):
+    folder = AUTO_PUBLISH[(account, channel)]
+    args = [str(ROOT / folder / '.venv' / 'bin' / 'python'), str(CONSOLE / 'app' / 'publishers.py'),
+            str(_cdir(cid)), account, channel] + (['--dry'] if dry else [])
+    p = subprocess.run(args, cwd=str(ROOT / folder), capture_output=True, text=True, timeout=1800)
+    lines = (p.stdout or '').strip().splitlines()
+    try:
+        return json.loads(lines[-1]), (p.stdout or '') + (p.stderr or '')
+    except (IndexError, ValueError):
+        return {'status': 'error', 'detail': ((p.stderr or '').strip().splitlines() or ['출력 없음'])[-1][:300]}, \
+            (p.stdout or '') + (p.stderr or '')
+
+
+def run_publish(t, manual):
+    start = now()
+    day = RUNS / start.strftime('%Y-%m-%d')
+    day.mkdir(parents=True, exist_ok=True)
+    log = day / f"{start.strftime('%H%M%S')}_{t['id']}.log"
+    try:
+        r, out = publish_call(t['content'], t['account'], t['channel'], dry=False)
+    except Exception as e:
+        r, out = {'status': 'error', 'detail': str(e)[:300]}, ''
+    log.write_text(f"자동 발행: {t['title']} → {t['account']}/{t['channel']}\n시작: {start}\n결과: {json.dumps(r, ensure_ascii=False)}\n\n{out}")
+    ok = r.get('status') == 'published'
+    with LOCK:
+        tasks = load()
+        x = next((y for y in tasks if y['id'] == t['id']), None)
+        if x:
+            x['status'] = 'done' if ok else 'failed'
+            x['url'] = r.get('url', '')
+            x['result'] = r
+            x.setdefault('runs', []).insert(0, {'at': start.isoformat(), 'end': now().isoformat(),
+                                                'code': 0 if ok else 1, 'manual': manual,
+                                                'log': str(log.relative_to(CONSOLE)),
+                                                'tail': r.get('url') or r.get('detail', '')})
+            save(tasks)
+
+
+def content_check(cid):
+    """승인 전 점검: 자동 발행할 채널을 '게시 직전'까지만 돌려 본다."""
+    c = cload(cid)
+    out = {}
+    for ch in c['channels']:
+        if (c['account'], ch) not in AUTO_PUBLISH:
+            out[ch] = {'status': 'manual', 'detail': '자동 발행 연결 없음 — 직접 올린 뒤 완료 표시'}
+        elif ch == 'naver_blog':
+            out[ch] = {'status': 'not_checked', 'detail': '네이버 점검은 크롬 창을 열어 글을 입력하므로 버튼으로 따로 실행합니다'}
+        else:
+            out[ch] = publish_call(cid, c['account'], ch, dry=True)[0]
+    return out
 
 
 def content_cancel(cid):
@@ -895,7 +957,8 @@ class H(BaseHTTPRequestHandler):
         if self.path == '/api/meta':
             return self.send(200, meta())
         if self.path == '/api/contents':
-            return self.send(200, {'items': contents(), 'checks': CHECKS})
+            return self.send(200, {'items': contents(), 'checks': CHECKS,
+                                   'auto': [f'{a}/{c}' for a, c in AUTO_PUBLISH]})
         if self.path == '/api/gateway':
             return self.send(200, gateway_view())
         if self.path == '/api/automations':
@@ -939,6 +1002,16 @@ class H(BaseHTTPRequestHandler):
                     return self.send(200, {'ok': True})
                 if op == 'update':
                     return self.send(200, content_update(cid, b))
+                if op == 'check':
+                    return self.send(200, content_check(cid))
+                if op == 'check_naver':
+                    # 연달아 점검하면 네이버 편집기 자동저장이 다음 글에 섞인다(2026-10-18 확인) → 5분 간격
+                    last = GW_STATE.get('naver_check')
+                    if last and (now() - last).total_seconds() < 300:
+                        raise ValueError('네이버 점검은 5분에 한 번만 할 수 있습니다(편집기 자동저장이 섞이지 않게)')
+                    GW_STATE['naver_check'] = now()
+                    c = cload(cid)
+                    return self.send(200, {'naver_blog': publish_call(cid, c['account'], 'naver_blog', dry=True)[0]})
                 if op == 'approve':
                     return self.send(200, content_approve(cid, b))
                 if op == 'cancel':

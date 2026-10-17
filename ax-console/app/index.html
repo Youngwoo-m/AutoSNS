@@ -128,7 +128,7 @@ async function save(state){
   if(state=='scheduled'&&act().live&&!confirm(`${C().label} 채널에 예약합니다.\n${fmt(b.schedule)}에 '${act().label}'이(가) 실제로 실행됩니다.`))return;
   try{cur=await api(cur?`/api/tasks/${cur.id}/update`:'/api/tasks',b);T=await api('/api/tasks');draw();$('msg').style.color='var(--ok)';$('msg').textContent=state=='scheduled'?'예약했습니다.':'저장했습니다.'}
   catch(e){$('msg').textContent=e.message}}
-async function runNow(){const a=C().actions.find(x=>x.key==cur.action);
+async function runNow(){const a=C().actions.find(x=>x.key==cur.action)||{live:true,label:'콘텐츠 자동 발행'};
   if(a.live&&!confirm(`지금 '${a.label}'을(를) 실행합니다. 실제로 발행됩니다.`))return;
   try{await api(`/api/tasks/${cur.id}/run`,{});setTimeout(refresh,600)}catch(e){$('msg').textContent=e.message}}
 async function del(){if(!confirm('이 작업을 삭제할까요?'))return;await api(`/api/tasks/${cur.id}/delete`,{});cur=null;T=await api('/api/tasks');draw()}
@@ -169,13 +169,16 @@ function editorC(){
     if(x.status=='review'){
       body+=`${pend?'<p class="warn">[확인 필요] 표시가 남아 있습니다. 사실을 확인해 고치거나 지워야 승인됩니다.</p>':''}
       <h2 style="margin-top:14px">③ 점검표</h2><div class="chk">${Object.entries(CT.checks).map(([k,l])=>`<label><input type="checkbox" id="ck_${k}" ${(x.checks||{})[k]?'checked':''}>${esc(l)}</label>`).join('')}</div>
-      <h2 style="margin-top:14px">⑤ 채널별 발행 시각</h2><div class="row">${x.channels.map(c=>`<div><label>${CHL[c]}</label><input type="datetime-local" id="sc_${c}"></div>`).join('')}</div>
+      <h2 style="margin-top:14px">⑤ 채널별 발행 시각·방식</h2><div class="row">${x.channels.map(c=>{const au=(CT.auto||[]).includes(x.account+'/'+c);return `<div><label>${CHL[c]}</label><input type="datetime-local" id="sc_${c}">
+        <select id="md_${c}" style="margin-top:4px">${au?'<option value="auto">자동 발행</option>':''}<option value="manual">직접 발행 (완료 표시)</option></select></div>`}).join('')}</div>
+      <div id="chkres"></div>
+      <div class="btns"><button onclick="checkC()">발행 점검(게시 직전까지)</button>${x.channels.includes('naver_blog')&&(CT.auto||[]).includes(x.account+'/naver_blog')?'<button onclick="checkNaver(this)">네이버 점검(크롬 창 열림)</button>':''}</div>
       <div class="btns"><button onclick="saveC()">저장</button><button onclick="draftC()">AI 초안 다시 만들기</button><button class="pri" onclick="approveC()">승인하고 예약</button><button class="del" onclick="delC()">삭제</button></div>`}
     if(['scheduled','published','failed'].includes(x.status)){
       const tl=Object.entries(x.tasks||{}).map(([c,tid])=>{const t=T.find(y=>y.id==tid)||{};
-        return `<div class="run">${CHL[c]} · ${fmt(t.schedule)} · <b class="${t.status=='done'?'':'x'}">${({scheduled:'예약됨',due:'발행할 차례',done:'발행 완료',failed:'실패'})[t.status]||t.status||'?'}</b>
-         ${t.url?` · <a href="${esc(t.url)}" target="_blank">${esc(t.url)}</a>`:''}${t.status=='due'||t.status=='scheduled'?` <a onclick="doneC('${tid}','${CHL[c]}')">올렸어요(완료 표시)</a>`:''}</div>`}).join('');
-      body+=`<h2 style="margin-top:14px">⑥ 채널별 발행</h2><p class="mut">아직 채널 자동 발행 연결이 없어, 시각이 되면 '발행할 차례'가 됩니다. 변환본을 복사해 올린 뒤 완료 표시하세요.</p>${tl}
+        return `<div class="run">${CHL[c]} · ${t.action=='publish'?'자동':'직접'} · ${fmt(t.schedule)} · <b class="${t.status=='done'?'':'x'}">${({scheduled:'예약됨',due:'발행할 차례',done:'발행 완료',failed:'실패',running:'발행 중'})[t.status]||t.status||'?'}</b>${t.result&&t.status=='failed'?` <span class="mut">${esc(t.result.detail||'')}</span>`:''}
+         ${t.url?` · <a href="${esc(t.url)}" target="_blank">${esc(t.url)}</a>`:''}${t.status=='due'||t.status=='failed'||(t.status=='scheduled'&&t.action!='publish')?` <a onclick="doneC('${tid}','${CHL[c]}')">직접 올렸어요(완료 표시)</a>`:''}</div>`}).join('');
+      body+=`<h2 style="margin-top:14px">⑥ 채널별 발행</h2><p class="mut">자동 발행 채널은 정한 시각에 올라가고 주소가 기록됩니다. 직접 발행 채널과 자동 발행이 실패한 채널은 변환본을 복사해 올린 뒤 완료 표시하세요.</p>${tl}
        ${x.status=='scheduled'?'<div class="btns"><button onclick="cancelC()">예약 취소(검토로)</button></div>':''}`}
   }
   body+=`<div class="msg" id="cmsg"></div><div class="runs"><h2>기록</h2>${(x.history||[]).slice().reverse().map(h=>`<div class="run">${fmt(h.at)} ${esc(h.what)}</div>`).join('')}</div>`;
@@ -187,8 +190,14 @@ async function newC(draft){const chs=[...document.querySelectorAll('#c_chs input
 async function draftC(){try{await api(`/api/contents/${cc.id}/draft`,{});await loadCont()}catch(e){cmsg(e.message)}}
 function bodyC(){saveDraftLocal();const ck={};Object.keys(CT.checks).forEach(k=>ck[k]=!!($('ck_'+k)&&$('ck_'+k).checked));return {title:cc.title,original:cc.original,variants:cc.variants,checks:ck}}
 async function saveC(){try{cc=await api(`/api/contents/${cc.id}/update`,bodyC());await loadCont();cmsg('저장했습니다.',true)}catch(e){cmsg(e.message)}}
-async function approveC(){const sc={};cc.channels.forEach(c=>sc[c]=$('sc_'+c).value);
-  try{await api(`/api/contents/${cc.id}/update`,bodyC());cc=await api(`/api/contents/${cc.id}/approve`,{schedule:sc});T=await api('/api/tasks');await loadCont();cmsg('승인하고 예약했습니다.',true)}catch(e){cmsg(e.message)}}
+async function approveC(){const sc={},md={};cc.channels.forEach(c=>{sc[c]=$('sc_'+c).value;md[c]=$('md_'+c).value});
+  const autos=cc.channels.filter(c=>md[c]=='auto').map(c=>CHL[c]);
+  if(autos.length&&!confirm(`${autos.join(', ')}에는 정한 시각에 실제로 공개 발행됩니다.\n승인할까요?`))return;
+  try{await api(`/api/contents/${cc.id}/update`,bodyC());cc=await api(`/api/contents/${cc.id}/approve`,{schedule:sc,modes:md});T=await api('/api/tasks');await loadCont();cmsg('승인하고 예약했습니다.',true)}catch(e){cmsg(e.message)}}
+const PST={dry_run:'점검 통과',skipped:'건너뜀',error:'오류',manual:'직접 발행',not_checked:'따로 점검',published:'발행됨'};
+function showChk(r){$('chkres').innerHTML+=Object.entries(r).map(([c,v])=>`<div class="run">${CHL[c]} · <b class="${v.status=='dry_run'||v.status=='manual'?'':'x'}">${PST[v.status]||v.status}</b> · <span class="mut">${esc(v.detail||'')}</span></div>`).join('')}
+async function checkC(){$('chkres').innerHTML='<div class="mut">점검 중…</div>';try{const r=await api(`/api/contents/${cc.id}/check`,{});$('chkres').innerHTML='';showChk(r)}catch(e){$('chkres').innerHTML=`<div class="warn">${esc(e.message)}</div>`}}
+async function checkNaver(b){if(!confirm('네이버 학과 블로그 크롬 창을 열어 글을 입력하고, 발행 버튼 직전에 멈춥니다.'))return;b.disabled=true;b.textContent='네이버 점검 중…(1~3분)';try{showChk(await api(`/api/contents/${cc.id}/check_naver`,{}))}catch(e){alert(e.message)}b.disabled=false;b.textContent='네이버 점검(크롬 창 열림)'}
 async function cancelC(){if(!confirm('예약을 취소하고 검토 단계로 돌립니다.'))return;try{await api(`/api/contents/${cc.id}/cancel`,{});T=await api('/api/tasks');await loadCont()}catch(e){cmsg(e.message)}}
 async function delC(){if(!confirm('이 콘텐츠를 지울까요?'))return;try{await api(`/api/contents/${cc.id}/delete`,{});cc=null;await loadCont()}catch(e){cmsg(e.message)}}
 async function doneC(tid,l){const u=prompt(`${l}에 올린 글 주소(없으면 비워 두세요)`);if(u===null)return;try{await api(`/api/tasks/${tid}/done`,{url:u});T=await api('/api/tasks');await loadCont()}catch(e){alert(e.message)}}
