@@ -19,6 +19,7 @@ launchd 로 몇 시간마다 이 스크립트를 돌린다(setup_trigger_schedul
 """
 import io
 import json
+import re
 import os
 import sys
 from datetime import datetime, timezone, timedelta
@@ -137,7 +138,7 @@ def decide(cfg):
             sig = _norm_title(rep["title"])[:40]
             return ({"sig": sig, "label": rep["title"][:40], "source": "news",
                      "rep": rep, "size": size, "severity": sev,
-                     "items": c["items"][:3]},
+                     "items": c["items"][:3], "all_items": c["items"][:15]},
                     f"사건 감지: '{_norm_title(rep['title'])[:24]}' "
                     f"기사 {size}건, 심각도 {'있음' if sev else '없음'}")
     top = next((c for c in clusters
@@ -162,6 +163,25 @@ def decide(cfg):
     return None, f"발행할 만큼 큰 사건 없음 ({detail})"
 
 
+def _nums(t):
+    """제목 속 숫자(연도 제외). '규모 9.9'·'8분' 같은 숫자는 같은 사건을 가리키는 강한 단서다."""
+    return {n for n in re.findall(r"\d+", t) if not re.fullmatch(r"(19|20)\d\d", n)}
+
+
+def _same_event(new_titles, old_titles):
+    """같은 사건인가. 10/16 17:00 과 10/17 08:00 에 '규모 9.9 지진속보 8분 만에 취소'를
+    언론사마다 다른 제목('열도 난리' / '강진 긴급속보 발령')으로 받아 유사도 0.62 → 두 번 발행했다.
+    유사도 0.7 이상이거나, 0.5 이상이면서 연도 아닌 숫자를 함께 가지면 같은 사건으로 본다."""
+    for a in new_titles:
+        for b in old_titles:
+            if not a or not b:
+                continue
+            r = SequenceMatcher(None, a, b).ratio()
+            if r >= 0.7 or (r >= 0.5 and _nums(a) & _nums(b)):
+                return True
+    return False
+
+
 def _gate(event, cfg, state):
     """쿨다운/주간상한/중복 통과 여부. (ok, 사유)"""
     tcfg = cfg.get("trigger", {})
@@ -170,11 +190,11 @@ def _gate(event, cfg, state):
 
     # 중복: 최근 dedup_days 내 같은 사건이면 재발행 안 함.
     dedup_days = tcfg.get("dedup_days", 3)
+    titles = [sig] + [_norm_title(i.get("title", "")) for i in event.get("all_items", event.get("items", []))]
     for p in state.get("posted", []):
-        if p["sig"] == sig or SequenceMatcher(None, sig, p["sig"]).ratio() >= 0.7:
-            ts = datetime.fromisoformat(p["ts"])
-            if now - ts < timedelta(days=dedup_days):
-                return False, f"이미 발행한 사건(중복): '{sig[:24]}'"
+        ts = datetime.fromisoformat(p["ts"])
+        if now - ts < timedelta(days=dedup_days) and _same_event(titles, [p["sig"]] + p.get("titles", [])):
+            return False, f"이미 발행한 사건(중복): '{sig[:24]}' ≈ '{p['sig'][:24]}'"
 
     # 쿨다운
     last = state.get("last_trigger")
@@ -253,7 +273,9 @@ def main(dry=False):
     # 상태 기록
     now = datetime.now(timezone.utc).isoformat()
     state["last_trigger"] = now
-    state.setdefault("posted", []).append({"sig": event["sig"], "ts": now})
+    state.setdefault("posted", []).append({
+        "sig": event["sig"], "ts": now,
+        "titles": [_norm_title(i.get("title", ""))[:40] for i in event.get("all_items", [])][:15]})
     state["posted"] = state["posted"][-30:]
     _save_state(state)
     log("[트리거] 상태 저장 완료.")
