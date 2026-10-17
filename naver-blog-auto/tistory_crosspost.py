@@ -493,9 +493,57 @@ def update_shorts(go):
         close(d)
 
 
+def seo_edit(d, num, title, summary, go):
+    """기존 글의 제목을 바꾸고 본문 맨 앞에 검색 설명용 요약 문단을 넣는다(이미 있으면 본문은 그대로)."""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    W = WebDriverWait(d, 25)
+    d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
+    if "/manage/newpost" not in _cur_url(d) and kakao_relogin(d):
+        d.get(f"{BLOG}/manage/newpost/{num}?type=post&returnURL=ENTRY")
+    W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
+    time.sleep(1.5)
+    t = d.find_element(By.ID, "post-title-inp")
+    old_title = t.get_attribute("value")
+    cur = d.execute_script("return tinymce.activeEditor.getContent();")
+    lead = f'<p data-ke-size="size16">{html.escape(summary)}</p>'
+    if summary[:20] not in cur:
+        d.execute_script("tinymce.activeEditor.setContent(arguments[0]);"
+                         "tinymce.activeEditor.fire('change'); tinymce.activeEditor.save();", lead + cur)
+    if old_title != title:
+        t.click()
+        t.clear()
+        if t.get_attribute("value"):        # clear() 가 안 먹으면 글자 수만큼 지운다
+            t.send_keys(Keys.END + Keys.BACKSPACE * (len(old_title) + 5))
+        t.send_keys(title)
+        if t.get_attribute("value") != title:
+            raise RuntimeError(f"제목 입력이 어긋남: {t.get_attribute('value')!r} — 저장하지 않음")
+    if not go:
+        return f"dry-ok (제목: {old_title} → {t.get_attribute('value')})"
+    d.execute_script("arguments[0].click();", d.find_element(By.ID, "publish-layer-btn"))
+    W.until(EC.presence_of_element_located((By.ID, "publish-btn")))
+    time.sleep(0.8)
+    d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();",
+                     d.find_element(By.ID, "publish-btn"))
+    W.until(lambda x: "/manage/newpost" not in x.current_url)
+    time.sleep(2)
+    return "saved"
+
+
 # ─── 실행 ────────────────────────────────────────────────────────────────────
 def main():
     args = sys.argv[1:]
+    if "--seo-edit" in args:                # --seo-edit 글번호 "새 제목" "요약 문장" [--go]
+        k = args.index("--seo-edit")
+        d = build_driver(headless=False)
+        try:
+            r = seo_edit(d, args[k + 1], args[k + 2], args[k + 3], "--go" in args)
+            log(f"  SEO {r}: {BLOG}/{args[k + 1]}")
+        finally:
+            close(d)
+        return
     if "--move-video" in args:              # --move-video 글번호 영상ID 소제목글자 [--go]
         k = args.index("--move-video")
         num, vid, head = args[k + 1], args[k + 2], (args[k + 3] if len(args) > k + 3 and not args[k + 3].startswith("--") else "")

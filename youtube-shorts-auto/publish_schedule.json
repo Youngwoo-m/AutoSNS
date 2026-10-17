@@ -331,7 +331,13 @@
       "재난안전학과",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/QTty4e5M_lM",
+      "instagram": "published",
+      "threads": "published",
+      "x": "published",
+      "at": "2026-10-13T19:02:58"
+    },
     "season_note": "핼러윈 전 인파",
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
   },
