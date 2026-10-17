@@ -156,14 +156,25 @@ def pin(video_id, go=False, headless=True, profile_dir=None):
             log("시험 실행: 여기서 멈춥니다(실제 고정하지 않음).")
             return {"status": "dry_run"}
 
-        d.execute_script("arguments[0].click();", item)
-        time.sleep(2)
-        # 확인 대화상자(있을 때만)
-        for el in d.find_elements("css selector", "yt-button-renderer, button"):
-            t = (el.text or "").strip()
-            if t in ("고정", "PIN", "Pin"):
-                d.execute_script("arguments[0].click();", el)
+        item.click()
+        time.sleep(3)
+        # 확인 대화상자: "이 댓글을 고정하시겠습니까?" → [취소] [고정]
+        # 페이지 전체에서 '고정' 글자를 찾으면 방금 닫힌 메뉴 항목을 눌러 아무 일도
+        # 일어나지 않는다(2026-10-17). 대화상자 안으로 범위를 좁힌다.
+        dlgs = d.find_elements("css selector", "yt-confirm-dialog-renderer, tp-yt-paper-dialog")
+        done = False
+        for dlg in dlgs:
+            for b in dlg.find_elements("css selector", "button"):
+                if (b.text or "").strip() in PIN_LABELS:
+                    b.click()
+                    done = True
+                    break
+            if done:
                 break
+        if not done:
+            _shot(d, "no_confirm_button")
+            log("확인 대화상자의 '고정' 버튼을 찾지 못했습니다.")
+            return {"status": "no_confirm"}
         time.sleep(3)
         _shot(d, "after_pin")
         log("댓글 고정 완료")
