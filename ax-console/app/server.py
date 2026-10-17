@@ -968,6 +968,51 @@ def content_delete(cid):
         shutil.rmtree(_cdir(cid))
 
 
+# ---- 에이전트 설정 ----
+AGENTS_CFG = CONSOLE / 'config' / 'agents.json'
+
+
+def agents_view():
+    cfg = _json(AGENTS_CFG, {})
+    u = _json(DATA / 'agent' / 'usage.json', {}).get(now().strftime('%Y-%m'), {})
+    total = sum(v.get('input', 0) + v.get('output', 0) for v in u.values())
+    return {'config': cfg, 'usage': u, 'month_total': total}
+
+
+def agents_save(b):
+    cfg = _json(AGENTS_CFG, {})
+
+    def num(v, lo, hi, name):
+        try:
+            v = int(v)
+        except (TypeError, ValueError):
+            raise ValueError(f'{name}: 숫자를 넣으세요')
+        if not lo <= v <= hi:
+            raise ValueError(f'{name}: {lo}~{hi} 사이로 넣으세요')
+        return v
+    if 'monthly_token_limit' in b:
+        cfg['monthly_token_limit'] = num(b['monthly_token_limit'], 10000, 100000000, '월 토큰 한도')
+    for acc, a in (b.get('planner_accounts') or {}).items():
+        if acc not in ('dept', 'personal'):
+            continue
+        t = cfg.setdefault('planner', {}).setdefault('accounts', {}).setdefault(acc, {})
+        t['enabled'] = bool(a.get('enabled'))
+        t['count'] = num(a.get('count'), 1, 20, '제안 개수')
+        t['weekday'] = num(a.get('weekday'), 0, 6, '요일')
+        t['hour'] = num(a.get('hour'), 0, 23, '시각')
+    for ag in ('planner', 'incident'):
+        bb = (b.get('budgets') or {}).get(ag)
+        if bb:
+            t = cfg.setdefault(ag, {}).setdefault('budget', {})
+            t['max_tokens'] = num(bb.get('max_tokens'), 2000, 500000, '실행당 토큰')
+            t['max_tool_calls'] = num(bb.get('max_tool_calls'), 1, 200, '도구 호출')
+            t['max_turns'] = num(bb.get('max_turns'), 1, 100, '턴')
+    tmp = AGENTS_CFG.with_suffix('.tmp')
+    tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+    tmp.replace(AGENTS_CFG)
+    return agents_view()
+
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -997,6 +1042,8 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/agents':
+            return self.send(200, agents_view())
         if self.path == '/api/contents':
             return self.send(200, {'items': contents(), 'checks': CHECKS,
                                    'auto': [f'{a}/{c}' for a, c in AUTO_PUBLISH]})
@@ -1034,6 +1081,8 @@ class H(BaseHTTPRequestHandler):
             if parts[:2] == ['api', 'tasks'] and parts[3:] == ['done']:
                 task_done(parts[2], b.get('url'))
                 return self.send(200, {'ok': True})
+            if parts == ['api', 'agents']:
+                return self.send(200, agents_save(b))
             if parts == ['api', 'contents']:
                 return self.send(200, content_create(b))
             if parts[:2] == ['api', 'contents'] and len(parts) == 4:

@@ -290,9 +290,30 @@ async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels
     <table>${SV.plugins.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.market)} · ${esc(x.version)}</div></td><td style="text-align:right"><input type="checkbox" class="sw" ${x.enabled?'checked':''} onchange="plug('${esc(x.id)}',this)"></td></tr>`).join('')}</table>
     <h2 style="margin-top:16px">커넥터 (MCP)</h2><p class="mut">claude.ai 계정 커넥터(Gmail, 캘린더, 노션 등)는 claude.ai 설정에서 관리합니다.</p>
     <div class="scroll"><table>${SV.connectors.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.source)} · ${esc(x.type)}</div></td><td class="${x.state=='인증 필요'?'bad':'ok'}">${esc(x.state)}</td></tr>`).join('')}</table></div></div></div>
+   <div class="card" id="agcard"><h2>에이전트 설정</h2><div class="mut">불러오는 중…</div></div>
    <div class="card" id="gwcard"><h2>세명대 AI 게이트웨이</h2><div class="mut">불러오는 중…</div></div>
    <div class="card"><h2>설치된 스킬 (${SV.skills.length})</h2><input id="sq" placeholder="스킬 검색" oninput="skl()"><div class="scroll" style="margin-top:8px"><table id="sk"></table></div></div>`;
-  skl();loadGw()}
+  skl();loadGw();loadAg()}
+const WDN=['일','월','화','수','목','금','토'];
+async function loadAg(){drawAg(await api('/api/agents'))}
+function drawAg(v){const c=v.config,pa=(c.planner||{}).accounts||{},lim=c.monthly_token_limit||0,pct=lim?Math.round(v.month_total*100/lim):0;
+  const bud=(ag,l)=>{const b=(c[ag]||{}).budget||{};return `<tr><td>${l}</td><td><input id="b_${ag}_t" value="${b.max_tokens||''}"></td><td><input id="b_${ag}_c" value="${b.max_tool_calls||''}"></td><td><input id="b_${ag}_r" value="${b.max_turns||''}"></td></tr>`};
+  $('agcard').innerHTML=`<h2>에이전트 설정</h2>
+   <h3 style="font-size:14px;margin:10px 0 4px">기획 에이전트 — 주간 제안</h3>
+   <table><tr><th>계정</th><th>켜기</th><th>제안 개수</th><th>요일</th><th>시각</th></tr>${['dept','personal'].map(a=>{const x=pa[a]||{};return `<tr><td>${a=='dept'?'학과':'개인'}</td>
+    <td><input type="checkbox" class="sw" id="pa_${a}_e" ${x.enabled?'checked':''}></td><td><input id="pa_${a}_n" value="${x.count??5}" style="width:70px"></td>
+    <td><select id="pa_${a}_w">${WDN.map((d,i)=>`<option value="${i}" ${i==(x.weekday??0)?'selected':''}>${d}</option>`).join('')}</select></td>
+    <td><select id="pa_${a}_h">${[...Array(24).keys()].map(h=>`<option value="${h}" ${h==(x.hour??20)?'selected':''}>${h}시</option>`).join('')}</select></td></tr>`}).join('')}</table>
+   <h3 style="font-size:14px;margin:14px 0 4px">실행 한 번의 예산</h3>
+   <table><tr><th>에이전트</th><th>토큰</th><th>도구 호출</th><th>턴</th></tr>${bud('planner','기획·초안')}${bud('incident','실패 대응')}</table>
+   <h3 style="font-size:14px;margin:14px 0 4px">이번 달 사용량</h3>
+   <p class="mut">${v.month_total.toLocaleString()} / ${lim.toLocaleString()} 토큰 (${pct}%) ${Object.entries(v.usage).map(([k,u])=>`· ${esc(k)} ${u.runs}회 ${(u.input+u.output).toLocaleString()}`).join(' ')}</p>
+   <label>월 토큰 한도</label><input id="ag_lim" value="${lim}" style="width:160px">
+   <div class="btns"><button class="pri" onclick="saveAg()">에이전트 설정 저장</button><span class="msg" id="agmsg"></span></div>`}
+async function saveAg(){const b={monthly_token_limit:$('ag_lim').value,planner_accounts:{},budgets:{}};
+  ['dept','personal'].forEach(a=>b.planner_accounts[a]={enabled:$(`pa_${a}_e`).checked,count:$(`pa_${a}_n`).value,weekday:$(`pa_${a}_w`).value,hour:$(`pa_${a}_h`).value});
+  ['planner','incident'].forEach(ag=>b.budgets[ag]={max_tokens:$(`b_${ag}_t`).value,max_tool_calls:$(`b_${ag}_c`).value,max_turns:$(`b_${ag}_r`).value});
+  try{drawAg(await api('/api/agents',b));$('agmsg').style.color='var(--ok)';$('agmsg').textContent='저장했습니다.'}catch(e){$('agmsg').style.color='var(--warn)';$('agmsg').textContent=e.message}}
 async function loadGw(){drawGw(await api('/api/gateway'))}
 function drawGw(g){const r=g.result;
   $('gwcard').innerHTML=`<div class="filt"><h2 style="margin:0 auto 0 0">세명대 AI 게이트웨이</h2><button class="gbtn" onclick="gwCheck(this)">키 연결 확인</button></div>
