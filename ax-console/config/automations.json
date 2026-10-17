@@ -147,7 +147,8 @@
           "tiktok"
         ]
       ],
-      "note": "2026-10-17 13:30 사용자 요청으로 중지(launchd bootout+disable, tiktok_web.daily=false). 캡션 입력칸을 못 찾는 실패가 반복된 뒤. 다시 켜려면 둘 다 되돌린다."
+      "note": "2026-10-17 13:30 사용자 요청으로 중지(launchd bootout+disable, tiktok_web.daily=false). 캡션 입력칸을 못 찾는 실패가 반복된 뒤. 다시 켜려면 둘 다 되돌린다.",
+      "reenable": "youtube-shorts-auto/config.json 의 tiktok_web.daily 도 false 로 꺼져 있습니다. launchd 만 켜면 실행돼도 업로드하지 않으니, 정말 다시 올리려면 이 값을 true 로 직접 바꿔야 합니다."
     },
     {
       "job": "xpromo.daily",

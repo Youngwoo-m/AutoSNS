@@ -5,7 +5,7 @@
 - 예약 시각이 되면 채널에 등록된 실행 작업(기존 run_*.sh)을 돌리고 기록을 남긴다.
 - 실행할 수 있는 명령은 아래 ACTIONS 목록뿐이다. 화면에서 임의 명령은 받지 않는다.
 """
-import datetime, json, os, subprocess, threading, time, uuid
+import datetime, json, os, subprocess, threading, time, urllib.parse, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -334,8 +334,8 @@ def _when_text(pl):
                       for ts, ds in bytimes.items())
 
 
-def _last_run(pl):
-    """plist 로그와 실행 스크립트가 쓰는 logs/*.log 중 가장 최근에 바뀐 시각."""
+def _log_files(pl):
+    """plist 로그와 실행 스크립트가 쓰는 logs/*.log 경로."""
     files = [pl.get('StandardOutPath'), pl.get('StandardErrorPath')]
     script = Path(pl.get('ProgramArguments', [''])[-1])
     try:
@@ -344,12 +344,29 @@ def _last_run(pl):
                 files.append(str((script.resolve().parent / m).resolve()))
     except OSError:
         pass
-    times = [os.path.getmtime(f) for f in files if f and os.path.exists(f)]
+    return list(dict.fromkeys(f for f in files if f and os.path.exists(f)))
+
+
+def _last_run(pl):
+    """plist 로그와 실행 스크립트가 쓰는 logs/*.log 중 가장 최근에 바뀐 시각."""
+    times = [os.path.getmtime(f) for f in _log_files(pl)]
     return datetime.datetime.fromtimestamp(max(times)).isoformat(timespec='minutes') if times else ''
 
 
+def _launchd():
+    """불러온 작업 {레이블: (pid, 마지막 종료 코드)} 와 disable 된 레이블 집합."""
+    loaded = {}
+    for line in subprocess.run(['launchctl', 'list'], capture_output=True, text=True).stdout.splitlines()[1:]:
+        f = line.split('\t')
+        if len(f) == 3:
+            loaded[f[2]] = (f[0], f[1])
+    pd = subprocess.run(['launchctl', 'print-disabled', f'gui/{os.getuid()}'], capture_output=True, text=True).stdout
+    disabled = set(__import__('re').findall(r'"([^"]+)" => (?:disabled|true)', pd))
+    return loaded, disabled
+
+
 def automations():
-    cat, loaded = catalog(), subprocess.run(['launchctl', 'list'], capture_output=True, text=True).stdout
+    cat, (loaded, disabled) = catalog(), _launchd()
     out, start = [], now()
     for f in sorted(AGENTS.glob('com.smuds.*.plist')):
         key = f.stem.replace('com.smuds.', '')
@@ -363,9 +380,72 @@ def automations():
         nxt = _next_times(iv, start, 40) if iv else []
         if pl.get('StartInterval'):
             nxt = [start + datetime.timedelta(seconds=pl['StartInterval'])]
-        out.append({**info, 'on': f.stem in loaded, 'when': _when_text(pl), 'last': _last_run(pl),
+        pid, code = loaded.get(f.stem, ('-', ''))
+        out.append({**info, 'on': f.stem in loaded, 'disabled': f.stem in disabled, 'running': pid != '-',
+                    'exit': code, 'controllable': key in cat and key not in SELF_JOBS,
+                    'live': any(c[0] != 'common' for c in info['channels']), 'when': _when_text(pl), 'last': _last_run(pl),
                     'next': [t.isoformat(timespec='minutes') for t in nxt[:3]],
                     'script': pl.get('ProgramArguments', [''])[-1].replace(str(ROOT) + '/', '')})
+    return out
+
+
+# ---- launchd 작업 제어: automations.json 에 등록된 작업만, 콘솔 자신은 제외 ----
+SELF_JOBS = {'axconsole'}
+
+
+def _job_plist(job):
+    if job not in catalog() or job in SELF_JOBS:
+        raise ValueError('제어할 수 없는 작업입니다')
+    f = AGENTS / f'com.smuds.{job}.plist'
+    if not f.exists():
+        raise ValueError(f'{f.name} 가 없습니다')
+    return f
+
+
+def _lc(*args, ok=()):
+    p = subprocess.run(['launchctl', *args], capture_output=True, text=True, timeout=30)
+    if p.returncode and p.returncode not in ok:
+        raise ValueError(f"launchctl {args[0]} 실패({p.returncode}): {(p.stderr or p.stdout).strip()[:200]}")
+    return p
+
+
+def job_control(job, op):
+    f = _job_plist(job)
+    dom, label = f'gui/{os.getuid()}', f'com.smuds.{job}'
+    loaded = label in _launchd()[0]
+    if op == 'off':
+        if loaded:
+            _lc('bootout', f'{dom}/{label}')
+        _lc('disable', f'{dom}/{label}')
+    elif op == 'on':
+        _lc('enable', f'{dom}/{label}')
+        if not loaded:
+            _lc('bootstrap', dom, str(f))
+    elif op == 'run':
+        if not loaded:
+            raise ValueError('꺼진 작업입니다. 먼저 켜세요')
+        _lc('kickstart', f'{dom}/{label}')
+    else:
+        raise ValueError('없는 동작입니다')
+    with open(DATA / 'logs' / 'launchd_control.log', 'a') as lf:
+        lf.write(f'{now().isoformat()} {op} {label}\n')
+    return next(j for j in automations() if j['job'] == job)
+
+
+def job_logs(job, lines=60):
+    """작업 로그 파일마다 끝부분을 돌려준다(최근에 바뀐 파일 먼저)."""
+    if job not in catalog():
+        raise ValueError('없는 작업입니다')
+    f = AGENTS / f'com.smuds.{job}.plist'
+    pl = plistlib.loads(f.read_bytes()) if f.exists() else {}
+    out = []
+    for path in sorted(_log_files(pl), key=os.path.getmtime, reverse=True)[:4]:
+        with open(path, 'rb') as fh:
+            fh.seek(max(0, os.path.getsize(path) - 32768))
+            tail = fh.read().decode('utf-8', 'replace').splitlines()[-lines:]
+        out.append({'path': path.replace(str(ROOT) + '/', ''), 'size': os.path.getsize(path),
+                    'mtime': datetime.datetime.fromtimestamp(os.path.getmtime(path)).isoformat(timespec='minutes'),
+                    'tail': '\n'.join(tail)})
     return out
 
 
@@ -627,6 +707,11 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, settings_view())
         if self.path == '/api/tasks':
             return self.send(200, sorted(load(), key=lambda t: (t.get('schedule') or '9', t['created'])))
+        if self.path.startswith('/api/automations/log?job='):
+            try:
+                return self.send(200, job_logs(urllib.parse.unquote(self.path.split('=', 1)[1])))
+            except ValueError as e:
+                return self.send(400, {'error': str(e)})
         if self.path.startswith('/api/log?'):
             rel = self.path.split('=', 1)[1]
             p = (CONSOLE / rel).resolve()
@@ -653,6 +738,8 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'google', 'login']:
                 google_login(str(b.get('account')), str(b.get('service')))
                 return self.send(200, google_view())
+            if parts[:2] == ['api', 'automations'] and len(parts) == 4 and parts[3] in ('on', 'off', 'run'):
+                return self.send(200, job_control(parts[2], parts[3]))
             if parts == ['api', 'settings', 'accounts']:
                 save_accounts(b)
                 return self.send(200, {'ok': True})
