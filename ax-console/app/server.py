@@ -169,8 +169,16 @@ def scheduler():
                 if t.get('status') == 'scheduled' and t.get('schedule') and \
                         datetime.datetime.fromisoformat(t['schedule']) <= now():
                     due.append(t['id'])
+            # 콘텐츠 예약(메모)은 실제 발행 연결이 없으므로 '발행할 차례'로만 바꾼다
+            ts = load()
+            for t in ts:
+                if t['id'] in due and t.get('content') and t.get('action') == 'memo':
+                    t['status'] = 'due'
+                    due.remove(t['id'])
+            save(ts)
         for tid in due:
             threading.Thread(target=run_task, args=(tid,), daemon=True).start()
+
         time.sleep(15)
 
 
@@ -666,6 +674,197 @@ def gateway_check():
     GW_STATE['checked'] = now().isoformat()
 
 
+# ---- 콘텐츠 파이프라인: ① 기획 → ② 초안 → ③ 검토 → ④ 제작 → ⑤ 예약 → ⑥ 발행 → ⑦ 성과 ----
+CONTENT = DATA / 'content'
+STAGES = ['idea', 'drafting', 'review', 'scheduled', 'published', 'failed']  # 예약 안의 'due' 는 작업 단위
+CHECKS = {'sources': '출처를 확인했다', 'facts': '수치·날짜·기관명을 확인했다',
+          'tone': '자극적인 표현이 없다', 'ai_notice': 'AI 도움을 받은 글임을 밝혔거나 밝힐 필요가 없다'}
+CLOCK = threading.Lock()
+
+
+def _cdir(cid):
+    hits = list(CONTENT.glob(f'*/*/{cid}'))
+    if not hits:
+        raise ValueError('콘텐츠를 찾지 못했습니다')
+    return hits[0]
+
+
+def cload(cid):
+    return _sync_status(json.loads((_cdir(cid) / 'meta.json').read_text()))
+
+
+def csave(c):
+    d = CONTENT / c['created'][:4] / c['created'][5:7] / c['id']
+    d.mkdir(parents=True, exist_ok=True)
+    c['updated'] = now().isoformat()
+    tmp = d / 'meta.tmp'
+    tmp.write_text(json.dumps(c, ensure_ascii=False, indent=2))
+    tmp.replace(d / 'meta.json')
+    # 사람이 읽기 쉬운 사본(원문·변환본)도 남긴다
+    (d / '원문.md').write_text(f"# {c.get('title') or c['topic']}\n\n{c.get('original', '')}\n")
+    for ch, txt in (c.get('variants') or {}).items():
+        (d / f'변환본_{ch}.md').write_text(txt + '\n')
+
+
+def _sync_status(c):
+    """⑥ 발행: 연결된 예약 작업의 결과로 콘텐츠 상태를 맞춘다."""
+    if c['status'] != 'scheduled' or not c.get('tasks'):
+        return c
+    ts = {t['id']: t for t in load()}
+    st = [ts.get(tid, {}).get('status') for tid in c['tasks'].values()]
+    new = 'published' if st and all(x == 'done' for x in st) else 'failed' if any(x == 'failed' for x in st) else None
+    if new:  # 바뀐 상태는 파일에도 남긴다(지우기·목록이 같은 상태를 보게)
+        c['status'] = new
+        c.setdefault('history', []).append({'at': now().isoformat(), 'what': '모든 채널 발행 완료' if new == 'published' else '발행 실패 채널 있음'})
+        csave(c)
+    return c
+
+
+def contents():
+    out = []
+    for f in sorted(CONTENT.glob('*/*/*/meta.json')):
+        try:
+            c = _sync_status(json.loads(f.read_text()))
+        except ValueError:
+            continue
+        out.append(c)
+    return sorted(out, key=lambda c: c.get('updated', ''), reverse=True)
+
+
+def content_create(b):
+    acc = b.get('account')
+    chans = [c for c in b.get('channels', []) if any(ch['id'] == c for a in meta()['accounts'] if a['id'] == acc
+                                                    for ch in a['channels'])]
+    topic = str(b.get('topic', '')).strip()[:200]
+    if acc not in ('dept', 'personal') or not topic or not chans:
+        raise ValueError('계정·주제·채널을 고르세요')
+    c = {'id': uuid.uuid4().hex[:8], 'created': now().isoformat(), 'account': acc, 'topic': topic,
+         'notes': str(b.get('notes', ''))[:5000], 'channels': chans, 'status': 'idea', 'variants': {},
+         'checks': {}, 'history': [{'at': now().isoformat(), 'what': '기획 등록'}]}
+    csave(c)
+    return c
+
+
+def content_draft(cid):
+    with CLOCK:
+        c = cload(cid)
+        if c['status'] not in ('idea', 'review'):
+            raise ValueError('기획·검토 단계에서만 초안을 만들 수 있습니다')
+        c['status'] = 'drafting'
+        csave(c)
+
+    def work():
+        try:
+            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'draft_ai.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+                               input=json.dumps({k: c[k] for k in ('account', 'topic', 'notes', 'channels')}, ensure_ascii=False),
+                               capture_output=True, text=True, timeout=600)
+            d = json.loads(p.stdout.strip().splitlines()[-1])
+            with CLOCK:
+                x = cload(cid)
+                x.update(title=d.get('title', ''), summary=d.get('summary', ''), original=d.get('original', ''),
+                         sources=d.get('sources', []), variants=d.get('variants', {}), status='review', checks={},
+                         model=d.get('model', ''), error='')
+                x['history'].append({'at': now().isoformat(), 'what': f"AI 초안 ({d.get('model', '')})"})
+                csave(x)
+        except Exception as e:
+            with CLOCK:
+                x = cload(cid)
+                x.update(status='idea', error=f'초안 실패: {str(e)[:200]}')
+                csave(x)
+
+    threading.Thread(target=work, daemon=True).start()
+
+
+def content_update(cid, b):
+    with CLOCK:
+        c = cload(cid)
+        if c['status'] not in ('idea', 'review'):
+            raise ValueError('예약된 뒤에는 고칠 수 없습니다. 예약을 취소하세요')
+        for k in ('title', 'original', 'topic', 'notes'):
+            if k in b:
+                c[k] = str(b[k])[:20000]
+        if 'variants' in b:
+            c['variants'] = {ch: str(b['variants'].get(ch, ''))[:20000] for ch in c['channels']}
+        if 'checks' in b:
+            c['checks'] = {k: bool(b['checks'].get(k)) for k in CHECKS}
+        csave(c)
+        return c
+
+
+def content_approve(cid, b):
+    """③ 검토 통과 → ⑤ 예약: 채널마다 예약 작업을 만든다."""
+    with CLOCK:
+        c = cload(cid)
+        if c['status'] != 'review':
+            raise ValueError('검토 대기 상태에서만 승인할 수 있습니다')
+        if not all(c.get('checks', {}).get(k) for k in CHECKS):
+            raise ValueError('점검표를 모두 확인해야 승인할 수 있습니다')
+        texts = [c.get('original', '')] + list(c.get('variants', {}).values())
+        if any('[확인 필요]' in t for t in texts):
+            raise ValueError('[확인 필요] 표시가 남아 있습니다. 확인해 고친 뒤 승인하세요')
+        when = b.get('schedule') or {}
+        for ch in c['channels']:
+            try:
+                datetime.datetime.fromisoformat(when.get(ch) or '')
+            except ValueError:
+                raise ValueError(f"{CH_LABEL.get(ch, ch)} 발행 시각을 정하세요")
+        tids = {}
+        with LOCK:
+            tasks = load()
+            for ch in c['channels']:
+                t = {'id': uuid.uuid4().hex[:8], 'created': now().isoformat(), 'runs': [], 'account': c['account'],
+                     'channel': ch, 'title': f"[콘텐츠] {c.get('title') or c['topic']}", 'action': 'memo',
+                     'body': c['variants'].get(ch, ''), 'schedule': when[ch], 'repeat': '', 'status': 'scheduled',
+                     'content': cid}
+                tasks.append(t)
+                tids[ch] = t['id']
+            save(tasks)
+        c.update(status='scheduled', tasks=tids, approved=now().isoformat())
+        c['history'].append({'at': now().isoformat(), 'what': '승인·예약 (' + ', '.join(f'{k} {v[5:16]}' for k, v in when.items() if k in tids) + ')'})
+        csave(c)
+        return c
+
+
+def content_cancel(cid):
+    with CLOCK:
+        c = cload(cid)
+        if c['status'] != 'scheduled':
+            raise ValueError('예약된 콘텐츠만 취소할 수 있습니다')
+        with LOCK:
+            tasks = [t for t in load() if t['id'] not in (c.get('tasks') or {}).values() or t['status'] != 'scheduled']
+            save(tasks)
+        c.update(status='review', tasks={})
+        c['history'].append({'at': now().isoformat(), 'what': '예약 취소 → 검토로'})
+        csave(c)
+        return c
+
+
+def task_done(tid, url):
+    """사람이 직접 올린 콘텐츠 작업을 완료로 표시(결과 주소를 남긴다)."""
+    with LOCK:
+        tasks = load()
+        t = next((x for x in tasks if x['id'] == tid), None)
+        if not t:
+            raise ValueError('작업을 찾지 못했습니다')
+        url = str(url or '').strip()[:500]
+        if url and not url.startswith(('http://', 'https://')):
+            raise ValueError('주소는 http 로 시작해야 합니다')
+        t['status'] = 'done'
+        t['url'] = url
+        t.setdefault('runs', []).insert(0, {'at': now().isoformat(), 'end': now().isoformat(), 'code': 0,
+                                            'manual': True, 'log': '', 'tail': '직접 발행 완료 ' + url})
+        save(tasks)
+
+
+def content_delete(cid):
+    with CLOCK:
+        c = cload(cid)
+        if c['status'] in ('scheduled', 'drafting'):
+            raise ValueError('예약·초안 작성 중에는 지울 수 없습니다')
+        import shutil
+        shutil.rmtree(_cdir(cid))
+
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -695,6 +894,8 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/contents':
+            return self.send(200, {'items': contents(), 'checks': CHECKS})
         if self.path == '/api/gateway':
             return self.send(200, gateway_view())
         if self.path == '/api/automations':
@@ -726,6 +927,25 @@ class H(BaseHTTPRequestHandler):
         try:
             b = self.body()
             parts = self.path.strip('/').split('/')
+            if parts[:2] == ['api', 'tasks'] and parts[3:] == ['done']:
+                task_done(parts[2], b.get('url'))
+                return self.send(200, {'ok': True})
+            if parts == ['api', 'contents']:
+                return self.send(200, content_create(b))
+            if parts[:2] == ['api', 'contents'] and len(parts) == 4:
+                cid, op = parts[2], parts[3]
+                if op == 'draft':
+                    content_draft(cid)
+                    return self.send(200, {'ok': True})
+                if op == 'update':
+                    return self.send(200, content_update(cid, b))
+                if op == 'approve':
+                    return self.send(200, content_approve(cid, b))
+                if op == 'cancel':
+                    return self.send(200, content_cancel(cid))
+                if op == 'delete':
+                    content_delete(cid)
+                    return self.send(200, {'ok': True})
             if parts == ['api', 'gateway', 'check']:
                 gateway_check()
                 return self.send(200, gateway_view())
@@ -785,6 +1005,11 @@ if __name__ == '__main__':
             if t.get('status') == 'running':
                 t['status'] = 'failed'
         save(ts)
+    for f in CONTENT.glob('*/*/*/meta.json'):
+        c = json.loads(f.read_text())
+        if c.get('status') == 'drafting':
+            c.update(status='idea', error='서버가 다시 켜져 초안 작성이 중단됐습니다')
+            f.write_text(json.dumps(c, ensure_ascii=False, indent=2))
     threading.Thread(target=scheduler, daemon=True).start()
     threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
     print(f'AX 발행 콘솔: http://{HOST}:{PORT}')
