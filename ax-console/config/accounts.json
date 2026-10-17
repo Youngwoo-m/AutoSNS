@@ -28,11 +28,8 @@
           "module": "insta-cardnews"
         },
         "naver_blog": {
-          "secrets": [
-            "NAVER_ID",
-            "NAVER_PW"
-          ],
-          "module": "naver-blog-auto"
+          "module": "naver-blog-auto",
+          "account": "naver"
         },
         "tiktok": {
           "profile": "TIKTOK_PROFILE_URL",
@@ -55,13 +52,15 @@
         "threads": {
           "login": "insta-cardnews 브라우저 세션",
           "module": "youtube-shorts-auto, insta-cardnews"
-        },
-        "kakao": {
-          "secrets": [
-            "KAKAO_TOKEN",
-            "KAKAO_REST_KEY"
-          ]
         }
+      },
+      "naver": {
+        "id": "smuds",
+        "login": "브라우저 세션 (naver-blog-auto/chrome-profile)",
+        "secrets": [
+          "NAVER_ID",
+          "NAVER_PW"
+        ]
       }
     },
     "personal": {
@@ -90,17 +89,38 @@
           "module": "geoai-site, geoai-functions"
         },
         "naver_blog": {
+          "account": "naver",
           "status": "확인 필요"
         },
         "tiktok": {
           "status": "확인 필요"
         },
         "youtube": {
-          "status": "채널 없음"
+          "note": "재난안전과 GeoAI",
+          "module": "naver-blog-auto geoai_daily (영상)"
         },
         "instagram": {
           "status": "계정 없음"
+        },
+        "kakao": {
+          "account": "kakao",
+          "module": "shared kakao_notify (알림)",
+          "note": "발행 알림 수신"
         }
+      },
+      "naver": {
+        "id": "",
+        "login": "아직 연결 전",
+        "secrets": [],
+        "note": "개인 네이버 계정 — ID·로그인 세션 등록 필요"
+      },
+      "kakao": {
+        "login": "카카오 토큰",
+        "secrets": [
+          "KAKAO_TOKEN",
+          "KAKAO_REST_KEY"
+        ],
+        "note": "발행·오류 알림(kakao_notify)을 받는 개인 카카오"
       }
     }
   },

@@ -33,16 +33,16 @@ ACTIONS = {
                        ('naver_jobs', '채용 소식 발행', 'naver-blog-auto/run_jobs.sh')],
         'tiktok': [('tiktok_queue', '틱톡 대기열 발행', 'youtube-shorts-auto/run_tiktok_queue.sh')],
         'x': [('x_promo', 'X 홍보글 발행', 'youtube-shorts-auto/run_x_promo.sh')],
-        'threads': [], 'blogger': [], 'kakao': [],
+        'threads': [], 'blogger': [],
     },
     'personal': {
         'blogger': [('geoai_morning', 'GeoAI 아침 글 발행', 'naver-blog-auto/run_geoai.sh'),
                     ('geoai_evening', 'GeoAI 저녁 글 발행', 'naver-blog-auto/run_geoai_evening.sh')],
         'tistory': [('tistory', '티스토리 발행', 'naver-blog-auto/run_tistory.sh')],
-        'homepage': [], 'naver_blog': [], 'tiktok': [], 'youtube': [], 'instagram': [],
+        'homepage': [], 'naver_blog': [], 'tiktok': [], 'youtube': [], 'instagram': [], 'kakao': [],
     },
 }
-CH_LABEL = {'youtube': '유튜브', 'instagram': '인스타그램', 'naver_blog': '네이버 블로그', 'tiktok': '틱톡',
+CH_LABEL = {'analytics': '성과·색인', 'maintenance': '유지보수', 'youtube': '유튜브', 'instagram': '인스타그램', 'naver_blog': '네이버 블로그', 'tiktok': '틱톡',
             'x': 'X', 'threads': '스레드', 'blogger': '블로거', 'kakao': '카카오', 'tistory': '티스토리',
             'homepage': '개인 홈페이지'}
 
@@ -67,7 +67,8 @@ def meta():
             chans.append({'id': ch, 'label': CH_LABEL.get(ch, ch), 'status': info.get('status', '연결됨'),
                           'detail': info.get('note') or info.get('blog') or info.get('site') or '',
                           'actions': [{k: v for k, v in x.items() if k != 'cmd'} for x in actions_for(acc, ch)]})
-        accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'channels': chans})
+        accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'channels': chans,
+                     'naver': a.get('naver'), 'kakao': a.get('kakao')})
     return {'accounts': accs}
 
 
@@ -305,19 +306,67 @@ def toggle_plugin(pid, on):
 # ---- 예약 목록: 콘솔 예약 + launchd 자동 작업 ----
 import plistlib
 AGENTS = Path.home() / 'Library' / 'LaunchAgents'
-# launchd 작업 → (계정, 채널, 이름)
-LAUNCHD = {
-    'ytshorts.weekly': ('dept', 'youtube', '숏츠 주간 발행'), 'ytcareer.weekly': ('dept', 'youtube', '진로 숏츠 발행'),
-    'ytshorts.trigger': ('dept', 'youtube', '숏츠 발행 트리거 점검'), 'captionbackfill.daily': ('dept', 'youtube', '자막 보충'),
-    'instacards.weekly': ('dept', 'instagram', '카드뉴스 발행'), 'captionautofix.daily': ('dept', 'instagram', '캡션 자동 수정'),
-    'captionrecheck.weekly': ('dept', 'instagram', '캡션 재점검'),
-    'naverblog.weekly': ('dept', 'naver_blog', '블로그 글 발행'), 'blogcareer.daily': ('dept', 'naver_blog', '진로 시리즈 발행'),
-    'naverjobs.weekly': ('dept', 'naver_blog', '채용 소식 발행'), 'naverbuddy.weekly': ('dept', 'naver_blog', '이웃 관리'),
-    'tiktok.queue': ('dept', 'tiktok', '틱톡 대기열 발행'), 'xpromo.daily': ('dept', 'x', 'X 홍보글 발행'),
-    'disastershorts.weekly': ('dept', 'youtube', '재난 숏츠 발행'), 'disastershorts.crosspost': ('dept', 'instagram', '재난 숏츠 교차 게시'),
-    'geoai.daily': ('personal', 'blogger', 'GeoAI 아침 글 발행'), 'geoai.evening': ('personal', 'blogger', 'GeoAI 저녁 글 발행'),
-    'tistory': ('personal', 'tistory', '티스토리 발행'),
-}
+AUTOMATIONS = CONSOLE / 'config' / 'automations.json'
+WD_KO = '일월화수목금토'
+
+
+def catalog():
+    return {j['job']: j for j in _json(AUTOMATIONS, {}).get('jobs', [])}
+
+
+def _when_text(pl):
+    if pl.get('StartInterval'):
+        return f"{pl['StartInterval'] // 60}분마다"
+    iv = pl.get('StartCalendarInterval')
+    if not iv:
+        return '로그인할 때 켜짐' if pl.get('RunAtLoad') else '시각 없음'
+    ivs = iv if isinstance(iv, list) else [iv]
+    groups = {}
+    for i in ivs:
+        t = f"{i.get('Hour', 0):02d}:{i.get('Minute', 0):02d}" if 'Hour' in i else f"매시 {i.get('Minute', 0):02d}분"
+        d = f"매월 {i['Day']}일" if 'Day' in i else WD_KO[i['Weekday'] % 7] if 'Weekday' in i else '매일'
+        groups.setdefault(d, []).append(t)
+    bytimes = {}
+    for d, ts in groups.items():
+        bytimes.setdefault(', '.join(sorted(ts)), []).append(d)
+    order = '매일' + WD_KO
+    return ' / '.join(f"{'·'.join(sorted(ds, key=lambda x: order.find(x[0]) if x[0] in order else 99))} {ts}"
+                      for ts, ds in bytimes.items())
+
+
+def _last_run(pl):
+    """plist 로그와 실행 스크립트가 쓰는 logs/*.log 중 가장 최근에 바뀐 시각."""
+    files = [pl.get('StandardOutPath'), pl.get('StandardErrorPath')]
+    script = Path(pl.get('ProgramArguments', [''])[-1])
+    try:
+        if script.suffix == '.sh':
+            for m in __import__('re').findall(r'((?:\.\./)?logs/[\w.\-]+\.log)', script.read_text(errors='ignore')):
+                files.append(str((script.resolve().parent / m).resolve()))
+    except OSError:
+        pass
+    times = [os.path.getmtime(f) for f in files if f and os.path.exists(f)]
+    return datetime.datetime.fromtimestamp(max(times)).isoformat(timespec='minutes') if times else ''
+
+
+def automations():
+    cat, loaded = catalog(), subprocess.run(['launchctl', 'list'], capture_output=True, text=True).stdout
+    out, start = [], now()
+    for f in sorted(AGENTS.glob('com.smuds.*.plist')):
+        key = f.stem.replace('com.smuds.', '')
+        try:
+            pl = plistlib.loads(f.read_bytes())
+        except Exception:
+            continue
+        info = cat.get(key, {'job': key, 'account': 'common', 'name': key, 'what': '분석 전 작업',
+                             'channels': [['common', 'maintenance']]})
+        iv = pl.get('StartCalendarInterval')
+        nxt = _next_times(iv, start, 40) if iv else []
+        if pl.get('StartInterval'):
+            nxt = [start + datetime.timedelta(seconds=pl['StartInterval'])]
+        out.append({**info, 'on': f.stem in loaded, 'when': _when_text(pl), 'last': _last_run(pl),
+                    'next': [t.isoformat(timespec='minutes') for t in nxt[:3]],
+                    'script': pl.get('ProgramArguments', [''])[-1].replace(str(ROOT) + '/', '')})
+    return out
 
 
 def _next_times(intervals, start, days=8):
@@ -346,27 +395,150 @@ def schedule_view(days=8):
             a = find_action(t['account'], t['channel'], t['action']) or {}
             rows.append({'at': t['schedule'], 'account': t['account'], 'channel': t['channel'], 'title': t['title'],
                          'what': a.get('label', t['action']), 'repeat': t.get('repeat', ''), 'source': 'console', 'id': t['id']})
-    loaded = subprocess.run(['launchctl', 'list'], capture_output=True, text=True).stdout
-    for f in sorted(AGENTS.glob('com.smuds.*.plist')):
-        key = f.stem.replace('com.smuds.', '')
-        if key not in LAUNCHD:
+    for j in automations():
+        if j['account'] == 'common' and not j['next']:
             continue
-        acc, ch, name = LAUNCHD[key]
-        try:
-            pl = plistlib.loads(f.read_bytes())
-        except Exception:
-            continue
-        on = f.stem in loaded
-        iv = pl.get('StartCalendarInterval')
-        times = _next_times(iv, start, days) if iv else []
+        base = {'account': j['account'], 'channel': j['channels'][0][1], 'channels': j['channels'], 'title': j['name'],
+                'what': j['when'], 'source': 'launchd', 'job': j['job'], 'on': j['on']}
+        times = []
+        if j['next'] and '분마다' not in j['when']:
+            iv = plistlib.loads((AGENTS / f"com.smuds.{j['job']}.plist").read_bytes()).get('StartCalendarInterval')
+            times = [t.isoformat(timespec='minutes') for t in _next_times(iv, start, days)]
         if not times:
-            rows.append({'at': '', 'account': acc, 'channel': ch, 'title': name, 'what': '감시형(시각 없음)',
-                         'source': 'launchd', 'job': key, 'on': on})
+            rows.append({**base, 'at': ''})
         for t in times:
-            rows.append({'at': t.isoformat(timespec='minutes'), 'account': acc, 'channel': ch, 'title': name,
-                         'what': Path(pl.get('ProgramArguments', [''])[-1]).name, 'source': 'launchd', 'job': key, 'on': on})
+            rows.append({**base, 'at': t})
     rows.sort(key=lambda r: r['at'] or '9')
     return {'from': start.isoformat(), 'days': days, 'labels': CH_LABEL, 'rows': rows}
+
+
+# ---- 구글 계정 연결: 토큰 상태 확인과 로그인 ----
+GPY = str(ROOT / 'youtube-shorts-auto' / '.venv' / 'bin' / 'python')
+SERVICE_LABEL = {'youtube': '유튜브', 'blogger': '블로거', 'searchconsole': '서치콘솔'}
+# (계정, 서비스) → 기존 인증 스크립트. 이미 토큰이 있으면 묻는 스크립트에는 'y' 를 넣는다.
+LOGIN = {
+    ('dept', 'youtube'): ('youtube-shorts-auto', ['youtube_login_setup.py']),
+    ('personal', 'youtube'): ('youtube-shorts-auto', ['geoai_youtube_auth.py']),
+    ('dept', 'blogger'): ('naver-blog-auto', ['blogger_auth_setup.py']),
+    ('personal', 'blogger'): ('naver-blog-auto', ['geoai_auth_setup.py']),
+    ('dept', 'searchconsole'): ('analytics', ['searchconsole_auth_setup.py', 'dept']),
+    ('personal', 'searchconsole'): ('analytics', ['searchconsole_auth_setup.py']),
+}
+GSTATE = {'checked': None, 'result': {}, 'login': {}}
+
+
+def google_pairs():
+    cfg = _json(ACCOUNTS, {})
+    return [[acc, svc, name] for acc, a in cfg.get('accounts', {}).items()
+            for svc, name in a.get('google', {}).get('tokens', {}).items()]
+
+
+def google_check():
+    p = subprocess.run([GPY, str(CONSOLE / 'app' / 'google_check.py'), json.dumps(google_pairs())],
+                       cwd=str(ROOT), capture_output=True, text=True, timeout=120)
+    if p.returncode != 0:
+        raise ValueError('토큰 확인 실패: ' + (p.stderr.strip().splitlines() or ['알 수 없는 오류'])[-1][:200])
+    GSTATE['result'] = json.loads(p.stdout.strip().splitlines()[-1])
+    GSTATE['checked'] = now().isoformat()
+
+
+def _safe(fn):
+    try:
+        fn()
+    except Exception:
+        pass
+
+
+def google_view():
+    cfg = _json(ACCOUNTS, {})
+    have = secret_names()
+    accs = []
+    for acc, a in cfg.get('accounts', {}).items():
+        svcs = []
+        for svc, name in a.get('google', {}).get('tokens', {}).items():
+            r = GSTATE['result'].get(f'{acc}/{svc}', {})
+            svcs.append({'id': svc, 'label': SERVICE_LABEL.get(svc, svc), 'secret': name, **r,
+                         'login': GSTATE['login'].get(f'{acc}/{svc}')})
+        others = []
+        for kind, label in (('naver', '네이버'), ('kakao', '카카오')):
+            o = a.get(kind)
+            if not o:
+                continue
+            sec = o.get('secrets', [])
+            ok = bool(sec) and have is not None and all(n in have for n in sec)
+            others.append({'label': label, 'id': o.get('id', ''), 'login': o.get('login', ''), 'note': o.get('note', ''),
+                           'secrets': sec, 'ok': ok, 'state': '로그인 정보 저장됨' if ok else '연결 전' if not sec else '비밀값 없음'})
+        accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'services': svcs, 'others': others})
+    return {'checked': GSTATE['checked'], 'accounts': accs}
+
+
+def google_login(acc, svc):
+    key = f'{acc}/{svc}'
+    if (acc, svc) not in LOGIN:
+        raise ValueError('로그인할 수 없는 항목입니다')
+    if (GSTATE['login'].get(key) or {}).get('state') == '진행 중':
+        raise ValueError('이미 로그인 창이 열려 있습니다')
+    folder, args = LOGIN[(acc, svc)]
+    GSTATE['login'][key] = {'state': '진행 중', 'at': now().isoformat(),
+                            'msg': '브라우저에 구글 로그인 창이 열립니다. 계정을 고르고 허용하세요.'}
+
+    def work():
+        py = ROOT / folder / '.venv' / 'bin' / 'python'
+        try:
+            p = subprocess.run([str(py), *args], cwd=str(ROOT / folder), input='y\n',
+                               capture_output=True, text=True, timeout=300)
+            ok = p.returncode == 0
+            msg = ((p.stdout or '') + (p.stderr or '')).strip().splitlines()
+            GSTATE['login'][key] = {'state': '완료' if ok else '실패', 'at': now().isoformat(),
+                                    'msg': (msg[-1] if msg else '')[:200]}
+            if ok:
+                google_check()
+        except subprocess.TimeoutExpired:
+            GSTATE['login'][key] = {'state': '실패', 'at': now().isoformat(), 'msg': '5분 안에 로그인을 마치지 않아 닫았습니다.'}
+        except Exception as e:
+            GSTATE['login'][key] = {'state': '실패', 'at': now().isoformat(), 'msg': str(e)[:200]}
+
+    threading.Thread(target=work, daemon=True).start()
+
+
+# ---- 세명대 AI 게이트웨이 ----
+GW_MODULES = ['youtube-shorts-auto', 'naver-blog-auto', 'insta-cardnews', 'insta-manual']
+GW_STATE = {'checked': None, 'result': None}
+
+
+def gateway_view():
+    have = secret_names() or set()
+    mods = []
+    for m in GW_MODULES:
+        g = _json(ROOT / m / 'config.json', {}).get('llm_gateway') or {}
+        extra = g.get('extra_keys') or []
+        mods.append({'module': m, 'enabled': bool(g.get('enabled')), 'base_url': g.get('base_url', ''),
+                     'model_map': g.get('model_map', {}), 'main_key': '암호화 저장소' if 'LLM_GATEWAY_API_KEY' in have
+                     else ('config.json 평문' if g.get('api_key') else '없음'), 'extra_plain': len(extra),
+                     'extra_store': int(g.get('extra_key_count', 0)) if 'LLM_GATEWAY_EXTRA_KEYS' in have else 0})
+    since = (now() - datetime.timedelta(days=7)).strftime('%Y-%m-%d')
+    use = {'gateway': 0, 'fallback': 0}
+    for m in GW_MODULES + ['analytics']:
+        for f in (ROOT / m / 'logs').glob('*.log'):
+            try:
+                if datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime('%Y-%m-%d') < since:
+                    continue
+                for ln in f.read_text(errors='ignore').splitlines():
+                    if 'LLM: ' not in ln or ln[1:11] < since:
+                        continue
+                    use['fallback' if '전환' in ln or 'Anthropic' in ln else 'gateway'] += 1
+            except OSError:
+                pass
+    return {'modules': mods, 'usage7d': use, 'checked': GW_STATE['checked'], 'result': GW_STATE['result']}
+
+
+def gateway_check():
+    p = subprocess.run([GPY, str(CONSOLE / 'app' / 'gateway_check.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+                       capture_output=True, text=True, timeout=300)
+    if p.returncode != 0:
+        raise ValueError('게이트웨이 확인 실패: ' + (p.stderr.strip().splitlines() or ['알 수 없는 오류'])[-1][:200])
+    GW_STATE['result'] = json.loads(p.stdout.strip().splitlines()[-1])
+    GW_STATE['checked'] = now().isoformat()
 
 
 class H(BaseHTTPRequestHandler):
@@ -398,6 +570,12 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/gateway':
+            return self.send(200, gateway_view())
+        if self.path == '/api/automations':
+            return self.send(200, automations())
+        if self.path == '/api/google':
+            return self.send(200, google_view())
         if self.path == '/api/schedule':
             return self.send(200, schedule_view())
         if self.path == '/api/settings':
@@ -418,6 +596,15 @@ class H(BaseHTTPRequestHandler):
         try:
             b = self.body()
             parts = self.path.strip('/').split('/')
+            if parts == ['api', 'gateway', 'check']:
+                gateway_check()
+                return self.send(200, gateway_view())
+            if parts == ['api', 'google', 'check']:
+                google_check()
+                return self.send(200, google_view())
+            if parts == ['api', 'google', 'login']:
+                google_login(str(b.get('account')), str(b.get('service')))
+                return self.send(200, google_view())
             if parts == ['api', 'settings', 'accounts']:
                 save_accounts(b)
                 return self.send(200, {'ok': True})
@@ -464,5 +651,6 @@ if __name__ == '__main__':
                 t['status'] = 'failed'
         save(ts)
     threading.Thread(target=scheduler, daemon=True).start()
+    threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
     print(f'AX 발행 콘솔: http://{HOST}:{PORT}')
     ThreadingHTTPServer((HOST, PORT), H).serve_forever()

@@ -71,7 +71,23 @@ def apply(cfg, warn=print):
                 d[k] = {}
             d = d[k]
         d[keys[-1]] = v
+    _apply_extra_keys(cfg, vals)
     return cfg
+
+
+# 게이트웨이 추가 키는 목록이라 MAP 에 못 넣는다. 저장소에는 JSON 목록 하나로 두고, 각 config 의
+# llm_gateway.extra_key_count(모듈마다 쓰는 개수)만큼 앞에서부터 채운다(2026-10-18 평문에서 옮김).
+EXTRA_KEYS = "LLM_GATEWAY_EXTRA_KEYS"
+
+
+def _apply_extra_keys(cfg, vals):
+    raw = vals.get(EXTRA_KEYS)
+    g = cfg.get("llm_gateway")
+    if not raw or not isinstance(g, dict) or g.get("extra_keys"):
+        return
+    import json
+    keys = json.loads(raw) if isinstance(raw, str) else list(raw)
+    g["extra_keys"] = keys[:int(g.get("extra_key_count", len(keys)))]
 
 
 def strip(cfg):
@@ -84,4 +100,7 @@ def strip(cfg):
             d = d.get(k) if isinstance(d, dict) else None
         if isinstance(d, dict) and d.get(keys[-1]):
             d[keys[-1]] = ""
+    if isinstance(out.get("llm_gateway"), dict) and out["llm_gateway"].get("extra_keys"):
+        out["llm_gateway"]["extra_key_count"] = len(out["llm_gateway"]["extra_keys"])
+        out["llm_gateway"]["extra_keys"] = []
     return out

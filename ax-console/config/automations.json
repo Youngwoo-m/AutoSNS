@@ -1,0 +1,411 @@
+{
+  "_설명": "launchd 자동 작업 분석 결과(2026-10-18). job = com.smuds.<job>.plist. channels 의 첫 항목이 주 채널이고 나머지는 같은 실행에서 함께 올리는 채널이다. 시각은 plist 에서 직접 읽는다.",
+  "jobs": [
+    {
+      "job": "ytshorts.weekly",
+      "account": "dept",
+      "name": "재난 뉴스 숏츠 발행",
+      "what": "뉴스로 대본 생성 → 프레임·TTS·영상 → 학과 유튜브 숏츠 공개, 이어서 인스타 릴·스레드·X 교차 게시, 틱톡 대기열 등록",
+      "entry": "youtube-shorts-auto/run_weekly.py",
+      "channels": [
+        [
+          "dept",
+          "youtube"
+        ],
+        [
+          "dept",
+          "instagram"
+        ],
+        [
+          "dept",
+          "threads"
+        ],
+        [
+          "dept",
+          "x"
+        ],
+        [
+          "dept",
+          "tiktok"
+        ]
+      ]
+    },
+    {
+      "job": "ytcareer.weekly",
+      "account": "dept",
+      "name": "진로·퀴즈 숏츠 발행",
+      "what": "publish_schedule.json 에서 예정일이 된 1편을 유튜브·인스타 릴에 공개하고 스레드·X 홍보, 틱톡 대기열 등록 (주 1편)",
+      "entry": "youtube-shorts-auto/publish_career.py",
+      "channels": [
+        [
+          "dept",
+          "youtube"
+        ],
+        [
+          "dept",
+          "instagram"
+        ],
+        [
+          "dept",
+          "threads"
+        ],
+        [
+          "dept",
+          "x"
+        ],
+        [
+          "dept",
+          "tiktok"
+        ]
+      ]
+    },
+    {
+      "job": "ytshorts.trigger",
+      "account": "dept",
+      "name": "재난 속보 즉시 숏츠",
+      "what": "최근 기사에서 큰 재난(여러 언론 보도 + 특보·대피 등)이 잡히면 주간 일정을 기다리지 않고 숏츠를 바로 올리고 스레드·X 에 알림. 해당 사건이 없으면 아무것도 안 함",
+      "entry": "youtube-shorts-auto/check_trigger.py",
+      "channels": [
+        [
+          "dept",
+          "youtube"
+        ],
+        [
+          "dept",
+          "threads"
+        ],
+        [
+          "dept",
+          "x"
+        ]
+      ]
+    },
+    {
+      "job": "captionbackfill.daily",
+      "account": "dept",
+      "name": "유튜브 자막 보충",
+      "what": "자동자막만 있는 기존 영상에 대본 자막을 하루 10편씩 올림",
+      "entry": "youtube-shorts-auto/backfill_captions.py",
+      "channels": [
+        [
+          "dept",
+          "youtube"
+        ]
+      ]
+    },
+    {
+      "job": "disastershorts.weekly",
+      "account": "dept",
+      "name": "재난 숏츠 제작·예약 업로드",
+      "what": "다가오는 화요일 편을 만들어 화 08:00 예약 공개로 유튜브에 올림. 이미 올렸으면 아무것도 안 함(일·월 재시도). 틱톡 대기열 등록",
+      "entry": "/Volumes/USB256/shorts-disaster/tools/weekly.py",
+      "channels": [
+        [
+          "dept",
+          "youtube"
+        ],
+        [
+          "dept",
+          "tiktok"
+        ]
+      ]
+    },
+    {
+      "job": "disastershorts.crosspost",
+      "account": "dept",
+      "name": "재난 숏츠 교차 게시",
+      "what": "화요일 공개된 재난 숏츠를 인스타 릴·학과 블로거·네이버 블로그·스레드에 함께 올림. 이미 올린 채널은 건너뜀",
+      "entry": "/Volumes/USB256/shorts-disaster/tools/crosspost.py",
+      "channels": [
+        [
+          "dept",
+          "instagram"
+        ],
+        [
+          "dept",
+          "blogger"
+        ],
+        [
+          "dept",
+          "naver_blog"
+        ],
+        [
+          "dept",
+          "threads"
+        ]
+      ]
+    },
+    {
+      "job": "tiktok.queue",
+      "account": "dept",
+      "name": "틱톡 대기열 게시",
+      "what": "유튜브 공개 30분 뒤 틱톡(@smuds2025)에 올림. 틱톡끼리 3시간 이상 간격. 개인 GeoAI 숏츠도 이 학과 틱톡으로 나감",
+      "entry": "youtube-shorts-auto/tiktok_queue.py",
+      "channels": [
+        [
+          "dept",
+          "tiktok"
+        ]
+      ],
+      "note": "2026-10-17 13:30 사용자 요청으로 중지(launchd bootout+disable, tiktok_web.daily=false). 캡션 입력칸을 못 찾는 실패가 반복된 뒤. 다시 켜려면 둘 다 되돌린다."
+    },
+    {
+      "job": "xpromo.daily",
+      "account": "dept",
+      "name": "X 학과 소개 영상",
+      "what": "학과 소개 영상 대기열에서 하루 1편을 X 에 올림. 대기열이 비면 조용히 끝남",
+      "entry": "youtube-shorts-auto/x_promo.py",
+      "channels": [
+        [
+          "dept",
+          "x"
+        ]
+      ]
+    },
+    {
+      "job": "instacards.weekly",
+      "account": "dept",
+      "name": "인스타 카드뉴스 발행",
+      "what": "카드 문구 생성 → Gamma 카드 이미지 → 인스타 캐러셀 게시",
+      "entry": "insta-cardnews/run_weekly.py",
+      "channels": [
+        [
+          "dept",
+          "instagram"
+        ]
+      ]
+    },
+    {
+      "job": "captionautofix.daily",
+      "account": "dept",
+      "name": "인스타 빈 캡션 복원",
+      "what": "최근 14일 게시물 중 캡션이 빈 채로 올라간 것을 찾아 캡션을 채움",
+      "entry": "insta-cardnews/ig_caption_restore.py",
+      "channels": [
+        [
+          "dept",
+          "instagram"
+        ]
+      ]
+    },
+    {
+      "job": "captionrecheck.weekly",
+      "account": "dept",
+      "name": "인스타 캡션 문구 보강",
+      "what": "기존 게시물 캡션 끝에 저장·팔로우 유도 문구를 덧붙임(최대 150건 점검)",
+      "entry": "insta-cardnews/ig_caption_boost.py",
+      "channels": [
+        [
+          "dept",
+          "instagram"
+        ]
+      ]
+    },
+    {
+      "job": "naverblog.weekly",
+      "account": "dept",
+      "name": "블로그 요일별 글 발행",
+      "what": "요일별 에디션(월·금 진로, 화 산업, 수 재난안전, 목 재해영향평가, 토 GeoAI, 일 생활안전) 글을 네이버 블로그에 올리고 같은 글을 블로거(smuds2026)에도 올림",
+      "entry": "naver-blog-auto/run_weekly.py",
+      "channels": [
+        [
+          "dept",
+          "naver_blog"
+        ],
+        [
+          "dept",
+          "blogger"
+        ]
+      ]
+    },
+    {
+      "job": "blogcareer.daily",
+      "account": "dept",
+      "name": "블로거 진로·자격증 시리즈",
+      "what": "진로 8편 → 자격증 16편 → 입시 순서로 블로거(smuds2026)에 하루 1편",
+      "entry": "naver-blog-auto/career_series.py",
+      "channels": [
+        [
+          "dept",
+          "blogger"
+        ]
+      ]
+    },
+    {
+      "job": "naverjobs.weekly",
+      "account": "dept",
+      "name": "재난안전 채용정보",
+      "what": "고용24 공고를 골라 요약해 네이버 블로그 '채용정보'에 올리고, 같은 공고를 인스타 카드뉴스와 티스토리(na-geoai)에도 올림",
+      "entry": "naver-blog-auto/jobs_work24.py",
+      "channels": [
+        [
+          "dept",
+          "naver_blog"
+        ],
+        [
+          "dept",
+          "instagram"
+        ],
+        [
+          "personal",
+          "tistory"
+        ]
+      ]
+    },
+    {
+      "job": "naverbuddy.weekly",
+      "account": "dept",
+      "name": "네이버 서로이웃 신청",
+      "what": "재난안전·지역 블로거에게 서로이웃을 하루 5건 이내로 신청하고 결과를 집계",
+      "entry": "naver-blog-auto/naver_buddy_request.py",
+      "channels": [
+        [
+          "dept",
+          "naver_blog"
+        ]
+      ]
+    },
+    {
+      "job": "geoai.daily",
+      "account": "personal",
+      "name": "GeoAI 아침 글·영상",
+      "what": "geoaina 블로거에 GeoAI 글 1편(화요일은 뉴스 브리핑, 나머지는 개념 시리즈), AI 아나운서 영상을 개인 유튜브에 올리고 유튜브 게시물도 작성. 영상은 학과 틱톡 대기열로도 감",
+      "entry": "naver-blog-auto/geoai_daily.py --go",
+      "channels": [
+        [
+          "personal",
+          "blogger"
+        ],
+        [
+          "personal",
+          "youtube"
+        ],
+        [
+          "dept",
+          "tiktok"
+        ]
+      ]
+    },
+    {
+      "job": "geoai.evening",
+      "account": "personal",
+      "name": "GeoAI 저녁 글",
+      "what": "geoaina 블로거에 영상 없이 글 1편, 학과 스레드에 홍보",
+      "entry": "naver-blog-auto/geoai_daily.py --go --no-video",
+      "channels": [
+        [
+          "personal",
+          "blogger"
+        ],
+        [
+          "dept",
+          "threads"
+        ]
+      ]
+    },
+    {
+      "job": "tistory",
+      "account": "personal",
+      "name": "티스토리 요약 교차 게시",
+      "what": "geoaina 새 글을 티스토리(na-geoai)에 요약 + 원문 링크로 올림(중복 문서 방지)",
+      "entry": "naver-blog-auto/tistory_crosspost.py",
+      "channels": [
+        [
+          "personal",
+          "tistory"
+        ]
+      ]
+    },
+    {
+      "job": "indexcheck.daily",
+      "account": "common",
+      "name": "구글 색인 점검",
+      "what": "사이트맵 주소가 구글에 색인됐는지 서치콘솔 URL 검사 API 로 확인",
+      "entry": "analytics/check_indexing.py",
+      "channels": [
+        [
+          "common",
+          "analytics"
+        ]
+      ]
+    },
+    {
+      "job": "report.weekly",
+      "account": "common",
+      "name": "주간 성과 보고서",
+      "what": "유튜브·블로그·블로거·X·네이버 조회수를 모아 주간 보고서를 만들어 메일로 보냄",
+      "entry": "analytics/run_weekly_report.sh",
+      "channels": [
+        [
+          "common",
+          "analytics"
+        ]
+      ]
+    },
+    {
+      "job": "report.monthly",
+      "account": "common",
+      "name": "월간 성과 보고서",
+      "what": "월간 수집 → 보고서(HWPX 포함) 작성·발송",
+      "entry": "analytics/run_monthly_report.sh",
+      "channels": [
+        [
+          "common",
+          "analytics"
+        ]
+      ]
+    },
+    {
+      "job": "promoreport.monthly",
+      "account": "common",
+      "name": "온라인 홍보활동 보고서",
+      "what": "매일 깨어나지만 말일에만 그달 홍보활동 보고서를 만듦",
+      "entry": "analytics/run_promo_report.sh",
+      "channels": [
+        [
+          "common",
+          "analytics"
+        ]
+      ]
+    },
+    {
+      "job": "cacheprune.daily",
+      "account": "common",
+      "name": "크롬 캐시 정리",
+      "what": "쓰지 않는 chrome-profile 의 캐시 폴더를 지워 디스크 확보",
+      "entry": "maintenance/prune_chrome_caches.sh",
+      "channels": [
+        [
+          "common",
+          "maintenance"
+        ]
+      ]
+    },
+    {
+      "job": "disastershorts.cleanup",
+      "account": "common",
+      "name": "재난 숏츠 음성 정리",
+      "what": "공개 7일이 지난 편의 나레이션 음성 파일과 Voicebox 기록을 지움",
+      "entry": "/Volumes/USB256/shorts-disaster/tools/cleanup.py",
+      "channels": [
+        [
+          "common",
+          "maintenance"
+        ]
+      ]
+    },
+    {
+      "job": "axconsole",
+      "account": "common",
+      "name": "AX 발행 콘솔 서버",
+      "what": "이 콘솔을 항상 켜 둠(꺼지면 다시 켬)",
+      "entry": "ax-console/app/server.py",
+      "channels": [
+        [
+          "common",
+          "maintenance"
+        ]
+      ]
+    }
+  ]
+}
