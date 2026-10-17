@@ -27,7 +27,18 @@ def load_config():
     eds = cfg.get("editions", {})
     if edition and edition in eds:
         cfg = _deep_merge(cfg, eds[edition])
-    return cfg
+    return _apply_secrets(cfg)
+
+
+# 비밀값은 config.json 에 두지 않고 암호화 저장소(AutoSNS/secrets.env.enc, 열쇠는 키체인)에서
+# 채운다(2026-10-17). 칸 목록은 shared/secret_config.py 의 MAP.
+def _apply_secrets(cfg):
+    import sys
+    root = os.path.dirname(BASE_DIR)
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import secret_config
+    return secret_config.apply(cfg, warn=log)
 
 
 def _deep_merge(base, over):

@@ -3,3 +3,4 @@ selenium>=4.27.0
 pyperclip>=1.9.0
 Pillow>=10.0.0
 pypdf
+cryptography>=42  # shared/secret_env.py(암호화 환경설정)

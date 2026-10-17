@@ -56,16 +56,49 @@ def load_config():
     # 예전 이름 호환: local_tags → always_tags
     if not cfg.get("always_tags") and saved.get("local_tags"):
         cfg["always_tags"] = saved["local_tags"]
-    return cfg
+    sc = _secret_config()
+    return sc.apply(cfg, warn=log) if sc else cfg
+
+
+def _secret_config():
+    """AutoSNS 안에서 돌 때만 쓰는 암호화 저장소(shared/secret_config.py).
+    이 앱만 따로 떼어 쓰면 없으니, 그때는 예전처럼 config.json 에 키를 둔다."""
+    import sys
+    root = os.path.dirname(BASE_DIR)
+    if not os.path.exists(os.path.join(root, "shared", "secret_config.py")):
+        return None
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    try:
+        from shared import secret_config
+        return secret_config
+    except Exception:
+        return None
 
 
 def save_config(patch):
     """화면에서 넘어온 설정을 기존 값 위에 병합해 저장한다."""
     current = load_config()
     cfg = _merge(current, patch or {})
+    on_disk = cfg
+    sc = _secret_config()
+    if sc:
+        # 비밀값은 파일 대신 저장소에 둔다. 화면에서 새 키를 넣으면 저장소 값을 바꾼다 —
+        # 이 키는 AutoSNS 자동 발행과 같이 쓰는 공용 키다. '지우기'는 저장소의 공용 키를
+        # 지우지 않는다(다른 발행이 멈추므로). 저장소를 못 쓰면 예전처럼 파일에 둔다.
+        try:
+            from shared import secret_env
+            new = {name: v for keys, name in sc.MAP.items()
+                   if (v := sc._get(patch or {}, keys))}
+            if new:
+                secret_env.update(new)
+                log(f"비밀값 {len(new)}개를 암호화 저장소에 저장했습니다.")
+            on_disk = sc.strip(cfg)
+        except BaseException as e:
+            log(f"⚠ 암호화 저장소에 쓰지 못함({type(e).__name__}) — config.json 에 저장합니다")
     tmp = CONFIG_PATH + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, ensure_ascii=False, indent=2)
+        json.dump(on_disk, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CONFIG_PATH)      # 쓰다 만 파일이 남지 않도록 원자적 교체
     try:
         os.chmod(CONFIG_PATH, 0o600)  # API 키가 들어가므로 본인만 읽게

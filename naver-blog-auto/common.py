@@ -32,53 +32,14 @@ def load_config():
 
 
 # 비밀값은 config.json 에 두지 않고 암호화 저장소(AutoSNS/secrets.env.enc, 열쇠는 키체인)에서
-# 채운다(2026-10-17). config.json 쪽 값은 비워 둔다 — 저장소에 없을 때만 config 값이 쓰인다.
-# 이름은 `python -m shared.secret_env names` 로 본다.
-SECRET_MAP = {
-    ("anthropic_api_key",): "ANTHROPIC_API_KEY",
-    ("gamma_api_key",): "GAMMA_API_KEY",
-    ("llm_gateway", "api_key"): "LLM_GATEWAY_API_KEY",
-    ("pexels", "api_key"): "PEXELS_API_KEY",
-    ("pixabay", "api_key"): "PIXABAY_API_KEY",
-    ("news", "naver_search", "client_id"): "NAVER_SEARCH_CLIENT_ID",
-    ("news", "naver_search", "client_secret"): "NAVER_SEARCH_CLIENT_SECRET",
-}
-_SECRETS = {"mtime": None, "vals": {}}
-
-
-def secrets():
-    """암호화 저장소 값(dict). 파일이 바뀔 때만 다시 푼다(load_config 가 자주 불린다).
-    열지 못하면 {} — 그때는 config.json 값으로 돌아간다."""
-    root = os.path.dirname(BASE_DIR)
-    path = os.path.join(root, "secrets.env.enc")
-    try:
-        m = os.path.getmtime(path)
-    except OSError:
-        return {}
-    if _SECRETS["mtime"] != m:
-        try:
-            import sys
-            if root not in sys.path:
-                sys.path.insert(0, root)
-            from shared import secret_env
-            _SECRETS["vals"], _SECRETS["mtime"] = secret_env.read(), m
-        except BaseException as e:          # 키체인 거부는 SystemExit 로 온다
-            log(f"⚠ 암호화 환경설정을 열지 못함({type(e).__name__}) — config.json 값으로 진행")
-            _SECRETS["vals"], _SECRETS["mtime"] = {}, m
-    return _SECRETS["vals"]
-
-
+# 채운다(2026-10-17). 칸 목록은 shared/secret_config.py 의 MAP.
 def _apply_secrets(cfg):
-    vals = secrets()
-    for keys, name in SECRET_MAP.items():
-        v = vals.get(name)
-        if not v:
-            continue
-        d = cfg
-        for k in keys[:-1]:
-            d = d.setdefault(k, {})
-        d[keys[-1]] = v
-    return cfg
+    import sys
+    root = os.path.dirname(BASE_DIR)
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import secret_config
+    return secret_config.apply(cfg, warn=log)
 
 
 def _deep_merge(base, over):

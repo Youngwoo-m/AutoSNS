@@ -2,3 +2,4 @@ anthropic>=0.40.0
 selenium>=4.27.0
 imageio-ffmpeg>=0.5.1
 requests
+cryptography>=42  # shared/secret_env.py(암호화 환경설정)

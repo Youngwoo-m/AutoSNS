@@ -7,3 +7,4 @@ google-api-python-client>=2.100.0
 google-auth-oauthlib>=1.2.0
 google-auth-httplib2>=0.2.0
 requests>=2.31.0
+cryptography>=42  # shared/secret_env.py(암호화 환경설정)

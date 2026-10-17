@@ -3,3 +3,4 @@ selenium>=4.27.0
 anthropic>=0.40.0
 pillow>=10.0.0
 requests>=2.31.0
+cryptography>=42  # shared/secret_env.py(암호화 환경설정)
