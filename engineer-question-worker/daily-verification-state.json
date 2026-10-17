@@ -1,0 +1,20 @@
+{
+  "2026-10-17": {
+    "date": "2026-10-17",
+    "status": "preparation_missing",
+    "checked_at": "2026-10-17T01:06:13.469052+00:00",
+    "last_completed_day": 9,
+    "last_completed_blog_url": "https://na-geoai.tistory.com/85",
+    "next_day": 10,
+    "next_field": "관련 제도·실무",
+    "cycle": 1,
+    "type": "논술형",
+    "evidence": "로컬 10일차 원고·PDF·영상 상태 없음. 로그인 복구 후 티스토리 글 관리의 최신 글은 /94이며 오늘 하루 한 문제 없음. 9일차 /85와 영상은 완료 상태.",
+    "scheduler_active": true,
+    "preparation_hour_kst": 6,
+    "verification_hour_kst": 8,
+    "cause": "사전 제작 결과와 예약 저장 기록을 찾지 못함. 미실행 원인은 확인되지 않음.",
+    "recovery_action": "확인 실행에서는 새 문제 생성 금지 지침을 적용. 기존 완료물 재발행·재전송하지 않음. 다음 정기 사전 제작에서 10일차부터 이어감.",
+    "notification_sent": true
+  }
+}
