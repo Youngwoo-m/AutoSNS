@@ -35,7 +35,25 @@ def _gh_bin():
     return "gh"
 
 
+def _owner_env():
+    """저장소 주인 계정의 토큰으로 gh 를 부른다. gh 기본 계정을 바꿔도(콘솔에서 전환)
+    업로드가 깨지지 않게 하려는 것(2026-10-17 기본 계정이 Youngwoo-m 으로 바뀐 뒤
+    SMUDS-m/geoai-assets 업로드가 404 로 모두 실패했다). 토큰을 못 얻으면 기본 계정으로 간다."""
+    a = _acfg()
+    user = a.get("account") or (a.get("repo") or "").split("/")[0]
+    if not user:
+        return None
+    t = subprocess.run([_gh_bin(), "auth", "token", "--user", user], capture_output=True, text=True, timeout=30)
+    if t.returncode != 0 or not t.stdout.strip():
+        return None
+    return {**os.environ, "GH_TOKEN": t.stdout.strip()}
+
+
 def _gh(args, **kw):
+    if "env" not in kw:
+        env = _owner_env()
+        if env:
+            kw["env"] = env
     p = subprocess.run([_gh_bin()] + args, capture_output=True, text=True, timeout=120, **kw)
     if p.returncode != 0:
         raise RuntimeError(f"gh {' '.join(args[:3])} 실패: {(p.stderr or p.stdout)[:200]}")

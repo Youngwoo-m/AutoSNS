@@ -160,8 +160,13 @@ function drawG(){
      ${(x.targets||[]).map(t=>`<div>${esc(t)}</div>`).join('')}
      ${L?`<div class="lg ${L.state=='실패'?'bad':L.state=='완료'?'ok':'mut'}">로그인 ${esc(L.state)} · ${esc(L.msg||'')}</div>`:''}</div>
      <button class="gbtn" ${L&&L.state=='진행 중'?'disabled':''} onclick="gLogin('${a.id}','${x.id}','${esc(a.label)}','${esc(x.label)}')">${x.ok?'다시 로그인':'로그인'}</button></div>`}).join('')}
+   ${a.github?`<div class="svc"><div>GitHub<div class="mut">gh CLI</div></div><div class="tg">${a.github.accounts.map(g=>`<div style="display:flex;gap:8px;align-items:center;padding:3px 0"><span style="min-width:110px">${esc(g.id)}</span>
+      ${g.active?'<span class="ok">기본 계정</span>':g.logged_in?`<button class="gbtn" onclick="ghSwitch('${esc(g.id)}')">기본으로 전환</button>`:'<span class="mut">gh 로그인 필요</span>'}</div><div class="mut" style="font-size:11px">${esc(g.use||'')}</div>`).join('')}
+      <div class="mut" style="font-size:12px;margin-top:4px">${esc(a.github.note)} · 새 계정 추가는 터미널에서 gh auth login</div></div><span></span></div>`:''}
    ${(a.others||[]).map(o=>`<div class="svc"><div>${esc(o.label)}<div class="mut">${esc(o.id||'')}</div></div>
      <div class="tg"><span class="${o.ok?'ok':'mut'}">${esc(o.state)}</span> <span class="mut">· ${esc(o.login)}</span>${o.note?`<div class="mut" style="font-size:12px">${esc(o.note)}</div>`:''}</div><span></span></div>`).join('')}</div>`).join('')}</div>`}
+async function ghSwitch(u){if(!confirm(`gh 기본 계정을 ${u} 로 바꿉니다.\n이후 gh 를 쓰는 작업은 이 계정으로 실행됩니다(GeoAI 이미지 업로드는 영향 없음).`))return;
+  try{GV=await api('/api/github/switch',{user:u});drawG()}catch(e){alert(e.message)}}
 async function gCheck(b){b.disabled=true;b.textContent='확인 중…';try{GV=await api('/api/google/check',{});drawG()}catch(e){alert(e.message)}}
 async function gLogin(a,s,al,sl){if(!confirm(`${al} 계정의 ${sl} 로그인 창을 엽니다.\n브라우저에서 ${al} 구글 계정을 골라야 합니다.`))return;
   try{GV=await api('/api/google/login',{account:a,service:s});drawG();loadG()}catch(e){alert(e.message)}}

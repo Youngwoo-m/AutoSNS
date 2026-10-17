@@ -61,6 +61,11 @@
           "NAVER_ID",
           "NAVER_PW"
         ]
+      },
+      "netlify": {
+        "id": "semyungds@gmail.com",
+        "login": "netlify CLI (보조 계정)",
+        "note": "smuds.netlify.app (틱톡 앱 등록 페이지)"
       }
     },
     "personal": {
@@ -121,6 +126,29 @@
           "KAKAO_REST_KEY"
         ],
         "note": "발행·오류 알림(kakao_notify)을 받는 개인 카카오"
+      },
+      "github": {
+        "login": "gh CLI (키체인) — 기본 계정을 전환해 쓴다",
+        "note": "세 계정 모두 개인 구글 계정으로 가입",
+        "accounts": [
+          {
+            "id": "Youngwoo-m",
+            "use": "개인 작업 기본"
+          },
+          {
+            "id": "SMUDS-m",
+            "use": "geoai-assets(GeoAI 이미지)·insta-cardnews-publisher 저장소 소유. 이미지 업로드는 기본 계정과 상관없이 이 계정 토큰을 씀"
+          },
+          {
+            "id": "surveymadang",
+            "use": "설문마당"
+          }
+        ]
+      },
+      "netlify": {
+        "id": "ds2eye@gmail.com",
+        "login": "netlify CLI (기본 계정)",
+        "note": "개인 구글 계정으로 가입. geoai-na.netlify.app, 기술사 질문 접수 양식"
       }
     }
   },

@@ -442,6 +442,39 @@ def google_check():
     GSTATE['checked'] = now().isoformat()
 
 
+CLI_LOGINS = {}
+
+
+def cli_logins():
+    """gh·netlify CLI 에 로그인된 계정 이름(토큰은 읽지 않는다)."""
+    gh = set()
+    for exe in ('/opt/homebrew/bin/gh', '/usr/local/bin/gh'):
+        if os.path.exists(exe):
+            out = subprocess.run([exe, 'auth', 'status'], capture_output=True, text=True).stdout
+            out += subprocess.run([exe, 'auth', 'status'], capture_output=True, text=True).stderr
+            gh = set(__import__('re').findall(r'account (\S+)', out))
+            act = __import__('re').search(r'account (\S+)[^\n]*\n\s*- Active account: true', out)
+            CLI_LOGINS['github_active'] = act.group(1) if act else None
+            CLI_LOGINS['gh_bin'] = exe
+            break
+    nl = {u.get('email') for u in _json(Path.home() / 'Library' / 'Preferences' / 'netlify' / 'config.json', {})
+          .get('users', {}).values()}
+    CLI_LOGINS.update(github=gh, netlify=nl)
+
+
+def github_switch(user):
+    cli_logins()
+    known = {x['id'] for a in _json(ACCOUNTS, {}).get('accounts', {}).values() for x in (a.get('github') or {}).get('accounts', [])}
+    if user not in known:
+        raise ValueError('설정에 없는 GitHub 계정입니다')
+    if user not in CLI_LOGINS.get('github', set()):
+        raise ValueError(f'{user} 는 아직 gh 에 로그인돼 있지 않습니다. 터미널에서 gh auth login 으로 먼저 추가하세요')
+    p = subprocess.run([CLI_LOGINS['gh_bin'], 'auth', 'switch', '--hostname', 'github.com', '--user', user],
+                       capture_output=True, text=True, timeout=30)
+    if p.returncode != 0:
+        raise ValueError((p.stderr or p.stdout).strip()[:200])
+
+
 def _safe(fn):
     try:
         fn()
@@ -452,6 +485,7 @@ def _safe(fn):
 def google_view():
     cfg = _json(ACCOUNTS, {})
     have = secret_names()
+    cli_logins()
     accs = []
     for acc, a in cfg.get('accounts', {}).items():
         svcs = []
@@ -460,15 +494,26 @@ def google_view():
             svcs.append({'id': svc, 'label': SERVICE_LABEL.get(svc, svc), 'secret': name, **r,
                          'login': GSTATE['login'].get(f'{acc}/{svc}')})
         others = []
-        for kind, label in (('naver', '네이버'), ('kakao', '카카오')):
+        for kind, label in (('naver', '네이버'), ('kakao', '카카오'), ('netlify', 'Netlify')):
             o = a.get(kind)
             if not o:
                 continue
             sec = o.get('secrets', [])
             ok = bool(sec) and have is not None and all(n in have for n in sec)
+            if kind in ('github', 'netlify'):
+                ok = o.get('id', '') in CLI_LOGINS.get(kind, set())
+                sec = ['CLI']
+            state = ('CLI 로그인됨' if ok else 'CLI 로그인 안 됨') if sec == ['CLI'] else \
+                ('로그인 정보 저장됨' if ok else '연결 전' if not sec else '비밀값 없음')
             others.append({'label': label, 'id': o.get('id', ''), 'login': o.get('login', ''), 'note': o.get('note', ''),
-                           'secrets': sec, 'ok': ok, 'state': '로그인 정보 저장됨' if ok else '연결 전' if not sec else '비밀값 없음'})
-        accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'services': svcs, 'others': others})
+                           'secrets': sec, 'ok': ok, 'state': state})
+        gh = None
+        if a.get('github'):
+            gh = {'note': a['github'].get('note', ''), 'accounts': [
+                {**x, 'logged_in': x['id'] in CLI_LOGINS.get('github', set()), 'active': x['id'] == CLI_LOGINS.get('github_active')}
+                for x in a['github'].get('accounts', [])]}
+        accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'services': svcs, 'others': others,
+                     'github': gh})
     return {'checked': GSTATE['checked'], 'accounts': accs}
 
 
@@ -601,6 +646,9 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, gateway_view())
             if parts == ['api', 'google', 'check']:
                 google_check()
+                return self.send(200, google_view())
+            if parts == ['api', 'github', 'switch']:
+                github_switch(str(b.get('user', '')))
                 return self.send(200, google_view())
             if parts == ['api', 'google', 'login']:
                 google_login(str(b.get('account')), str(b.get('service')))
