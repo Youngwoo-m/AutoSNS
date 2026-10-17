@@ -91,3 +91,4 @@ youtube-shorts-auto/thumbnail_backfill.json
 # 암호화된 환경설정(열쇠는 키체인) — 암호문이라도 저장소엔 올리지 않는다
 secrets.env.enc
 secrets.env.enc.tmp
+youtube-shorts-auto/comment_backfill.json
