@@ -87,3 +87,7 @@ chrome-profile-tistory/
 # 엔지니어 시리즈 영상 생성물(음성·영상·썸네일) — 다시 만들 수 있다
 engineer-video-output/
 youtube-shorts-auto/thumbnail_backfill.json
+
+# 암호화된 환경설정(열쇠는 키체인) — 암호문이라도 저장소엔 올리지 않는다
+secrets.env.enc
+secrets.env.enc.tmp
