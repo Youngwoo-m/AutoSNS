@@ -6,7 +6,7 @@ deploy.py(zip 업로드)는 함수를 올리지 못해서, 기상특보 중계 �
   python3 deploy_full.py          # 배포
   python3 deploy_full.py --check  # 무엇이 올라갈지만 보고 끝(배포 안 함)
 
-함수가 쓰는 키(공공데이터포털 DATA_GO_KR_KEY, 카카오 KAKAO_REST_KEY)는 AutoSNS/.env 에서 읽어
+함수가 쓰는 키(공공데이터포털 DATA_GO_KR_KEY, 카카오 KAKAO_REST_KEY)는 암호화 저장소(secrets.env.enc)에서 읽어
 Netlify 사이트 환경변수로 한 번 넣어 둔다 — 사이트 파일에는 들어가지 않는다.
 """
 import hashlib, io, json, sys, time, urllib.parse, zipfile
@@ -14,7 +14,6 @@ from pathlib import Path
 from netlify_api import api, SITE_ID, SITE_DIR
 
 FUNC_DIR = SITE_DIR.parent / "geoai-functions"
-ENV_FILE = SITE_DIR.parent / ".env"
 
 
 def site_files():
@@ -41,16 +40,18 @@ ENV_KEYS = ("DATA_GO_KR_KEY", "KAKAO_REST_KEY")   # 기상특보(wthr) · 카카
 
 
 def ensure_env():
-    """함수용 환경변수(ENV_KEYS)가 사이트에 없으면 AutoSNS/.env 값으로 넣는다."""
-    env = dict(l.strip().split("=", 1) for l in ENV_FILE.read_text(encoding="utf-8").splitlines()
-               if "=" in l and not l.lstrip().startswith("#"))
+    """함수용 환경변수(ENV_KEYS)가 사이트에 없으면 암호화 저장소 값으로 넣는다."""
+    # 키는 암호화 저장소에 있다(2026-10-17 AutoSNS/.env 에서 옮김).
+    sys.path.insert(0, str(SITE_DIR.parent))
+    from shared.secret_get import get
+    env = {k: get(k) or "" for k in ENV_KEYS}
     account = api("/sites/" + SITE_ID)["account_id"]
     have = {v.get("key") for v in (api(f"/accounts/{account}/env?site_id={SITE_ID}") or [])}
     out = {}
     for k in ENV_KEYS:
         val = env.get(k, "").strip().strip('"').strip("'")
         if not val:
-            raise SystemExit(f"AutoSNS/.env 에 {k} 가 없습니다")
+            raise SystemExit(f"암호화 저장소에 {k} 가 없습니다")
         if k in have:
             out[k] = "있음"; continue
         api(f"/accounts/{account}/env?site_id={SITE_ID}", "POST",

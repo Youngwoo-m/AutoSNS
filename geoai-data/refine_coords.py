@@ -17,10 +17,14 @@ CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "geo_cache.json
 
 
 def _key():
-    for line in open(os.path.join(AUTO, ".env"), encoding="utf-8"):
-        if line.startswith("KAKAO_REST_KEY="):
-            return line.strip().split("=", 1)[1]
-    raise SystemExit("AutoSNS/.env 에 KAKAO_REST_KEY 가 없습니다")
+    # 키는 암호화 저장소에 있다(2026-10-17 .env 에서 옮김). 어느 파이썬에서든 꺼낼 수 있다.
+    import sys
+    sys.path.insert(0, AUTO)
+    from shared.secret_get import get
+    k = get("KAKAO_REST_KEY")
+    if not k:
+        raise SystemExit("암호화 저장소에 KAKAO_REST_KEY 가 없습니다")
+    return k
 
 
 KEY = _key()

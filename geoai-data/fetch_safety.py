@@ -1,7 +1,7 @@
 """룰렛 앱(geoai-site/dinner)용 주변 안전시설 데이터 만들기 — 충북 AED·민방위 대피소.
 
 공공데이터포털 API 는 브라우저에서 직접 부를 수 없어(CORS 없음) 미리 받아 정적 JSON 으로 둔다.
-키는 AutoSNS/.env 의 DATA_GO_KR_KEY. 결과: geoai-site/dinner/data/{aed,shelter}.json
+키는 암호화 저장소의 DATA_GO_KR_KEY. 결과: geoai-site/dinner/data/{aed,shelter}.json
 배포 전에 한 번씩 다시 실행하면 최신으로 갱신된다.
 
   python3 geoai-data/fetch_safety.py
@@ -19,10 +19,14 @@ REGION = "충청북도"
 
 
 def key():
-    for line in open(os.path.join(AUTO, ".env"), encoding="utf-8"):
-        if line.startswith("DATA_GO_KR_KEY="):
-            return line.strip().split("=", 1)[1]
-    raise SystemExit("AutoSNS/.env 에 DATA_GO_KR_KEY 가 없습니다")
+    # 키는 암호화 저장소에 있다(2026-10-17 .env 에서 옮김). 어느 파이썬에서든 꺼낼 수 있다.
+    import sys
+    sys.path.insert(0, AUTO)
+    from shared.secret_get import get
+    k = get("DATA_GO_KR_KEY")
+    if not k:
+        raise SystemExit("암호화 저장소에 DATA_GO_KR_KEY 가 없습니다")
+    return k
 
 
 KEY = key()

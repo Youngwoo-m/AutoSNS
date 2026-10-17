@@ -25,8 +25,10 @@ pw = re.sub(r"\s+", "", pw)          # 구글이 4자씩 띄어서 보여주므�
 if len(pw) != 16:
     raise SystemExit(f"앱 비밀번호는 16자리여야 합니다(입력값 {len(pw)}자리). 다시 실행하세요.")
 
-cfg["app_password"] = pw
-with open(PATH, "w", encoding="utf-8") as f:
-    json.dump(cfg, f, ensure_ascii=False, indent=1)
-os.chmod(PATH, 0o600)
+from shared.secret_get import put  # noqa: E402  파일 대신 암호화 저장소에 둔다
+put("MAIL_APP_PASSWORD", pw)
+if cfg.get("app_password"):          # 예전 평문 칸은 비운다
+    cfg["app_password"] = ""
+    with open(PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=1)
 print("저장했습니다. 이제 ./run_weekly_report.sh 로 시험 발송할 수 있습니다.")

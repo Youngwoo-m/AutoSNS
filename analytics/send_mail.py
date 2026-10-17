@@ -7,7 +7,7 @@
 mail_config.json (git 에 올라가지 않음):
 {
   "sender": "semyungds@gmail.com",
-  "app_password": "여기에 앱 비밀번호 16자리",
+  "app_password": "",   ← 비워 둔다. 앱 비밀번호는 암호화 저장소의 MAIL_APP_PASSWORD(set_mail_password.py 로 입력)
   "to": ["ds2eye@gmail.com", "yunju24@semyung.ac.kr"],
   "sender_name": "세명대 재난안전학과"
 }
@@ -42,6 +42,9 @@ def load_config():
         )
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
+    # 앱 비밀번호는 암호화 저장소에 있다(2026-10-17). 파일에는 보내는 계정·받는 사람만.
+    from shared.secret_get import get
+    cfg["app_password"] = get("MAIL_APP_PASSWORD") or cfg.get("app_password", "")
     for k in ("sender", "app_password", "to"):
         if not cfg.get(k):
             raise SystemExit(f"mail_config.json 에 {k} 값이 비어 있습니다.")
