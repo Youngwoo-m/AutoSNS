@@ -12,6 +12,7 @@
 토큰은 refresh_token 으로 자동 갱신되므로 보통 한 번만 하면 된다.
 """
 import os
+import sys
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -20,18 +21,20 @@ from youtube_upload import SCOPES  # 업로드+읽기+애널리틱스+댓글(for
 
 
 def main():
-    if not os.path.exists(CLIENT_SECRET_PATH):
+    # OAuth 클라이언트·토큰은 암호화 저장소에 있다(shared/token_store.py).
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from shared import token_store
+    if not token_store.exists(CLIENT_SECRET_PATH):
         raise SystemExit(
             "client_secret.json 이 없습니다.\n"
             "Google Cloud Console 에서 '데스크톱 앱' OAuth 클라이언트 JSON 을 받아\n"
             f"{CLIENT_SECRET_PATH} 로 저장한 뒤 다시 실행하세요.\n"
             "(자세한 절차는 이 파일 상단 주석 / README 참고)"
         )
-    flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_PATH, SCOPES)
+    flow = InstalledAppFlow.from_client_config(token_store.client_config(CLIENT_SECRET_PATH), SCOPES)
     creds = flow.run_local_server(port=0, prompt="consent")
-    with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-        f.write(creds.to_json())
-    log(f"인증 완료. 토큰 저장됨: {TOKEN_PATH}")
+    where = token_store.write_text(TOKEN_PATH, creds.to_json())
+    log(f"인증 완료. 토큰 저장됨: {token_store.name_for(TOKEN_PATH)} ({where})")
     print("\n로그인/인증 완료! 이제 업로드가 가능합니다.")
 
 

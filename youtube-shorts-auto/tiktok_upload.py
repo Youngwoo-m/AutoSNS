@@ -26,17 +26,25 @@ INIT_URL = "https://open.tiktokapis.com/v2/post/publish/video/init/"
 STATUS_URL = "https://open.tiktokapis.com/v2/post/publish/status/fetch/"
 
 
+def _token_store():
+    """토큰은 암호화 저장소에 있다(shared/token_store.py)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import token_store
+    return token_store
+
+
 def _load_token():
-    if not os.path.exists(TIKTOK_TOKEN_PATH):
+    tok = _token_store().read_json(TIKTOK_TOKEN_PATH)
+    if not tok:
         raise RuntimeError(
-            "tiktok_token.json 이 없습니다. 먼저 tiktok_login_setup.py 로 1회 로그인하세요.")
-    with open(TIKTOK_TOKEN_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+            "틱톡 토큰(TIKTOK_TOKEN)이 없습니다. 먼저 tiktok_login_setup.py 로 1회 로그인하세요.")
+    return tok
 
 
 def _save_token(tok):
-    with open(TIKTOK_TOKEN_PATH, "w", encoding="utf-8") as f:
-        json.dump(tok, f, ensure_ascii=False, indent=2)
+    _token_store().write_json(TIKTOK_TOKEN_PATH, tok)
 
 
 def _access_token(cfg):

@@ -35,12 +35,36 @@ AUTH_URL = "https://kauth.kakao.com/oauth/token"
 MEMO_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 
 
+def _token_store():
+    """토큰은 AutoSNS 암호화 저장소(shared/token_store.py, KAKAO_TOKEN)에 있다(2026-10-17).
+    AutoSNS 밖으로 복사해 쓰면 없으니 그때는 예전처럼 파일을 쓴다."""
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    try:
+        from shared import token_store
+        return token_store
+    except Exception:
+        return None
+
+
 def _load():
+    ts = _token_store()
+    if ts:
+        tok = ts.read_json(TOKEN_PATH)
+        if not tok:
+            raise FileNotFoundError(TOKEN_PATH)
+        return tok
     with open(TOKEN_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
 def _save(tok):
+    ts = _token_store()
+    if ts:
+        ts.write_json(TOKEN_PATH, tok)
+        return
     with open(TOKEN_PATH, "w", encoding="utf-8") as f:
         json.dump(tok, f, ensure_ascii=False, indent=2)
     os.chmod(TOKEN_PATH, 0o600)

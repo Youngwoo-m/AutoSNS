@@ -14,6 +14,7 @@
   Redirect URI = config.tiktok.redirect_uri 와 동일, 도메인 검증 완료, Sandbox Target user 추가.
 """
 import json
+import os
 import sys
 import time
 import urllib.parse
@@ -96,9 +97,10 @@ def exchange(code):
     if "access_token" not in tok:
         raise SystemExit(f"토큰 교환 실패: {tok}")
     tok["_obtained_at"] = int(time.time())
-    with open(TIKTOK_TOKEN_PATH, "w", encoding="utf-8") as f:
-        json.dump(tok, f, ensure_ascii=False, indent=2)
-    log(f"틱톡 인증 완료. 토큰 저장됨: {TIKTOK_TOKEN_PATH}")
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from shared import token_store                 # 평문 파일 대신 암호화 저장소
+    where = token_store.write_json(TIKTOK_TOKEN_PATH, tok)
+    log(f"틱톡 인증 완료. 토큰 저장됨: {token_store.name_for(TIKTOK_TOKEN_PATH)} ({where})")
     print("로그인/인증 완료! 이제 틱톡 업로드가 가능합니다.")
 
 

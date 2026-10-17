@@ -6,18 +6,20 @@ fetch_news 가 이 결과를 뉴스 항목과 같은 형태로 받아 소스 풀
 네이버 블로그/웹 검색은 무료 '네이버 검색 API' 키(developers.naver.com)가 필요하고,
 인스타그램 팔로잉/검색은 공식 API 로 접근이 불가능하다(별도 안내 참조).
 """
+import os
+import sys
 from datetime import datetime, timezone, timedelta
 
 from common import TOKEN_PATH, log
 
 
 def _creds():
-    from google.oauth2.credentials import Credentials
-    from google.auth.transport.requests import Request
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH)
-    if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    return creds
+    # 토큰은 암호화 저장소에 있다(shared/token_store.py). 갱신본은 저장하지 않는다(예전과 같음).
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import token_store
+    return token_store.load_google(TOKEN_PATH, save=False)
 
 
 # 우리 채널 — 검색 결과에 우리 영상이 다시 잡혀 '출처'로 재인용되는 것을 막는다.

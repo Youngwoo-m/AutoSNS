@@ -34,24 +34,23 @@ def _token_paths():
     속성은 계정별로 등록되므로(학과 계정·개인 계정) 토큰도 계정마다 둔다.
     searchconsole_auth_setup.py <이름> 으로 추가한다."""
     import glob
-    first = TOKEN_PATH if os.path.exists(TOKEN_PATH) else None
-    rest = sorted(p for p in glob.glob(TOKEN_PATH.replace(".json", "_*.json"))
-                  if p != TOKEN_PATH)
-    return [p for p in [first] + rest if p]
+    from shared import token_store            # 토큰은 암호화 저장소에 있다(옛 파일도 찾는다)
+    names = token_store.stored_names()
+    first = TOKEN_PATH if (token_store.name_for(TOKEN_PATH) in names
+                           or os.path.exists(TOKEN_PATH)) else None
+    pre = "SEARCHCONSOLE_TOKEN_"
+    rest = {p for p in glob.glob(TOKEN_PATH.replace(".json", "_*.json")) if p != TOKEN_PATH}
+    rest |= {TOKEN_PATH.replace(".json", f"_{n[len(pre):].lower()}.json")
+             for n in names if n.startswith(pre)}
+    return [p for p in [first] + sorted(rest) if p]
 
 
 def _creds(path=None):
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
+    from shared import token_store
     path = path or TOKEN_PATH
-    if not os.path.exists(path):
+    if not token_store.exists(path):
         raise RuntimeError("서치콘솔 토큰 없음 — python searchconsole_auth_setup.py 로 인증하세요.")
-    c = Credentials.from_authorized_user_file(path, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
-    return c
+    return token_store.load_google(path, SCOPES)
 
 
 def _query(svc, site, start, end, dimension, limit):

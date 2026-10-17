@@ -18,18 +18,27 @@ REFRESH_URL = "https://graph.threads.net/refresh_access_token"
 REFRESH_BEFORE_DAYS = 10
 
 
+def _token_store():
+    """토큰은 암호화 저장소(shared/token_store.py, THREADS_TOKEN)에 둔다(2026-10-17)."""
+    import sys
+    root = os.path.dirname(BASE_DIR)
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import token_store
+    return token_store
+
+
 def save_token(tok):
-    with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-        json.dump(tok, f, ensure_ascii=False, indent=2)
+    _token_store().write_json(TOKEN_PATH, tok)
 
 
 def load_token():
-    if not os.path.exists(TOKEN_PATH):
+    tok = _token_store().read_json(TOKEN_PATH)
+    if not tok:
         raise RuntimeError(
             "스레드 토큰이 없습니다.\n"
             "  먼저 1회 로그인하세요:  python threads_login_setup.py")
-    with open(TOKEN_PATH, encoding="utf-8") as f:
-        return json.load(f)
+    return tok
 
 
 def valid_token():

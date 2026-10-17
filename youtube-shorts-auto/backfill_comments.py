@@ -37,12 +37,8 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.readonly",
 
 
 def _creds(path):
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
-    c = Credentials.from_authorized_user_file(path, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-    return c
+    from shared import token_store            # 토큰은 암호화 저장소에 있다(갱신본은 저장 안 함)
+    return token_store.load_google(path, SCOPES, save=False)
 
 
 def _state():

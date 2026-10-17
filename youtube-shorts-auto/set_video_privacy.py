@@ -23,19 +23,22 @@ MANAGE_TOKEN = os.path.join(BASE_DIR, "token_manage.json")
 
 
 def _creds():
+    # 토큰·OAuth 클라이언트는 암호화 저장소에 있다(shared/token_store.py).
+    sys.path.insert(0, os.path.dirname(BASE_DIR))
+    from shared import token_store
     creds = None
-    if os.path.exists(MANAGE_TOKEN):
-        creds = Credentials.from_authorized_user_file(MANAGE_TOKEN, MANAGE_SCOPES)
+    if token_store.exists(MANAGE_TOKEN):
+        creds = token_store.google_creds(MANAGE_TOKEN, MANAGE_SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists(CLIENT_SECRET_PATH):
-                raise SystemExit("client_secret.json 이 필요합니다.")
-            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET_PATH, MANAGE_SCOPES)
+            if not token_store.exists(CLIENT_SECRET_PATH):
+                raise SystemExit("client_secret.json(GOOGLE_OAUTH_CLIENT) 이 필요합니다.")
+            flow = InstalledAppFlow.from_client_config(
+                token_store.client_config(CLIENT_SECRET_PATH), MANAGE_SCOPES)
             creds = flow.run_local_server(port=0, prompt="consent")
-        with open(MANAGE_TOKEN, "w", encoding="utf-8") as f:
-            f.write(creds.to_json())
+        token_store.write_text(MANAGE_TOKEN, creds.to_json())
     return creds
 
 

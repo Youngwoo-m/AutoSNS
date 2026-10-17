@@ -39,7 +39,8 @@ TOKEN_PATH = os.path.join(BASE_DIR, "token_youtube_geoai.json")
 
 def run(payload):
     cfg = load_config()
-    if not os.path.exists(TOKEN_PATH) and not payload.get("dry_run", True):
+    from shared import token_store            # 토큰은 암호화 저장소에 있다
+    if not token_store.exists(TOKEN_PATH) and not payload.get("dry_run", True):
         raise RuntimeError("token_youtube_geoai.json 이 없습니다 — "
                            "geoai_youtube_auth.py 로 채널 인증을 먼저 하세요.")
     scenes = payload.get("scenes") or []

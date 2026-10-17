@@ -75,18 +75,19 @@ def _creds(token_path=None):
 
     token_path 를 주면 다른 채널의 토큰을 쓴다(예: 개인 GeoAI 채널 —
     token_youtube_geoai.json). 기본값은 학과 채널 토큰(token.json)."""
+    # 토큰은 암호화 저장소에 있다(shared/token_store.py). 경로는 이름표로만 쓴다.
+    from shared import token_store
     path = token_path or TOKEN_PATH
-    if not os.path.exists(path):
+    if not token_store.exists(path):
         raise RuntimeError(
-            f"{os.path.basename(path)} 이 없습니다. 먼저 로그인 스크립트로 1회 인증하세요"
+            f"{token_store.name_for(path)} 토큰이 없습니다. 먼저 로그인 스크립트로 1회 인증하세요"
             " (학과 채널: youtube_login_setup.py / GeoAI 채널: geoai_youtube_auth.py).")
-    creds = Credentials.from_authorized_user_file(path, SCOPES)
+    creds = token_store.google_creds(path, SCOPES)
     if not creds.valid:
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(creds.to_json())
-            log(f"토큰 자동 갱신됨({os.path.basename(path)}).")
+            token_store.write_text(path, creds.to_json())
+            log(f"토큰 자동 갱신됨({token_store.name_for(path)}).")
         else:
             raise RuntimeError(
                 "토큰이 만료되어 갱신할 수 없습니다. youtube_login_setup.py 를 다시 실행하세요.")

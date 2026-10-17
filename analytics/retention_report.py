@@ -30,12 +30,8 @@ def _creds(path):
     SCOPES(읽기 2개)로 좁혀져, 같은 토큰을 쓰는 업로드·썸네일 설정이 403
     'insufficient authentication scopes' 로 막혔다(2026-10-14). 분석용 스크립트가
     발행용 자격 증명을 건드리면 안 된다."""
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
-    c = Credentials.from_authorized_user_file(path, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-    return c
+    from shared import token_store            # 토큰은 암호화 저장소에 있다
+    return token_store.load_google(path, SCOPES, save=False)
 
 
 def _dur_seconds(iso):

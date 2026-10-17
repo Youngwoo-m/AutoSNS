@@ -97,20 +97,25 @@ def _refresh_token(x, tok):
     tok = {"access_token": j["access_token"], "refresh_token": j.get("refresh_token") or tok["refresh_token"],
            "scope": j.get("scope", tok.get("scope", "")), "expires_in": j.get("expires_in", 7200),
            "saved_at": int(time.time())}
-    tmp = TOKEN_PATH + ".part"
-    with open(tmp, "w") as f:
-        json.dump(tok, f, indent=1)
-    os.chmod(tmp, 0o600)
-    os.replace(tmp, TOKEN_PATH)
+    _token_store().write_json(TOKEN_PATH, tok)    # 저장소에 못 쓰면 파일에 쓴다(갱신 토큰을 잃지 않게)
     return tok
+
+
+def _token_store():
+    """토큰은 암호화 저장소에 있다(shared/token_store.py, 2026-10-17)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import token_store
+    return token_store
 
 
 def _session(cfg):
     """OAuth 2.0 사용자 토큰(x_token.json, 자동 갱신)이 있으면 그것을, 없으면 OAuth 1.0a 키 4개를 쓴다."""
     x = cfg.get("x") or {}
-    if os.path.exists(TOKEN_PATH) and x.get("oauth2_client_id"):
+    tok = _token_store().read_json(TOKEN_PATH) if x.get("oauth2_client_id") else None
+    if tok:
         import requests
-        tok = json.load(open(TOKEN_PATH))
         if time.time() > tok.get("saved_at", 0) + int(tok.get("expires_in") or 7200) - 300:
             tok = _refresh_token(x, tok)
         s = requests.Session()

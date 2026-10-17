@@ -36,16 +36,10 @@ OK_VERDICT = "PASS"
 
 
 def _creds():
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
-    if not os.path.exists(TOKEN_PATH):
+    from shared import token_store            # 토큰은 암호화 저장소에 있다
+    if not token_store.exists(TOKEN_PATH):
         raise RuntimeError("서치콘솔 토큰 없음 — searchconsole_auth_setup.py 로 인증하세요.")
-    c = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-        with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
-    return c
+    return token_store.load_google(TOKEN_PATH, SCOPES)
 
 
 def _sitemap_urls(site):

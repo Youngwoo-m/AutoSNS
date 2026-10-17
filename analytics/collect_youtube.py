@@ -103,7 +103,9 @@ def collect_via_rss():
 def collect():
     # 토큰 파일은 읽기만 한다. 갱신 결과를 덮어쓰면 이 파일의 SCOPES(force-ssl 없음)로
     # 범위가 좁혀져, 같은 토큰을 쓰는 업로드·썸네일 설정이 403 으로 막힌다(2026-10-14).
-    creds = Credentials.from_authorized_user_file(TOKEN, SCOPES)
+    # 토큰은 암호화 저장소에 있다(shared/token_store.py) — 갱신본은 저장하지 않는다.
+    from shared import token_store
+    creds = token_store.google_creds(TOKEN, SCOPES)
     if not creds.valid:
         creds.refresh(Request())
     yt = build("youtube", "v3", credentials=creds)

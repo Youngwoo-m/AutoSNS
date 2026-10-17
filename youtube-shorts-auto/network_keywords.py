@@ -19,12 +19,12 @@ from shared.keyword_terms import queries_from_titles  # noqa: E402
 
 
 def _creds():
-    from google.oauth2.credentials import Credentials
-    from google.auth.transport.requests import Request
-    creds = Credentials.from_authorized_user_file(TOKEN_PATH)
-    if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    return creds
+    # 토큰은 암호화 저장소에 있다(shared/token_store.py). 갱신본은 저장하지 않는다(예전과 같음).
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared import token_store
+    return token_store.load_google(TOKEN_PATH, save=False)
 
 
 def _recent_titles(within_days, max_channels, per_channel):

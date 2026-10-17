@@ -18,14 +18,16 @@ from collect_searchconsole import CLIENT_SECRET, SCOPES, TOKEN_PATH
 suffix = (sys.argv[1] if len(sys.argv) > 1 else "").strip().lstrip("_")
 out = TOKEN_PATH if not suffix else TOKEN_PATH.replace(".json", f"_{suffix}.json")
 
-if not os.path.exists(CLIENT_SECRET):
-    raise SystemExit(f"client_secret.json 없음: {CLIENT_SECRET}")
-if os.path.exists(out):
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared import token_store  # noqa: E402  OAuth 클라이언트·토큰은 암호화 저장소에
+
+if not token_store.exists(CLIENT_SECRET):
+    raise SystemExit("client_secret.json(GOOGLE_OAUTH_CLIENT) 없음")
+if token_store.exists(out):
     ans = input(f"{os.path.basename(out)} 가 이미 있습니다. 덮어쓸까요? [y/N] ").strip().lower()
     if ans != "y":
         raise SystemExit("취소했습니다.")
-flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET, SCOPES)
+flow = InstalledAppFlow.from_client_config(token_store.client_config(CLIENT_SECRET), SCOPES)
 creds = flow.run_local_server(port=0, prompt="consent")
-with open(out, "w", encoding="utf-8") as f:
-    f.write(creds.to_json())
-print("완료:", out)
+token_store.write_text(out, creds.to_json())
+print("완료:", token_store.name_for(out))

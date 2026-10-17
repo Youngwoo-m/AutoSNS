@@ -44,14 +44,8 @@ STATE = os.path.join(BASE_DIR, "thumbnail_backfill.json")
 
 
 def _creds(path):
-    from google.auth.transport.requests import Request
-    from google.oauth2.credentials import Credentials
-    c = Credentials.from_authorized_user_file(path, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
-    return c
+    from shared import token_store            # 토큰은 암호화 저장소에 있다
+    return token_store.load_google(path, SCOPES)
 
 
 def _payloads():

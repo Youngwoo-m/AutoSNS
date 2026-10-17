@@ -11,6 +11,7 @@ OAuth 클라이언트는 유튜브·Blogger 와 같은 client_secret.json 을 �
 먼저 추가해야 로그인이 통과된다(403: access_denied 가 나오면 이 경우다).
 """
 import os
+import sys
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -19,8 +20,11 @@ from common import load_config
 from post_blogger import CLIENT_SECRET, SCOPES
 from geoai_blogger import TOKEN_PATH, blog_id
 
-if not os.path.exists(CLIENT_SECRET):
-    raise SystemExit(f"client_secret.json 을 찾을 수 없습니다: {CLIENT_SECRET}")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared import token_store  # noqa: E402  OAuth 클라이언트는 암호화 저장소(GOOGLE_OAUTH_CLIENT)에
+
+if not token_store.exists(CLIENT_SECRET):
+    raise SystemExit("client_secret.json(GOOGLE_OAUTH_CLIENT) 을 찾을 수 없습니다")
 import blogger_token  # noqa: E402
 if blogger_token.exists(TOKEN_PATH):
     ans = input(f"{os.path.basename(TOKEN_PATH)} 이 이미 있습니다. 다시 인증할까요? [y/N] ")
@@ -29,7 +33,7 @@ if blogger_token.exists(TOKEN_PATH):
 
 print("브라우저에서 **geoaina.blogspot.com 소유 계정**으로 로그인하세요.")
 # prompt='consent' + 계정 선택을 강제해 '이미 로그인된 다른 계정'으로 새어나가지 않게 한다.
-flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET, SCOPES)
+flow = InstalledAppFlow.from_client_config(token_store.client_config(CLIENT_SECRET), SCOPES)
 c = flow.run_local_server(port=0, prompt="consent select_account")
 blogger_token.save(TOKEN_PATH, c.to_json())           # 평문 파일 대신 암호화 저장소
 print("토큰 저장:", blogger_token.secret_name(TOKEN_PATH))
