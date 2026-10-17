@@ -1,6 +1,50 @@
 {
   "items": [
     {
+      "title": "GIS 위상관계와 위상 오류 검증",
+      "url": "https://na-geoai.tistory.com/85",
+      "kind": "daily",
+      "date": "2026-10-16",
+      "tags": [
+        "GIS·공간정보"
+      ],
+      "tracingPdf": true,
+      "day": 9
+    },
+    {
+      "title": "LiDAR 점군의 지면 분류와 DTM·DSM 생성",
+      "url": "https://na-geoai.tistory.com/73",
+      "kind": "daily",
+      "date": "2026-10-15",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 8
+    },
+    {
+      "title": "UAV 사진측량의 GSD와 위치정확도",
+      "url": "https://na-geoai.tistory.com/61",
+      "kind": "daily",
+      "date": "2026-10-14",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 7
+    },
+    {
+      "title": "폐합트래버스의 폐합차와 Bowditch 조정",
+      "url": "https://na-geoai.tistory.com/58",
+      "kind": "daily",
+      "date": "2026-10-13",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 6
+    },
+    {
       "title": "최소제곱조정과 관측 가중치",
       "url": "https://na-geoai.tistory.com/42",
       "kind": "daily",

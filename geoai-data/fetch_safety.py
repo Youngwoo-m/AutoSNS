@@ -104,6 +104,18 @@ def save(name, rows):
     print(p, len(rows), f"{os.path.getsize(p) // 1024}KB")
 
 
+def shelter_org(x):
+    # 주소 괄호 속 건물명이 있으면 그것(예: '세명대학교'), 없으면 이름 첫 단어
+    m = re.search(r",\s*([^,()]+)$|\(([^()]*?)\)$", x["a"])
+    tail = (m.group(1) or m.group(2)).split(",")[-1].strip() if m else ""
+    return tail if tail and not re.search(r"[동리]$", tail) else x["n"].split()[0]
+
+
 if __name__ == "__main__":
-    save("aed.json", fetch_aed())
-    save("shelter.json", fetch_shelter())
+    from refine_coords import refine
+    aed = fetch_aed()
+    print("AED 건물 좌표 보정", refine(aed, lambda x: x["n"], lambda x: x["p"]))
+    save("aed.json", aed)
+    sh = fetch_shelter()
+    print("대피소 건물 좌표 보정", refine(sh, shelter_org, lambda x: x["n"]))
+    save("shelter.json", sh)

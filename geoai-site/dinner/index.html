@@ -12,6 +12,7 @@
 <meta property="og:description" content="룰렛으로 메뉴 정하고 주변 맛집까지 한 번에">
 <meta property="og:image" content="https://geoai-na.netlify.app/dinner/og.jpg">
 <meta property="og:url" content="https://geoai-na.netlify.app/dinner/">
+<link rel="canonical" href="https://geoai-na.netlify.app/dinner/">
 <meta name="apple-mobile-web-app-title" content="저녁 룰렛">
 <meta name="theme-color" content="#ff6b3d">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -27,17 +28,41 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);
   font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   -webkit-tap-highlight-color:transparent}
-main{max-width:480px;margin:0 auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
-header{text-align:center;margin:8px 0 14px}
-h1{font-size:clamp(18px,5.4vw,26px);margin:0;letter-spacing:-.5px;white-space:nowrap}
-header p{margin:6px 0 0;color:var(--sub);font-size:14px}
-.titlerow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px}
-.titlerow a{display:flex}
-.dept{display:block;height:clamp(18px,5.6vw,28px);width:auto}
+/* 셔틀 앱(세명대 통학 길잡이)처럼: 위·아래 바는 고정, 가운데만 스크롤 */
+html{scroll-padding-top:calc(var(--top,96px) + 10px);scroll-padding-bottom:calc(var(--bottom,64px) + 10px)}
+main{max-width:480px;margin:0 auto;padding:calc(var(--top,96px) + 14px) 16px calc(var(--bottom,64px) + 24px)}
+.appbar,.appfoot{position:fixed;left:0;right:0;z-index:50}
+.appbar{top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.18);text-align:center}
+.appfoot{bottom:0;padding:8px 16px calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px -10px rgba(0,0,0,.35)}
+.bar-in{max-width:480px;margin:0 auto}
+h1{font-size:clamp(18px,5.4vw,24px);margin:0;letter-spacing:-.5px;white-space:nowrap}
+.appbar p{margin:4px 0 0;color:rgba(255,255,255,.88);font-size:13px}
+/* 재난 소식 한 줄 띠(셔틀 앱과 같은 모양): 기상특보·예비특보·재난뉴스가 오른쪽에서 왼쪽으로 흐른다 */
+.ticker{margin-top:8px;overflow:hidden;white-space:nowrap;font-size:13px;line-height:24px;border-radius:6px;background:rgba(0,0,0,.18);text-align:left;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent)}
+.tk-in{display:inline-block;padding-left:100%;animation:tk var(--tkdur,40s) linear infinite}
+.ticker:hover .tk-in,.ticker:focus-within .tk-in{animation-play-state:paused}
+.tk-in a{color:#fff;text-decoration:none;margin-right:28px}
+.tk-in b{display:inline-block;margin-right:5px;padding:0 6px;border-radius:4px;font-size:11px;line-height:17px;color:#fff;background:rgba(255,255,255,.25)}
+.tk-in b.k-특보,.tk-in b.k-여기{background:#dc2626}
+.tk-in b.k-예비특보{background:#9a3412}
+@keyframes tk{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.tk-in{animation:none;padding-left:0}}
+.appfoot .bar-in{display:flex;align-items:center;gap:10px}
+.appfoot .deptlogo{display:flex;padding:4px 8px;border-radius:8px;background:#fff}
+.appfoot .deptlogo img{display:block;height:26px;width:auto}
+.ftxt{display:grid;font-size:13px;line-height:1.35;color:var(--sub);min-width:0}
+.ftxt a{color:var(--ink);font-weight:800;text-decoration:none;font-variant-numeric:tabular-nums;display:inline-block;padding:6px 0;margin:-6px 0}
+.fhome{margin-left:auto;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--accent);font-weight:800;font-size:15px;text-decoration:none;white-space:nowrap}
 .ages{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:360px;margin:0 auto 16px}
 .ages button{padding:9px 4px;border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
 .ages button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.ages .emg-btn{grid-column:1/-1;border-style:dashed}
+.ages .emg-btn{border-style:dashed}
+.ages .emg-btn{grid-column:span 2}
+.ages .near-btn{border-color:#2563eb;color:#2563eb}
+.ages .near-btn.on{background:#2563eb;border-color:#2563eb;color:#fff}
+.ages .hak-btn{border-color:#2f7d5b;color:#2f7d5b}
+.ages .hak-btn.on{background:#2f7d5b;border-color:#2f7d5b;color:#fff}
+.hakview .wheel-wrap,.hakview #spin,.hakview #browseBtn,.hakview #browse,.hakview #result,.hakview #nearby,.hakview #prep,.hakview #shop,.hakview #vs{display:none!important}
 .ages .emg-btn.on{background:#1d3557;border-color:#1d3557;border-style:solid}
 .emg .maps,.emg .delivery,.emg #eatsTip{display:none}
 .info{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--bg);text-align:left;font-size:14px;line-height:1.6}
@@ -61,6 +86,15 @@ button{font:inherit;border:0;cursor:pointer}
   background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:20px;font-weight:800;
   box-shadow:0 6px 16px rgba(255,107,61,.35)}
 .spin:disabled{opacity:.6}
+.hnav{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.hnav>button{flex:1;height:34px;border-radius:10px;background:var(--bg);color:var(--ink);font-size:14px;font-weight:700;border:1px solid var(--line)}
+.hmeal{padding:8px 0;border-top:1px solid var(--line)}
+.hmeal:first-child{border-top:0}
+.hmeal .hmt{font-weight:800;font-size:14.5px;margin-bottom:4px}
+.hmeal.now .hmt{color:var(--accent)}
+.hlist{list-style:none;margin:0;padding:4px 2px;display:flex;flex-wrap:wrap;gap:6px}
+.hlist li{padding:6px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:14px}
+.hlist li.empty{border:0;background:none;color:var(--sub);padding:6px 0}
 .browse-btn{display:block;width:100%;max-width:320px;margin:10px auto 0;padding:12px;border-radius:14px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;border:1px solid var(--line)}
 .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 .cats button{padding:8px 2px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:600;font-size:13.5px;border:1px solid var(--line)}
@@ -85,6 +119,13 @@ button{font:inherit;border:0;cursor:pointer}
 .order{flex:1;display:block;padding:12px 8px;border-radius:12px;color:#fff;font-weight:800;font-size:15px;text-align:center;text-decoration:none}
 .order.cp{background:#e8344e}
 .order.nv{background:#03c75a}
+.hakpick .delivery,.hakpick #eatsTip,.hakpick .orders{display:none}
+.vsgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vside{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:12px;background:var(--bg);border:1px solid var(--line);font-size:13.5px;line-height:1.45;min-width:0}
+.vside .vt{font-weight:800;font-size:15px}
+.vside .vm{color:var(--ink);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.vside .vs2{color:var(--sub)}
+.vside a{margin-top:auto;display:block;text-align:center;padding:9px 4px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:800;text-decoration:none;font-size:13.5px}
 .shop .ad{width:100%;max-width:300px;margin:0 auto}
 .kit{display:block;margin:0 0 12px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:inherit;text-decoration:none}
 .kit b{display:block;font-size:15px}
@@ -105,8 +146,6 @@ h2 small{font-weight:500;color:var(--sub);font-size:12px}
 .dist{flex:none;font-weight:700;color:var(--accent);font-size:14px}
 .tag{display:inline-block;background:var(--good);color:#fff;font-size:11px;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
 .radius{display:flex;gap:6px;margin-bottom:10px}
-.wxbar{max-width:360px;margin:0 auto 12px;padding:10px 12px;border-radius:12px;background:#fde8e4;color:#8a1f11;font-size:14px;line-height:1.5}
-.wxbar b{font-weight:800}
 .safe .wx{padding:2px 0 6px;margin-bottom:4px;border-bottom:1px dashed var(--line)}
 .safe .wx.on{color:#c2410c;font-weight:700}
 .safe{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--safe);color:var(--ink);font-size:13.5px;line-height:1.5}
@@ -132,28 +171,39 @@ details summary::after{content:" ▾";color:var(--sub)}
 .add input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
 .add button,.reset{padding:10px 14px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:700}
 .reset{background:transparent;color:var(--sub);padding:8px 0;font-size:13px;text-decoration:underline}
-footer{text-align:center;color:var(--sub);font-size:12px;margin-top:22px;line-height:1.6}
-footer a{color:var(--sub)}
+.notes{text-align:center;color:var(--sub);font-size:12px;margin:22px 0 0;line-height:1.6}
+.notes a{color:var(--sub)}
 .hidden{display:none}
 </style>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZJHFVZ6PP5"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZJHFVZ6PP5');</script>
 </head>
 <body>
-<main>
-  <header>
-    <div class="titlerow">
-      <a href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener" title="세명대학교 재난안전학과 홈페이지"><img class="dept" src="smu_logo.png" width="131" height="28" alt="세명대학교 재난안전학과"></a>
-      <h1 id="title">🍽️ 오늘 저녁 뭐 먹지?</h1>
-    </div>
+<header class="appbar" id="appbar">
+  <div class="bar-in">
+    <h1 id="title">🍽️ 오늘 저녁 뭐 먹지?</h1>
     <p id="subtitle">고민은 룰렛에게 맡기고, 맛집은 바로 찾아요</p>
-  </header>
+    <div class="ticker" id="ticker" hidden aria-label="재난 소식"><div class="tk-in" id="tkIn"></div></div>
+  </div>
+</header>
 
-  <div class="wxbar hidden" id="wxbar"></div>
+<main>
 
   <div class="ages" id="ages">
     <button data-p="all">전체</button><button data-p="10">10대</button><button data-p="20">20대</button>
-    <button data-p="3040">30·40대</button><button data-p="50">50대 이상</button><button data-p="night">🌙 야식</button>
-    <button data-p="emergency" class="emg-btn">🔦 비상식량 (정전·재난 대비)</button>
+    <button data-p="3040">30·40대</button><button data-v="hak" class="hak-btn" id="hakBtn">🍚 학식</button><button data-p="night">🌙 야식</button>
+    <button data-p="near" class="near-btn">📍 내 주변</button><button data-p="emergency" class="emg-btn">🔦 비상식량 (정전·재난 대비)</button>
   </div>
+
+  <section class="card hidden" id="hak">
+    <h2>🍚 오늘의 학식 <small id="hdate"></small></h2>
+    <div class="hnav">
+      <button type="button" id="hprev">‹ 전날</button><button type="button" id="htoday">오늘</button><button type="button" id="hnext">다음날 ›</button>
+    </div>
+    <div id="hlist"></div>
+    <p class="disclose" id="hnote"></p>
+  </section>
 
   <div class="wheel-wrap">
     <div class="pointer"></div>
@@ -162,6 +212,7 @@ footer a{color:var(--sub)}
   </div>
   <button class="spin" id="spin">룰렛 돌리기</button>
   <button class="browse-btn" id="browseBtn" type="button">🔍 룰렛 없이 주변 맛집 바로 보기</button>
+
 
   <section class="card hidden" id="browse">
     <h2>🔍 주변 맛집 둘러보기 <small id="bsrc"></small></h2>
@@ -198,6 +249,11 @@ footer a{color:var(--sub)}
         <a class="order nv" id="norder" target="_blank" rel="noopener">🛒 네이버쇼핑</a>
       </div>
     </div>
+  </section>
+
+  <section class="card hidden" id="vs">
+    <h2>🍚 학식 vs 🎡 룰렛 <small id="vstally"></small></h2>
+    <div class="vsgrid" id="vsgrid"></div>
   </section>
 
   <section class="card hidden" id="prep">
@@ -244,13 +300,30 @@ footer a{color:var(--sub)}
     <p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
   </section>
 
-  <footer>
-    주변 식당 정보: 카카오맵<br>
-    위치 정보는 주변 검색에만 쓰이고 저장되지 않아요 · <a href="/">geoai-na</a>
-  </footer>
+  <p class="notes">
+    주변 식당 정보: 카카오맵 · 안전시설·특보: 공공데이터포털<br>
+    위치 정보는 주변 검색에만 쓰이고 저장되지 않아요 · 방문 통계(Google Analytics)를 사용해요 · <a href="/">geoai-na</a>
+  </p>
 </main>
 
+<footer class="appfoot" id="appfoot">
+  <div class="bar-in">
+    <a class="deptlogo" href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener" title="세명대학교 재난안전학과 홈페이지">
+      <img src="smu_logo.png" width="131" height="28" alt="세명대학교 재난안전학과"></a>
+    <div class="ftxt"><span>학과 사무실</span><a href="tel:043-649-1778">☎ 043-649-1778</a></div>
+    <a class="fhome" href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener">학과 홈</a>
+  </div>
+</footer>
+
 <script>
+// 고정 바 높이만큼 본문 위아래 여백을 맞춘다(특보 띠가 생기면 위 바가 길어진다)
+function syncBars(){
+  const r = document.documentElement.style;
+  r.setProperty('--top', document.getElementById('appbar').offsetHeight + 'px');
+  r.setProperty('--bottom', document.getElementById('appfoot').offsetHeight + 'px');
+}
+syncBars();
+if(window.ResizeObserver){ const ro = new ResizeObserver(syncBars); ro.observe(document.getElementById('appbar')); ro.observe(document.getElementById('appfoot')); }
 const DEFAULT_MENUS = ['김치찌개','짜장면','초밥','치킨','피자','삼겹살','떡볶이','국밥','돈까스','햄버거','쌀국수','족발'];
 // 연령대·야식별 메뉴 묶음 (통계가 아니라 흔한 인식 기반 예시)
 const PRESETS = {
@@ -258,12 +331,12 @@ const PRESETS = {
   '10':{menus:['떡볶이','마라탕','햄버거','치킨','피자','탕후루','돈까스','라면','김밥','짜장면']},
   '20':{menus:['마라탕','쌀국수','초밥','파스타','삼겹살','포케','라멘','곱창','치킨','덮밥','샐러드','타코']},
   '3040':{menus:['김치찌개','국밥','삼겹살','족발','초밥','짜장면','냉면','갈비','회','비빔밥','부대찌개','칼국수']},
-  '50':{menus:['국밥','생선구이','칼국수','백반','순두부','보쌈','추어탕','한정식','갈비탕','냉면','오리고기','청국장']},
   emergency:{menus:['참치캔','즉석밥','3분카레','컵라면','건빵','에너지바','스팸','과일 통조림','견과류','육포','발열 도시락','생수'],emergency:true},
+  near:{menus:DEFAULT_MENUS, near:true},
   night:{menus:['치킨','피자','족발','보쌈','떡볶이','라면','곱창','닭발','순대','햄버거','마라탕','편의점'],night:true},
 };
 // 메뉴 이름에 키워드가 들어 있으면 그 아이콘, 없으면 기본 접시 (앞쪽 키워드가 우선)
-const ICONS = [['참치','🥫'],['즉석밥','🍚'],['컵라면','🍜'],['건빵','🍘'],['에너지바','🍫'],['스팸','🥫'],['과일','🍑'],['견과','🥜'],['육포','🥓'],['발열','🔥'],['생수','💧'],['편의점','🏪'],['순대','🌭'],['갈비탕','🥣'],['오리','🦆'],['탕후루','🍡'],['라면','🍜'],['포케','🥗'],['생선','🐟'],['백반','🍚'],['순두부','🍲'],
+const ICONS = [['학식','🍚'],['중식','🥡'],['일식','🍣'],['양식','🍝'],['한식','🍚'],['분식','🍢'],['감자탕','🍲'],['곰탕','🥣'],['해장국','🥣'],['도시락','🍱'],['뷔페','🍽️'],['참치','🥫'],['즉석밥','🍚'],['컵라면','🍜'],['건빵','🍘'],['에너지바','🍫'],['스팸','🥫'],['과일','🍑'],['견과','🥜'],['육포','🥓'],['발열','🔥'],['생수','💧'],['편의점','🏪'],['순대','🌭'],['갈비탕','🥣'],['오리','🦆'],['탕후루','🍡'],['라면','🍜'],['포케','🥗'],['생선','🐟'],['백반','🍚'],['순두부','🍲'],
   ['추어탕','🍲'],['한정식','🍱'],['청국장','🍲'],['중국','🥡'],['해물','🦐'],['샤브','🍲'],['김치찌개','🍲'],['찌개','🍲'],['짜장','🥡'],['짬뽕','🥡'],['탕수육','🥡'],['초밥','🍣'],['스시','🍣'],['회','🐟'],
   ['치킨','🍗'],['닭','🍗'],['피자','🍕'],['삼겹','🥓'],['고기','🥩'],['갈비','🥩'],['스테이크','🥩'],['떡볶이','🍢'],['분식','🍢'],
   ['국밥','🥣'],['해장','🥣'],['돈까스','🍱'],['돈가스','🍱'],['도시락','🍱'],['버거','🍔'],['쌀국수','🍜'],['라멘','🍥'],['우동','🍜'],
@@ -304,8 +377,8 @@ const COLORS = ['#ff6b3d','#ffb03a','#ffd35c','#7bc96f','#3fb8af','#4a90e2','#8e
 let preset = (()=>{try{const p=localStorage.getItem('dinner-preset');return PRESETS[p]?p:'all'}catch(e){return 'all'}})();
 const menuKey = () => preset==='all' ? 'dinner-menus' : 'dinner-menus-'+preset;
 const store = {
-  get(){try{const v=JSON.parse(localStorage.getItem(menuKey()));return Array.isArray(v)&&v.length>=2?v:null}catch(e){return null}},
-  set(v){try{localStorage.setItem(menuKey(),JSON.stringify(v))}catch(e){}}
+  get(){ if(preset==='near') return null; try{const v=JSON.parse(localStorage.getItem(menuKey()));return Array.isArray(v)&&v.length>=2?v:null}catch(e){return null}},
+  set(v){ if(preset==='near') return; try{localStorage.setItem(menuKey(),JSON.stringify(v))}catch(e){}}
 };
 let menus = store.get() || PRESETS[preset].menus.slice();
 let angle = 0, spinning = false, picked = null, radius = 1000, pos = null;
@@ -314,7 +387,7 @@ const $ = id => document.getElementById(id);
 const cv = $('wheel'), ctx = cv.getContext('2d');
 
 function draw(){
-  const n = menus.length, R = 390, cx = 400, cy = 400, seg = Math.PI*2/n;
+  const menus = wheel(), n = menus.length, R = 390, cx = 400, cy = 400, seg = Math.PI*2/n;
   ctx.clearRect(0,0,800,800);
   for(let i=0;i<n;i++){
     const a0 = angle + i*seg - Math.PI/2;
@@ -339,6 +412,7 @@ function draw(){
 }
 
 function spin(){
+  const menus = wheel();
   if(spinning || menus.length<2) return;
   spinning = true; $('spin').disabled = true; $('spin').textContent = '두구두구…';
   const n = menus.length, seg = Math.PI*2/n;
@@ -360,6 +434,7 @@ function spin(){
 }
 
 function done(menu){
+  if(window.gtag) gtag('event','spin_result',{menu});
   picked = menu;
   if(navigator.vibrate) navigator.vibrate([40,40,80]);
   $('menu').textContent = iconOf(menu) + ' ' + menu;
@@ -370,6 +445,22 @@ function done(menu){
   $('result').classList.remove('hidden');
   $('shop').classList.remove('hidden');
   $('einfo')?.remove();
+  document.body.classList.toggle('hakpick', menu==='학식');
+  $('vs').classList.add('hidden');
+  if(menu==='학식'){
+    const meal = hakMealNow(), items = hakItems(meal);
+    const st = hakStatus();
+    const body = !hakToday ? '학식 정보를 불러오지 못했어요'
+      : st.code==='off' ? '오늘은 학생식당 식단이 없어요(주말·휴무)'
+      : `<b>오늘 ${MEAL_KO[meal]}</b> · ${esc(items.join(' · ') || '식단 미입력')}<br>${st.text}`;
+    $('menu').insertAdjacentHTML('afterend', `<p class="info" id="einfo">${body} · 학생회관 1층</p>`);
+    $('kakao').href = hakDir; $('kakao').textContent = '학생회관 길찾기';
+    $('naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(HAK_POS.n);
+    $('nearby').classList.add('hidden'); $('shop').classList.add('hidden'); $('prep').classList.add('hidden');
+    $('result').scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  $('kakao').textContent = '카카오맵 검색';
   if(PRESETS[preset].emergency){
     $('menu').insertAdjacentHTML('afterend', `<p class="info" id="einfo">${EMG_INFO[menu] || '포장의 유통기한과 보관 방법을 확인하세요.'}</p>`);
     $('prep').classList.remove('hidden'); prepChecks();
@@ -381,6 +472,7 @@ function done(menu){
   }
   $('shop').querySelector('h2').textContent = '🛒 집에서 해 먹는다면';
   $('nearby').classList.remove('hidden');
+  showVs(null);
   const kit = KITS.find(([k])=>menu.includes(k));
   $('kit').classList.toggle('hidden', !kit);
   if(kit){ $('kit').href = kit[1]; $('kit').innerHTML = `<b>${iconOf(menu)} ${esc(menu)} 밀키트 쿠팡에서 보기 →</b><span>${esc(kit[2])}</span>`; }
@@ -415,6 +507,134 @@ function locate(force, stEl){
     timer = setTimeout(finish, GPS_WAIT);
   });
 }
+// 📍 내 주변: GPS 위치 반경 1km 음식점(카카오 FD6, 거리순 최대 45곳)의 분류를 다듬어 서로 다른 메뉴 최대 12칸으로.
+// 카페·디저트·술집은 뺀다. 6칸이 안 되면 기본 메뉴로 채운다.
+const NEAR_SKIP = /카페|커피|디저트|제과|베이커리|술집|주점|호프|이자카야|와인|칵테일|포장마차|아이스크림|도넛|프레즐|프레첼|떡,한과|^간식$|^음식점$/;
+const NEAR_NAME = {'육류,고기':'고기','돈까스,우동':'돈까스','치킨,닭강정':'치킨','족발,보쌈':'족발','해물,생선':'해물',
+  '패스트푸드':'햄버거','중국요리':'중식','일식집':'일식','초밥,롤':'초밥','베트남음식':'쌀국수','인도음식':'카레',
+  '태국음식':'태국음식','두부전문점':'두부요리','샤브샤브':'샤브샤브','설렁탕':'설렁탕','국밥':'국밥','국수':'국수'};
+// 카카오는 '처갓집양념치킨'·'한솥도시락'처럼 브랜드명을 분류로 주기도 해서 대표 메뉴로 묶는다
+const NEAR_BRAND = [[/치킨/,'치킨'],[/피자/,'피자'],[/버거|패스트푸드/,'햄버거'],[/도시락/,'도시락'],[/중식|중국/,'중식'],[/초밥|스시/,'초밥'],[/찌개|전골/,'찌개'],[/아구/,'아구찜']];
+const nearName = c => NEAR_NAME[c] || (NEAR_BRAND.find(([re])=>re.test(c))||[])[1] || c.split(',')[0].replace(/전문점$/,'').trim();
+let nearInfo = '';
+async function buildNear(){
+  if(spinning) return;
+  $('subtitle').textContent = '📍 내 위치 주변 음식점을 찾는 중…';
+  try{
+    const p = await locate(false, $('subtitle')); showLoc();
+    const k = await loadKakao(), ps = new k.maps.services.Places(), all = [];
+    for(let page=1; page<=3; page++){
+      const {data, pg} = await new Promise(ok=>ps.categorySearch('FD6', (d,st,pg)=>ok({data: st===k.maps.services.Status.OK ? d : [], pg}),
+        {location:new k.maps.LatLng(p.lat,p.lon), radius:1000, sort:k.maps.services.SortBy.DISTANCE, page}));
+      all.push(...data); if(!pg || !pg.hasNextPage) break;
+    }
+    const names = [];
+    for(const x of all){
+      const c = (x.category_name||'').split('>').map(t=>t.trim()).filter(Boolean).slice(-1)[0] || '';
+      if(!c || NEAR_SKIP.test(c)) continue;
+      const n = nearName(c); if(n && !names.includes(n)) names.push(n);
+      if(names.length >= 12) break;
+    }
+    const got = names.length;
+    for(const m of DEFAULT_MENUS){ if(names.length >= 6) break; if(!names.includes(m)) names.push(m); }
+    if(preset !== 'near') return;           // 기다리는 사이 다른 묶음을 고른 경우
+    menus = names; angle = 0; chips(); draw();
+    nearInfo = got ? `📍 내 주변 1km 음식점 ${all.length}곳에서 고른 메뉴 ${got}가지` + (got<6 ? ' (부족한 칸은 기본 메뉴)' : '') : '주변 음식점을 못 찾아 기본 메뉴로 돌려요';
+    $('subtitle').textContent = nearInfo;
+  }catch(e){
+    if(preset === 'near') $('subtitle').textContent = (e.message || '위치를 확인하지 못했어요.') + ' 기본 메뉴로 돌려요.';
+  }
+}
+// 오늘의 학식: /.netlify/functions/hak(세명대 학생회관 학생식당, 포털 식단 중계, 30분 캐시)
+const HAK_DAYS = ['일','월','화','수','목','금','토'];
+const kstDate = (off=0) => new Date(Date.now() + 9*3600e3 + off*86400e3).toISOString().slice(0,10);
+let hakOff = 0, hakCache = {};
+async function loadHak(){
+  const date = kstDate(hakOff);
+  if(!hakCache[date]) hakCache[date] = fetch('/.netlify/functions/hak?date='+date).then(r=>r.ok ? r.json() : null).catch(()=>null);
+  const h = await hakCache[date];
+  const d = new Date(date+'T00:00:00Z');
+  $('hdate').textContent = `${hakOff===0?'오늘 · ':''}${d.getUTCMonth()+1}/${d.getUTCDate()}(${HAK_DAYS[d.getUTCDay()]}) · 학생회관`;
+  if(!h || !h.ok){ $('hlist').innerHTML = '<div class="status">학식 정보를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요.</div>'; $('hnote').textContent = ''; return; }
+  if(hakOff===0 && hakToday !== h){ hakToday = h; if(!spinning) draw(); }
+  if(!h.open){ $('hlist').innerHTML = '<div class="status">이날은 학생식당 식단이 없어요(주말·휴무)</div>'; }
+  else {
+    const now = hakOff===0 ? hakMealNow() : '';
+    $('hlist').innerHTML = [['morning','🌅 아침'],['lunch','🌞 점심'],['dinner','🌙 저녁']].map(([k,t])=>{
+      const items = h[k]||[];
+      return `<div class="hmeal${k===now?' now':''}"><div class="hmt">${t}${k===now?' · 지금':''}</div><ul class="hlist">${
+        items.length ? items.map(x=>`<li>${esc(x)}</li>`).join('') : '<li class="empty">아직 식단이 올라오지 않았어요</li>'}</ul></div>`;
+    }).join('');
+  }
+  $('hnote').textContent = (h.notes||[]).filter(n=>!n.includes('변경')).join(' · ') + ' · 식재료 사정에 따라 바뀔 수 있어요';
+}
+// 학생회관(세명대학교 교수학생회관, 카카오 장소 좌표)
+const HAK_POS = {lat:37.179849, lon:128.196725, n:'세명대학교 학생회관'};
+let hakToday = null;
+const kstMin = () => { const d = new Date(Date.now()+9*3600e3); return d.getUTCHours()*60 + d.getUTCMinutes(); };
+const hm = m => `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+const hakMealNow = () => (h=>h<10?'morning':h<15?'lunch':'dinner')(Math.floor(kstMin()/60));
+const MEAL_KO = {morning:'아침', lunch:'점심', dinner:'저녁'};
+// 안내문("이용시간 8:30~18:50", "브레이크타임 : 15:00~16:30")에서 시간을 읽고, 없으면 기본값
+function hakStatus(){
+  const h = hakToday;
+  if(!h || !h.open || !['morning','lunch','dinner'].some(k=>(h[k]||[]).length)) return {code:'off', text:'오늘은 학생식당 식단이 없어요'};
+  const notes = (h.notes||[]).join(' '), t = (re, a, b) => { const m = notes.match(re); return m ? [m[1]*60+ +m[2], m[3]*60+ +m[4]] : [a, b]; };
+  const [open, close] = t(/이용시간\s*(\d+):(\d+)\s*~\s*(\d+):(\d+)/, 510, 1130);
+  const [bs, be] = t(/브레이크타임\s*:?\s*(\d+):(\d+)\s*~\s*(\d+):(\d+)/, 900, 990);
+  const m = kstMin();
+  if(m < open) return {code:'before', text:`🟡 ${hm(open)}에 문 열어요`};
+  if(m >= close) return {code:'closed', text:'🔴 오늘은 마감했어요'};
+  if(m >= bs && m < be) return {code:'break', text:`🟡 브레이크타임(~${hm(be)})`};
+  return {code:'open', text:`🟢 지금 이용 가능(~${hm(close)})`};
+}
+// 룰렛에는 '학식' 한 칸이 기본으로 들어간다(비상식량 모드 제외, 메뉴 편집에는 안 들어감) — 식단이 없는 날 걸리면 그 사정을 알려 준다
+const hakSlot = () => !PRESETS[preset].emergency;
+const wheel = () => hakSlot() && !menus.includes('학식') ? [...menus, '학식'] : menus;
+const hakItems = (meal) => (hakToday && hakToday[meal]) || [];
+const hakDir = `https://map.kakao.com/link/to/${encodeURIComponent(HAK_POS.n)},${HAK_POS.lat},${HAK_POS.lon}`;
+// 이번 주(월요일 기준) 학식·룰렛 선택 기록 — 이 휴대폰에만 저장
+const weekKey = () => { const d = new Date(Date.now()+9*3600e3); d.setUTCDate(d.getUTCDate() - (d.getUTCDay()+6)%7); return d.toISOString().slice(0,10); };
+function tally(add){
+  let t = {}; try{ t = JSON.parse(localStorage.getItem('hak-vs')) || {}; }catch(e){}
+  const w = weekKey(); t = t.w === w ? t : {w, hak:0, rou:0};
+  if(add){ t[add]++; try{ localStorage.setItem('hak-vs', JSON.stringify(t)); }catch(e){} }
+  $('vstally').textContent = (t.hak || t.rou) ? `이번 주 학식 ${t.hak} : 룰렛 ${t.rou}` : '';
+}
+function showVs(places){
+  if(PRESETS[preset].emergency || picked==='학식'){ $('vs').classList.add('hidden'); return; }
+  const st = hakStatus(), meal = hakMealNow(), items = hakItems(meal), p0 = places && places[0];
+  const walk = d => `도보 ${Math.max(1, Math.round(d/67))}분`;
+  const dh = pos ? distM(pos, HAK_POS) : null;
+  const hakMenu = !hakToday ? '학식 정보를 불러오지 못했어요' : st.code==='off' ? '오늘은 식단이 없어요(주말·휴무)'
+    : items.length ? esc(items[0]) + (items.length>1 ? ` 외 ${items.length-1}가지` : '') : '식단 미입력';
+  const shop = places === undefined || places === null ? '🔎 가까운 가게를 찾는 중…' : p0 ? esc(p0.place_name) : !pos ? '위치를 허용하면 가까운 가게를 찾아 드려요' : '1km 안에 가게가 없어요';
+  $('vsgrid').innerHTML = `
+    <div class="vside"><div class="vt">🍚 학식 · ${MEAL_KO[meal]}</div>
+      <div class="vm">${hakMenu}</div>
+      <div class="vs2">${st.code==='off' ? '🔴 운영 안 함' : st.text}</div>
+      <div class="vs2">${dh===null ? '📍 학생회관 1층' : `🚶 학생회관 ${fmtM(Math.round(dh))}` + (dh<=3000 ? ` · ${walk(dh)}` : '')}</div>
+      <a href="${hakDir}" target="_blank" rel="noopener" data-pick="hak">학식 먹으러 가기</a></div>
+    <div class="vside"><div class="vt">${iconOf(picked)} ${esc(picked)}</div>
+      <div class="vm">${shop}</div>
+      <div class="vs2">🛵 배달·포장도 가능</div><div class="vs2">${p0 ? `🚶 ${fmtM(+p0.distance)} · ${walk(+p0.distance)}` : '🗺️ 지도에서 찾아보기'}</div>
+      <a href="${p0 ? esc(p0.place_url) : $('kakao').href}" target="_blank" rel="noopener" data-pick="rou">이 메뉴로 결정</a></div>`;
+  $('vs').classList.remove('hidden'); tally();
+}
+// 학식 보기: 룰렛 자리에 학식 칸 + 학식 vs 룰렛(룰렛은 지금 묶음에서 임의로 하나 뽑아 가장 가까운 가게와 비교)
+let hakView = false;
+function setHakView(on){
+  if(spinning) return;
+  hakView = on;
+  document.body.classList.toggle('hakview', on);
+  $('hakBtn').classList.toggle('on', on);
+  $('hak').classList.toggle('hidden', !on);
+  if(on){ hakOff = 0; loadHak(); $('hak').scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+$('vsgrid').addEventListener('click', e=>{ const a = e.target.closest('a[data-pick]'); if(a) tally(a.dataset.pick); });
+$('htoday').addEventListener('click',()=>{ hakOff = 0; loadHak(); });
+$('hprev').addEventListener('click',()=>{ hakOff--; loadHak(); });
+$('hnext').addEventListener('click',()=>{ hakOff++; loadHak(); });
 // 기상특보: /api/wthr(Netlify 함수, 공공데이터포털 특보현황 10분 캐시) + 카카오로 내 시·도/시·군 확인
 const SIDO = {서울:'서울특별시',부산:'부산광역시',대구:'대구광역시',인천:'인천광역시',광주:'광주광역시',대전:'대전광역시',울산:'울산광역시',
   세종:'세종특별자치시',경기:'경기도',강원:'강원특별자치도',충북:'충청북도',충남:'충청남도',전북:'전북특별자치도',전남:'전라남도',
@@ -457,6 +677,24 @@ function wxMatch(lines, r){
   }
   return out;
 }
+// ---- 헤더 재난 소식 띠: 내 위치 특보 + 충북 기상특보·예비특보 + 재난뉴스(geoai-na 함수 alerts, 셔틀 앱과 공용) ----
+const ALERTS = 'https://geoai-na.netlify.app/.netlify/functions/alerts';
+let localWx = [], alertItems = [];
+function renderTicker(){
+  // 내 위치 특보가 있으면 같은 내용의 충북 특보 줄은 빼지 않고 맨 앞에 내 위치 줄만 더한다
+  const items = [...localWx, ...alertItems].slice(0, 9);
+  const tk = $('ticker');
+  if(!items.length){ tk.hidden = true; return; }
+  const label = {'여기':'내 위치 특보','특보':'충북 특보','예비특보':'예비특보','문자':'재난문자','뉴스':'재난뉴스'};
+  $('tkIn').innerHTML = items.map(x=>`<a href="${esc(x.url||'#')}" target="_blank" rel="noopener"><b class="k-${esc(x.kind)}">${label[x.kind]||esc(x.kind)}</b>${esc(x.text)}</a>`).join('');
+  tk.hidden = false;
+  // 글자 길이에 맞춰 흐르는 속도를 일정하게(초당 약 60px)
+  requestAnimationFrame(()=>$('tkIn').style.setProperty('--tkdur', Math.max(20, $('tkIn').scrollWidth/60)+'s'));
+}
+async function loadTicker(){
+  try { alertItems = ((await fetch(ALERTS).then(r=>r.json())).items || []).slice(0, 8); } catch { alertItems = []; }
+  renderTicker();
+}
 async function showWeather(){
   if(!pos) return '';
   const [w, r] = await Promise.all([loadWx(), myRegion()]);
@@ -466,18 +704,18 @@ async function showWeather(){
   const preLine = `<div class="wx">🌥️ ${esc(place)} 예비특보: ${esc(pre.join(' · '))} (${t})</div>`;
   if(now.length){
     const tip = (WX_TIP.find(([k])=>now.some(x=>x.includes(k)))||[,'기상 정보를 확인하고 이동에 주의하세요'])[1];
-    $('wxbar').innerHTML = `⚠️ <b>${esc(place)} ${esc(now.join(' · '))}</b> 발효 중<br>${tip}`;
-    $('wxbar').classList.remove('hidden');
+    localWx = [{kind:'여기', text:`${place} ${now.join(' · ')} 발효 중 — ${tip}`, url:'https://www.weather.go.kr/w/special-report/overall.do'}];
+    renderTicker();
     return `<div class="wx on">⚠️ ${esc(place)} 기상특보: ${esc(now.join(' · '))} (${t})</div>` + (pre.length ? preLine : '');
   }
-  $('wxbar').classList.add('hidden');
+  if(localWx.length){ localWx = []; renderTicker(); }
   if(pre.length) return preLine;
   return `<div class="wx">🌤️ ${esc(place)} 기상특보 없음 (${t})</div>`;
 }
 // 내 주변 안전시설: 충북 AED·민방위 대피소(공공데이터포털, data/*.json 로 미리 받아 둠)
 let safetyData = null;
 const loadSafety = () => safetyData || (safetyData = Promise.all(['data/aed.json','data/shelter.json']
-  .map(u=>fetch(u).then(r=>r.json()))).catch(()=>{ safetyData = null; return null; }));
+  .map(u=>fetch(u,{cache:'no-cache'}).then(r=>r.json()))).catch(()=>{ safetyData = null; return null; }));
 function distM(a, b){
   const R=6371000, r=Math.PI/180, dLa=(b.lat-a.lat)*r, dLo=(b.lon-a.lon)*r;
   return 2*R*Math.asin(Math.sqrt(Math.sin(dLa/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dLo/2)**2));
@@ -493,7 +731,8 @@ function nearest(items, n){
   }
   return [...seen.values()];
 }
-const mapLink = x => `https://map.kakao.com/link/map/${encodeURIComponent(x.n)},${x.lat},${x.lon}`;
+// 지도 핀 이름에 설치 건물까지(예: 세명대학교 학생회관 1층 로비). 쉼표는 링크 구분자라 뺀다.
+const mapLink = x => `https://map.kakao.com/link/map/${encodeURIComponent((x.n + (x.p ? ' ' + x.p : '')).replace(/,/g,' '))},${x.lat},${x.lon}`;
 const SAFE_FAR = 5000;
 async function showSafety(){
   if(!pos) return;
@@ -565,9 +804,10 @@ async function findNearby(force){
     showLoc();
     const key = picked+'|'+radius;
     if(!cache[key]){ st.textContent = `🔎 주변 ‘${picked}’ 식당을 찾는 중…`; cache[key] = await fetchPlaces(p, picked, radius); }
-    render(cache[key]);
+    render(cache[key]); showVs(cache[key].places);
   }catch(e){
     st.textContent = e.message || '식당 정보를 불러오지 못했어요. 지도 검색 버튼을 이용해 주세요.';
+    showVs([]);   // 위치를 못 받아도 학식 쪽 비교는 남긴다
   }
 }
 
@@ -647,7 +887,7 @@ $('addForm').addEventListener('submit',e=>{
   if(menus.length>=20){ alert('메뉴는 20개까지 넣을 수 있어요.'); return; }
   menus.push(v); store.set(menus); $('addInput').value=''; chips(); draw();
 });
-$('reset').addEventListener('click',()=>{ if(spinning) return; menus=PRESETS[preset].menus.slice(); store.set(menus); chips(); draw(); });
+$('reset').addEventListener('click',()=>{ if(spinning) return; if(preset==='near'){ buildNear(); return; } menus=PRESETS[preset].menus.slice(); store.set(menus); chips(); draw(); });
 function prepChecks(){
   let saved = {}; try{ saved = JSON.parse(localStorage.getItem('prep-checks')) || {}; }catch(e){}
   $('checks').innerHTML = PREP_LIST.map(([t,d],i)=>`<li><label><input type="checkbox" data-i="${i}" ${saved[i]?'checked':''}><span>${t}<small>${d}</small></span></label></li>`).join('');
@@ -672,19 +912,24 @@ function setOrder(menu){
 }
 function applyPreset(){
   const night = !!PRESETS[preset].night, emg = !!PRESETS[preset].emergency;
-  $('title').textContent = emg ? '🔦 비상식량 뭐 챙기지?' : night ? '🌙 오늘 야식 뭐 먹지?' : '🍽️ 오늘 저녁 뭐 먹지?';
+  const near = !!PRESETS[preset].near;
+  $('title').textContent = emg ? '🔦 비상식량 뭐 챙기지?' : night ? '🌙 오늘 야식 뭐 먹지?' : near ? '📍 내 주변 뭐 먹지?' : '🍽️ 오늘 저녁 뭐 먹지?';
   $('label').textContent = emg ? '오늘 챙길 비상식량은' : night ? '오늘 야식은' : '오늘 저녁은';
   document.body.classList.toggle('emg', emg);
-  $('subtitle').textContent = emg ? '정전·재난 때 먹을 것, 룰렛으로 하나씩 챙겨 두세요' : '고민은 룰렛에게 맡기고, 맛집은 바로 찾아요';
+  $('subtitle').textContent = emg ? '정전·재난 때 먹을 것, 룰렛으로 하나씩 챙겨 두세요' : near ? (nearInfo || '📍 내 위치 주변 음식점으로 룰렛을 만들어요') : '고민은 룰렛에게 맡기고, 맛집은 바로 찾아요';
   if(emg){ $('nearby').classList.add('hidden'); }
   else { $('prep').classList.add('hidden'); $('einfo')?.remove(); }
-  [...$('ages').children].forEach(b=>b.classList.toggle('on', b.dataset.p===preset));
+  [...$('ages').children].forEach(b=>{ if(b.dataset.p) b.classList.toggle('on', b.dataset.p===preset); });
 }
 $('ages').addEventListener('click',e=>{
-  const p = e.target.dataset.p; if(!p || spinning || p===preset) return;
+  if(e.target.dataset.v==='hak'){ setHakView(!hakView); return; }
+  const p = e.target.dataset.p; if(!p || spinning) return;
+  if(hakView) setHakView(false);
+  if(p===preset) return;
   preset = p; try{localStorage.setItem('dinner-preset',p)}catch(err){}
   menus = store.get() || PRESETS[p].menus.slice();
   angle = 0; applyPreset(); chips(); draw();
+  if(p==='near') buildNear();
 });
 $('radius').addEventListener('click',e=>{
   const r = e.target.dataset.r; if(!r) return;
@@ -693,9 +938,16 @@ $('radius').addEventListener('click',e=>{
 });
 $('relocate').addEventListener('click',()=>{ if(picked && !spinning) findNearby(true); });
 $('spin').addEventListener('click',spin);
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a,button'); if(!a||!window.gtag) return;
+  const kind=a.id==='kakao'?'kakaomap':a.id==='naver'?'navermap':a.classList.contains('eats')?'coupangeats'
+    :a.classList.contains('baemin')?'baemin':a.id==='kit'?'mealkit':a.id==='share'?'share':a.closest('#list')?'place':null;
+  if(kind) gtag('event','dinner_click',{kind,menu:picked||''});
+});
 cv.addEventListener('click',spin);
 
-applyPreset(); chips(); draw();
+applyPreset(); chips(); draw(); loadHak(); if(preset==='near') buildNear();
+loadTicker(); setInterval(loadTicker, 10*60*1000);
 document.fonts && document.fonts.ready.then(draw);
 </script>
 </body>
