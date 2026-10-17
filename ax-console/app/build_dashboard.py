@@ -1,14 +1,14 @@
 """AutoSNS 운영 대시보드: 저장소의 상태 파일을 읽어 dashboard/index.html 한 장을 만든다.
 
-실행: python3 dashboard/build.py  → dashboard/index.html 을 브라우저로 연다.
+실행: python3 ax-console/app/build_dashboard.py  → ax-console/data/dashboard/index.html 을 브라우저로 연다.
 질문 큐는 사용자가 보낸 글이므로 제목만 이스케이프해서 보여 주고 본문·닉네임은 싣지 않는다.
 """
 import datetime, html, json
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / 'dashboard' / 'index.html'
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / 'ax-console' / 'data' / 'dashboard' / 'index.html'
 TODAY = datetime.date.today()
 
 
@@ -87,7 +87,7 @@ def build():
 TEMPLATE = '''<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>AutoSNS 운영 현황</title>
 <style>
-@font-face{{font-family:P;src:url(../FONTS/Pretendard-Bold.otf);font-weight:700}}
+@font-face{{font-family:P;src:url(../../../FONTS/Pretendard-Bold.otf);font-weight:700}}
 :root{{--bg:#f4f6f8;--card:#fff;--ink:#17202a;--sub:#5f6b78;--line:#e3e7ec;--accent:#1f6feb;--warn:#c2410c;--ok:#15803d}}
 @media (prefers-color-scheme:dark){{:root:not([data-theme=light]){{--bg:#0f1419;--card:#182029;--ink:#e6edf3;--sub:#93a1b0;--line:#2a3541;--accent:#58a6ff;--warn:#fb923c;--ok:#4ade80}}}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:700 15px/1.5 P,-apple-system,sans-serif}}

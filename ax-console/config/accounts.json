@@ -1,0 +1,125 @@
+{
+  "_설명": "AX 발행 콘솔 계정 설정. 비밀값은 여기 쓰지 않고 secrets.env.enc 의 이름만 적는다. 값 확인: python -m shared.secret_env get <이름>",
+  "accounts": {
+    "dept": {
+      "label": "학과 (세명대 재난안전학과)",
+      "google": {
+        "email": "semyungds@gmail.com",
+        "login": "oauth",
+        "tokens": {
+          "youtube": "YOUTUBE_TOKEN_DEPT",
+          "blogger": "BLOGGER_TOKEN_DEPT",
+          "searchconsole": "SEARCHCONSOLE_TOKEN_DEPT"
+        }
+      },
+      "channels": {
+        "youtube": {
+          "module": "youtube-shorts-auto"
+        },
+        "blogger": {
+          "blog": "smuds2026.blogspot.com",
+          "module": "naver-blog-auto"
+        },
+        "instagram": {
+          "secrets": [
+            "INSTAGRAM_ID",
+            "INSTAGRAM_PW"
+          ],
+          "module": "insta-cardnews"
+        },
+        "naver_blog": {
+          "secrets": [
+            "NAVER_ID",
+            "NAVER_PW"
+          ],
+          "module": "naver-blog-auto"
+        },
+        "tiktok": {
+          "profile": "TIKTOK_PROFILE_URL",
+          "secrets": [
+            "TIKTOK_CLIENT_KEY",
+            "TIKTOK_CLIENT_SECRET",
+            "TIKTOK_TOKEN",
+            "TIKTOK_REDIRECT_URI"
+          ],
+          "module": "youtube-shorts-auto"
+        },
+        "x": {
+          "secrets": [
+            "X_OAUTH2_CLIENT_ID",
+            "X_OAUTH2_CLIENT_SECRET",
+            "X_TOKEN"
+          ],
+          "module": "youtube-shorts-auto"
+        },
+        "threads": {
+          "login": "insta-cardnews 브라우저 세션",
+          "module": "youtube-shorts-auto, insta-cardnews"
+        },
+        "kakao": {
+          "secrets": [
+            "KAKAO_TOKEN",
+            "KAKAO_REST_KEY"
+          ]
+        }
+      }
+    },
+    "personal": {
+      "label": "개인",
+      "google": {
+        "email": "ds2eye@gmail.com",
+        "login": "oauth",
+        "tokens": {
+          "youtube": "YOUTUBE_TOKEN_GEOAI",
+          "blogger": "BLOGGER_TOKEN_GEOAI",
+          "searchconsole": "SEARCHCONSOLE_TOKEN"
+        }
+      },
+      "channels": {
+        "blogger": {
+          "blog": "geoaina.blogspot.com",
+          "module": "naver-blog-auto (geoai_*)"
+        },
+        "tistory": {
+          "blog": "na-geoai.tistory.com",
+          "login": "naver-blog-auto/chrome-profile-tistory",
+          "module": "GeoAI_NA"
+        },
+        "homepage": {
+          "site": "geoai-site (Netlify)",
+          "module": "geoai-site, geoai-functions"
+        },
+        "naver_blog": {
+          "status": "확인 필요"
+        },
+        "tiktok": {
+          "status": "확인 필요"
+        },
+        "youtube": {
+          "status": "채널 없음"
+        },
+        "instagram": {
+          "status": "계정 없음"
+        }
+      }
+    }
+  },
+  "services": {
+    "llm_gateway": "LLM_GATEWAY_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+    "gamma": "GAMMA_API_KEY",
+    "heygen": "HEYGEN_API_KEY",
+    "pexels": "PEXELS_API_KEY",
+    "pixabay": "PIXABAY_API_KEY",
+    "naver_search": [
+      "NAVER_SEARCH_CLIENT_ID",
+      "NAVER_SEARCH_CLIENT_SECRET"
+    ],
+    "data_go_kr": [
+      "DATA_GO_KR_KEY",
+      "DATA_GO_KR_KEY_ENCODED"
+    ],
+    "google_oauth_client": "GOOGLE_OAUTH_CLIENT",
+    "mail": "MAIL_APP_PASSWORD"
+  }
+}

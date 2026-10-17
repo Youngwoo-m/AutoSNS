@@ -39,7 +39,7 @@ IG_TIMEOUT = 600   # 릴 업로드·처리·공유·첫 댓글까지 넉넉히(�
 def _refresh_dashboard():
     """발행 기록이 바뀌면 운영 대시보드를 다시 만든다. 실패해도 발행은 막지 않는다."""
     try:
-        subprocess.run([sys.executable, os.path.join(BASE_DIR, "..", "dashboard", "build.py")],
+        subprocess.run([sys.executable, os.path.join(BASE_DIR, "..", "ax-console", "app", "build_dashboard.py")],
                        capture_output=True, timeout=60)
     except Exception:
         pass

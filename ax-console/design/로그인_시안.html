@@ -1,0 +1,45 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>AX 발행 콘솔 로그인</title>
+<style>
+@font-face{font-family:P;src:url(../../FONTS/Pretendard-Bold.otf);font-weight:700}
+:root{--bg:#f3f5f8;--card:#fff;--ink:#16202b;--sub:#5f6b78;--line:#e2e6eb;--dept:#2563eb;--me:#7c3aed;--ok:#15803d;--warn:#c2410c}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1318;--card:#172029;--ink:#e6edf3;--sub:#93a1b0;--line:#283441;--ok:#4ade80;--warn:#fb923c}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:700 14px/1.55 P,-apple-system,sans-serif}
+main{max-width:880px;margin:auto;padding:48px 16px}h1{font-size:26px;margin:0 0 6px}p.lead{color:var(--sub);margin:0 0 28px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--dept);border-radius:14px;padding:20px}
+.card.me{border-top-color:var(--me)}.card h2{font-size:18px;margin:0}.card .role{color:var(--sub);font-size:13px;margin-bottom:16px}
+.g{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px}
+.g svg{width:18px;height:18px}
+.who{display:flex;gap:12px;align-items:center;padding:12px;background:var(--bg);border-radius:10px;margin-bottom:12px}
+.av{width:38px;height:38px;border-radius:50%;background:var(--me);color:#fff;display:grid;place-items:center}
+.who small{display:block;color:var(--sub);font-size:12px}
+ul{list-style:none;margin:0 0 14px;padding:0}li{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)}
+li:first-child{border-top:0}label{display:flex;gap:8px;align-items:center}.ok{color:var(--ok);font-size:12px}
+.row{display:flex;gap:8px}.row button{flex:1;border:1px solid var(--line);background:none;color:var(--ink);border-radius:8px;padding:7px;font:inherit;font-size:13px}
+.row .pri{background:var(--me);border-color:var(--me);color:#fff}
+.scopes{color:var(--sub);font-size:12px;margin-top:12px}
+.other{margin-top:16px}.other h3{font-size:15px;color:var(--sub);margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{border:1px dashed var(--line);border-radius:8px;padding:6px 10px;color:var(--sub);font-size:13px}
+.note{color:var(--sub);font-size:12px;margin-top:20px}
+</style></head><body><main>
+<h1>AX 발행 콘솔</h1>
+<p class="lead">먼저 구글 계정 두 개를 연결합니다. 비밀번호는 구글 로그인 창에만 입력하고, 콘솔은 받지 않습니다.</p>
+<div class="cols">
+<section class="card"><h2>학과 계정</h2><div class="role">세명대 재난안전학과 · 학과 유튜브, 학과 블로거, 서치콘솔</div>
+<button class="g"><svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>Google로 로그인</button>
+<div class="scopes">요청 권한: 유튜브 업로드·관리, 블로거 글쓰기, 서치콘솔 읽기</div></section>
+
+<section class="card me"><h2>개인 계정</h2><div class="role">유튜브·블로거(geoaina, 토목 연재)·서치콘솔</div>
+<div class="who"><div class="av">Y</div><div>로그인됨<small>개인 구글 계정 · 토큰 정상</small></div></div>
+<ul>
+<li><label><input type="checkbox" checked>블로거 · geoaina.blogspot.com</label><span class="ok">개인용</span></li>
+<li><label><input type="checkbox" checked>블로거 · 토목기술사 연재</label><span class="ok">개인용</span></li>
+<li><label><input type="checkbox">유튜브 · 채널 없음</label><span>—</span></li>
+</ul>
+<div class="row"><button class="pri">이 채널들로 연결 확정</button><button>다시 로그인</button><button>연결 해제</button></div></section>
+</div>
+<div class="other"><h3>구글 외 매체 (다음 단계)</h3>
+<div class="cols"><div><h3>학과</h3><div class="chips"><span>네이버 블로그</span><span>인스타그램</span><span>틱톡</span><span>X</span><span>스레드</span><span>카카오 채널</span></div></div><div><h3>개인</h3><div class="chips"><span>네이버 블로그</span><span>티스토리 na-geoai</span><span>틱톡</span><span>개인 홈페이지(Netlify)</span></div></div></div></div>
+<p class="note">시안입니다. 계정과 채널 이름은 예시입니다. 학과 칸에 개인 계정으로 로그인하면 채널 목록을 보고 바로잡을 수 있게, 확정 버튼을 눌러야 연결이 끝납니다.</p>
+</main></body></html>

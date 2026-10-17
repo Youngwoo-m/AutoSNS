@@ -1,0 +1,162 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>AX 발행 콘솔</title>
+<style>
+@font-face{font-family:P;src:url(/fonts/pretendard.otf);font-weight:700}
+:root{--bg:#f3f5f8;--card:#fff;--ink:#16202b;--sub:#5f6b78;--line:#e2e6eb;--acc:#2563eb;--warn:#c2410c;--ok:#15803d;--run:#a16207}
+:root[data-acc=personal]{--acc:#7c3aed}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1318;--card:#172029;--ink:#e6edf3;--sub:#93a1b0;--line:#283441;--warn:#fb923c;--ok:#4ade80;--run:#facc15}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:700 14px/1.5 P,-apple-system,sans-serif}
+header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:18px;margin:0}header .who{color:var(--sub);font-size:13px;margin-left:auto}
+.seg{display:flex;background:var(--bg);border-radius:9px;padding:3px}.seg button{border:0;background:none;color:var(--sub);font:inherit;padding:6px 16px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--acc);color:#fff}
+.wrap{display:grid;grid-template-columns:210px 1fr 400px;gap:16px;padding:16px 20px;align-items:start}
+@media(max-width:1100px){.wrap{grid-template-columns:200px 1fr}.wrap>.edit{grid-column:1/-1}}
+@media(max-width:700px){.wrap{grid-template-columns:1fr;padding:12px 16px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+h2{font-size:14px;color:var(--sub);margin:0 0 10px}
+.ch{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;color:var(--ink);font:inherit;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer}
+.ch small{display:block;color:var(--sub);font-size:11px}.ch.on{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+.ch.off{color:var(--sub)}.n{background:var(--bg);border-radius:9px;padding:0 8px;font-size:12px;color:var(--sub)}
+.task{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:11px 10px;border-top:1px solid var(--line);cursor:pointer;border-radius:8px}
+.task:first-of-type{border-top:0}.task.on{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.task .t{font-size:15px}.task .m{color:var(--sub);font-size:12px}
+.st{font-size:12px;border-radius:6px;padding:1px 8px;background:var(--bg);color:var(--sub);white-space:nowrap;align-self:start}
+.st.scheduled{color:var(--acc)}.st.done{color:var(--ok)}.st.failed{color:var(--warn)}.st.running{color:var(--run)}
+.empty{color:var(--sub);padding:20px 4px}
+label{display:block;color:var(--sub);font-size:12px;margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:140px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btns button{border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;border-radius:8px;padding:8px 12px;cursor:pointer}
+.btns .pri{background:var(--acc);border-color:var(--acc);color:#fff}.btns .del{color:var(--warn);margin-left:auto}
+.live{color:var(--warn);font-size:12px;margin-top:6px}
+.runs{margin-top:16px}.run{border-top:1px solid var(--line);padding:8px 0;font-size:12px}
+.run b{color:var(--ok)}.run b.x{color:var(--warn)}.run a{color:var(--acc);cursor:pointer;margin-left:6px}
+pre{background:var(--bg);border-radius:8px;padding:10px;font:12px/1.5 ui-monospace,monospace;white-space:pre-wrap;max-height:260px;overflow:auto}
+.top2{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.newbtn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer}
+.msg{color:var(--warn);font-size:13px;margin-top:8px;min-height:1em}
+
+#schv{padding:16px 20px;max-width:1100px}.day{margin:16px 0 6px;font-size:15px}.src{font-size:11px;border-radius:5px;padding:1px 6px;background:var(--bg);color:var(--sub)}.src.c{color:var(--acc)}.acct{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-right:6px}.acct.p{background:#7c3aed}.filt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.filt select{width:auto}tr.click{cursor:pointer}
+#setv{padding:16px 20px;display:grid;gap:16px;max-width:1100px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.sgrid{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:7px 6px;border-top:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
+.ok{color:var(--ok)}.bad{color:var(--warn)}.mut{color:var(--sub);font-size:12px}
+.sw{appearance:none;width:34px;height:20px;border-radius:10px;background:var(--line);position:relative;cursor:pointer;padding:0;border:0}
+.sw:checked{background:var(--acc)}.sw::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.sw:checked::after{left:16px}
+.scroll{max-height:420px;overflow:auto}
+</style></head><body>
+<header><h1>AX 발행 콘솔</h1>
+<div class="seg" id="tabs"><button class="on" onclick="tab('work')">작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
+<div class="seg" id="accs"></div><span class="who" id="who"></span></header>
+<main id="setv" hidden></main>
+<main id="schv" hidden></main>
+<div class="wrap" id="workv">
+<nav class="card"><h2>채널</h2><div id="chans"></div></nav>
+<section class="card"><div class="top2"><h2 id="listTitle">작업</h2><button class="newbtn" onclick="edit(null)">+ 새 작업</button></div><div id="tasks"></div></section>
+<section class="card edit" id="edit"></section>
+</div>
+<script>
+let M,T=[],acc='dept',ch=null,cur=null;
+const ST={draft:'초안',scheduled:'예약됨',running:'실행 중',done:'완료',failed:'실패'};
+const RP={'':'한 번','daily':'매일','weekly':'매주'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>s?s.replace('T',' ').slice(0,16):'';
+async function api(p,b){const r=await fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'오류');return j}
+const A=()=>M.accounts.find(a=>a.id==acc), C=()=>A().channels.find(c=>c.id==ch);
+async function init(){M=await api('/api/meta');ch=A().channels[0].id;T=await api('/api/tasks');draw();setInterval(()=>{if(!$('workv').hidden)refresh()},4000)}
+async function refresh(){T=await api('/api/tasks');draw(false)}
+function draw(full=true){
+  document.documentElement.dataset.acc=acc;
+  $('accs').innerHTML=M.accounts.map(a=>`<button class="${a.id==acc?'on':''}" onclick="acc='${a.id}';ch=A().channels[0].id;cur=null;draw()">${esc(a.label.split(' ')[0])}</button>`).join('');
+  $('who').textContent=A().email;
+  $('chans').innerHTML=A().channels.map(c=>{const n=T.filter(t=>t.account==acc&&t.channel==c.id).length;const off=c.status!='연결됨';
+    return `<button class="ch ${c.id==ch?'on':''} ${off?'off':''}" onclick="ch='${c.id}';cur=null;draw()"><span>${esc(c.label)}<small>${esc(off?c.status:c.detail||'')}</small></span><span class="n">${n}</span></button>`}).join('');
+  $('listTitle').textContent=`${A().label.split(' ')[0]} · ${C().label} 작업`;
+  const list=T.filter(t=>t.account==acc&&t.channel==ch);
+  $('tasks').innerHTML=list.length?list.map(t=>{const a=C().actions.find(x=>x.key==t.action);
+    return `<div class="task ${cur&&cur.id==t.id?'on':''}" onclick="edit('${t.id}')"><div><div class="t">${esc(t.title)}</div>
+    <div class="m">${esc(a?a.label:t.action)} · ${t.schedule?fmt(t.schedule)+' '+RP[t.repeat||'']:'시각 미정'}${t.runs&&t.runs[0]?' · 최근 실행 '+fmt(t.runs[0].at):''}</div></div>
+    <span class="st ${t.status}">${ST[t.status]||t.status}</span></div>`}).join(''):'<div class="empty">아직 작업이 없습니다. 오른쪽에서 수행 내용을 입력하세요.</div>';
+  if(cur){const f=T.find(t=>t.id==cur.id);if(f){cur=f}else{cur=null;full=true}}
+  if(full)form();else runs();
+}
+function edit(id){cur=id?T.find(t=>t.id==id):null;draw()}
+function form(){
+  const t=cur||{title:'',body:'',action:C().actions[0].key,schedule:'',repeat:''};
+  $('edit').innerHTML=`<h2>${cur?'작업 수정':'새 작업'} · ${esc(C().label)}</h2>
+  <label>제목</label><input id="f_title" value="${esc(t.title)}" placeholder="예: 10월 진로 숏츠 9편 발행">
+  <label>수행 내용</label><textarea id="f_body" placeholder="무엇을 할지, 확인할 점, 참고 링크">${esc(t.body)}</textarea>
+  <label>실행 작업</label><select id="f_action" onchange="liveNote()">${C().actions.map(a=>`<option value="${a.key}" ${a.key==t.action?'selected':''}>${esc(a.label)}${a.live?' — 실제 발행':''}</option>`).join('')}</select>
+  <div class="live" id="live"></div>
+  <div class="row"><div><label>실행 시각</label><input type="datetime-local" id="f_schedule" value="${esc((t.schedule||'').slice(0,16))}"></div>
+  <div><label>반복</label><select id="f_repeat">${Object.entries(RP).map(([k,v])=>`<option value="${k}" ${k==(t.repeat||'')?'selected':''}>${v}</option>`).join('')}</select></div></div>
+  <div class="btns"><button onclick="save('draft')">저장</button><button class="pri" onclick="save('scheduled')">예약 걸기</button>
+  ${cur?`<button onclick="runNow()">지금 실행</button><button class="del" onclick="del()">삭제</button>`:''}</div>
+  <div class="msg" id="msg"></div><div class="runs" id="runs"></div>`;
+  liveNote();runs();
+}
+function act(){return C().actions.find(a=>a.key==$('f_action').value)}
+function liveNote(){const a=act();$('live').textContent=a&&a.live?`실행하면 ${a.script} 가 돌아 실제로 발행됩니다.`:''}
+function runs(){if(!$('runs'))return;const r=(cur&&cur.runs)||[];
+  $('runs').innerHTML=cur?`<h2>실행 기록</h2>`+(r.length?r.map(x=>`<div class="run"><b class="${x.code==0?'':'x'}">${x.code==0?'성공':'실패('+x.code+')'}</b> ${fmt(x.at)} ${x.manual?'수동':'예약'}<a onclick="showLog('${esc(x.log)}',this)">기록 보기</a></div>`).join(''):'<div class="empty">아직 실행하지 않았습니다.</div>')+(cur.status=='running'?'<div class="run">실행 중…</div>':''):''}
+async function showLog(p,el){const t=await (await fetch('/api/log?p='+encodeURIComponent(p))).text();const pre=document.createElement('pre');pre.textContent=t;el.parentNode.after(pre);el.remove()}
+async function save(state){
+  const b={account:acc,channel:ch,title:$('f_title').value,body:$('f_body').value,action:$('f_action').value,
+    schedule:$('f_schedule').value,repeat:$('f_repeat').value,state};
+  if(state=='scheduled'&&act().live&&!confirm(`${C().label} 채널에 예약합니다.\n${fmt(b.schedule)}에 '${act().label}'이(가) 실제로 실행됩니다.`))return;
+  try{cur=await api(cur?`/api/tasks/${cur.id}/update`:'/api/tasks',b);T=await api('/api/tasks');draw();$('msg').style.color='var(--ok)';$('msg').textContent=state=='scheduled'?'예약했습니다.':'저장했습니다.'}
+  catch(e){$('msg').textContent=e.message}}
+async function runNow(){const a=C().actions.find(x=>x.key==cur.action);
+  if(a.live&&!confirm(`지금 '${a.label}'을(를) 실행합니다. 실제로 발행됩니다.`))return;
+  try{await api(`/api/tasks/${cur.id}/run`,{});setTimeout(refresh,600)}catch(e){$('msg').textContent=e.message}}
+async function del(){if(!confirm('이 작업을 삭제할까요?'))return;await api(`/api/tasks/${cur.id}/delete`,{});cur=null;T=await api('/api/tasks');draw()}
+function tab(t){const ids=['work','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
+  $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('accs').style.visibility=t=='work'?'':'hidden';
+  if(t=='set')loadSet();else if(t=='sch')loadSch();else refresh()}
+let SC,F={acc:'',ch:'',src:'',hide:true};
+const WD='일월화수목금토';
+async function loadSch(){SC=await api('/api/schedule');drawSch()}
+function drawSch(){const L=SC.labels;const chs=[...new Set(SC.rows.map(r=>r.channel))];
+  let rows=SC.rows.filter(r=>(!F.acc||r.account==F.acc)&&(!F.ch||r.channel==F.ch)&&(!F.src||r.source==F.src)&&!(F.hide&&r.job=='ytshorts.trigger'));
+  const by={};rows.forEach(r=>(by[r.at?r.at.slice(0,10):'시각 없음']??=[]).push(r));
+  $('schv').innerHTML=`<div class="card"><div class="filt"><h2 style="margin:0 auto 0 0">앞으로 ${SC.days}일 예약 (${rows.length}건)</h2>
+   <select onchange="F.acc=this.value;drawSch()"><option value="">전체 계정</option><option value="dept" ${F.acc=='dept'?'selected':''}>학과</option><option value="personal" ${F.acc=='personal'?'selected':''}>개인</option></select>
+   <select onchange="F.ch=this.value;drawSch()"><option value="">전체 채널</option>${chs.map(c=>`<option value="${c}" ${F.ch==c?'selected':''}>${esc(L[c]||c)}</option>`).join('')}</select>
+   <select onchange="F.src=this.value;drawSch()"><option value="">콘솔+자동</option><option value="console" ${F.src=='console'?'selected':''}>콘솔 예약만</option><option value="launchd" ${F.src=='launchd'?'selected':''}>자동 작업만</option></select>
+   <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${F.hide?'checked':''} onchange="F.hide=this.checked;drawSch()">트리거 점검 숨기기</label></div>
+   ${Object.entries(by).map(([d,rs])=>`<div class="day">${d=='시각 없음'?d:d.slice(5).replace('-','/')+' ('+WD[new Date(d+'T00:00').getDay()]+')'}</div><table>${rs.map(r=>`<tr class="${r.source=='console'?'click':''}" ${r.source=='console'?`onclick="openTask('${r.account}','${r.channel}','${r.id}')"`:''}>
+    <td style="width:60px">${r.at?r.at.slice(11,16):'—'}</td><td style="width:150px"><span class="acct ${r.account=='personal'?'p':''}"></span>${r.account=='dept'?'학과':'개인'} · ${esc(L[r.channel]||r.channel)}</td>
+    <td>${esc(r.title)}<div class="mut">${esc(r.what)}${r.repeat?' · '+({daily:'매일',weekly:'매주'}[r.repeat]):''}</div></td>
+    <td style="text-align:right"><span class="src ${r.source=='console'?'c':''}">${r.source=='console'?'콘솔 예약':r.on===false?'자동(꺼짐)':'자동'}</span></td></tr>`).join('')}</table>`).join('')||'<div class="empty">조건에 맞는 예약이 없습니다.</div>'}</div>`}
+function openTask(a,c,id){acc=a;ch=c;tab('work');cur=T.find(t=>t.id==id)||null;draw()}
+let SV;
+async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels;
+  const accHtml=Object.entries(SV.accounts).map(([id,a])=>`<div class="card"><h2>${id=='dept'?'학과':'개인'} 계정</h2>
+   <label>이름</label><input data-a="${id}" data-k="label" value="${esc(a.label)}">
+   <label>구글 계정</label><input data-a="${id}" data-k="email" value="${esc(a.google.email)}">
+   <table style="margin-top:10px"><tr><th>채널</th><th>상태</th><th>주소·메모</th></tr>${Object.entries(a.channels).map(([c,i])=>`<tr><td>${esc(L[c]||c)}</td>
+   <td><input data-a="${id}" data-c="${c}" data-k="status" value="${esc(i.status||'')}" placeholder="연결됨"></td>
+   <td><input data-a="${id}" data-c="${c}" data-k="${i.site?'site':i.blog?'blog':'note'}" value="${esc(i.blog||i.site||i.note||'')}"></td></tr>`).join('')}</table></div>`).join('');
+  $('setv').innerHTML=`<div class="sgrid">${accHtml}</div>
+   <div class="btns" style="margin-top:0"><button class="pri" onclick="saveAcc()">계정 정보 저장</button><span class="msg" id="smsg"></span></div>
+   <div class="sgrid">
+   <div class="card"><h2>비밀값 (암호화 저장소)</h2><p class="mut">값은 보여 주지 않습니다. 바꿀 때는 터미널에서 python3 -m shared.secret_env set 이름</p>
+    <div class="scroll"><table>${SV.secrets.map(x=>`<tr><td>${esc(x.name)}</td><td class="${x.ok?'ok':'bad'}">${x.ok===null?'확인 불가':x.ok?'저장됨':'없음'}</td></tr>`).join('')}</table></div></div>
+   <div class="card"><h2>플러그인</h2><p class="mut">켜고 끄면 ~/.claude/settings.json 에 반영되고, 새 Claude 세션부터 적용됩니다.</p>
+    <table>${SV.plugins.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.market)} · ${esc(x.version)}</div></td><td style="text-align:right"><input type="checkbox" class="sw" ${x.enabled?'checked':''} onchange="plug('${esc(x.id)}',this)"></td></tr>`).join('')}</table>
+    <h2 style="margin-top:16px">커넥터 (MCP)</h2><p class="mut">claude.ai 계정 커넥터(Gmail, 캘린더, 노션 등)는 claude.ai 설정에서 관리합니다.</p>
+    <div class="scroll"><table>${SV.connectors.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.source)} · ${esc(x.type)}</div></td><td class="${x.state=='인증 필요'?'bad':'ok'}">${esc(x.state)}</td></tr>`).join('')}</table></div></div></div>
+   <div class="card"><h2>설치된 스킬 (${SV.skills.length})</h2><input id="sq" placeholder="스킬 검색" oninput="skl()"><div class="scroll" style="margin-top:8px"><table id="sk"></table></div></div>`;
+  skl()}
+function skl(){const q=($('sq').value||'').toLowerCase();$('sk').innerHTML=SV.skills.filter(x=>(x.name+x.desc).toLowerCase().includes(q)).map(x=>`<tr><td style="width:30%">${esc(x.name)}<div class="mut">${esc(x.source)}</div></td><td class="mut">${esc(x.desc)}</td></tr>`).join('')}
+async function saveAcc(){const b={accounts:{}};document.querySelectorAll('#setv input[data-a]').forEach(i=>{const a=b.accounts[i.dataset.a]??={channels:{}};
+  if(i.dataset.c)(a.channels[i.dataset.c]??={})[i.dataset.k]=i.value;else a[i.dataset.k]=i.value});
+  try{await api('/api/settings/accounts',b);M=await api('/api/meta');$('smsg').style.color='var(--ok)';$('smsg').textContent='저장했습니다.'}catch(e){$('smsg').textContent=e.message}}
+async function plug(id,el){if(!confirm(`${id.split('@')[0]} 플러그인을 ${el.checked?'켭':'끕'}니다.`)){el.checked=!el.checked;return}
+  try{await api('/api/settings/plugin',{id,enabled:el.checked})}catch(e){alert(e.message);el.checked=!el.checked}}
+init();
+</script></body></html>
