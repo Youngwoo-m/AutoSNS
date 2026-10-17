@@ -11,4 +11,15 @@ if [ "$#" -ne 0 ]; then
 fi
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
+# 같은 티스토리 크롬 프로필을 다른 작업(채용정보 tistory_jobs, Codex 기술사 연재 자동화 등)이
+# 쓰고 있으면 크롬이 프로필을 못 열어 실패한다 → 비기를 최대 40분 기다린다(2026-10-18).
+for i in $(seq 1 40); do
+    pgrep -f "chrome-profile-tistory" >/dev/null || break
+    [ "$i" -eq 1 ] && echo "[$(date '+%F %T')] 티스토리 크롬 프로필 사용 중 — 기다림" >> logs/tistory.log
+    if [ "$i" -eq 40 ]; then
+        echo "[$(date '+%F %T')] 40분 기다려도 프로필이 비지 않아 이번 회차를 건너뜀" >> logs/tistory.log
+        exit 1
+    fi
+    sleep 60
+done
 exec ./.venv/bin/python tistory_crosspost.py --go >> "logs/tistory.log" 2>&1

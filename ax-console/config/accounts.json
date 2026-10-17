@@ -149,6 +149,11 @@
         "id": "ds2eye@gmail.com",
         "login": "netlify CLI (기본 계정)",
         "note": "개인 구글 계정으로 가입. geoai-na.netlify.app, 기술사 질문 접수 양식"
+      },
+      "tistory": {
+        "id": "na-geoai.tistory.com",
+        "login": "카카오 계정 로그인 (chrome-profile-tistory)",
+        "note": "티스토리 세션은 크롬을 닫으면 풀려 매번 카카오 로그인으로 다시 들어간다. 카카오가 비밀번호를 물으면 tistory_login.py 로 직접 로그인"
       }
     }
   },

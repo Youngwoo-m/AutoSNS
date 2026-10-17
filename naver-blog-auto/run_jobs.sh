@@ -22,4 +22,9 @@ done
 # 없으면(이번 주 블로그를 건너뛴 경우) jobs_insta.py 가 알아서 건너뛴다.
 (cd ../insta-cardnews && ./.venv/bin/python jobs_insta.py --latest --go) >> "logs/jobs.log" 2>&1
 # 티스토리(na-geoai '채용정보')에도 같은 초안으로. 인스타가 실패해도 이어서 한다.
+for i in $(seq 1 40); do      # 티스토리 프로필도 다른 작업이 쓰고 있으면 기다린다
+    pgrep -f "chrome-profile-tistory" >/dev/null || break
+    [ "$i" -eq 1 ] && echo "[$(date '+%F %T')] 티스토리 크롬 프로필 사용 중 — 기다림" >> logs/jobs.log
+    sleep 60
+done
 exec ./.venv/bin/python tistory_jobs.py --latest --go >> "logs/jobs.log" 2>&1

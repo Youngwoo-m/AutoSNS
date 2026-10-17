@@ -565,6 +565,37 @@ def github_switch(user):
         raise ValueError((p.stderr or p.stdout).strip()[:200])
 
 
+TISTORY_DIR = ROOT / 'GeoAI_NA' / 'naver-blog-auto'
+
+
+def tistory_status():
+    """티스토리 교차 게시의 최근 결과와 카카오 장기 로그인 쿠키 만료일(값은 읽지 않는다)."""
+    out = {'last_ok': '', 'last_fail': '', 'fail_reason': '', 'kakao_until': '', 'profile_busy': False}
+    try:
+        for ln in (TISTORY_DIR / 'tistory-logs' / 'tistory.log').read_text(errors='ignore').splitlines()[-400:]:
+            if '발행 완료' in ln:
+                out['last_ok'] = ln[1:20]
+            elif '실패' in ln or '비밀번호를 묻' in ln or '건너뜀' in ln:
+                out['last_fail'], out['fail_reason'] = ln[1:20], ln[22:].split('http')[0].strip(' :')[:120]
+    except OSError:
+        pass
+    import shutil, sqlite3, tempfile
+    db = TISTORY_DIR / 'chrome-profile-tistory' / 'Default' / 'Cookies'
+    if db.exists():
+        with tempfile.TemporaryDirectory() as td:
+            cp = Path(td) / 'c.db'
+            shutil.copy(db, cp)
+            try:
+                row = sqlite3.connect(cp).execute(
+                    "select max(expires_utc) from cookies where host_key like '%kakao.com' and name='_kawlt'").fetchone()
+                if row and row[0]:
+                    out['kakao_until'] = datetime.datetime.fromtimestamp(row[0] / 1e6 - 11644473600).isoformat(timespec='minutes')
+            except sqlite3.Error:
+                pass
+    out['profile_busy'] = subprocess.run(['pgrep', '-f', 'chrome-profile-tistory'], capture_output=True).returncode == 0
+    return out
+
+
 def _safe(fn):
     try:
         fn()
@@ -584,16 +615,26 @@ def google_view():
             svcs.append({'id': svc, 'label': SERVICE_LABEL.get(svc, svc), 'secret': name, **r,
                          'login': GSTATE['login'].get(f'{acc}/{svc}')})
         others = []
-        for kind, label in (('naver', '네이버'), ('kakao', '카카오'), ('netlify', 'Netlify')):
+        for kind, label in (('naver', '네이버'), ('kakao', '카카오'), ('tistory', '티스토리'), ('netlify', 'Netlify')):
             o = a.get(kind)
             if not o:
                 continue
             sec = o.get('secrets', [])
             ok = bool(sec) and have is not None and all(n in have for n in sec)
+            if kind == 'tistory':
+                ts = tistory_status()
+                fail_newer = ts['last_fail'] > ts['last_ok']
+                ok = bool(ts['last_ok']) and not fail_newer
+                sec = ['TISTORY']
+                o = {**o, 'note': (f"최근 성공 {ts['last_ok'][5:16]}" if ts['last_ok'] else '성공 기록 없음')
+                     + (f" · 최근 실패 {ts['last_fail'][5:16]}: {ts['fail_reason']}" if fail_newer else '')
+                     + (f" · 카카오 로그인 유지 {ts['kakao_until'][:10]}까지" if ts['kakao_until'] else ' · 카카오 로그인 쿠키 없음')
+                     + (' · 지금 다른 작업이 티스토리 크롬 사용 중' if ts['profile_busy'] else '')}
             if kind in ('github', 'netlify'):
                 ok = o.get('id', '') in CLI_LOGINS.get(kind, set())
                 sec = ['CLI']
-            state = ('CLI 로그인됨' if ok else 'CLI 로그인 안 됨') if sec == ['CLI'] else \
+            state = ('정상' if ok else '로그인 확인 필요') if sec == ['TISTORY'] else \
+                ('CLI 로그인됨' if ok else 'CLI 로그인 안 됨') if sec == ['CLI'] else \
                 ('로그인 정보 저장됨' if ok else '연결 전' if not sec else '비밀값 없음')
             others.append({'label': label, 'id': o.get('id', ''), 'login': o.get('login', ''), 'note': o.get('note', ''),
                            'secrets': sec, 'ok': ok, 'state': state})
