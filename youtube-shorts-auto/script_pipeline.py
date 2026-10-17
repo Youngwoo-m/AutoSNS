@@ -17,6 +17,7 @@ import datetime
 import json
 import os
 import re
+import subprocess
 import sys
 
 from common import BASE_DIR, load_config, log
@@ -74,6 +75,15 @@ JSON 형식:
   ],
   "tags": ["해시태그 3~4개(# 없이)"]}}
 """ + COMMON_RULES
+
+
+def _refresh_dashboard():
+    """발행 기록이 바뀌면 운영 대시보드를 다시 만든다. 실패해도 발행은 막지 않는다."""
+    try:
+        subprocess.run([sys.executable, os.path.join(BASE_DIR, "..", "dashboard", "build.py")],
+                       capture_output=True, timeout=60)
+    except Exception:
+        pass
 
 
 def _claude(prompt):
@@ -233,6 +243,7 @@ def approve(path):
                   "description": desc, "tags": tags, "published": None})
     sched.append(entry)
     json.dump(sched, open(SCHED_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    _refresh_dashboard()
     d.update({"status": "approved", "video": entry["video"], "scheduled": entry["date"],
               "label": label})
     json.dump(d, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

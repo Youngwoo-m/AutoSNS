@@ -36,6 +36,15 @@ IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python")
 IG_TIMEOUT = 600   # 릴 업로드·처리·공유·첫 댓글까지 넉넉히(초)
 
 
+def _refresh_dashboard():
+    """발행 기록이 바뀌면 운영 대시보드를 다시 만든다. 실패해도 발행은 막지 않는다."""
+    try:
+        subprocess.run([sys.executable, os.path.join(BASE_DIR, "..", "dashboard", "build.py")],
+                       capture_output=True, timeout=60)
+    except Exception:
+        pass
+
+
 def _load():
     with open(SCHED_PATH, encoding="utf-8") as f:
         return json.load(f)
@@ -44,6 +53,7 @@ def _load():
 def _save(sched):
     with open(SCHED_PATH, "w", encoding="utf-8") as f:
         json.dump(sched, f, ensure_ascii=False, indent=2)
+    _refresh_dashboard()
 
 
 def _pick(sched, ignore_date):
