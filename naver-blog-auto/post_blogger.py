@@ -37,17 +37,9 @@ def _token_path(cfg=None):
 
 
 def _creds(cfg=None):
-    path = _token_path(cfg)
-    if not os.path.exists(path):
-        raise RuntimeError(
-            f"Blogger 토큰이 없습니다({os.path.basename(path)}) — 해당 계정으로 1회 인증이 필요합니다.")
-    c = Credentials.from_authorized_user_file(path, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
-        log("Blogger 토큰 자동 갱신됨.")
-    return c
+    # 토큰은 암호화 저장소에 있다(blogger_token.py). 이름은 token_file 로 정한다.
+    import blogger_token
+    return blogger_token.load(_token_path(cfg), SCOPES, "Blogger")
 
 
 def _esc(t):

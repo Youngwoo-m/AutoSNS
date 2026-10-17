@@ -61,6 +61,20 @@ def write(values):
     os.replace(tmp, FILE)
 
 
+def update(values=None, remove=()):
+    """잠금을 잡고 읽고-고치고-쓴다. 발행 중 토큰 갱신과 사람이 넣는 값이 겹쳐도
+    서로 지우지 않게 한다(write 는 통째로 덮어쓴다)."""
+    import fcntl
+    with open(FILE + ".lock", "w") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        vals = read()
+        vals.update(values or {})
+        for k in remove:
+            vals.pop(k, None)
+        write(vals)
+    return vals
+
+
 def get(name, default=None):
     return os.environ.get(name) or read().get(name, default)
 

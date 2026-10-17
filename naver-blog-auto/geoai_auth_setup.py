@@ -21,7 +21,8 @@ from geoai_blogger import TOKEN_PATH, blog_id
 
 if not os.path.exists(CLIENT_SECRET):
     raise SystemExit(f"client_secret.json 을 찾을 수 없습니다: {CLIENT_SECRET}")
-if os.path.exists(TOKEN_PATH):
+import blogger_token  # noqa: E402
+if blogger_token.exists(TOKEN_PATH):
     ans = input(f"{os.path.basename(TOKEN_PATH)} 이 이미 있습니다. 다시 인증할까요? [y/N] ")
     if ans.strip().lower() not in ("y", "yes"):
         raise SystemExit("취소했습니다.")
@@ -30,9 +31,8 @@ print("브라우저에서 **geoaina.blogspot.com 소유 계정**으로 로그인
 # prompt='consent' + 계정 선택을 강제해 '이미 로그인된 다른 계정'으로 새어나가지 않게 한다.
 flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET, SCOPES)
 c = flow.run_local_server(port=0, prompt="consent select_account")
-with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-    f.write(c.to_json())
-print("토큰 저장:", TOKEN_PATH)
+blogger_token.save(TOKEN_PATH, c.to_json())           # 평문 파일 대신 암호화 저장소
+print("토큰 저장:", blogger_token.secret_name(TOKEN_PATH))
 
 # 인증한 계정이 정말 그 블로그에 글을 쓸 수 있는지 즉시 확인한다(나중에 발행 때 403 나는 걸 막는다).
 cfg = load_config()

@@ -32,17 +32,9 @@ def gcfg(cfg=None):
 
 
 def creds():
-    if not os.path.exists(TOKEN_PATH):
-        raise RuntimeError(
-            "GeoAI 블로그 토큰이 없습니다 — python geoai_auth_setup.py 로 "
-            "블로그 소유 계정 인증을 한 번 해주세요.")
-    c = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    if not c.valid and c.expired and c.refresh_token:
-        c.refresh(Request())
-        with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-            f.write(c.to_json())
-        log("GeoAI Blogger 토큰 자동 갱신됨.")
-    return c
+    # 토큰은 암호화 저장소에 있다(blogger_token.py). 없으면 geoai_auth_setup.py 로 1회 인증.
+    import blogger_token
+    return blogger_token.load(TOKEN_PATH, SCOPES, "GeoAI Blogger")
 
 
 def service():

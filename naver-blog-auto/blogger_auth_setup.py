@@ -17,6 +17,6 @@ if not os.path.exists(CLIENT_SECRET):
     raise SystemExit(f"client_secret.json 을 찾을 수 없습니다: {CLIENT_SECRET}")
 flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRET, SCOPES)
 creds = flow.run_local_server(port=0, prompt="consent")
-with open(TOKEN_PATH, "w", encoding="utf-8") as f:
-    f.write(creds.to_json())
-print("완료:", TOKEN_PATH)
+import blogger_token  # noqa: E402
+blogger_token.save(TOKEN_PATH, creds.to_json())       # 평문 파일 대신 암호화 저장소
+print("완료:", blogger_token.secret_name(TOKEN_PATH))
