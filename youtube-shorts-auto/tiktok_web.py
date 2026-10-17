@@ -411,7 +411,9 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
         if popular_sound and not video.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
             snd = _add_popular_sound(d)
             log(f"인기 음원: {snd} (-20dB)" if snd else "인기 음원 없이 진행")
-        box = _caption_box(d)
+        # 10/16~17: 52MB 홍보 영상은 40초 안에 캡션칸이 안 떠 하루 넘게 막혔다 — 크기만큼 더 기다린다.
+        mb = os.path.getsize(video) / 1e6
+        box = _caption_box(d, timeout=int(min(300, 40 + mb * 3)))
         if box is None:
             shot(d, "no_caption_box")
             # 10/16 08:13~16:32: 업로드 화면이 멈춘 Chrome 에 계속 붙어 33번 연속 실패했다.
