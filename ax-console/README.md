@@ -70,6 +70,13 @@ python3 ax-console/app/server.py      # http://127.0.0.1:8700
 - 콘텐츠 탭 **⓪ 제안** 칸: 카드마다 요약·왜 지금·근거·겹침, **기획으로**(① 기획 콘텐츠가 생김) / **반려**(이유). 채택·반려는
   `data/proposals/feedback.jsonl` 에 남아 다음 제안 프롬프트에 들어간다. '지금 제안 받기'로 바로 돌릴 수도 있다.
 
+## GeoAI_NA(Codex 자동화) 보기
+
+- `~/.codex/automations/*/automation.toml` 7개(기술사 연재·친구 질문·기출 숏츠·노르딕워킹·안전한국훈련 등)를
+  **개인 계정** 자동 작업으로 보여 준다(Codex 배지, 예약 목록 'Codex 자동화만' 필터). 일정은 rrule 에서, 채널은 지시문
+  내용(티스토리·유튜브·블로거·카톡)에서 추정한다. 켜고 끄기·실행은 Codex 앱에서(콘솔은 보기만).
+- 자동 작업 탭 위 **친구 질문 대기열**: GeoAI_NA/engineer-question-worker 의 측량·토목 요청 상태.
+
 ## 편집
 
 - **자동 작업** 탭 '편집': 이름·설명(`config/automations.json`)과 실행 시각(요일·시각 여러 줄, 매월 N일, N분마다).

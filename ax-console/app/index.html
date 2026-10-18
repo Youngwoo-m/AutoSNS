@@ -325,12 +325,12 @@ const ACCL={dept:'학과',personal:'개인',common:'공통'};
 const CHL={youtube:'유튜브',instagram:'인스타그램',naver_blog:'네이버 블로그',tiktok:'틱톡',x:'X',threads:'스레드',blogger:'블로거',kakao:'카카오',tistory:'티스토리',homepage:'개인 홈페이지',analytics:'성과·색인',maintenance:'유지보수'};
 async function getAuto(){AU=await api('/api/automations');return AU}
 function jobHtml(j,acc,ch){const main=j.channels[0][0]==acc&&j.channels[0][1]==ch;const others=j.channels.filter(c=>!(c[0]==acc&&c[1]==ch)).map(c=>(c[0]!=acc?ACCL[c[0]]+' ':'')+CHL[c[1]]);
-  return `<div class="job"><b>${esc(j.name)}</b><span class="role ${main?'m':''}">${main?'주 채널':'함께 게시'}</span>${j.on?'':'<span class="off">꺼짐</span>'}
+  return `<div class="job"><b>${esc(j.name)}</b>${j.codex?'<span class="role" style="color:#7c3aed">Codex</span>':''}<span class="role ${main?'m':''}">${main?'주 채널':'함께 게시'}</span>${j.on?'':'<span class="off">꺼짐</span>'}
   <div class="mut">${esc(j.when)} · 다음 ${j.next[0]?fmt(j.next[0]):'—'} · 최근 실행 ${j.last?fmt(j.last):'기록 없음'}</div>
   <div class="mut">${esc(j.what)}${others.length?' → 함께: '+esc(others.join(', ')):''}</div>
   ${j.note?`<div class="bad" style="font-size:12px">${esc(j.note)}</div>`:''}
   <div class="mut" style="font-size:11px">${esc(j.script)} (com.smuds.${esc(j.job)})${j.running?' · <b style="color:var(--acc)">지금 실행 중</b>':''}${!j.running&&j.exit&&j.exit!='0'?` · <span class="bad">마지막 종료 코드 ${esc(j.exit)}</span>`:''}</div>
-  <div class="jbtn">${j.controllable?`<button onclick="jobCtl('${j.job}','${j.on?'off':'on'}',this)">${j.on?'끄기':'켜기'}</button><button onclick="jobCtl('${j.job}','run',this)" ${j.on?'':'disabled title="꺼진 작업은 실행할 수 없습니다"'}>지금 실행</button>`:j.job=='axconsole'?'<span class="mut" style="font-size:11px">콘솔 자신이라 여기서 끌 수 없습니다</span>':''}<button onclick="jobLog('${j.job}',this)">최근 로그</button>${j.controllable?`<button onclick="jobEdit('${j.job}',this)">편집</button>`:''}</div></div>`}
+  <div class="jbtn">${j.controllable?`<button onclick="jobCtl('${j.job}','${j.on?'off':'on'}',this)">${j.on?'끄기':'켜기'}</button><button onclick="jobCtl('${j.job}','run',this)" ${j.on?'':'disabled title="꺼진 작업은 실행할 수 없습니다"'}>지금 실행</button>`:j.job=='axconsole'?'<span class="mut" style="font-size:11px">콘솔 자신이라 여기서 끌 수 없습니다</span>':''}${j.codex?'<span class="mut" style="font-size:11px">Codex 앱에서 관리합니다(콘솔은 보기만)</span>':`<button onclick="jobLog('${j.job}',this)">최근 로그</button>`}${j.controllable?`<button onclick="jobEdit('${j.job}',this)">편집</button>`:''}</div></div>`}
 async function jobCtl(job,op,b){const j=AU.find(x=>x.job==job);let q;
   if(op=='off')q=`'${j.name}' 자동 작업을 끕니다.\n(launchctl bootout + disable — 재부팅해도 꺼진 채로 남습니다)`;
   if(op=='on'){q=`'${j.name}' 자동 작업을 켭니다.\n일정(${j.when})대로 다시 자동으로 돕니다${j.live?' — 실제로 발행됩니다':''}.`;
@@ -346,7 +346,11 @@ async function jobLog(job,b){const box=b.parentNode.nextElementSibling;if(box&&b
     b.parentNode.after(d);d.querySelectorAll('pre').forEach(p=>p.scrollTop=p.scrollHeight);b.textContent='로그 닫기'}catch(e){alert(e.message);b.textContent='최근 로그'}}
 async function loadAuto(){await getAuto();const order=['dept','personal','common'];
   const chOrder={dept:['youtube','instagram','naver_blog','blogger','tiktok','x','threads'],personal:['blogger','youtube','tistory','naver_blog','homepage','kakao'],common:['analytics','maintenance']};
-  $('autov').innerHTML=`<div class="card" id="osbox" style="margin-bottom:16px"></div><div class="card" style="margin-bottom:16px"><h2 style="margin:0">launchd 자동 작업 ${AU.length}개 · 계정별 채널별</h2>
+  const QQ=await api('/api/questions').catch(()=>[]);
+  $('autov').innerHTML=`<div class="card" id="osbox" style="margin-bottom:16px"></div>
+   <div class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">개인 · 티스토리 친구 질문 대기열 <span class="mut" style="font-size:12px">(GeoAI_NA · Codex 자동화가 매일 23시 처리)</span></h2>
+    ${QQ.map(q=>`<div class="run"><b>${esc(q.label)}</b> · 전체 ${q.total} · ${Object.entries(q.counts).map(([k,v])=>`${esc({queued:'대기',processing:'처리 중',published:'발행됨',done:'완료',ignored:'무시'}[k]||k)} ${v}`).join(' · ')||'없음'}
+      ${q.pending.map(x=>`<div class="mut" style="font-size:12px">· ${esc(x.at)} ${esc(x.title)} (${esc(x.status)})</div>`).join('')}</div>`).join('')}</div><div class="card" style="margin-bottom:16px"><h2 style="margin:0">launchd 자동 작업 ${AU.length}개 · 계정별 채널별</h2>
    <p class="mut" style="margin:6px 0 0">한 작업이 여러 채널에 올리면 각 채널에 모두 표시합니다(주 채널 / 함께 게시). 분석 내용은 config/automations.json 에 있습니다.</p></div>`+
    order.map(acc=>{const chs=chOrder[acc].map(ch=>[ch,AU.filter(j=>j.channels.some(c=>c[0]==acc&&c[1]==ch))]);
      const n=AU.filter(j=>j.channels.some(c=>c[0]==acc)).length;
@@ -412,12 +416,12 @@ function drawSch(){const L=SC.labels;const chs=[...new Set(SC.rows.map(r=>r.chan
   $('schv').innerHTML=`<div class="card"><div class="filt"><h2 style="margin:0 auto 0 0">앞으로 ${SC.days}일 예약 (${rows.length}건)</h2>
    <select onchange="F.acc=this.value;drawSch()"><option value="">전체 계정</option><option value="dept" ${F.acc=='dept'?'selected':''}>학과</option><option value="personal" ${F.acc=='personal'?'selected':''}>개인</option><option value="common" ${F.acc=='common'?'selected':''}>공통</option></select>
    <select onchange="F.ch=this.value;drawSch()"><option value="">전체 채널</option>${chs.map(c=>`<option value="${c}" ${F.ch==c?'selected':''}>${esc(L[c]||c)}</option>`).join('')}</select>
-   <select onchange="F.src=this.value;drawSch()"><option value="">콘솔+자동</option><option value="console" ${F.src=='console'?'selected':''}>콘솔 예약만</option><option value="launchd" ${F.src=='launchd'?'selected':''}>자동 작업만</option></select>
+   <select onchange="F.src=this.value;drawSch()"><option value="">콘솔+자동</option><option value="console" ${F.src=='console'?'selected':''}>콘솔 예약만</option><option value="launchd" ${F.src=='launchd'?'selected':''}>launchd 자동 작업만</option><option value="codex" ${F.src=='codex'?'selected':''}>Codex 자동화만</option></select>
    <label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" ${F.hide?'checked':''} onchange="F.hide=this.checked;drawSch()">트리거 점검 숨기기</label></div>
    ${Object.entries(by).map(([d,rs])=>`<div class="day">${d=='시각 없음'?d:d.slice(5).replace('-','/')+' ('+WD[new Date(d+'T00:00').getDay()]+')'}</div><table>${rs.map(r=>`<tr class="${r.source=='console'?'click':''}" ${r.source=='console'?`onclick="openTask('${r.account}','${r.channel}','${r.id}')"`:''}>
     <td style="width:60px">${r.at?r.at.slice(11,16):'—'}</td><td style="width:150px"><span class="acct ${r.account=='personal'?'p':''}"></span>${ACCL[r.account]} · ${esc(L[r.channel]||r.channel)}${r.channels&&r.channels.length>1?` <span class="mut">+${r.channels.length-1}</span>`:''}</td>
     <td>${esc(r.title)}<div class="mut">${esc(r.what)}${r.repeat?' · '+({daily:'매일',weekly:'매주'}[r.repeat]):''}</div></td>
-    <td style="text-align:right;white-space:nowrap"><span class="src ${r.source=='console'?'c':''}">${r.source=='console'?'콘솔 예약':r.on===false?'자동(꺼짐)':'자동'}</span>
+    <td style="text-align:right;white-space:nowrap"><span class="src ${r.source=='console'?'c':''}">${r.source=='console'?'콘솔 예약':r.source=='codex'?'Codex':r.on===false?'자동(꺼짐)':'자동'}</span>
       ${r.source=='console'?`<button class="gbtn" onclick="event.stopPropagation();schMove('${r.id}','${r.at}')">시각 바꾸기</button><button class="gbtn" onclick="event.stopPropagation();schCancel('${r.id}')">취소</button>`
         :(AU.find(j=>j.job==r.job)||{}).controllable?`<button class="gbtn" onclick="event.stopPropagation();schEditJob('${r.job}')">편집</button>`:''}</td></tr>`).join('')}</table>`).join('')||'<div class="empty">조건에 맞는 예약이 없습니다.</div>'}</div>`}
 let INL=null;

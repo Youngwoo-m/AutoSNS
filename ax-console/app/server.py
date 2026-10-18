@@ -520,6 +520,89 @@ def automations():
                     'next': [t.isoformat(timespec='minutes') for t in nxt[:3]],
                     'sched': _sched_rows(pl), 'interval_min': (pl.get('StartInterval') or 0) // 60,
                     'script': pl.get('ProgramArguments', [''])[-1].replace(str(ROOT) + '/', '')})
+    try:
+        out += [{k: v for k, v in j.items() if k != 'times'} for j in codex_jobs()]
+    except Exception as e:
+        axlock.log(f'Codex 자동화 읽기 실패: {type(e).__name__}: {e}')
+    return out
+
+
+# ---- Codex 자동화(GeoAI_NA 작업)를 개인 계정 자동 작업으로 보여 주기(읽기 전용) ----
+CODEX_AUTOS = Path.home() / '.codex' / 'automations'
+
+
+def _toml_str(txt, key):
+    """automation.toml 의 한 줄짜리·여러 줄 문자열 값(파이썬 3.9 라 tomllib 없이 필요한 칸만)."""
+    import re
+    m = re.search(rf'^{key}\s*=\s*"""(.*?)"""', txt, re.S | re.M) or re.search(rf'^{key}\s*=\s*"((?:[^"\\]|\\.)*)"', txt, re.M)
+    if not m:
+        return ''
+    v = m.group(1)
+    try:
+        return json.loads(f'"{v}"') if '\n' not in v else v
+    except ValueError:
+        return v
+
+
+def _rrule_times(rrule, start, days):
+    import re
+    hours = [int(h) for h in (re.search(r'BYHOUR=([\d,]+)', rrule) or [None, ''])[1].split(',') if h != '']
+    minute = int((re.search(r'BYMINUTE=(\d+)', rrule) or [None, '0'])[1])
+    wd = (re.search(r'BYDAY=([A-Z,]+)', rrule) or [None, ''])[1]
+    days_ok = {'SU': 0, 'MO': 1, 'TU': 2, 'WE': 3, 'TH': 4, 'FR': 5, 'SA': 6}
+    want = {days_ok[x] for x in wd.split(',') if x in days_ok}
+    out = []
+    for d in range(days):
+        day = (start + datetime.timedelta(days=d)).date()
+        if want and day.isoweekday() % 7 not in want:
+            continue
+        for h in hours:
+            t = datetime.datetime.combine(day, datetime.time(h, minute))
+            if t > start:
+                out.append(t)
+    return sorted(out), hours, minute
+
+
+def question_queues():
+    """친구 질문 대기열(Codex 자동화가 처리). 제목은 외부 사용자가 쓴 글이라 화면에서 이스케이프해 보여 준다."""
+    base = ROOT / 'GeoAI_NA' / 'engineer-question-worker'
+    out = []
+    for f, label in (('state.json', '측량및지형공간정보기술사'), ('civil-state.json', '토목시공기술사')):
+        jobs = list(_json(base / f, {}).get('jobs', {}).values())
+        cnt = {}
+        for j in jobs:
+            cnt[j.get('status', '?')] = cnt.get(j.get('status', '?'), 0) + 1
+        pending = sorted([j for j in jobs if j.get('status') in ('queued', 'processing', 'published')], key=lambda j: j.get('created_at', ''))
+        out.append({'label': label, 'counts': cnt, 'total': len(jobs),
+                    'pending': [{'title': j.get('title', '')[:80], 'at': j.get('created_at', '')[:16], 'status': j.get('status')} for j in pending[:5]]})
+    return out
+
+
+def codex_jobs(days=8):
+    out, start = [], now()
+    for f in sorted(CODEX_AUTOS.glob('*/automation.toml')):
+        txt = f.read_text(errors='ignore')
+        name, status, rrule, prompt = (_toml_str(txt, k) for k in ('name', 'status', 'rrule', 'prompt'))
+        times, hours, minute = _rrule_times(rrule, start, days)
+        low = prompt.lower()
+        ch = []
+        if 'tistory' in low:
+            ch.append(['personal', 'tistory'])
+        if '유튜브' in prompt or '숏츠' in prompt or 'youtube' in low:
+            ch.append(['personal', 'youtube'])
+        if 'blogspot' in low or '블로거' in prompt:
+            ch.append(['personal', 'blogger'])
+        if '카톡' in prompt or '카카오' in prompt:
+            ch.append(['personal', 'kakao'])
+        ch = ch or [['personal', 'tistory']]
+        when = '매일 ' + ', '.join(f'{h:02d}:{minute:02d}' for h in hours) if hours else rrule
+        out.append({'job': f'codex.{f.parent.name}', 'source': 'codex', 'account': 'personal', 'name': name or f.parent.name,
+                    'what': prompt.strip().splitlines()[0][:220] if prompt.strip() else '', 'channels': ch,
+                    'on': status == 'ACTIVE', 'disabled': status != 'ACTIVE', 'running': False, 'exit': '',
+                    'controllable': False, 'live': True, 'when': when, 'last': '',
+                    'next': [t.isoformat(timespec='minutes') for t in times[:3]], 'times': [t.isoformat(timespec='minutes') for t in times],
+                    'sched': [], 'interval_min': 0, 'script': f'Codex 자동화 {f.parent.name} (~/.codex/automations)',
+                    'note': '' if status == 'ACTIVE' else f'Codex 에서 {status}', 'codex': True})
     return out
 
 
@@ -609,16 +692,19 @@ def schedule_view(days=8):
             a = find_action(t['account'], t['channel'], t['action']) or {}
             rows.append({'at': t['schedule'], 'account': t['account'], 'channel': t['channel'], 'title': t['title'],
                          'what': a.get('label', t['action']), 'repeat': t.get('repeat', ''), 'source': 'console', 'id': t['id']})
+    codex = {j['job']: j['times'] for j in codex_jobs(days)} if CODEX_AUTOS.exists() else {}
     for j in automations():
         if j['account'] == 'common' and not j['next']:
             continue
         base = {'account': j['account'], 'channel': j['channels'][0][1], 'channels': j['channels'], 'title': j['name'],
-                'what': j['when'], 'source': 'launchd', 'job': j['job'], 'on': j['on']}
+                'what': j['when'], 'source': 'codex' if j.get('codex') else 'launchd', 'job': j['job'], 'on': j['on']}
         times = []
-        if j['next'] and '분마다' not in j['when']:
+        if j.get('codex'):
+            times = codex.get(j['job'], [])
+        elif j['next'] and '분마다' not in j['when']:
             iv = plistlib.loads((AGENTS / f"com.smuds.{j['job']}.plist").read_bytes()).get('StartCalendarInterval')
             times = [t.isoformat(timespec='minutes') for t in _next_times(iv, start, days)]
-        if not times:
+        if not times and not j.get('codex'):
             rows.append({**base, 'at': ''})
         for t in times:
             rows.append({**base, 'at': t})
@@ -1538,6 +1624,8 @@ class H(BaseHTTPRequestHandler):
                                    'auto': [f'{a}/{c}' for a, c in AUTO_PUBLISH]})
         if self.path == '/api/gateway':
             return self.send(200, gateway_view())
+        if self.path == '/api/questions':
+            return self.send(200, question_queues())
         if self.path == '/api/automations':
             return self.send(200, automations())
         if self.path == '/api/google':
