@@ -44,6 +44,8 @@ WATCH=$!
 wait "$PID"; RC=$?
 kill "$WATCH" 2>/dev/null; wait "$WATCH" 2>/dev/null
 rm -f "$PROMPT"
+# 지시문대로 껐어야 하지만, 실패·중단으로 Voicebox 가 켜진 채 남았으면 끈다(사람이 연 것은 두기)
+/bin/bash "$ROOT/shared/voicebox.sh" down "$JOB" >/dev/null 2>&1
 echo "===== [$(date '+%F %T')] $JOB 끝 (코드 $RC) =====" >> "$LOG"
 # 실제 실행이 실패하면 카카오톡 '나에게'로 알린다(시험 실행은 알리지 않음). 알림 실패는 작업 결과를 바꾸지 않는다.
 if [ "$RC" != "0" ] && [ "$AX_DRY" != "1" ]; then
