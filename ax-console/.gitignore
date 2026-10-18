@@ -2,3 +2,6 @@ data/*
 !data/*/
 data/*/*
 !data/*/.gitkeep
+
+# 바탕화면 아이콘 빌드 결과(원본: launcher.applescript, AX.icns)
+launcher/*.app/
