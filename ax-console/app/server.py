@@ -1228,6 +1228,7 @@ def run_watch():
     WSTATE['running'] = True
     try:
         watcher.check()
+        _safe(planner_due)
         cfg = _json(CONSOLE / 'config' / 'agents.json', {}).get('incident', {})
         if cfg.get('enabled'):   # 자동 원인 분석(설정에서 켬): 아직 분석 안 된 '오류' 사건만
             for x in watcher.incidents('open'):
@@ -1366,6 +1367,93 @@ def bw_login_done(profile):
     return {'ok': ok, 'saved': saved}
 
 
+# ---- ⓪ 주간 기획 제안 ----
+PROP = DATA / 'proposals'
+PSTATE = {'running': set()}
+
+
+def _week():
+    y, w, _ = now().isocalendar()
+    return f'{y}-W{w:02d}'
+
+
+def prop_files():
+    return sorted(PROP.glob('*-W*_*.json'))
+
+
+def proposals_view():
+    out = []
+    for f in prop_files()[-8:]:
+        d = _json(f, {})
+        for it in d.get('items', []):
+            out.append({**it, 'week': d.get('week'), 'account': d.get('account'), 'file': f.name})
+    return {'items': out[::-1], 'running': sorted(PSTATE['running'])}
+
+
+def run_planner(acc, why='수동'):
+    if acc in PSTATE['running']:
+        raise ValueError('이미 제안을 만드는 중입니다')
+    cfg = _json(CONSOLE / 'config' / 'agents.json', {}).get('planner', {}).get('accounts', {}).get(acc, {})
+    count = int(cfg.get('count', 5))
+    PSTATE['running'].add(acc)
+
+    def work():
+        try:
+            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'planner.py'), acc, str(count)],
+                               cwd=str(ROOT / 'youtube-shorts-auto'), capture_output=True, text=True, timeout=1800)
+            d = json.loads((p.stdout or '').strip().splitlines()[-1])
+            if d.get('error'):
+                raise RuntimeError(d['error'])
+            PROP.mkdir(parents=True, exist_ok=True)
+            f = PROP / f'{_week()}_{acc}.json'
+            old = _json(f, {}).get('items', [])
+            items = old + [{**x, 'id': uuid.uuid4().hex[:8], 'status': 'new', 'created': now().isoformat()} for x in d['proposals']]
+            f.write_text(json.dumps({'week': _week(), 'account': acc, 'items': items, 'log': d.get('log'), 'usage': d.get('usage')},
+                                    ensure_ascii=False, indent=2))
+            axlock.log(f"기획 제안 {acc}: {len(d['proposals'])}개 ({why})")
+        except Exception as e:
+            axlock.log(f'기획 제안 {acc} 실패: {type(e).__name__}: {str(e)[:200]}')
+        finally:
+            PSTATE['running'].discard(acc)
+
+    threading.Thread(target=work, daemon=True).start()
+
+
+def planner_due():
+    """설정한 요일·시각이 지났고 이번 주 제안이 아직 없으면 돌린다(감시기 주기에 함께 점검)."""
+    cfg = _json(CONSOLE / 'config' / 'agents.json', {}).get('planner', {}).get('accounts', {})
+    t = now()
+    for acc, c in cfg.items():
+        if not c.get('enabled'):
+            continue
+        if (t.isoweekday() % 7) == int(c.get('weekday', 0)) and t.hour >= int(c.get('hour', 20)) \
+                and not (PROP / f'{_week()}_{acc}.json').exists() and acc not in PSTATE['running']:
+            run_planner(acc, '예약')
+
+
+def prop_decide(pid, decision, reason=''):
+    for f in prop_files():
+        d = _json(f, {})
+        for it in d.get('items', []):
+            if it['id'] != pid:
+                continue
+            if it['status'] != 'new':
+                raise ValueError('이미 처리한 제안입니다')
+            it['status'], it['reason'], it['decided'] = decision, reason[:300], now().isoformat()
+            res = {}
+            if decision == 'accepted':
+                notes = f"{it.get('summary', '')}\n왜 지금: {it.get('why_now', '')}\n근거: " + ' / '.join(it.get('evidence', []))
+                c = content_create({'account': d['account'], 'topic': it['topic'], 'notes': notes, 'channels': it.get('channels', [])})
+                it['content'] = c['id']
+                res = {'content': c['id']}
+            f.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+            with (PROP / 'feedback.jsonl').open('a') as fb:   # 다음 제안에 반영(planner.rejections)
+                fb.write(json.dumps({'at': now().isoformat(), 'account': d['account'], 'decision': '채택' if decision == 'accepted' else '반려',
+                                     'topic': it['topic'], 'reason': reason[:300]}, ensure_ascii=False) + '\n')
+            return res
+    raise ValueError('제안을 찾지 못했습니다')
+
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -1441,6 +1529,8 @@ class H(BaseHTTPRequestHandler):
             except OSError:
                 st['log'] = []
             return self.send(200, st)
+        if self.path == '/api/proposals':
+            return self.send(200, proposals_view())
         if self.path == '/api/agents':
             return self.send(200, agents_view())
         if self.path == '/api/contents':
@@ -1577,6 +1667,14 @@ class H(BaseHTTPRequestHandler):
                 else:
                     axlock.clear_stop(by='콘솔')
                 return self.send(200, axlock.status())
+            if parts == ['api', 'proposals', 'run']:
+                acc = str(b.get('account', ''))
+                if acc not in ('dept', 'personal'):
+                    raise ValueError('계정을 고르세요')
+                run_planner(acc)
+                return self.send(200, proposals_view())
+            if parts[:2] == ['api', 'proposals'] and len(parts) == 4 and parts[3] in ('accept', 'reject'):
+                return self.send(200, prop_decide(parts[2], 'accepted' if parts[3] == 'accept' else 'rejected', str(b.get('reason', ''))))
             if parts == ['api', 'agents']:
                 return self.send(200, agents_save(b))
             if parts == ['api', 'contents']:

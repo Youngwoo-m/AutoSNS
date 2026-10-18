@@ -1,4 +1,11 @@
 {
   "_설명": "발행 스크립트가 바깥 크롬 창 대신 콘솔 브라우저 서비스(창 없음)를 쓸 프로필. 콘솔 설정 탭에서 켠다. 비어 있으면 모두 예전 방식.",
-  "profiles": {}
+  "profiles": {
+    "tistory": "headless",
+    "naver": "headless",
+    "insta": "headless",
+    "tiktok": "headless",
+    "youtube-personal": "headless",
+    "youtube-dept": "headless"
+  }
 }

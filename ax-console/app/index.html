@@ -42,7 +42,7 @@ pre{background:var(--bg);border-radius:8px;padding:10px;font:12px/1.5 ui-monospa
 
 #autov{padding:16px 20px;max-width:1200px}
 #contv{padding:16px 20px}.pipe{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}.pipe span{font-size:12px;border-radius:6px;padding:3px 9px;background:var(--bg);color:var(--sub)}.pipe span.on{background:var(--acc);color:#fff}
-.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}@media(max-width:900px){.board{grid-template-columns:1fr 1fr}}
+.board{display:grid;grid-template-columns:minmax(0,1.8fr) repeat(5,minmax(0,1fr));gap:10px}.pc{border-left-color:#f59e0b!important}.pc .why{font-size:11px;color:var(--sub);margin-top:4px}.pc .pb{display:flex;gap:4px;margin-top:6px}.pc .pb button{font-size:11px;padding:3px 7px}@media(max-width:900px){.board{grid-template-columns:1fr 1fr}}
 .col h3{font-size:13px;color:var(--sub);margin:0 0 8px}.cc{background:var(--card);border:1px solid var(--line);border-left:4px solid #2563eb;border-radius:9px;padding:9px;margin-bottom:8px;cursor:pointer;font-size:13px}.cc.p{border-left-color:#7c3aed}.cc.on{outline:2px solid var(--acc)}
 .cc .mut{font-size:11px}.ed{margin-top:16px}.vt{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 6px}.vt button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:7px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}.vt button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .chk label{display:flex;gap:8px;align-items:center;color:var(--ink);font-size:13px;margin:5px 0}.chk input{width:auto}.warn{color:var(--warn);font-size:13px}.agrp{margin-bottom:16px}.agrp>h2{color:var(--ink);font-size:17px}
@@ -236,13 +236,27 @@ async function incAct(id,op){let note='';if(op=='resolve'){note=prompt('해결 �
   try{IV=await api(`/api/incidents/${id}/${op}`,{note});ic=IV.items.find(x=>x.id==id);drawInc();badgeInc();if(op=='analyze')loadInc()}catch(e){alert(e.message)}}
 let CT={items:[],checks:{}},cc=null,vtab='original',cTimer;
 const CST={idea:'① 기획',drafting:'② 초안 작성 중',review:'③ 검토 대기',scheduled:'⑤ 예약됨',published:'⑥ 발행됨',failed:'발행 실패'};
+let PV={items:[],running:[]};
+function propCol(){const it=PV.items.filter(x=>x.status=='new');
+  return `<div class="col"><h3>⓪ 제안 (${it.length})</h3>
+   <div class="pb" style="display:flex;gap:4px;margin-bottom:8px">${['dept','personal'].map(a=>`<button class="gbtn" style="font-size:11px" ${PV.running.includes(a)?'disabled':''} onclick="propRun('${a}')">${PV.running.includes(a)?ACCL[a]+' 만드는 중…':ACCL[a]+' 지금 제안 받기'}</button>`).join('')}</div>
+   ${it.map(x=>`<div class="cc pc ${x.account=='personal'?'p':''}"><b>${esc(x.topic)}</b>
+     <div class="mut">${ACCL[x.account]} · ${esc(x.format||'')} · ${(x.channels||[]).map(c=>CHL[c]).join(', ')}</div>
+     <div class="why">${esc(x.summary||'')}</div>
+     <details class="why"><summary style="cursor:pointer">왜 지금 · 근거 ${(x.evidence||[]).length} · 겹침</summary><div>왜 지금: ${esc(x.why_now||'')}</div>
+       ${(x.evidence||[]).map(e=>/^https?:/.test(e)?`<div><a href="${esc(e)}" target="_blank">${esc(e.slice(0,60))}</a></div>`:`<div>· ${esc(e)}</div>`).join('')}
+       ${x.overlap?`<div>겹침: ${esc(x.overlap)}</div>`:''}</details>
+     <div class="pb"><button class="gbtn" onclick="propDo('${x.id}','accept')">기획으로</button><button class="gbtn" onclick="propDo('${x.id}','reject')">반려</button></div></div>`).join('')||'<div class="mut">없음. 설정한 요일·시각에 자동으로 올라옵니다.</div>'}</div>`}
+async function propRun(a){try{PV=await api('/api/proposals/run',{account:a});drawCont();setTimeout(()=>loadCont(true),20000)}catch(e){alert(e.message)}}
+async function propDo(id,op){let reason='';if(op=='reject'){reason=prompt('반려 이유(다음 제안에 반영됩니다). 예: 이미 다룸 / 시기 아님 / 학과와 무관','');if(reason===null)return}
+  try{const r=await api(`/api/proposals/${id}/${op}`,{reason});await loadCont();if(r.content){cc=CT.items.find(x=>x.id==r.content);drawCont()}}catch(e){alert(e.message)}}
 const COLS=[['idea','① 기획'],['drafting','② 초안 작성 중'],['review','③ 검토 대기'],['scheduled','⑤ 예약·발행 대기'],['published','⑥ 발행됨']];
-async function loadCont(keep){CT=await api('/api/contents');if(cc)cc=CT.items.find(x=>x.id==cc.id)||null;drawCont(keep);
-  clearTimeout(cTimer);if(CT.items.some(x=>x.status=='drafting'||x.status=='scheduled'))cTimer=setTimeout(()=>{if(!$('contv').hidden)loadCont(true)},5000)}
+async function loadCont(keep){CT=await api('/api/contents');PV=await api('/api/proposals');if(cc)cc=CT.items.find(x=>x.id==cc.id)||null;drawCont(keep);
+  clearTimeout(cTimer);if(CT.items.some(x=>x.status=='drafting'||x.status=='scheduled')||PV.running.length)cTimer=setTimeout(()=>{if(!$('contv').hidden)loadCont(true)},5000)}
 function drawCont(keep){
   const board=`<div class="card"><div class="filt"><h2 style="margin:0 auto 0 0">콘텐츠 파이프라인</h2><button class="newbtn" onclick="cc=null;drawCont()">+ 새 기획</button></div>
-   <div class="pipe" style="margin-top:8px">${['① 기획','② AI 초안','③ 사람 검토·점검표','④ 제작(이미지·영상: 다음 단계)','⑤ 채널별 예약','⑥ 발행 확인','⑦ 성과(다음 단계)'].map((x,i)=>`<span class="${[0,1,2,4,5].includes(i)?'on':''}">${x}</span>`).join('')}</div>
-   <div class="board">${COLS.map(([st,lab])=>{const it=CT.items.filter(x=>x.status==st||(st=='scheduled'&&x.status=='failed'));
+   <div class="pipe" style="margin-top:8px">${['⓪ 제안','① 기획','② AI 초안','③ 사람 검토·점검표','④ 제작(이미지·영상: 다음 단계)','⑤ 채널별 예약','⑥ 발행 확인','⑦ 성과(다음 단계)'].map((x,i)=>`<span class="${[0,1,2,3,5,6].includes(i)?'on':''}">${x}</span>`).join('')}</div>
+   <div class="board">${propCol()}${COLS.map(([st,lab])=>{const it=CT.items.filter(x=>x.status==st||(st=='scheduled'&&x.status=='failed'));
      return `<div class="col"><h3>${lab} (${it.length})</h3>${it.map(x=>`<div class="cc ${x.account=='personal'?'p':''} ${cc&&cc.id==x.id?'on':''}" onclick="pickC('${x.id}')">${esc(x.title||x.topic)}
       <div class="mut">${ACCL[x.account]} · ${x.channels.map(c=>CHL[c]).join(', ')}</div>${x.error?`<div class="warn" style="font-size:11px">${esc(x.error)}</div>`:''}${x.status=='failed'?'<div class="warn" style="font-size:11px">발행 실패</div>':''}</div>`).join('')||'<div class="mut">없음</div>'}</div>`}).join('')}</div></div>`;
   if(keep&&$('cedit')&&document.activeElement&&$('cedit').contains(document.activeElement)){$('cboard').innerHTML=board;return}

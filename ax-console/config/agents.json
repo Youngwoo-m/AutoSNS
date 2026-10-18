@@ -26,7 +26,7 @@
     "max_pages_per_draft": 15
   },
   "incident": {
-    "enabled": false,
+    "enabled": true,
     "budget": {
       "max_tokens": 60000,
       "max_tool_calls": 20,

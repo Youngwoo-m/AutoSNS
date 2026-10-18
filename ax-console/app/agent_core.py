@@ -243,7 +243,15 @@ class Agent:
                     msgs.append({'role': 'user', 'content': '아직 제출하지 않았습니다. 일을 마쳤으면 제출 도구를 부르세요.'})
                     continue
                 results, submitted = [], None
+                mixed = len(uses) > 1 and any(self.tools.get(b.name) and self.tools[b.name].kind == 'submit' for b in uses)
                 for b in uses:
+                    if mixed and self.tools.get(b.name) and self.tools[b.name].kind == 'submit':
+                        # 같은 차례에 다른 도구와 함께 낸 제출은 받지 않는다 — 도구 결과를 보기 전에 결론을 낸 것
+                        # (2026-10-18 기획 에이전트: 15개 도구와 제출을 한 번에 보내 '결과 없음'을 지어냄)
+                        blk, summary = self._result_block(b, '오류: 도구 결과를 보기 전에 제출했습니다. 아래 결과를 읽고 다음 차례에 제출만 따로 다시 하세요.', True)
+                        results.append(blk)
+                        self._log('tool', name=b.name, input={'(거부)': '다른 도구와 같은 차례에 제출'}, error=True, result=summary)
+                        continue
                     if self.usage['tool_calls'] >= self.budget.max_tool_calls:
                         out, err, tool = f'오류: 도구 호출 예산({self.budget.max_tool_calls}) 소진. 지금까지로 제출하세요.', True, None
                     else:
