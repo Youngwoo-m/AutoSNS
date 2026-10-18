@@ -486,6 +486,19 @@
       ]
     },
     {
+      "job": "claude.survey-shorts",
+      "account": "personal",
+      "name": "측량 기출 핵심 숏츠 (17시 준비 · 19시 공개)",
+      "what": "클로드(claude -p, opus)가 지시문 jobs/survey-shorts.md 대로 작성·발행 (Codex '7' 에서 옮김)",
+      "entry": "GeoAI_NA/claude-jobs/jobs/survey-shorts.md",
+      "channels": [
+        [
+          "personal",
+          "youtube"
+        ]
+      ]
+    },
+    {
       "job": "claude.civil-daily",
       "account": "personal",
       "name": "토목시공 하루 한 문제 (티스토리+개인 블로거)",
