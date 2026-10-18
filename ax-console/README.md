@@ -31,6 +31,12 @@ python3 ax-console/app/server.py      # http://127.0.0.1:8700
   다시 시작: `launchctl kickstart -k gui/$(id -u)/com.smuds.axconsole` · 로그: `data/logs/server.*.log`
 - 예약은 서버가 켜져 있을 때만 실행된다(USB가 빠져 있으면 서버도 못 켠다). `data/tasks.json` 에 작업, `data/runs/` 에 실행 기록이 쌓인다.
 
+## 바탕화면 아이콘
+
+`~/Desktop/AX 발행 콘솔.app` 을 더블클릭하면 콘솔 서버를 확인(꺼져 있으면 켬)하고 Chrome 앱 창으로 연다.
+USB256 이 없으면 알림만 띄운다. 원본: `launcher/`(open_console.sh, launcher.applescript, AX.icns).
+다시 만들기: `osacompile -o "AX 발행 콘솔.app" launcher.applescript` 후 `AX.icns` 를 `Contents/Resources/applet.icns` 로 복사.
+
 ## 오케스트레이터 (D1)
 
 - 모든 launchd 작업(`run_*.sh` 맨 앞 한 줄)과 콘솔 자동 발행이 `shared/axlock.py` 의 잠금을 거친다.
