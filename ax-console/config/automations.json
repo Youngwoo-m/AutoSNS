@@ -286,7 +286,8 @@
         "profile:naver",
         "profile:insta",
         "profile:tistory"
-      ]
+      ],
+      "note": "2026-10-18 사용자가 일부러 끔. 켜기 전에 사용자에게 확인."
     },
     {
       "job": "naverbuddy.weekly",
@@ -364,7 +365,8 @@
       ],
       "locks": [
         "profile:tistory"
-      ]
+      ],
+      "note": "2026-10-18 사용자가 일부러 끔. 켜기 전에 사용자에게 확인."
     },
     {
       "job": "indexcheck.daily",
