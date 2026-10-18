@@ -23,6 +23,7 @@
 
 기존 자동 발행 파이프라인(make_video.py 등 ffmpeg 기반)은 아직 이 지침으로 바꾸지 않았다.
 바꿀 때는 사용자와 범위를 정한 뒤 옮긴다.
+(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `youtube-shorts-auto/diorama_image.py`.)
 
 ## 자동 작업 잠금·비상 정지 (2026-10-18)
 
