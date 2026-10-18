@@ -216,7 +216,10 @@ function brClick(e){const im=e.target,r=im.getBoundingClientRect();const x=(e.cl
 function brWheel(e){e.preventDefault();brIn({type:'scroll',dy:e.deltaY>0?400:-400})}
 async function brType(){const v=$('br_txt').value;if(!v)return;await brIn({type:'type',text:v});$('br_txt').value=''}
 async function brDone(){try{const r=await api('/api/browser/login_done',{profile:bp});alert('로그인을 저장했습니다'+(r.saved!=null?` (쿠키 ${r.saved}개 파일 저장)`:'')+'. 브라우저를 닫았습니다.');await loadBr()}catch(e){alert(e.message)}}
-async function brOpenLogin(prof){bp=prof;await tab('br');try{await api('/api/browser/start',{profile:prof,mode:'headless'})}catch(e){alert(e.message)}await loadBr()}
+async function brOpenLogin(prof){bp=prof;await tab('br');
+  // 발행 때와 같은 방식으로 로그인해야 쿠키를 그대로 읽는다(창 없음 크롬은 키체인을 따로 씀)
+  let mode='headless';try{mode=((await api('/api/browser/config')).profiles||{})[prof]||'hidden'}catch(e){}
+  try{await api('/api/browser/start',{profile:prof,mode})}catch(e){alert(e.message)}await loadBr()}
 let IV={items:[]},ic=null,iTimer;
 const IK={log:'로그 실패',missed:'실행 안 됨',unloaded:'작업 내려감',shot:'실패 화면',console:'콘솔 작업 실패',lock:'잠금 대기 초과',env:'환경'};
 const IS={open:'열림',resolved:'해결',ignored:'무시'};
