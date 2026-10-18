@@ -1,10 +1,171 @@
 {
-  "_설명": "④ 제작 Canva 카드뉴스 설정. 템플릿 ID 는 Canva 에서 브랜드 템플릿을 게시한 뒤 넣는다(주소의 /brand-templates/<ID> 또는 콘솔 설정).",
+  "_설명": "④ 제작 Canva 설정. 템플릿은 종류별(docs/Canva_템플릿_추천.md). Canva 에서 브랜드 템플릿을 게시한 뒤 id 를 넣는다.",
   "cli": "/usr/local/lib/nodejs/node-v24.21.0-darwin-x64/bin/canva",
-  "templates": {"dept": "", "personal": ""},
-  "pages": 6,
-  "limits": {"title": 22, "body": 60},
-  "handle": {"dept": "세명대학교 재난안전학과", "personal": "GeoAI 나영우"},
-  "end_card": {"title": "저장해 두고 필요할 때 꺼내 보세요", "body": "프로필 링크에서 더 많은 안전 정보를 볼 수 있어요"},
-  "export": {"width": 1080, "height": 1350}
+  "templates": {
+    "T1_safety_cards": {
+      "id": "",
+      "name": "생활안전 수칙 카드",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "instagram",
+        "threads"
+      ],
+      "size": [
+        1080,
+        1350
+      ],
+      "pages": 6,
+      "limits": {
+        "title": 22,
+        "body": 60
+      }
+    },
+    "T2_job_cards": {
+      "id": "",
+      "name": "채용정보 카드",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "instagram"
+      ],
+      "size": [
+        1080,
+        1350
+      ],
+      "pages": 6
+    },
+    "T3_series_cover": {
+      "id": "",
+      "name": "진로·자격증 시리즈 표지",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "blogger",
+        "youtube"
+      ],
+      "size": [
+        1200,
+        630
+      ],
+      "resize_to": [
+        [
+          1080,
+          1920
+        ]
+      ]
+    },
+    "T4_quiz_cards": {
+      "id": "",
+      "name": "O/X 퀴즈 카드",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "instagram",
+        "threads"
+      ],
+      "size": [
+        1080,
+        1350
+      ],
+      "pages": 2
+    },
+    "T5_blog_cover": {
+      "id": "",
+      "name": "요일별 블로그 대표 이미지",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "naver_blog",
+        "blogger"
+      ],
+      "size": [
+        1080,
+        1080
+      ],
+      "resize_to": [
+        [
+          1200,
+          630
+        ]
+      ]
+    },
+    "T6_breaking_cover": {
+      "id": "",
+      "name": "재난 속보 표지",
+      "accounts": [
+        "dept"
+      ],
+      "channels": [
+        "youtube",
+        "instagram",
+        "tiktok"
+      ],
+      "size": [
+        1080,
+        1920
+      ]
+    },
+    "T7_geoai_cards": {
+      "id": "",
+      "name": "GeoAI 개념 카드·대표",
+      "accounts": [
+        "personal"
+      ],
+      "channels": [
+        "blogger",
+        "tistory"
+      ],
+      "size": [
+        1080,
+        1350
+      ],
+      "pages": 4,
+      "limits": {
+        "title": 22,
+        "body": 60
+      }
+    },
+    "T8_exam_cards": {
+      "id": "",
+      "name": "기술사 답안 카드",
+      "accounts": [
+        "personal"
+      ],
+      "channels": [
+        "blogger",
+        "tistory"
+      ],
+      "size": [
+        1080,
+        1350
+      ],
+      "pages": 5,
+      "limits": {
+        "title": 22,
+        "body": 70
+      }
+    }
+  },
+  "limits": {
+    "title": 22,
+    "body": 60
+  },
+  "handle": {
+    "dept": "세명대학교 재난안전학과",
+    "personal": "GeoAI 나영우"
+  },
+  "end_card": {
+    "title": "저장해 두고 필요할 때 꺼내 보세요",
+    "body": "프로필 링크에서 더 많은 안전 정보를 볼 수 있어요"
+  },
+  "card_template": {
+    "dept": "T1_safety_cards",
+    "personal": "T7_geoai_cards"
+  }
 }

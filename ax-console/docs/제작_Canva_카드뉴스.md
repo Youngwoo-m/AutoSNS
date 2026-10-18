@@ -30,6 +30,8 @@ data/media/YYYY/MM/<콘텐츠ID>/card_01.png …
 
 ## 템플릿 규격 (사람이 Canva 에서 만들 것)
 
+> 2026-10-18: 템플릿은 종류별 8개(T1~T8)로 나눴다 — `docs/Canva_템플릿_추천.md`. 아래 규격은 **T1 생활안전 수칙 카드**다. 확인 명령은 `python3 app/makers/canva_cards.py check T1_safety_cards`.
+
 | 항목 | 값 |
 |---|---|
 | 크기 | 1080 × 1350 (인스타 세로 4:5) |
@@ -44,7 +46,7 @@ data/media/YYYY/MM/<콘텐츠ID>/card_01.png …
 
 ## 구현 순서
 
-1. `app/makers/canva_cards.py`: 문구 나누기 → (이미지 업로드) → autofill → 작업 기다리기 → PNG 내보내기 → 내려받기 — **완료 2026-10-18**. 템플릿만 남음: 게시 후 `config/canva.json` 의 `templates` 에 ID 를 넣고 `python3 app/makers/canva_cards.py check dept` 로 필드 확인
+1. `app/makers/canva_cards.py`: 문구 나누기 → (이미지 업로드) → autofill → 작업 기다리기 → PNG 내보내기 → 내려받기 — **완료 2026-10-18**. 템플릿만 남음: 게시 후 `config/canva.json` 의 `templates` 에 ID 를 넣고 `python3 app/makers/canva_cards.py check T1_safety_cards` 로 필드 확인
 2. 콘솔: ③ 검토 화면에 [카드 만들기] 버튼과 카드 미리보기, 콘텐츠에 `media.cards` 저장
 3. ⑥ 어댑터: `(dept, instagram)` 자동 발행 연결(`post_instagram.post_carousel`, 크롬 프로필 잠금 `profile:insta`)
 4. 시험: 템플릿 채우기 → 미리보기 → 인스타 점검(dry, 게시 직전 멈춤) → 사람 승인 뒤 첫 실제 발행

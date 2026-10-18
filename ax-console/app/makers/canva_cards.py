@@ -6,7 +6,7 @@ CLI 가 가지고 있고, 이 코드는 토큰을 읽지 않는다. 설정: conf
     from makers import canva_cards as cc
     plan = cc.plan(content, 'dept')          # 문구 나누기 + 글자 수 검사(네트워크 없음)
     r = cc.make(content, 'dept', out_dir)    # 채우기 → PNG 내려받기 → {'files': […], 'design_id', 'edit_url'}
-    cc.check_template('dept')                # 템플릿에 필요한 필드가 다 있는지
+    cc.check_template('T1_safety_cards')     # 템플릿에 필요한 필드가 다 있는지
 
 필드 이름(템플릿 규격, docs/제작_Canva_카드뉴스.md): C1_TITLE·C1_BODY … C6_TITLE·C6_BODY, COVER_IMAGE, HANDLE
 """
@@ -84,12 +84,25 @@ def parse(text):
     return {'cards': out, 'caption': caption, 'hashtags': list(dict.fromkeys(tags))}
 
 
-def plan(content, account):
-    """카드 6장 배치와 글자 수 검사. 네트워크를 쓰지 않는다."""
+def tpl(kind):
+    t = (cfg().get('templates') or {}).get(kind)
+    if not t:
+        raise CanvaError(f'설정에 없는 템플릿 종류: {kind}')
+    return t
+
+
+def card_kind(account):
+    return (cfg().get('card_template') or {}).get(account, 'T1_safety_cards')
+
+
+def plan(content, account, kind=None):
+    """카드 배치와 글자 수 검사. 네트워크를 쓰지 않는다. kind 를 안 주면 계정의 기본 카드 템플릿."""
     c = cfg()
+    kind = kind or card_kind(account)
+    t = tpl(kind)
     text = (content.get('variants') or {}).get('instagram') or ''
     p = parse(text)
-    cards, pages = p['cards'], int(c.get('pages', 6))
+    cards, pages = p['cards'], int(t.get('pages', 6))
     problems = []
     if len(cards) < pages - 1:
         problems.append(f'카드 문구가 {len(cards)}장뿐입니다(필요 {pages - 1}~{pages}장). 인스타 변환본의 카드 머리(1️⃣, 1. 등)를 확인하세요')
@@ -97,7 +110,7 @@ def plan(content, account):
         problems.append(f'카드 문구가 {len(cards)}장으로 템플릿({pages}쪽)보다 많습니다')
     if len(cards) == pages - 1:  # 마무리 카드는 설정의 고정 문구
         cards = cards + [dict(c['end_card'])]
-    lim = c.get('limits', {})
+    lim = t.get('limits') or c.get('limits', {})
     for i, k in enumerate(cards[:pages], 1):
         for f in ('title', 'body'):
             n = len(k.get(f, ''))
@@ -109,7 +122,7 @@ def plan(content, account):
     for i, k in enumerate(cards[:pages], 1):
         fields[f'C{i}_TITLE'] = k.get('title', '')
         fields[f'C{i}_BODY'] = k.get('body', '')
-    return {'cards': cards[:pages], 'fields': fields, 'caption': p['caption'], 'hashtags': p['hashtags'],
+    return {'kind': kind, 'cards': cards[:pages], 'fields': fields, 'caption': p['caption'], 'hashtags': p['hashtags'],
             'problems': problems, 'ok': not problems}
 
 
@@ -149,18 +162,18 @@ def _wait(get_args, pick, what, limit=240):
         delay = min(delay * 2, 15)
 
 
-def template_id(account):
-    tid = (cfg().get('templates') or {}).get(account, '').strip()
+def template_id(kind):
+    tid = (tpl(kind).get('id') or '').strip()
     if not tid:
-        raise CanvaError(f'{account} 계정의 카드뉴스 브랜드 템플릿 ID 가 config/canva.json 에 없습니다')
+        raise CanvaError(f"'{tpl(kind).get('name', kind)}'({kind}) 브랜드 템플릿 ID 가 config/canva.json 에 없습니다")
     return tid
 
 
-def check_template(account):
-    """템플릿의 데이터 필드를 읽어 규격과 비교한다."""
-    d = cli('brand-templates', 'dataset', '--brand-template-id', template_id(account))
+def check_template(kind):
+    """카드형 템플릿의 데이터 필드를 읽어 규격(C1~Cn 제목·본문, HANDLE)과 비교한다."""
+    d = cli('brand-templates', 'dataset', '--brand-template-id', template_id(kind))
     have = {k: v.get('type') for k, v in (d.get('dataset') or {}).items()}
-    pages = int(cfg().get('pages', 6))
+    pages = int(tpl(kind).get('pages', 6))
     need = {**{f'C{i}_{f}': 'text' for i in range(1, pages + 1) for f in ('TITLE', 'BODY')}, 'HANDLE': 'text'}
     missing = [k for k in need if k not in have]
     wrong = [k for k, t in need.items() if k in have and have[k] != t]
@@ -174,12 +187,13 @@ def upload_image(path):
     return _wait(['assets', 'get-upload', '--job-id', jid], lambda j: j['asset']['id'], '이미지 업로드')
 
 
-def make(content, account, out_dir, image=None, dry=False):
+def make(content, account, out_dir, image=None, dry=False, kind=None):
     """카드 디자인을 만들고 PNG 를 내려받는다. dry=True 면 Canva 에 보내지 않고 요청만 검증한다."""
-    p = plan(content, account)
+    p = plan(content, account, kind)
+    kind = p['kind']
     if not p['ok']:
         raise CanvaError('카드 문구 문제: ' + ' / '.join(p['problems']))
-    tid = template_id(account) if not dry else ((cfg().get('templates') or {}).get(account) or 'DRY_RUN_TEMPLATE')
+    tid = template_id(kind) if not dry else (tpl(kind).get('id') or 'DRY_RUN_TEMPLATE')
     data = {k: {'type': 'text', 'text': v} for k, v in p['fields'].items()}
     if image and not dry:
         data['COVER_IMAGE'] = {'type': 'image', 'asset_id': upload_image(image)}
@@ -190,10 +204,9 @@ def make(content, account, out_dir, image=None, dry=False):
         return {'dry_run': True, 'fields': list(data), 'cards': p['cards']}
     d = cli('autofill', 'create', body=body)
     design = _wait(['autofill', 'get', '--job-id', d['job']['id']], lambda j: j['result']['design'], '템플릿 채우기')
-    ex = cfg().get('export', {})
+    w, h = tpl(kind).get('size', [1080, 1350])
     e = cli('exports', 'create', body={'design_id': design['id'],
-                                       'format': {'type': 'png', 'width': ex.get('width', 1080), 'height': ex.get('height', 1350),
-                                                  'lossless': False}})
+                                       'format': {'type': 'png', 'width': w, 'height': h, 'lossless': False}})
     urls = _wait(['exports', 'get', '--export-id', e['job']['id']], lambda j: j['urls'], 'PNG 내보내기')
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -203,11 +216,11 @@ def make(content, account, out_dir, image=None, dry=False):
         with urllib.request.urlopen(u, timeout=120) as r:
             f.write_bytes(r.read())
         files.append(str(f))
-    return {'design_id': design['id'], 'edit_url': (design.get('urls') or {}).get('edit_url', ''),
+    return {'kind': kind, 'design_id': design['id'], 'edit_url': (design.get('urls') or {}).get('edit_url', ''),
             'files': files, 'caption': p['caption'], 'hashtags': p['hashtags'], 'cards': p['cards']}
 
 
 if __name__ == '__main__':
     import sys
     if sys.argv[1:2] == ['check']:
-        print(json.dumps(check_template(sys.argv[2]), ensure_ascii=False, indent=2))
+        print(json.dumps(check_template(sys.argv[2]), ensure_ascii=False, indent=2))   # 예: check T1_safety_cards
