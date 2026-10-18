@@ -1425,28 +1425,29 @@ class H(BaseHTTPRequestHandler):
 
     def auth_post(self, op, b):
         ip = self.client_address[0]
+        log = (lambda m: axlock.log(f'[시험 서버 {PORT}] {m}')) if os.environ.get('AX_NO_BG') else axlock.log
         if op == 'setup':
             auth.setup(str(b.get('password', '')))
             tok = auth.new_session(self.headers.get('User-Agent', ''))
-            axlock.log('콘솔 비밀번호를 처음 만들고 로그인')
+            log('콘솔 비밀번호를 처음 만들고 로그인')
             return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
         if op == 'login':
             if not auth.verify(str(b.get('password', '')), ip):
-                axlock.log('콘솔 로그인 실패')
+                log('콘솔 로그인 실패')
                 return self.send(401, {'error': '비밀번호가 맞지 않습니다'})
             tok = auth.new_session(self.headers.get('User-Agent', ''))
-            axlock.log('콘솔 로그인')
+            log('콘솔 로그인')
             return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
         if not self.authed():
             return self.send(401, {'error': '로그인이 필요합니다', 'login': True})
         if op == 'logout':
             auth.drop(self.token())
-            axlock.log('콘솔 로그아웃')
+            log('콘솔 로그아웃')
             return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.clear_cookie()})
         if op == 'password':
             auth.change_password(str(b.get('old', '')), str(b.get('new', '')))
             tok = auth.new_session(self.headers.get('User-Agent', ''))
-            axlock.log('콘솔 비밀번호 변경(다른 세션 모두 종료)')
+            log('콘솔 비밀번호 변경(다른 세션 모두 종료)')
             return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
         return self.send(404, {'error': '없는 주소'})
 
