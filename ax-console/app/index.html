@@ -64,7 +64,7 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 .scroll{max-height:420px;overflow:auto}
 </style></head><body>
 <header><h1>AX 발행 콘솔</h1>
-<div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
+<div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button onclick="tab('br')">브라우저</button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
 <div class="seg" id="accs"></div><span class="who" id="who"></span><button class="gbtn" id="refbtn" onclick="refreshTab(this)" title="지금 보는 화면을 새로 불러옵니다">↻ 새로고침</button><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button>
 <div class="dd" id="umenu"><button class="gbtn" onclick="ddToggle('umenu',event)">관리자 ▾</button>
  <div class="ddm"><a onclick="changePw()">비밀번호 바꾸기</a><a onclick="logout()" class="bad">로그아웃</a></div></div></header>
@@ -75,6 +75,7 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 <main id="autov" hidden></main>
 <main id="contv" hidden></main>
 <main id="incv" hidden></main>
+<main id="brv" hidden></main>
 <div class="wrap" id="workv">
 <nav class="card"><h2>채널</h2><div id="chans"></div></nav>
 <section class="card"><div class="top2"><h2 id="listTitle">작업</h2><button class="newbtn" onclick="edit(null)">+ 새 작업</button></div><div id="tasks"></div></section>
@@ -162,9 +163,42 @@ async function refreshTab(b){b.disabled=true;const old=b.textContent;b.textConte
     else if(CUR=='auto')await loadAuto();else if(CUR=='cont')await loadCont();else if(CUR=='inc'){IV=await api('/api/incidents/check',{});drawInc();badgeInc()}
     else{M=await api('/api/meta');await refresh();draw()}}catch(e){alert(e.message)}
   b.disabled=false;b.textContent=old}
-function tab(t){CUR=t;const ids=['acct','cont','work','inc','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
-  $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('incv').hidden=t!='inc';$('accs').style.visibility=t=='work'?'':'hidden';
-  if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else if(t=='inc')loadInc();else refresh()}
+function tab(t){CUR=t;const ids=['acct','cont','work','inc','br','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
+  $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('incv').hidden=t!='inc';$('brv').hidden=t!='br';if(t!='br')brStopPoll();$('accs').style.visibility=t=='work'?'':'hidden';
+  if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else if(t=='inc')loadInc();else if(t=='br')loadBr();else refresh()}
+let BR={sessions:[],profiles:{}},bp='scratch',brTimer=null,brBusy=false,brLast='';
+async function loadBr(){BR=await api('/api/browser/list');drawBr()}
+function brSess(){return BR.sessions.find(s=>s.profile==bp)}
+function drawBr(){const s=brSess(),P=BR.profiles[bp]||{};if(!s)brLast='';
+  $('brv').innerHTML=`<div class="card" style="margin:16px 20px"><div class="filt" style="gap:8px">
+    <select id="br_prof" style="width:auto" onchange="bp=this.value;drawBr()">${Object.entries(BR.profiles).map(([k,v])=>`<option value="${k}" ${k==bp?'selected':''}>${esc(v.name)}${BR.sessions.some(x=>x.profile==k)?' ●':''}</option>`).join('')}</select>
+    ${s?`<button class="gbtn" onclick="brStop()">닫기</button>`:`<select id="br_mode" style="width:auto"><option value="headless">창 없이(기본)</option><option value="hidden">화면 밖 크롬(사이트가 막을 때)</option></select><button class="newbtn" onclick="brStart()">열기</button>`}
+    ${s&&P.has_check?`<button class="newbtn" onclick="brDone()">로그인 완료 · 저장하고 닫기</button>`:''}
+    <span class="mut" style="margin-left:auto;font-size:12px">${s?`${esc(s.mode=='headless'?'창 없음':'화면 밖')} · 프로필 잠금 중 · ${s.idle}초 전 조작 · 15분 안 쓰면 닫힘`:'바탕화면에 크롬 창을 띄우지 않고 콘솔 안에서 봅니다'}</span></div>
+   ${s?`<div class="filt" style="gap:6px;margin-top:10px"><button class="gbtn" onclick="brIn({type:'back'})">←</button>
+     <input id="br_url" value="${esc(s.url)}" onkeydown="if(event.key=='Enter')brIn({type:'navigate',url:this.value})" style="flex:1">
+     <button class="gbtn" onclick="brIn({type:'navigate',url:$('br_url').value})">이동</button></div>
+   <div style="margin-top:10px;position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff">
+     <img id="br_img" src="${brLast}" style="width:100%;display:block;cursor:pointer;min-height:200px" onclick="brClick(event)" onwheel="brWheel(event)" alt="브라우저 화면"></div>
+   <div class="filt" style="gap:6px;margin-top:10px"><input id="br_txt" type="password" autocomplete="off" placeholder="입력칸을 누른 뒤 여기에 쓰고 '보내기' (가려서 보냄)" style="flex:1" onkeydown="if(event.key=='Enter'){brType();event.preventDefault()}">
+     <button class="gbtn" onclick="$('br_txt').type=$('br_txt').type=='password'?'text':'password'">보기</button><button class="gbtn" onclick="brType()">보내기</button>
+     ${['Enter','Tab','Backspace','Escape'].map(k=>`<button class="gbtn" onclick="brIn({type:'key',key:'${k}'})">${k}</button>`).join('')}
+     <button class="gbtn" onclick="brIn({type:'scroll',dy:-500})">▲</button><button class="gbtn" onclick="brIn({type:'scroll',dy:500})">▼</button></div>
+   <p class="mut" style="font-size:12px;margin:8px 0 0">화면을 누르면 그 자리를 클릭합니다. 비밀번호·인증번호는 여기서 직접 입력하세요 — 콘솔은 입력한 글자를 저장하지 않습니다.</p>`
+   :`<p class="mut" style="margin:12px 0 0">${esc(P.name||'')} 프로필을 엽니다. 열린 동안은 같은 프로필을 쓰는 자동 작업이 기다립니다.</p>`}</div>`;
+  if(s)brStartPoll();else brStopPoll()}
+function brStartPoll(){brStopPoll();const tick=async()=>{if($('brv').hidden||!$('br_img'))return;if(!brBusy){brBusy=true;
+    try{const r=await fetch('/api/browser/shot?profile='+bp);if(r.status==401){location.href='/login';return}if(r.ok){const u=URL.createObjectURL(await r.blob());const im=$('br_img');const old=brLast;if(im)im.src=u;brLast=u;if(old&&old!=u)setTimeout(()=>URL.revokeObjectURL(old),2000)}}catch(e){}brBusy=false}
+    brTimer=setTimeout(tick,700)};tick()}
+function brStopPoll(){clearTimeout(brTimer);brTimer=null}
+async function brStart(){try{await api('/api/browser/start',{profile:bp,mode:$('br_mode').value});await loadBr()}catch(e){alert(e.message)}}
+async function brStop(){try{await api('/api/browser/stop',{profile:bp});await loadBr()}catch(e){alert(e.message)}}
+async function brIn(b){try{await api('/api/browser/input',{profile:bp,...b});if(b.type=='navigate'||b.type=='back')setTimeout(loadBr,1200)}catch(e){alert(e.message)}}
+function brClick(e){const im=e.target,r=im.getBoundingClientRect();const x=(e.clientX-r.left)*im.naturalWidth/r.width,y=(e.clientY-r.top)*im.naturalHeight/r.height;brIn({type:'click',x,y})}
+function brWheel(e){e.preventDefault();brIn({type:'scroll',dy:e.deltaY>0?400:-400})}
+async function brType(){const v=$('br_txt').value;if(!v)return;await brIn({type:'type',text:v});$('br_txt').value=''}
+async function brDone(){try{const r=await api('/api/browser/login_done',{profile:bp});alert('로그인을 저장했습니다'+(r.saved!=null?` (쿠키 ${r.saved}개 파일 저장)`:'')+'. 브라우저를 닫았습니다.');await loadBr()}catch(e){alert(e.message)}}
+async function brOpenLogin(prof){bp=prof;await tab('br');try{await api('/api/browser/start',{profile:prof,mode:'headless'})}catch(e){alert(e.message)}await loadBr()}
 let IV={items:[]},ic=null,iTimer;
 const IK={log:'로그 실패',missed:'실행 안 됨',unloaded:'작업 내려감',shot:'실패 화면',console:'콘솔 작업 실패',lock:'잠금 대기 초과',env:'환경'};
 const IS={open:'열림',resolved:'해결',ignored:'무시'};
@@ -333,7 +367,7 @@ function infoHtml(i){return `<div style="margin-top:3px"><a href="${esc(i.url||'
   ${i.stats&&Object.keys(i.stats).length?`<div class="mut" style="font-size:12px">${statsHtml(i.stats)}</div>`:''}${i.note?`<div class="mut" style="font-size:11px">${esc(i.note)}</div>`:''}</div>`}
 function ddMenu(id,label,items){return `<div class="dd" id="dd_${id}"><button class="gbtn" onclick="ddToggle('dd_${id}',event)">${label}</button><div class="ddm">${items.map(([fn,l,c])=>`<a class="${c||''}" onclick="${fn}">${esc(l)}</a>`).join('')}</div></div>`}
 function otherMenu(a,o){const it=[];
-  if(o.site){if(!(o.site_login&&o.site_login.state=='진행 중'))it.push([`siteLogin('${o.site}','${esc(o.label)}')`,o.ok?'다시 로그인':'로그인']);it.push([`siteLogout('${o.site}','${esc(o.label)}')`,'로그아웃(쿠키 삭제)','bad'])}
+  if(o.site){it.push([`brOpenLogin('${o.site}')`,'콘솔 안 브라우저에서 로그인']);if(!(o.site_login&&o.site_login.state=='진행 중'))it.push([`siteLogin('${o.site}','${esc(o.label)}')`,'바깥 창으로 로그인(예전 방식)']);it.push([`siteLogout('${o.site}','${esc(o.label)}')`,'로그아웃(쿠키 삭제)','bad'])}
   if(o.kind=='kakao'&&o.ok)it.push([`kakaoLogout()`,'로그아웃(알림 토큰 삭제)','bad']);
   return it.length?ddMenu('o_'+a.id+o.kind,'관리 ▾',it):'<span></span>'}
 function affected(acc,ch){const js=(AU||[]).filter(j=>j.channels.some(c=>c[0]==acc&&(!ch||c[1]==ch)));return js.length?`\n\n영향받는 자동 작업 ${js.length}개: ${js.map(j=>j.name).join(', ')}`:''}

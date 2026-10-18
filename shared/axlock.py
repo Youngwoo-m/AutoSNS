@@ -234,6 +234,7 @@ PROFILES = {
     'youtube-personal': str(ROOT / 'youtube-shorts-auto' / 'chrome-profile-youtube'),
     'youtube-dept': str(ROOT / 'youtube-shorts-auto' / 'chrome-profile-youtube-dept'),
     'insta-manual': str(ROOT / 'insta-manual' / 'chrome-profile'),
+    'scratch': str(ROOT / 'ax-console' / 'data' / 'browser-scratch'),   # 콘솔 내부 브라우저용 빈 프로필
 }
 
 

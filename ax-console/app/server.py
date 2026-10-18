@@ -1280,6 +1280,71 @@ def analyze(iid):
     threading.Thread(target=work, daemon=True).start()
 
 
+# ---- D3 내부 브라우저: browser_worker.py(127.0.0.1:8711) 를 띄우고 중계한다 ----
+BW = 'http://127.0.0.1:8711'
+BW_PROC = {'p': None}
+BW_PROFILES = {  # 프로필 → (이름, 로그인 주소, 로그인 확인 쿠키 도메인·이름, 쿠키 파일로 받아 둘 곳)
+    'naver': ('네이버 (학과 smuds)', 'https://nid.naver.com/nidlogin.login', ('naver.com', 'NID_AUT'), None),
+    'tistory': ('티스토리 (개인 na-geoai, 카카오 로그인)', 'https://www.tistory.com/auth/login', ('tistory.com', 'TSSESSION'),
+                (['tistory', 'kakao'], 'GeoAI_NA/naver-blog-auto/tistory_cookies.json')),
+    'insta': ('인스타그램·스레드 (학과)', 'https://www.instagram.com/accounts/login/', ('instagram.com', 'sessionid'), None),
+    'tiktok': ('틱톡 (학과)', 'https://www.tiktok.com/login', ('tiktok.com', 'sessionid'), None),
+    'youtube-personal': ('유튜브 (개인 GeoAI)', 'https://studio.youtube.com', ('youtube.com', 'SID'), None),
+    'youtube-dept': ('유튜브 (학과)', 'https://studio.youtube.com', ('youtube.com', 'SID'), None),
+    'scratch': ('빈 브라우저 (아무 계정 없음)', 'https://www.naver.com', None, None),
+}
+
+
+def bw_call(path, body=None, raw=False, timeout=60):
+    import urllib.request
+    key = auth.internal_key()
+    for attempt in (1, 2):
+        try:
+            req = urllib.request.Request(BW + path, data=None if body is None else json.dumps(body).encode(),
+                                         headers={'Content-Type': 'application/json', 'X-AX-Internal': key})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = r.read()
+            return data if raw else json.loads(data)
+        except urllib.error.HTTPError as e:
+            raise ValueError(json.loads(e.read() or b'{}').get('error', f'브라우저 서비스 오류 {e.code}'))
+        except (urllib.error.URLError, ConnectionError):
+            if attempt == 2:
+                raise ValueError('브라우저 서비스를 켜지 못했습니다')
+            bw_start()
+
+
+def bw_start():
+    if BW_PROC['p'] and BW_PROC['p'].poll() is None:
+        return
+    BW_PROC['p'] = subprocess.Popen([GPY, str(CONSOLE / 'app' / 'browser_worker.py')], cwd=str(CONSOLE / 'app'),
+                                    stdout=subprocess.DEVNULL, stderr=open(DATA / 'logs' / 'browser_worker.log', 'a'))
+    for _ in range(30):
+        time.sleep(0.3)
+        try:
+            import urllib.request
+            urllib.request.urlopen(urllib.request.Request(BW + '/list', headers={'X-AX-Internal': auth.internal_key()}), timeout=1)
+            return
+        except Exception:
+            pass
+
+
+def bw_login_done(profile):
+    """사람이 내부 브라우저에서 로그인한 뒤: 로그인 쿠키 확인 → (필요하면) 쿠키 파일 저장 → 크롬을 정상 종료해 저장."""
+    name, _, check, save = BW_PROFILES[profile]
+    ok = True
+    if check:
+        names = bw_call(f'/cookies?profile={profile}&domain={check[0]}')['names']
+        ok = check[1] in names
+        if not ok:
+            raise ValueError(f'아직 로그인되지 않았습니다({check[0]} 의 {check[1]} 쿠키 없음). 로그인을 마친 뒤 다시 누르세요')
+    saved = bw_call('/save_cookies', {'profile': profile, 'domains': save[0], 'path': save[1]})['saved'] if save else None
+    bw_call('/stop', {'profile': profile})
+    axlock.log(f'내부 브라우저 로그인 완료: {profile}' + (f' (쿠키 {saved}개 파일 저장)' if saved is not None else ''))
+    GSTATE['login'][f'site:{profile}'] = {'state': '완료', 'at': now().isoformat(), 'msg': '내부 브라우저에서 로그인'}
+    _safe(site_info)
+    return {'ok': ok, 'saved': saved}
+
+
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
@@ -1329,6 +1394,15 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/browser/list':
+            try:
+                sess = bw_call('/list', timeout=5) if BW_PROC['p'] and BW_PROC['p'].poll() is None else []
+            except ValueError:
+                sess = []
+            return self.send(200, {'sessions': sess, 'profiles': {k: {'name': v[0], 'login_url': v[1], 'has_check': bool(v[2])}
+                                                                     for k, v in BW_PROFILES.items()}})
+        if self.path.startswith('/api/browser/shot?profile='):
+            return self.send(200, body=bw_call('/shot?profile=' + self.path.split('=', 1)[1], raw=True, timeout=20), ctype='image/jpeg')
         if self.path == '/api/incidents':
             return self.send(200, incidents_view())
         if self.path.startswith('/api/shot?'):
@@ -1519,6 +1593,20 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'google', 'check']:
                 google_check()
                 return self.send(200, google_view())
+            if parts[:2] == ['api', 'browser'] and len(parts) == 3:
+                op, prof = parts[2], str(b.get('profile', ''))
+                if prof not in BW_PROFILES:
+                    raise ValueError('없는 프로필입니다')
+                if op == 'start':
+                    return self.send(200, bw_call('/start', {'profile': prof, 'mode': b.get('mode') or 'headless',
+                                                             'url': b.get('url') or BW_PROFILES[prof][1]}))
+                if op == 'stop':
+                    return self.send(200, bw_call('/stop', {'profile': prof}))
+                if op == 'input':
+                    return self.send(200, bw_call('/input', {**b, 'profile': prof}))
+                if op == 'login_done':
+                    return self.send(200, bw_login_done(prof))
+                return self.send(404, {'error': '없는 주소'})
             if parts == ['api', 'secrets']:
                 account_ops.save_secret(str(b.get('name', '')).strip(), str(b.get('value', '')))
                 return self.send(200, {'ok': True})
