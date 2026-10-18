@@ -45,4 +45,11 @@ wait "$PID"; RC=$?
 kill "$WATCH" 2>/dev/null; wait "$WATCH" 2>/dev/null
 rm -f "$PROMPT"
 echo "===== [$(date '+%F %T')] $JOB 끝 (코드 $RC) =====" >> "$LOG"
+# 실제 실행이 실패하면 카카오톡 '나에게'로 알린다(시험 실행은 알리지 않음). 알림 실패는 작업 결과를 바꾸지 않는다.
+if [ "$RC" != "0" ] && [ "$AX_DRY" != "1" ]; then
+    LAST=$(grep -v '^=====' "$LOG" | tail -3 | tr '\n' ' ' | cut -c1-120)
+    "$ROOT/naver-blog-auto/.venv/bin/python" "$ROOT/naver-blog-auto/kakao_notify.py" \
+        "[AX] 클로드 작업 실패: $JOB (코드 $RC) $LAST" >> "$LOG" 2>&1 \
+        || echo "[$(date '+%F %T')] 카카오 실패 알림을 보내지 못함" >> "$LOG"
+fi
 exit $RC
