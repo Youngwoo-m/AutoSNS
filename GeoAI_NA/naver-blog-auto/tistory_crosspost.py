@@ -179,6 +179,41 @@ def save_state(s):
         json.dump(s, f, ensure_ascii=False, indent=2)
 
 
+def _norm_title(t):
+    import html as _h
+    import re as _re
+    return _re.sub(r"[\s\W_]+", "", _h.unescape(_h.unescape(t or ""))).lower()   # RSS 는 &amp;middot; 처럼 두 번 감싼다
+
+
+def _skip_existing(posts, s):
+    """티스토리에 같은 제목 글이 이미 있으면(다른 자동화가 직접 올린 경우 등) 올린 것으로 기록하고 건너뛴다.
+    2026-10-18: Codex 연재 자동화가 '흙의 다짐 1일차'를 티스토리에 직접 올린 뒤, 교차 게시가 같은 제목을
+    또 올리려 했다. 공개 RSS(최근 글)와 대조한다 — 읽지 못하면 아무것도 하지 않는다."""
+    import re as _re
+    import urllib.request as _u
+    try:
+        x = _u.urlopen(_u.Request(f"{BLOG}/rss", headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "ignore")
+    except Exception as e:
+        log(f"티스토리: 기존 글 대조 못함({type(e).__name__}) — 그대로 진행")
+        return
+    have = {}
+    for item in _re.findall(r"<item>(.*?)</item>", x, _re.S):
+        t = _re.search(r"<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>", item, _re.S)
+        l = _re.search(r"<link>(.*?)</link>", item, _re.S)
+        if t and l:
+            have[_norm_title(t.group(1))] = l.group(1).strip()
+    hit = 0
+    for p in posts:
+        u = have.get(_norm_title(p.get("title")))
+        if p.get("url") and p["url"] not in s["posted"] and u:
+            s["posted"][p["url"]] = {"tistory": u, "title": p["title"], "at": datetime.now().isoformat(timespec="seconds"),
+                                     "note": "티스토리에 같은 제목 글이 이미 있어 건너뜀"}
+            log(f"티스토리: 이미 같은 제목 글이 있어 건너뜀 — {p['title'][:50]} → {u}")
+            hit += 1
+    if hit:
+        save_state(s)
+
+
 def pick(posts, done, per_run):
     """새 글(최근 3일) 먼저 오래된 순으로, 남는 몫은 예전 글을 오래된 것부터."""
     todo = [p for p in posts if p["url"] and p["url"] not in done]
@@ -575,6 +610,7 @@ def main():
     per_run = int(tc.get("per_run", 2))
     s = state()
     posts = fetch_posts()
+    _skip_existing(posts, s)
     todo = pick(posts, s["posted"], per_run)
 
     if "--plan" in args or not todo:
