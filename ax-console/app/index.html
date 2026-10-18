@@ -117,9 +117,10 @@ function draw(full=true){
   $('listTitle').textContent=`${A().label.split(' ')[0]} · ${C().label} 작업`;
   const list=T.filter(t=>t.account==acc&&t.channel==ch);
   $('tasks').innerHTML=list.length?list.map(t=>{const a=C().actions.find(x=>x.key==t.action);
+    if(INL==t.id)return inlineTask(t);
     return `<div class="task ${cur&&cur.id==t.id?'on':''}" onclick="edit('${t.id}')"><div><div class="t">${esc(t.title)}</div>
-    <div class="m">${esc(a?a.label:t.action)} · ${t.schedule?fmt(t.schedule)+' '+RP[t.repeat||'']:'시각 미정'}${t.runs&&t.runs[0]?' · 최근 실행 '+fmt(t.runs[0].at):''}</div></div>
-    <span class="st ${t.status}">${ST[t.status]||t.status}</span></div>`}).join(''):'<div class="empty">아직 작업이 없습니다. 오른쪽에서 수행 내용을 입력하세요.</div>';
+    <div class="m">${esc(a?a.label:t.action||'콘텐츠 자동 발행')} · ${t.schedule?fmt(t.schedule)+' '+RP[t.repeat||'']:'시각 미정'}${t.runs&&t.runs[0]?' · 최근 실행 '+fmt(t.runs[0].at):''}</div></div>
+    <span style="display:flex;gap:6px;align-items:start"><span class="st ${t.status}">${ST[t.status]||t.status}</span>${t.status!='running'?`<button class="gbtn" title="여기서 바로 고치기" onclick="event.stopPropagation();INL='${t.id}';draw()">✎</button>`:''}</span></div>`}).join(''):'<div class="empty">아직 작업이 없습니다. 오른쪽에서 수행 내용을 입력하세요.</div>';
   const aj=AU.filter(j=>j.channels.some(c=>c[0]==acc&&c[1]==ch));
   $('tasks').innerHTML+=`<div class="autobox"><h2>자동 작업 (launchd ${aj.length}개)</h2>${aj.length?aj.map(j=>jobHtml(j,acc,ch)).join(''):'<div class="mut">이 채널에 걸린 자동 작업이 없습니다.</div>'}</div>`;
   if(cur){const f=T.find(t=>t.id==cur.id);if(f){cur=f}else{cur=null;full=true}}
@@ -281,7 +282,7 @@ function jobHtml(j,acc,ch){const main=j.channels[0][0]==acc&&j.channels[0][1]==c
   <div class="mut">${esc(j.what)}${others.length?' → 함께: '+esc(others.join(', ')):''}</div>
   ${j.note?`<div class="bad" style="font-size:12px">${esc(j.note)}</div>`:''}
   <div class="mut" style="font-size:11px">${esc(j.script)} (com.smuds.${esc(j.job)})${j.running?' · <b style="color:var(--acc)">지금 실행 중</b>':''}${!j.running&&j.exit&&j.exit!='0'?` · <span class="bad">마지막 종료 코드 ${esc(j.exit)}</span>`:''}</div>
-  <div class="jbtn">${j.controllable?`<button onclick="jobCtl('${j.job}','${j.on?'off':'on'}',this)">${j.on?'끄기':'켜기'}</button><button onclick="jobCtl('${j.job}','run',this)" ${j.on?'':'disabled title="꺼진 작업은 실행할 수 없습니다"'}>지금 실행</button>`:j.job=='axconsole'?'<span class="mut" style="font-size:11px">콘솔 자신이라 여기서 끌 수 없습니다</span>':''}<button onclick="jobLog('${j.job}',this)">최근 로그</button></div></div>`}
+  <div class="jbtn">${j.controllable?`<button onclick="jobCtl('${j.job}','${j.on?'off':'on'}',this)">${j.on?'끄기':'켜기'}</button><button onclick="jobCtl('${j.job}','run',this)" ${j.on?'':'disabled title="꺼진 작업은 실행할 수 없습니다"'}>지금 실행</button>`:j.job=='axconsole'?'<span class="mut" style="font-size:11px">콘솔 자신이라 여기서 끌 수 없습니다</span>':''}<button onclick="jobLog('${j.job}',this)">최근 로그</button>${j.controllable?`<button onclick="jobEdit('${j.job}',this)">편집</button>`:''}</div></div>`}
 async function jobCtl(job,op,b){const j=AU.find(x=>x.job==job);let q;
   if(op=='off')q=`'${j.name}' 자동 작업을 끕니다.\n(launchctl bootout + disable — 재부팅해도 꺼진 채로 남습니다)`;
   if(op=='on'){q=`'${j.name}' 자동 작업을 켭니다.\n일정(${j.when})대로 다시 자동으로 돕니다${j.live?' — 실제로 발행됩니다':''}.`;
@@ -368,7 +369,41 @@ function drawSch(){const L=SC.labels;const chs=[...new Set(SC.rows.map(r=>r.chan
    ${Object.entries(by).map(([d,rs])=>`<div class="day">${d=='시각 없음'?d:d.slice(5).replace('-','/')+' ('+WD[new Date(d+'T00:00').getDay()]+')'}</div><table>${rs.map(r=>`<tr class="${r.source=='console'?'click':''}" ${r.source=='console'?`onclick="openTask('${r.account}','${r.channel}','${r.id}')"`:''}>
     <td style="width:60px">${r.at?r.at.slice(11,16):'—'}</td><td style="width:150px"><span class="acct ${r.account=='personal'?'p':''}"></span>${ACCL[r.account]} · ${esc(L[r.channel]||r.channel)}${r.channels&&r.channels.length>1?` <span class="mut">+${r.channels.length-1}</span>`:''}</td>
     <td>${esc(r.title)}<div class="mut">${esc(r.what)}${r.repeat?' · '+({daily:'매일',weekly:'매주'}[r.repeat]):''}</div></td>
-    <td style="text-align:right"><span class="src ${r.source=='console'?'c':''}">${r.source=='console'?'콘솔 예약':r.on===false?'자동(꺼짐)':'자동'}</span></td></tr>`).join('')}</table>`).join('')||'<div class="empty">조건에 맞는 예약이 없습니다.</div>'}</div>`}
+    <td style="text-align:right;white-space:nowrap"><span class="src ${r.source=='console'?'c':''}">${r.source=='console'?'콘솔 예약':r.on===false?'자동(꺼짐)':'자동'}</span>
+      ${r.source=='console'?`<button class="gbtn" onclick="event.stopPropagation();schMove('${r.id}','${r.at}')">시각 바꾸기</button><button class="gbtn" onclick="event.stopPropagation();schCancel('${r.id}')">취소</button>`
+        :(AU.find(j=>j.job==r.job)||{}).controllable?`<button class="gbtn" onclick="event.stopPropagation();schEditJob('${r.job}')">편집</button>`:''}</td></tr>`).join('')}</table>`).join('')||'<div class="empty">조건에 맞는 예약이 없습니다.</div>'}</div>`}
+let INL=null;
+function inlineTask(t){return `<div class="task on" style="cursor:default"><div style="display:grid;gap:6px">
+  <input id="il_title" value="${esc(t.title)}"><div class="row"><input type="datetime-local" id="il_sch" value="${esc((t.schedule||'').slice(0,16))}">
+  <select id="il_rep">${Object.entries(RP).map(([k,v])=>`<option value="${k}" ${k==(t.repeat||'')?'selected':''}>${v}</option>`).join('')}</select></div>
+  <div class="btns" style="margin-top:0"><button class="pri" onclick="inlSave('${t.id}','scheduled')">저장하고 예약</button><button onclick="inlSave('${t.id}','')">저장만</button><button onclick="INL=null;draw()">닫기</button></div>
+  <div class="msg" id="il_msg"></div></div><span></span></div>`}
+async function inlSave(id,state){const b={title:$('il_title').value,schedule:$('il_sch').value,repeat:$('il_rep').value};if(state)b.state=state;
+  try{await api(`/api/tasks/${id}/reschedule`,b);INL=null;T=await api('/api/tasks');draw()}catch(e){$('il_msg').textContent=e.message}}
+async function schMove(id,at){const v=prompt('새 실행 시각 (예: 2026-10-20 09:30)',(at||'').replace('T',' ').slice(0,16));if(v===null)return;
+  try{await api(`/api/tasks/${id}/reschedule`,{schedule:v.trim().replace(' ','T'),state:'scheduled'});T=await api('/api/tasks');loadSch()}catch(e){alert(e.message)}}
+async function schCancel(id){if(!confirm('이 예약을 취소할까요? 작업은 초안으로 남습니다.'))return;
+  try{await api(`/api/tasks/${id}/reschedule`,{state:'draft'});T=await api('/api/tasks');loadSch()}catch(e){alert(e.message)}}
+async function schEditJob(job){await tab('auto');setTimeout(()=>{const b=[...document.querySelectorAll('#autov .jbtn button')].find(x=>x.getAttribute('onclick')==`jobEdit('${job}',this)`);if(b){b.scrollIntoView({block:'center'});jobEdit(job,b)}},700)}
+function jobEdit(job,btn){const j=AU.find(x=>x.job==job);const box=btn.closest('.job');const old=box.querySelector('.jedit');if(old){old.remove();return}
+  const rows=(j.sched&&j.sched.length?j.sched:[{time:'09:00',days:[]}]);
+  const rowH=(r,i)=>`<div class="jrow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0"><input type="time" value="${r.time}" style="width:110px">
+    ${r.day?`<span class="mut">매월 <input type="number" min="1" max="28" value="${r.day}" style="width:60px" class="jday">일</span>`:WD.split('').map((d,k)=>`<label style="margin:0;display:flex;gap:2px;align-items:center;color:var(--ink)"><input type="checkbox" style="width:auto" value="${k}" ${r.days.includes(k)?'checked':''}>${d}</label>`).join('')}
+    <span class="mut" style="font-size:11px">${r.day?'':'(요일을 안 고르면 매일)'}</span><button class="gbtn" onclick="this.parentNode.remove()">빼기</button></div>`;
+  const f=document.createElement('div');f.className='jedit card';f.style.cssText='margin:8px 0;padding:10px';
+  f.innerHTML=`<label>이름</label><input class="je_name" value="${esc(j.name)}"><label>설명</label><textarea class="je_what" style="min-height:60px">${esc(j.what)}</textarea>
+   <label>실행 시각</label>${j.interval_min?`<div><input type="number" class="je_int" min="5" max="1440" value="${j.interval_min}" style="width:90px"> 분마다</div>`:`<div class="je_rows">${rows.map(rowH).join('')}</div><button class="gbtn je_add">+ 시각 추가</button>`}
+   <div class="btns"><button class="pri">저장</button><button>닫기</button></div><div class="msg"></div>`;
+  box.appendChild(f);
+  const [save,close]=f.querySelectorAll('.btns button');close.onclick=()=>f.remove();
+  const add=f.querySelector('.je_add');if(add)add.onclick=()=>f.querySelector('.je_rows').insertAdjacentHTML('beforeend',rowH({time:'09:00',days:[]}));
+  save.onclick=async()=>{const b={name:f.querySelector('.je_name').value,what:f.querySelector('.je_what').value};
+    if(j.interval_min)b.interval_min=f.querySelector('.je_int').value;
+    else b.schedule=[...f.querySelectorAll('.jrow')].map(r=>({time:r.querySelector('input[type=time]').value,days:[...r.querySelectorAll('input[type=checkbox]:checked')].map(c=>+c.value),day:(r.querySelector('.jday')||{}).value||null}));
+    const before=j.when;
+    if(b.schedule&&!confirm(`'${j.name}' 실행 시각을 바꿉니다.\n지금: ${before}\n launchd 설정을 고치고(바꾸기 전 사본은 data/config-history) 바로 다시 적용합니다.`))return;
+    try{const r=await api(`/api/automations/${job}/edit`,b);f.querySelector('.msg').style.color='var(--ok)';f.querySelector('.msg').textContent=`저장했습니다 → ${r.job.when}`;setTimeout(loadAuto,900)}
+    catch(e){f.querySelector('.msg').style.color='var(--warn)';f.querySelector('.msg').textContent=e.message}}}
 function openTask(a,c,id){acc=a;ch=c;tab('work');cur=T.find(t=>t.id==id)||null;draw()}
 let SV;
 async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels;

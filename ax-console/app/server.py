@@ -118,6 +118,112 @@ def clean(body, old=None):
     return t
 
 
+# ---- 자동 작업 편집: 이름·설명(automations.json), 실행 시각(launchd plist) ----
+def _sched_rows(pl):
+    """StartCalendarInterval → [{'time':'HH:MM','days':[0..6]|[],'day':N|None}] (요일 비면 매일)."""
+    iv = pl.get('StartCalendarInterval')
+    if not iv:
+        return []
+    rows = {}
+    for i in (iv if isinstance(iv, list) else [iv]):
+        if 'Hour' not in i:
+            continue
+        k = (f"{i['Hour']:02d}:{i.get('Minute', 0):02d}", i.get('Day'))
+        r = rows.setdefault(k, {'time': k[0], 'days': [], 'day': k[1]})
+        if 'Weekday' in i:
+            r['days'].append(i['Weekday'] % 7)
+    return [{**r, 'days': sorted(set(r['days']))} for r in rows.values()]
+
+
+def job_edit(job, b):
+    cat = _json(AUTOMATIONS, {})
+    j = next((x for x in cat.get('jobs', []) if x['job'] == job), None)
+    if not j:
+        raise ValueError('없는 작업입니다')
+    changed = []
+    for k, lim in (('name', 60), ('what', 400)):
+        if k in b and str(b[k]).strip() and str(b[k]).strip() != j.get(k):
+            j[k] = str(b[k]).strip()[:lim]
+            changed.append(k)
+    if changed:
+        tmp = AUTOMATIONS.with_suffix('.tmp')
+        tmp.write_text(json.dumps(cat, ensure_ascii=False, indent=2) + '\n')
+        tmp.replace(AUTOMATIONS)
+    if 'schedule' in b or 'interval_min' in b:
+        f = _job_plist(job)
+        pl = plistlib.loads(f.read_bytes())
+        if 'interval_min' in b and pl.get('StartInterval'):
+            m = int(b['interval_min'])
+            if not 5 <= m <= 1440:
+                raise ValueError('간격은 5~1440분 사이로')
+            pl['StartInterval'] = m * 60
+        elif 'schedule' in b:
+            ivs = []
+            for r in b['schedule']:
+                hm = __import__('re').fullmatch(r'(\d{1,2}):(\d{2})', str(r.get('time', '')).strip())
+                if not hm or int(hm.group(1)) > 23 or int(hm.group(2)) > 59:
+                    raise ValueError(f"시각 형식이 맞지 않습니다: {r.get('time')}")
+                base = {'Hour': int(hm.group(1)), 'Minute': int(hm.group(2))}
+                if r.get('day'):
+                    ivs.append({**base, 'Day': int(r['day'])})
+                elif r.get('days'):
+                    ivs += [{**base, 'Weekday': int(d) % 7} for d in sorted(set(r['days']))]
+                else:
+                    ivs.append(base)
+            if not ivs:
+                raise ValueError('실행 시각을 하나 이상 넣으세요')
+            pl.pop('StartInterval', None)
+            pl['StartCalendarInterval'] = ivs if len(ivs) > 1 else ivs[0]
+        hist = DATA / 'config-history'
+        hist.mkdir(parents=True, exist_ok=True)
+        (hist / f"{f.stem}_{now().strftime('%Y%m%d_%H%M%S')}.plist").write_bytes(f.read_bytes())  # 바꾸기 전 사본
+        f.write_bytes(plistlib.dumps(pl))
+        if subprocess.run(['plutil', '-lint', str(f)], capture_output=True).returncode != 0:
+            raise ValueError('plist 검사 실패 — config-history 의 사본으로 되돌리세요')
+        dom, label = f'gui/{os.getuid()}', f.stem
+        loaded, disabled = _launchd()
+        if label in loaded:                 # 켜져 있던 작업만 새 시각으로 다시 올린다
+            _lc('bootout', f'{dom}/{label}')
+            _lc('bootstrap', dom, str(f))
+        changed.append('schedule')
+        with open(DATA / 'logs' / 'launchd_control.log', 'a') as lf:
+            lf.write(f"{now().isoformat()} edit-schedule {label} → {_when_text(pl)}\n")
+    return {'changed': changed, 'job': next(x for x in automations() if x['job'] == job)}
+
+
+# ---- 콘솔 예약 고치기·취소 ----
+def task_reschedule(tid, b):
+    with LOCK:
+        tasks = load()
+        t = next((x for x in tasks if x['id'] == tid), None)
+        if not t:
+            raise ValueError('작업을 찾지 못했습니다')
+        if t['status'] == 'running':
+            raise ValueError('실행 중에는 고칠 수 없습니다')
+        if 'title' in b and str(b['title']).strip():
+            t['title'] = str(b['title']).strip()[:200]
+        if 'schedule' in b:
+            v = str(b['schedule'] or '').strip()
+            if v:
+                try:
+                    datetime.datetime.fromisoformat(v)
+                except ValueError:
+                    raise ValueError('시각은 2026-10-20 09:30 처럼 넣으세요')
+            t['schedule'] = v
+        if b.get('repeat') in ('', 'daily', 'weekly') and 'repeat' in b:
+            t['repeat'] = b['repeat']
+        if b.get('state') == 'scheduled':
+            if not t.get('schedule'):
+                raise ValueError('예약하려면 실행 시각을 정하세요')
+            t['status'] = 'scheduled'
+        elif b.get('state') == 'draft':
+            if t.get('content'):
+                raise ValueError('콘텐츠 예약은 콘텐츠 탭에서 취소하세요(채널 묶음으로 취소됩니다)')
+            t['status'] = 'draft'
+        save(tasks)
+        return t
+
+
 def run_task(tid, manual=False):
     with LOCK:
         tasks = load()
@@ -412,6 +518,7 @@ def automations():
                     'exit': code, 'controllable': key in cat and key not in SELF_JOBS,
                     'live': any(c[0] != 'common' for c in info['channels']), 'when': _when_text(pl), 'last': _last_run(pl),
                     'next': [t.isoformat(timespec='minutes') for t in nxt[:3]],
+                    'sched': _sched_rows(pl), 'interval_min': (pl.get('StartInterval') or 0) // 60,
                     'script': pl.get('ProgramArguments', [''])[-1].replace(str(ROOT) + '/', '')})
     return out
 
@@ -1422,6 +1529,10 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'google', 'login']:
                 google_login(str(b.get('account')), str(b.get('service')))
                 return self.send(200, google_view())
+            if parts[:2] == ['api', 'automations'] and len(parts) == 4 and parts[3] == 'edit':
+                return self.send(200, job_edit(parts[2], b))
+            if parts[:2] == ['api', 'tasks'] and len(parts) == 4 and parts[3] == 'reschedule':
+                return self.send(200, task_reschedule(parts[2], b))
             if parts[:2] == ['api', 'automations'] and len(parts) == 4 and parts[3] in ('on', 'off', 'run'):
                 return self.send(200, job_control(parts[2], parts[3]))
             if parts == ['api', 'settings', 'accounts']:
