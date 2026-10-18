@@ -1,0 +1,10 @@
+{
+  "_설명": "④ 제작 Canva 카드뉴스 설정. 템플릿 ID 는 Canva 에서 브랜드 템플릿을 게시한 뒤 넣는다(주소의 /brand-templates/<ID> 또는 콘솔 설정).",
+  "cli": "/usr/local/lib/nodejs/node-v24.21.0-darwin-x64/bin/canva",
+  "templates": {"dept": "", "personal": ""},
+  "pages": 6,
+  "limits": {"title": 22, "body": 60},
+  "handle": {"dept": "세명대학교 재난안전학과", "personal": "GeoAI 나영우"},
+  "end_card": {"title": "저장해 두고 필요할 때 꺼내 보세요", "body": "프로필 링크에서 더 많은 안전 정보를 볼 수 있어요"},
+  "export": {"width": 1080, "height": 1350}
+}
