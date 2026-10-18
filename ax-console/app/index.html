@@ -390,7 +390,7 @@ async function loadAuto(){await getAuto();const order=[VA];
   const chOrder={dept:['youtube','instagram','naver_blog','blogger','tiktok','x','threads'],personal:['blogger','youtube','tistory','naver_blog','homepage','kakao'],common:['analytics','maintenance']};
   const QQ=await api('/api/questions').catch(()=>[]);
   $('autov').innerHTML=`<div class="card" id="osbox" style="margin-bottom:16px"></div>
-   ${VA!='personal'?'':`<div class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">개인 · 티스토리 친구 질문 대기열 <span class="mut" style="font-size:12px">(GeoAI_NA · Codex 자동화가 매일 23시 처리)</span></h2>
+   ${VA!='personal'?'':`<div class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">개인 · 티스토리 친구 질문 대기열 <span class="mut" style="font-size:12px">(GeoAI_NA · 클로드 자동 작업이 매일 23시 처리)</span></h2>
     ${QQ.map(q=>`<div class="run"><b>${esc(q.label)}</b> · 전체 ${q.total} · ${Object.entries(q.counts).map(([k,v])=>`${esc({queued:'대기',processing:'처리 중',published:'발행됨',done:'완료',ignored:'무시'}[k]||k)} ${v}`).join(' · ')||'없음'}
       ${q.pending.map(x=>`<div class="mut" style="font-size:12px">· ${esc(x.at)} ${esc(x.title)} (${esc(x.status)})</div>`).join('')}</div>`).join('')}</div>`}<div class="card" style="margin-bottom:16px"><h2 style="margin:0">${ACCL[VA]} 자동 작업 ${AU.filter(j=>j.channels.some(c=>c[0]==VA)).length}개 · 채널별</h2>
    <p class="mut" style="margin:6px 0 0">한 작업이 여러 채널에 올리면 각 채널에 모두 표시합니다(주 채널 / 함께 게시). 분석 내용은 config/automations.json 에 있습니다.</p></div>`+

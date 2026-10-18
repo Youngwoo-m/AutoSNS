@@ -470,7 +470,10 @@ def _when_text(pl):
 def _log_files(pl):
     """plist 로그와 실행 스크립트가 쓰는 logs/*.log 경로."""
     files = [pl.get('StandardOutPath'), pl.get('StandardErrorPath')]
-    script = Path(pl.get('ProgramArguments', [''])[-1])
+    args = pl.get('ProgramArguments', [''])
+    script = Path(next((a for a in args if a.endswith('.sh')), args[-1]))
+    if script.name == 'run_claude_job.sh':      # 클로드 작업: logs/<작업>.log 에 claude -p 출력이 쌓인다
+        files.append(str(script.parent / 'logs' / f'{args[-1]}.log'))
     try:
         if script.suffix == '.sh':
             for m in __import__('re').findall(r'((?:\.\./)?logs/[\w.\-]+\.log)', script.read_text(errors='ignore')):
@@ -519,7 +522,7 @@ def automations():
                     'live': any(c[0] != 'common' for c in info['channels']), 'when': _when_text(pl), 'last': _last_run(pl),
                     'next': [t.isoformat(timespec='minutes') for t in nxt[:3]],
                     'sched': _sched_rows(pl), 'interval_min': (pl.get('StartInterval') or 0) // 60,
-                    'script': pl.get('ProgramArguments', [''])[-1].replace(str(ROOT) + '/', '')})
+                    'script': ' '.join(a for a in pl.get('ProgramArguments', ['']) if a != '/bin/bash').replace(str(ROOT) + '/', '')})
     try:
         out += [{k: v for k, v in j.items() if k != 'times'} for j in codex_jobs()]
     except Exception as e:
@@ -564,7 +567,7 @@ def _rrule_times(rrule, start, days):
 
 
 def question_queues():
-    """친구 질문 대기열(Codex 자동화가 처리). 제목은 외부 사용자가 쓴 글이라 화면에서 이스케이프해 보여 준다."""
+    """친구 질문 대기열(클로드 자동 작업 claude.*-friend 가 처리). 제목은 외부 사용자가 쓴 글이라 화면에서 이스케이프해 보여 준다."""
     base = ROOT / 'GeoAI_NA' / 'engineer-question-worker'
     out = []
     for f, label in (('state.json', '측량및지형공간정보기술사'), ('civil-state.json', '토목시공기술사')):
@@ -580,7 +583,10 @@ def question_queues():
 
 def codex_jobs(days=8):
     out, start = [], now()
+    moved = {j.get('codex') for j in _json(ROOT / 'GeoAI_NA' / 'claude-jobs' / 'jobs.json', {}).get('jobs', [])}
     for f in sorted(CODEX_AUTOS.glob('*/automation.toml')):
+        if f.parent.name in moved:              # 클로드 작업(claude.*)으로 옮긴 것은 그쪽에 보인다
+            continue
         txt = f.read_text(errors='ignore')
         name, status, rrule, prompt = (_toml_str(txt, k) for k in ('name', 'status', 'rrule', 'prompt'))
         times, hours, minute = _rrule_times(rrule, start, days)

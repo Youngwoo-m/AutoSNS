@@ -1,0 +1,128 @@
+{
+ "_설명": "Codex 자동화(~/.codex/automations)에서 옮긴 클로드 자동 작업. install.py 가 이 표로 launchd(com.smuds.claude.<key>)를 만든다. 지시 원문은 jobs/<key>.md.",
+ "jobs": [
+  {
+   "key": "survey-daily",
+   "codex": "automation",
+   "name": "측량 하루 한 문제 (답안 PDF·티스토리·카톡·숏츠)",
+   "hours": [
+    6,
+    8
+   ],
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "youtube"
+    ],
+    [
+     "personal",
+     "kakao"
+    ]
+   ],
+   "runs": {
+    "6": "06:00 실행 — 원고·따라쓰기 PDF·20초 숏츠를 준비하고, 준비가 끝나는 대로 블로그를 공개 발행한다(07:00 목표, 늦으면 실제 완료 후).",
+    "8": "08:00 실행 — 당일 글·숏츠의 공개 검증과 목록·카카오톡·댓글 후처리만 한다. 새 문제나 두 번째 숏츠를 만들지 않는다."
+   }
+  },
+  {
+   "key": "civil-daily",
+   "codex": "8",
+   "name": "토목시공 하루 한 문제 (티스토리+개인 블로거)",
+   "hours": [
+    8
+   ],
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ]
+  },
+  {
+   "key": "survey-friend",
+   "codex": "automation-2",
+   "name": "측량 친구 요청 답안 (티스토리·카톡)",
+   "hours": [
+    23
+   ],
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "kakao"
+    ]
+   ]
+  },
+  {
+   "key": "civil-friend",
+   "codex": "11",
+   "name": "토목시공 친구 요청 답안 (티스토리+개인 블로거)",
+   "hours": [
+    23
+   ],
+   "minute": 10,
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ]
+  },
+  {
+   "key": "safekorea",
+   "codex": "geoai",
+   "name": "안전한국훈련 글 (하루 세 번)",
+   "hours": [
+    9,
+    12,
+    18
+   ],
+   "model": "sonnet",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ]
+   ],
+   "runs": {
+    "9": "09:00 회차 — 이해와 준비 주제.",
+    "12": "12:00 회차 — 유튜브 공식 영상 소개 글(임베드 플레이어 + 원본 링크).",
+    "18": "18:00 회차 — 실무 주제."
+   }
+  },
+  {
+   "key": "nordic",
+   "codex": "automation-3",
+   "name": "노르딕워킹 아침 글",
+   "hours": [
+    7
+   ],
+   "model": "sonnet",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ]
+   ]
+  }
+ ]
+}
