@@ -57,7 +57,9 @@ def process_list(pattern):
 
 
 def _console(path):
-    with urllib.request.urlopen(f'http://127.0.0.1:8700{path}', timeout=60) as r:
+    key = (CONSOLE / 'data' / 'auth' / 'internal.key').read_text().strip()
+    req = urllib.request.Request(f'http://127.0.0.1:8700{path}', headers={'X-AX-Internal': key})
+    with urllib.request.urlopen(req, timeout=60) as r:
         return json.load(r)
 
 

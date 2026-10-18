@@ -16,6 +16,8 @@ sys.path.insert(0, str(ROOT))
 from shared import axlock  # noqa: E402  잠금·대기·비상 정지
 sys.path.insert(0, str(CONSOLE / 'app'))
 import watcher  # noqa: E402  실패 대응 감시기
+import auth  # noqa: E402  콘솔 로그인
+import account_ops  # noqa: E402  채널 계정 로그아웃·비밀값 저장
 DATA = CONSOLE / 'data'
 TASKS = DATA / 'tasks.json'
 RUNS = DATA / 'runs'
@@ -281,7 +283,8 @@ def settings_view():
     have = secret_names()
     used = sorted(set(__import__('re').findall(r'"([A-Z][A-Z0-9_]{3,})"', json.dumps(cfg))))
     return {'accounts': cfg.get('accounts', {}), 'channel_labels': CH_LABEL,
-            'secrets': [{'name': n, 'ok': None if have is None else n in have} for n in used],
+            'secrets': [{'name': n, 'ok': None if have is None else n in have, 'used': n in used}
+                        for n in sorted(set(used) | (have or set()), key=lambda n: (n not in used, n))],
             'skills': skills(), 'plugins': plugin_rows(), 'connectors': connectors()}
 
 
@@ -544,6 +547,8 @@ def google_check():
         raise ValueError('토큰 확인 실패: ' + (p.stderr.strip().splitlines() or ['알 수 없는 오류'])[-1][:200])
     GSTATE['result'] = json.loads(p.stdout.strip().splitlines()[-1])
     GSTATE['checked'] = now().isoformat()
+    cli_logins()
+    _safe(site_info)
 
 
 CLI_LOGINS = {}
@@ -610,6 +615,51 @@ def tistory_status():
     return out
 
 
+def _rss(url):
+    import html as H
+    import urllib.request
+    x = urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=15).read().decode('utf-8', 'ignore')
+    t = __import__('re').search(r'<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', x, __import__('re').S)
+    last = __import__('re').search(r'<pubDate>(.*?)</pubDate>', x[x.find('<item>'):]) if '<item>' in x else None
+    first = __import__('re').search(r'<item>.*?<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</title>', x, __import__('re').S)
+    return {'name': H.unescape(t.group(1)).strip() if t else '', 'recent': x.count('<item>'),
+            'last': last.group(1) if last else '', 'last_title': H.unescape(first.group(1)).strip()[:80] if first else ''}
+
+
+def site_info():
+    """구글 밖 채널의 공개 정보(블로그 이름·최근 글, GitHub 저장소 수). 계정 연결 화면에 쓴다."""
+    out, cfg = {}, _json(ACCOUNTS, {}).get('accounts', {})
+    for acc, a in cfg.items():
+        nb = (a.get('naver') or {}).get('blog')
+        if nb:
+            try:
+                r = _rss(f'https://rss.blog.naver.com/{nb}.xml')
+                out[f'{acc}/naver'] = {'name': r['name'], 'url': f'https://blog.naver.com/{nb}',
+                                       'stats': {'최근 글': r['recent']}, 'note': f"마지막 글 {r['last'][:16]} · {r['last_title']}"}
+            except Exception as e:
+                out[f'{acc}/naver'] = {'error': str(e)[:120]}
+        ts = (a.get('tistory') or {}).get('id')
+        if ts:
+            try:
+                r = _rss(f'https://{ts}/rss')
+                out[f'{acc}/tistory'] = {'name': r['name'], 'url': f'https://{ts}', 'stats': {'최근 글': r['recent']},
+                                         'note': f"마지막 글 {r['last'][:16]} · {r['last_title']}"}
+            except Exception as e:
+                out[f'{acc}/tistory'] = {'error': str(e)[:120]}
+        for g in (a.get('github') or {}).get('accounts', []):
+            gh = CLI_LOGINS.get('gh_bin') or '/usr/local/bin/gh'
+            try:
+                r = subprocess.run([gh, 'api', f"users/{g['id']}"], capture_output=True, text=True, timeout=20)
+                u = json.loads(r.stdout)
+                out[f"github/{g['id']}"] = {'name': u.get('login'), 'url': u.get('html_url'),
+                                           'stats': {'공개 저장소': u.get('public_repos', 0), '팔로워': u.get('followers', 0)}}
+            except Exception as e:
+                out[f"github/{g['id']}"] = {'error': str(e)[:120]}
+    GSTATE['site_info'] = out
+    GSTATE['site_checked'] = now().isoformat()
+    return out
+
+
 def _safe(fn):
     try:
         fn()
@@ -650,12 +700,15 @@ def google_view():
             state = ('정상' if ok else '로그인 확인 필요') if sec == ['TISTORY'] else \
                 ('CLI 로그인됨' if ok else 'CLI 로그인 안 됨') if sec == ['CLI'] else \
                 ('로그인 정보 저장됨' if ok else '연결 전' if not sec else '비밀값 없음')
-            others.append({'label': label, 'id': o.get('id', ''), 'login': o.get('login', ''), 'note': o.get('note', ''),
-                           'secrets': sec, 'ok': ok, 'state': state})
+            others.append({'info': GSTATE.get('site_info', {}).get(f'{acc}/{kind}'), 'label': label, 'kind': kind, 'id': o.get('id', ''), 'login': o.get('login', ''), 'note': o.get('note', ''),
+                           'secrets': sec, 'ok': ok, 'state': state,
+                           'site': {'naver': 'naver' if acc == 'dept' else '', 'tistory': 'tistory'}.get(kind, ''),
+                           'site_login': GSTATE['login'].get('site:' + {'naver': 'naver', 'tistory': 'tistory'}.get(kind, '-'))})
         gh = None
         if a.get('github'):
             gh = {'note': a['github'].get('note', ''), 'accounts': [
-                {**x, 'logged_in': x['id'] in CLI_LOGINS.get('github', set()), 'active': x['id'] == CLI_LOGINS.get('github_active')}
+                {**x, 'logged_in': x['id'] in CLI_LOGINS.get('github', set()), 'active': x['id'] == CLI_LOGINS.get('github_active'),
+                 'info': GSTATE.get('site_info', {}).get(f"github/{x['id']}")}
                 for x in a['github'].get('accounts', [])]}
         accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'services': svcs, 'others': others,
                      'github': gh})
@@ -1124,11 +1177,13 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-    def send(self, code, obj=None, body=None, ctype='application/json; charset=utf-8'):
+    def send(self, code, obj=None, body=None, ctype='application/json; charset=utf-8', headers=None):
         data = body if body is not None else json.dumps(obj, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header('Content-Type', ctype)
         self.send_header('Cache-Control', 'no-store')
+        for k, v in (headers or {}).items():
+            self.send_header(k, v)
         self.end_headers()
         self.wfile.write(data)
 
@@ -1141,7 +1196,25 @@ class H(BaseHTTPRequestHandler):
         o = self.headers.get('Origin')
         return o in (None, f'http://{HOST}:{PORT}', f'http://localhost:{PORT}')
 
+    # ---- 로그인 ----
+    def token(self):
+        return auth.cookie_of(self.headers.get('Cookie'))
+
+    def authed(self):
+        k = self.headers.get('X-AX-Internal')
+        if k and auth.hmac.compare_digest(k, auth.internal_key()):
+            return True
+        return auth.check(self.token())
+
     def do_GET(self):
+        if self.path == '/login' or self.path.startswith('/login?'):
+            return self.send(200, body=(CONSOLE / 'app' / 'login.html').read_bytes(), ctype='text/html; charset=utf-8')
+        if self.path == '/api/auth/status':
+            return self.send(200, {'setup': auth.is_setup(), 'logged_in': self.authed()})
+        if not self.path.startswith('/fonts/') and not self.authed():
+            if self.path in ('/', '/index.html'):
+                return self.send(302, body=b'', headers={'Location': '/login'})
+            return self.send(401, {'error': '로그인이 필요합니다', 'login': True})
         if self.path in ('/', '/index.html'):
             return self.send(200, body=(CONSOLE / 'app' / 'index.html').read_bytes(), ctype='text/html; charset=utf-8')
         if self.path.startswith('/fonts/'):
@@ -1194,12 +1267,92 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=p.read_bytes(), ctype='text/plain; charset=utf-8')
         self.send(404, {'error': '없는 주소'})
 
+    def account_op(self, op, b):
+        cfg = _json(ACCOUNTS, {}).get('accounts', {})
+        acc = str(b.get('account', ''))
+        if op in ('google-disconnect', 'google-logout'):
+            toks = (cfg.get(acc, {}).get('google') or {}).get('tokens', {})
+            if not toks:
+                raise ValueError('없는 계정입니다')
+            if op == 'google-disconnect':
+                svc = str(b.get('service', ''))
+                if svc not in toks:
+                    raise ValueError('없는 서비스입니다')
+                account_ops.google_disconnect(acc, svc, toks[svc])
+                GSTATE['result'].pop(f'{acc}/{svc}', None)
+                return self.send(200, {'ok': True})
+            r = account_ops.google_logout(acc, list(toks.values()))
+            for svc in toks:
+                GSTATE['result'].pop(f'{acc}/{svc}', None)
+            return self.send(200, {'ok': True, **r})
+        if op in ('browser-logout', 'browser-login'):
+            site = str(b.get('site', ''))
+            if site not in account_ops.BROWSER:
+                raise ValueError('없는 사이트입니다')
+            if op == 'browser-logout':
+                try:
+                    return self.send(200, account_ops.browser_logout(site))
+                except axlock.Timeout:
+                    raise ValueError('그 사이트 크롬 프로필을 다른 작업이 쓰고 있습니다. 끝난 뒤 다시 하세요')
+            key = f'site:{site}'
+            if (GSTATE['login'].get(key) or {}).get('state') == '진행 중':
+                raise ValueError('이미 로그인 창이 열려 있습니다')
+            GSTATE['login'][key] = {'state': '진행 중', 'at': now().isoformat(), 'msg': '로그인 창이 열립니다. 직접 로그인하면 알아서 닫힙니다(최대 10분).'}
+
+            def work():
+                try:
+                    r = account_ops.browser_login(site)
+                    GSTATE['login'][key] = {'state': '완료' if r['ok'] else '실패', 'at': now().isoformat(), 'msg': r['msg']}
+                    _safe(site_info)   # 연결되면 채널 정보를 다시 가져온다
+                except Exception as e:
+                    GSTATE['login'][key] = {'state': '실패', 'at': now().isoformat(), 'msg': str(e)[:200]}
+            threading.Thread(target=work, daemon=True).start()
+            return self.send(200, {'ok': True})
+        if op == 'gh-logout':
+            account_ops.gh_logout(str(b.get('user', '')))
+            return self.send(200, {'ok': True})
+        if op == 'kakao-logout':
+            account_ops.kakao_logout()
+            return self.send(200, {'ok': True})
+        return self.send(404, {'error': '없는 주소'})
+
+    def auth_post(self, op, b):
+        ip = self.client_address[0]
+        if op == 'setup':
+            auth.setup(str(b.get('password', '')))
+            tok = auth.new_session(self.headers.get('User-Agent', ''))
+            axlock.log('콘솔 비밀번호를 처음 만들고 로그인')
+            return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
+        if op == 'login':
+            if not auth.verify(str(b.get('password', '')), ip):
+                axlock.log('콘솔 로그인 실패')
+                return self.send(401, {'error': '비밀번호가 맞지 않습니다'})
+            tok = auth.new_session(self.headers.get('User-Agent', ''))
+            axlock.log('콘솔 로그인')
+            return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
+        if not self.authed():
+            return self.send(401, {'error': '로그인이 필요합니다', 'login': True})
+        if op == 'logout':
+            auth.drop(self.token())
+            axlock.log('콘솔 로그아웃')
+            return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.clear_cookie()})
+        if op == 'password':
+            auth.change_password(str(b.get('old', '')), str(b.get('new', '')))
+            tok = auth.new_session(self.headers.get('User-Agent', ''))
+            axlock.log('콘솔 비밀번호 변경(다른 세션 모두 종료)')
+            return self.send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(tok)})
+        return self.send(404, {'error': '없는 주소'})
+
     def do_POST(self):
         if not self.same_origin():
             return self.send(403, {'error': '허용되지 않은 요청'})
         try:
             b = self.body()
             parts = self.path.strip('/').split('/')
+            if parts[:2] == ['api', 'auth']:
+                return self.auth_post(parts[2] if len(parts) > 2 else '', b)
+            if not self.authed():
+                return self.send(401, {'error': '로그인이 필요합니다', 'login': True})
             if parts[:2] == ['api', 'tasks'] and parts[3:] == ['done']:
                 task_done(parts[2], b.get('url'))
                 return self.send(200, {'ok': True})
@@ -1258,6 +1411,11 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'google', 'check']:
                 google_check()
                 return self.send(200, google_view())
+            if parts == ['api', 'secrets']:
+                account_ops.save_secret(str(b.get('name', '')).strip(), str(b.get('value', '')))
+                return self.send(200, {'ok': True})
+            if parts[:2] == ['api', 'account'] and len(parts) == 3:
+                return self.account_op(parts[2], b)
             if parts == ['api', 'github', 'switch']:
                 github_switch(str(b.get('user', '')))
                 return self.send(200, google_view())
@@ -1307,19 +1465,23 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
+    auth.internal_key()   # 내부 호출 키를 미리 만든다
+    TEST = bool(os.environ.get('AX_NO_BG'))   # 시험용 서버: 실제 데이터를 고치는 일을 하지 않는다
     with LOCK:  # 서버가 꺼진 사이 '실행 중'으로 남은 작업은 실패로 돌린다
         ts = load()
         for t in ts:
-            if t.get('status') == 'running':
+            if t.get('status') == 'running' and not TEST:
                 t['status'] = 'failed'
-        save(ts)
-    for f in CONTENT.glob('*/*/*/meta.json'):
+        if not TEST:
+            save(ts)
+    for f in ([] if TEST else CONTENT.glob('*/*/*/meta.json')):
         c = json.loads(f.read_text())
         if c.get('status') == 'drafting':
             c.update(status='idea', error='서버가 다시 켜져 초안 작성이 중단됐습니다')
             f.write_text(json.dumps(c, ensure_ascii=False, indent=2))
-    threading.Thread(target=scheduler, daemon=True).start()
-    threading.Thread(target=watch_loop, daemon=True).start()
-    threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
+    if not TEST:   # 시험용 서버(AX_NO_BG=1)는 예약 실행기·감시기·토큰 확인을 돌리지 않는다
+        threading.Thread(target=scheduler, daemon=True).start()
+        threading.Thread(target=watch_loop, daemon=True).start()
+        threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
     print(f'AX 발행 콘솔: http://{HOST}:{PORT}')
     ThreadingHTTPServer((HOST, PORT), H).serve_forever()

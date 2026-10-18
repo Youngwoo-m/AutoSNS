@@ -60,7 +60,9 @@
         "secrets": [
           "NAVER_ID",
           "NAVER_PW"
-        ]
+        ],
+        "blog": "studs23",
+        "note": "로그인 ID smuds · 블로그 주소 blog.naver.com/studs23"
       },
       "netlify": {
         "id": "semyungds@gmail.com",

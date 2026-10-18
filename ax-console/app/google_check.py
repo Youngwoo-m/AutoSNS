@@ -30,17 +30,27 @@ def creds(name):
 
 
 def identify(service, c):
+    """연결된 채널·블로그의 이름과 주요 수치. (targets: 이름 목록, info: 자세한 정보)"""
     from googleapiclient.discovery import build
     if service == 'youtube':
-        r = build('youtube', 'v3', credentials=c, cache_discovery=False).channels().list(part='snippet', mine=True).execute()
-        return [i['snippet']['title'] for i in r.get('items', [])] or ['연결된 채널 없음']
+        r = build('youtube', 'v3', credentials=c, cache_discovery=False).channels().list(
+            part='snippet,statistics', mine=True).execute()
+        info = [{'name': i['snippet']['title'], 'url': f"https://www.youtube.com/channel/{i['id']}",
+                 'handle': i['snippet'].get('customUrl', ''),
+                 'stats': {'구독자': int(i['statistics'].get('subscriberCount', 0)), '영상': int(i['statistics'].get('videoCount', 0)),
+                           '조회수': int(i['statistics'].get('viewCount', 0))}} for i in r.get('items', [])]
+        return [x['name'] for x in info] or ['연결된 채널 없음'], info
     if service == 'blogger':
         r = build('blogger', 'v3', credentials=c, cache_discovery=False).blogs().listByUser(userId='self').execute()
-        return [b['url'].replace('https://', '').rstrip('/') for b in r.get('items', [])] or ['블로그 없음']
+        info = [{'name': b.get('name', ''), 'url': b['url'], 'stats': {'글': int((b.get('posts') or {}).get('totalItems', 0))}}
+                for b in r.get('items', [])]
+        return [x['url'].replace('https://', '').rstrip('/') for x in info] or ['블로그 없음'], info
     if service == 'searchconsole':
         r = build('searchconsole', 'v1', credentials=c, cache_discovery=False).sites().list().execute()
-        return [s['siteUrl'] for s in r.get('siteEntry', [])] or ['등록된 사이트 없음']
-    return []
+        info = [{'name': s['siteUrl'], 'url': s['siteUrl'], 'stats': {}, 'note': s.get('permissionLevel', '')}
+                for s in r.get('siteEntry', [])]
+        return [x['name'] for x in info] or ['등록된 사이트 없음'], info
+    return [], []
 
 
 def check(service, name):
@@ -48,8 +58,9 @@ def check(service, name):
         c, err = creds(name)
         if err:
             return {'ok': False, 'state': err}
+        targets, info = identify(service, c)
         return {'ok': True, 'state': '정상', 'expires': c.expiry.isoformat() if c.expiry else '',
-                'scopes': [s.rsplit('/', 1)[-1] for s in (c.scopes or [])], 'targets': identify(service, c)}
+                'scopes': [s.rsplit('/', 1)[-1] for s in (c.scopes or [])], 'targets': targets, 'info': info}
     except Exception as e:  # 갱신 거부(invalid_grant)·권한 부족 등을 사람이 읽을 말로
         msg = str(e)
         if 'invalid_grant' in msg:

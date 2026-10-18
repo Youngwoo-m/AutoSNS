@@ -5,7 +5,9 @@
 :root{--bg:#f3f5f8;--card:#fff;--ink:#16202b;--sub:#5f6b78;--line:#e2e6eb;--acc:#2563eb;--warn:#c2410c;--ok:#15803d;--run:#a16207}
 :root[data-acc=personal]{--acc:#7c3aed}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1318;--card:#172029;--ink:#e6edf3;--sub:#93a1b0;--line:#283441;--warn:#fb923c;--ok:#4ade80;--run:#facc15}}
-[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:700 14px/1.5 P,-apple-system,sans-serif}
+[hidden]{display:none!important}
+.dd{position:relative;display:inline-block}.ddm{display:none;position:absolute;right:0;top:calc(100% + 4px);min-width:170px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);padding:4px;z-index:50}
+.dd.open .ddm{display:block}.ddm a{display:block;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--ink);white-space:nowrap}.ddm a:hover{background:var(--bg)}.ddm a.bad{color:var(--warn)}.ddm .sep{border-top:1px solid var(--line);margin:4px 0}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:700 14px/1.5 P,-apple-system,sans-serif}
 header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
 header h1{font-size:18px;margin:0}header .who{color:var(--sub);font-size:13px;margin-left:auto}
 .seg{display:flex;background:var(--bg);border-radius:9px;padding:3px}.seg button{border:0;background:none;color:var(--sub);font:inherit;padding:6px 16px;border-radius:7px;cursor:pointer}
@@ -63,7 +65,9 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 </style></head><body>
 <header><h1>AX 발행 콘솔</h1>
 <div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
-<div class="seg" id="accs"></div><span class="who" id="who"></span><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button></header>
+<div class="seg" id="accs"></div><span class="who" id="who"></span><button class="gbtn" id="refbtn" onclick="refreshTab(this)" title="지금 보는 화면을 새로 불러옵니다">↻ 새로고침</button><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button>
+<div class="dd" id="umenu"><button class="gbtn" onclick="ddToggle('umenu',event)">관리자 ▾</button>
+ <div class="ddm"><a onclick="changePw()">비밀번호 바꾸기</a><a onclick="logout()" class="bad">로그아웃</a></div></div></header>
 <div id="stopbar" hidden style="background:var(--warn);color:#fff;padding:8px 20px;font-size:14px"></div>
 <main id="setv" hidden></main>
 <main id="schv" hidden></main>
@@ -83,8 +87,14 @@ const RP={'':'한 번','daily':'매일','weekly':'매주'};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=s=>s?s.replace('T',' ').slice(0,16):'';
-async function api(p,b){const r=await fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'오류');return j}
+async function api(p,b){const r=await fetch(p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{});if(r.status==401){location.href='/login';throw new Error('로그인이 필요합니다')}const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'오류');return j}
 const A=()=>M.accounts.find(a=>a.id==acc), C=()=>A().channels.find(c=>c.id==ch);
+function ddToggle(id,e){e.stopPropagation();const d=$(id),o=d.classList.contains('open');document.querySelectorAll('.dd.open').forEach(x=>x.classList.remove('open'));if(!o)d.classList.add('open')}
+document.addEventListener('click',()=>document.querySelectorAll('.dd.open').forEach(x=>x.classList.remove('open')));
+async function logout(){if(!confirm('콘솔에서 로그아웃할까요? 자동 작업은 계속 돕니다.'))return;await api('/api/auth/logout',{});location.href='/login'}
+async function changePw(){const o=prompt('지금 비밀번호');if(o===null)return;const n=prompt('새 비밀번호(8자 이상)');if(n===null)return;
+  if(prompt('새 비밀번호 확인')!==n){alert('두 비밀번호가 다릅니다');return}
+  try{await api('/api/auth/password',{old:o,new:n});alert('비밀번호를 바꿨습니다. 다른 곳의 로그인은 모두 끝났습니다.')}catch(e){alert(e.message)}}
 let OS={};
 async function loadOS(){OS=await api('/api/orchestrator');const s=OS.stop;$('stopbar').hidden=!s;
   if(s)$('stopbar').textContent=`비상 정지 중 (${fmt(s.at)} · ${s.by}) — ${s.reason}. 발행 작업은 시작하지 않습니다. 돌고 있던 작업은 끝까지 갑니다.`;
@@ -145,7 +155,13 @@ async function runNow(){const a=C().actions.find(x=>x.key==cur.action)||{live:tr
   if(a.live&&!confirm(`지금 '${a.label}'을(를) 실행합니다. 실제로 발행됩니다.`))return;
   try{await api(`/api/tasks/${cur.id}/run`,{});setTimeout(refresh,600)}catch(e){$('msg').textContent=e.message}}
 async function del(){if(!confirm('이 작업을 삭제할까요?'))return;await api(`/api/tasks/${cur.id}/delete`,{});cur=null;T=await api('/api/tasks');draw()}
-function tab(t){const ids=['acct','cont','work','inc','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
+let CUR='acct';
+async function refreshTab(b){b.disabled=true;const old=b.textContent;b.textContent='불러오는 중…';
+  try{loadOS();if(CUR=='acct'){GV=await api('/api/google/check',{});drawG()}else if(CUR=='set')await loadSet();else if(CUR=='sch')await loadSch();
+    else if(CUR=='auto')await loadAuto();else if(CUR=='cont')await loadCont();else if(CUR=='inc'){IV=await api('/api/incidents/check',{});drawInc();badgeInc()}
+    else{M=await api('/api/meta');await refresh();draw()}}catch(e){alert(e.message)}
+  b.disabled=false;b.textContent=old}
+function tab(t){CUR=t;const ids=['acct','cont','work','inc','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
   $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('incv').hidden=t!='inc';$('accs').style.visibility=t=='work'?'':'hidden';
   if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else if(t=='inc')loadInc();else refresh()}
 let IV={items:[]},ic=null,iTimer;
@@ -290,22 +306,49 @@ async function loadAuto(){await getAuto();const order=['dept','personal','common
 let GV,gTimer;
 const lt=s=>{if(!s)return'';const d=new Date(s.endsWith('Z')||s.includes('+')?s:s+'Z');return d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})};
 async function loadG(){GV=await api('/api/google');drawG();
-  clearTimeout(gTimer);if(GV.accounts.some(a=>a.services.some(x=>x.login&&x.login.state=='진행 중'))||!GV.checked)gTimer=setTimeout(()=>{if(!$('acctv').hidden)loadG()},3000)}
+  clearTimeout(gTimer);if(GV.accounts.some(a=>a.services.some(x=>x.login&&x.login.state=='진행 중')||(a.others||[]).some(o=>o.site_login&&o.site_login.state=='진행 중'))||!GV.checked)gTimer=setTimeout(()=>{if(!$('acctv').hidden)loadG()},3000)}
 function drawG(){
-  $('acctv').innerHTML=`<div class="card" style="margin-bottom:16px"><div class="filt"><h2 style="margin:0 auto 0 0">계정 연결 (구글 · 네이버 · 카카오)</h2>
+  $('acctv').innerHTML=`<div class="card" style="margin-bottom:16px"><div class="filt"><h2 style="margin:0 auto 0 0">계정 연결</h2>
    <span class="mut">${GV.checked?'마지막 확인 '+fmt(GV.checked):'확인 중…'}</span><button class="gbtn" onclick="gCheck(this)">지금 확인</button></div>
    <p class="mut" style="margin:8px 0 0">로그인은 시스템 브라우저의 구글 창에서 직접 합니다. 콘솔은 비밀번호를 받지 않고, 토큰은 암호화 저장소에 저장됩니다. 연결 대상(채널·블로그)이 맞는 계정인지 꼭 확인하세요.</p></div>
-   <div class="sgrid">${GV.accounts.map(a=>`<div class="card gcard ${a.id=='personal'?'p':''}"><h2 style="color:var(--ink);font-size:17px;margin:0">${esc(a.label)}</h2><div class="mut">${esc(a.email)}</div>
+   <div class="sgrid">${GV.accounts.map(a=>`<div class="card gcard ${a.id=='personal'?'p':''}"><div class="filt"><h2 style="color:var(--ink);font-size:17px;margin:0 auto 0 0">${esc(a.label)}</h2>
+     ${ddMenu('ga_'+a.id,'구글 계정 ▾',[[`gLogoutAll('${a.id}','${esc(a.label)}')`,'구글 계정 로그아웃(모든 서비스 취소)','bad']])}</div><div class="mut">${esc(a.email)}</div>
    ${a.services.map(x=>{const L=x.login;return `<div class="svc"><div>${esc(x.label)}<div class="mut">${esc(x.secret)}</div></div>
      <div class="tg"><span class="${x.ok?'ok':x.state?'bad':'mut'}">${esc(x.state||'확인 전')}</span>${x.expires?` <span class="mut">· 토큰 갱신됨 (${lt(x.expires)}까지)</span>`:''}
-     ${(x.targets||[]).map(t=>`<div>${esc(t)}</div>`).join('')}
+     ${x.info&&x.info.length?x.info.map(infoHtml).join(''):(x.targets||[]).map(t=>`<div>${esc(t)}</div>`).join('')}
      ${L?`<div class="lg ${L.state=='실패'?'bad':L.state=='완료'?'ok':'mut'}">로그인 ${esc(L.state)} · ${esc(L.msg||'')}</div>`:''}</div>
-     <button class="gbtn" ${L&&L.state=='진행 중'?'disabled':''} onclick="gLogin('${a.id}','${x.id}','${esc(a.label)}','${esc(x.label)}')">${x.ok?'다시 로그인':'로그인'}</button></div>`}).join('')}
+     ${L&&L.state=='진행 중'?'<span class="mut">로그인 중…</span>':ddMenu('gs_'+a.id+x.id,'관리 ▾',[[`gLogin('${a.id}','${x.id}','${esc(a.label)}','${esc(x.label)}')`,x.ok?'다시 로그인':'로그인'],
+       ...(x.ok||x.state?[[`gDisconnect('${a.id}','${x.id}','${esc(a.label)}','${esc(x.label)}')`,'연결 해제(이 서비스만)','bad']]:[])])}</div>`}).join('')}
    ${a.github?`<div class="svc"><div>GitHub<div class="mut">gh CLI</div></div><div class="tg">${a.github.accounts.map(g=>`<div style="display:flex;gap:8px;align-items:center;padding:3px 0"><span style="min-width:110px">${esc(g.id)}</span>
-      ${g.active?'<span class="ok">기본 계정</span>':g.logged_in?`<button class="gbtn" onclick="ghSwitch('${esc(g.id)}')">기본으로 전환</button>`:'<span class="mut">gh 로그인 필요</span>'}</div><div class="mut" style="font-size:11px">${esc(g.use||'')}</div>`).join('')}
+      ${g.active?'<span class="ok">기본 계정</span>':g.logged_in?'<span class="mut">로그인됨</span>':'<span class="mut">gh 로그인 필요</span>'}
+      ${g.logged_in?ddMenu('gh_'+g.id,'▾',[...(g.active?[]:[[`ghSwitch('${esc(g.id)}')`,'기본으로 전환']]),[`ghLogout('${esc(g.id)}')`,'로그아웃','bad']]):''}</div><div class="mut" style="font-size:11px">${esc(g.use||'')}</div>${g.info&&!g.info.error?`<div class="mut" style="font-size:11px">${statsHtml(g.info.stats)}</div>`:''}`).join('')}
       <div class="mut" style="font-size:12px;margin-top:4px">${esc(a.github.note)} · 새 계정 추가는 터미널에서 gh auth login</div></div><span></span></div>`:''}
    ${(a.others||[]).map(o=>`<div class="svc"><div>${esc(o.label)}<div class="mut">${esc(o.id||'')}</div></div>
-     <div class="tg"><span class="${o.ok?'ok':'mut'}">${esc(o.state)}</span> <span class="mut">· ${esc(o.login)}</span>${o.note?`<div class="mut" style="font-size:12px">${esc(o.note)}</div>`:''}</div><span></span></div>`).join('')}</div>`).join('')}</div>`}
+     <div class="tg"><span class="${o.ok?'ok':'mut'}">${esc(o.state)}</span> <span class="mut">· ${esc(o.login)}</span>${o.info?(o.info.error?`<div class="bad" style="font-size:12px">정보를 못 가져옴: ${esc(o.info.error)}</div>`:infoHtml(o.info)):''}${o.note?`<div class="mut" style="font-size:12px">${esc(o.note)}</div>`:''}
+       ${o.site_login?`<div class="lg ${o.site_login.state=='실패'?'bad':o.site_login.state=='완료'?'ok':'mut'}">로그인 ${esc(o.site_login.state)} · ${esc(o.site_login.msg||'')}</div>`:''}</div>
+     ${otherMenu(a,o)}</div>`).join('')}</div>`).join('')}</div>`}
+function statsHtml(st){return Object.entries(st||{}).map(([k,v])=>`${esc(k)} <b>${Number(v).toLocaleString()}</b>`).join(' · ')}
+function infoHtml(i){return `<div style="margin-top:3px"><a href="${esc(i.url||'#')}" target="_blank" style="color:var(--ink)">${esc(i.name||i.url)}</a>${i.handle?` <span class="mut">${esc(i.handle)}</span>`:''}
+  ${i.stats&&Object.keys(i.stats).length?`<div class="mut" style="font-size:12px">${statsHtml(i.stats)}</div>`:''}${i.note?`<div class="mut" style="font-size:11px">${esc(i.note)}</div>`:''}</div>`}
+function ddMenu(id,label,items){return `<div class="dd" id="dd_${id}"><button class="gbtn" onclick="ddToggle('dd_${id}',event)">${label}</button><div class="ddm">${items.map(([fn,l,c])=>`<a class="${c||''}" onclick="${fn}">${esc(l)}</a>`).join('')}</div></div>`}
+function otherMenu(a,o){const it=[];
+  if(o.site){if(!(o.site_login&&o.site_login.state=='진행 중'))it.push([`siteLogin('${o.site}','${esc(o.label)}')`,o.ok?'다시 로그인':'로그인']);it.push([`siteLogout('${o.site}','${esc(o.label)}')`,'로그아웃(쿠키 삭제)','bad'])}
+  if(o.kind=='kakao'&&o.ok)it.push([`kakaoLogout()`,'로그아웃(알림 토큰 삭제)','bad']);
+  return it.length?ddMenu('o_'+a.id+o.kind,'관리 ▾',it):'<span></span>'}
+function affected(acc,ch){const js=(AU||[]).filter(j=>j.channels.some(c=>c[0]==acc&&(!ch||c[1]==ch)));return js.length?`\n\n영향받는 자동 작업 ${js.length}개: ${js.map(j=>j.name).join(', ')}`:''}
+async function gDisconnect(a,s,al,sl){if(!confirm(`${al} ${sl} 연결을 해제합니다.\n저장된 토큰만 지우고, 구글 쪽 허용은 남습니다. 다시 쓰려면 '로그인'을 누르세요.${affected(a,s=='searchconsole'?'analytics':s)}`))return;
+  try{await api('/api/account/google-disconnect',{account:a,service:s});loadG()}catch(e){alert(e.message)}}
+async function gLogoutAll(a,al){if(!confirm(`${al} 구글 계정을 로그아웃합니다.\n구글 쪽 허용을 취소하고 유튜브·블로거·서치콘솔 토큰을 모두 지웁니다.${affected(a)}`))return;
+  if(!confirm('정말 로그아웃할까요? 다시 쓰려면 서비스마다 로그인해야 합니다.'))return;
+  try{const r=await api('/api/account/google-logout',{account:a});alert('로그아웃했습니다. 취소: '+(r.revoked||[]).join(', '));loadG()}catch(e){alert(e.message)}}
+async function siteLogin(site,l){if(!confirm(`${l} 로그인 창을 엽니다. 창에서 직접 로그인하면 알아서 닫힙니다.`))return;
+  try{await api('/api/account/browser-login',{site});loadG()}catch(e){alert(e.message)}}
+async function siteLogout(site,l){if(!confirm(`${l} 에서 로그아웃합니다(크롬 프로필의 로그인 쿠키 삭제).${affected(site=='naver'?'dept':'personal',site=='naver'?'naver_blog':'tistory')}`))return;
+  try{const r=await api('/api/account/browser-logout',{site});alert(`로그아웃했습니다(쿠키 ${r.cookies_removed}개 삭제).`);loadG()}catch(e){alert(e.message)}}
+async function kakaoLogout(){if(!confirm('카카오 알림 토큰을 지웁니다. 발행·오류 알림이 카카오톡으로 오지 않게 됩니다.'))return;
+  try{await api('/api/account/kakao-logout',{});loadG()}catch(e){alert(e.message)}}
+async function ghLogout(u){if(!confirm(`gh 에서 ${u} 계정을 로그아웃합니다. 다시 쓰려면 터미널에서 gh auth login 을 해야 합니다.`))return;
+  try{await api('/api/account/gh-logout',{user:u});loadG()}catch(e){alert(e.message)}}
 async function ghSwitch(u){if(!confirm(`gh 기본 계정을 ${u} 로 바꿉니다.\n이후 gh 를 쓰는 작업은 이 계정으로 실행됩니다(GeoAI 이미지 업로드는 영향 없음).`))return;
   try{GV=await api('/api/github/switch',{user:u});drawG()}catch(e){alert(e.message)}}
 async function gCheck(b){b.disabled=true;b.textContent='확인 중…';try{GV=await api('/api/google/check',{});drawG()}catch(e){alert(e.message)}}
@@ -338,8 +381,14 @@ async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels
   $('setv').innerHTML=`<div class="sgrid">${accHtml}</div>
    <div class="btns" style="margin-top:0"><button class="pri" onclick="saveAcc()">계정 정보 저장</button><span class="msg" id="smsg"></span></div>
    <div class="sgrid">
-   <div class="card"><h2>비밀값 (암호화 저장소)</h2><p class="mut">값은 보여 주지 않습니다. 바꿀 때는 터미널에서 python3 -m shared.secret_env set 이름</p>
-    <div class="scroll"><table>${SV.secrets.map(x=>`<tr><td>${esc(x.name)}</td><td class="${x.ok?'ok':'bad'}">${x.ok===null?'확인 불가':x.ok?'저장됨':'없음'}</td></tr>`).join('')}</table></div></div>
+   <div class="card"><h2>비밀값 (암호화 저장소)</h2><p class="mut">키·토큰은 이 Mac 의 암호화 저장소(secrets.env.enc, 열쇠는 키체인)에만 저장됩니다. 저장된 값은 화면에 보여 주지 않습니다. 새 값을 넣고 저장하면 바뀝니다.</p>
+    <div class="scroll"><table>${SV.secrets.map(x=>`<tr><td style="width:44%">${esc(x.name)}${x.used?'':' <span class="mut" style="font-size:11px">(설정에서 안 씀)</span>'}</td>
+      <td class="${x.ok?'ok':'bad'}" style="white-space:nowrap">${x.ok===null?'확인 불가':x.ok?'저장됨':'없음'}</td>
+      <td><input type="password" autocomplete="off" id="sv_${esc(x.name)}" placeholder="${x.ok?'새 값으로 바꾸기':'값 넣기'}" style="padding:5px 8px"></td>
+      <td><button class="gbtn" onclick="saveSecret('${esc(x.name)}')">저장</button></td></tr>`).join('')}
+      <tr><td><input id="sv_new_name" placeholder="새 이름 (예: CANVA_API_KEY)" style="padding:5px 8px"></td><td></td>
+      <td><input type="password" autocomplete="off" id="sv_new_val" placeholder="값" style="padding:5px 8px"></td><td><button class="gbtn" onclick="saveSecret()">추가</button></td></tr></table></div>
+    <div class="msg" id="svmsg"></div></div>
    <div class="card"><h2>플러그인</h2><p class="mut">켜고 끄면 ~/.claude/settings.json 에 반영되고, 새 Claude 세션부터 적용됩니다.</p>
     <table>${SV.plugins.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.market)} · ${esc(x.version)}</div></td><td style="text-align:right"><input type="checkbox" class="sw" ${x.enabled?'checked':''} onchange="plug('${esc(x.id)}',this)"></td></tr>`).join('')}</table>
     <h2 style="margin-top:16px">커넥터 (MCP)</h2><p class="mut">claude.ai 계정 커넥터(Gmail, 캘린더, 노션 등)는 claude.ai 설정에서 관리합니다.</p>
@@ -349,6 +398,12 @@ async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels
    <div class="card"><h2>설치된 스킬 (${SV.skills.length})</h2><input id="sq" placeholder="스킬 검색" oninput="skl()"><div class="scroll" style="margin-top:8px"><table id="sk"></table></div></div>`;
   skl();loadGw();loadAg()}
 const WDN=['일','월','화','수','목','금','토'];
+async function saveSecret(n){const isNew=!n;const name=isNew?$('sv_new_name').value.trim().toUpperCase():n;const el=isNew?$('sv_new_val'):$('sv_'+n);const v=el.value;
+  if(!name||!v){$('svmsg').style.color='var(--warn)';$('svmsg').textContent='이름과 값을 넣으세요';return}
+  const was=(SV.secrets.find(x=>x.name==name)||{}).ok;
+  if(was&&!confirm(`${name} 에 저장된 값을 새 값으로 바꿉니다. 이 키를 쓰는 자동 작업은 다음 실행부터 새 값을 씁니다.`))return;
+  try{await api('/api/secrets',{name,value:v});el.value='';if(isNew)$('sv_new_name').value='';$('svmsg').style.color='var(--ok)';$('svmsg').textContent=`${name} 을(를) 암호화해 저장했습니다.`;loadSet()}
+  catch(e){$('svmsg').style.color='var(--warn)';$('svmsg').textContent=e.message}}
 async function loadAg(){drawAg(await api('/api/agents'))}
 function drawAg(v){const c=v.config,pa=(c.planner||{}).accounts||{},lim=c.monthly_token_limit||0,pct=lim?Math.round(v.month_total*100/lim):0;
   const bud=(ag,l)=>{const b=(c[ag]||{}).budget||{};return `<tr><td>${l}</td><td><input id="b_${ag}_t" value="${b.max_tokens||''}"></td><td><input id="b_${ag}_c" value="${b.max_tool_calls||''}"></td><td><input id="b_${ag}_r" value="${b.max_turns||''}"></td></tr>`};
