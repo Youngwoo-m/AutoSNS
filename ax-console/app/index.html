@@ -6,6 +6,15 @@
 :root[data-acc=personal]{--acc:#7c3aed}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1318;--card:#172029;--ink:#e6edf3;--sub:#93a1b0;--line:#283441;--warn:#fb923c;--ok:#4ade80;--run:#facc15}}
 [hidden]{display:none!important}
+#shell{display:grid;grid-template-columns:196px minmax(0,1fr);align-items:start}
+#side{position:sticky;top:0;min-height:calc(100vh - 62px);background:var(--card);border-right:1px solid var(--line);padding:14px 10px}
+#side .grp{margin-bottom:16px}#side .gh{display:flex;align-items:center;gap:7px;font-size:13px;padding:4px 8px;margin-bottom:4px;color:var(--ink)}
+#side .gh i{width:9px;height:9px;border-radius:50%;background:#2563eb;display:inline-block}#side .gh.p i{background:#7c3aed}#side .gh.c i{background:var(--sub)}
+#side .gh small{color:var(--sub);font-size:11px;margin-left:auto}
+#side button{display:flex;justify-content:space-between;width:100%;border:0;background:none;color:var(--sub);font:inherit;font-size:14px;text-align:left;padding:8px 10px 8px 24px;border-radius:8px;cursor:pointer}
+#side button:hover{background:var(--bg)}#side button.on{background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+#side button b{font-weight:700;font-size:11px;color:var(--sub);background:var(--bg);border-radius:8px;padding:0 6px}
+@media(max-width:820px){#shell{grid-template-columns:1fr}#side{position:static;min-height:0;display:flex;gap:10px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}#side .grp{margin:0;min-width:150px}}
 .dd{position:relative;display:inline-block}.ddm{display:none;position:absolute;right:0;top:calc(100% + 4px);min-width:170px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);padding:4px;z-index:50}
 .dd.open .ddm{display:block}.ddm a{display:block;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13px;color:var(--ink);white-space:nowrap}.ddm a:hover{background:var(--bg)}.ddm a.bad{color:var(--warn)}.ddm .sep{border-top:1px solid var(--line);margin:4px 0}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:700 14px/1.5 P,-apple-system,sans-serif}
 header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line)}
@@ -64,11 +73,12 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 .scroll{max-height:420px;overflow:auto}
 </style></head><body>
 <header><h1>AX 발행 콘솔</h1>
-<div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button onclick="tab('br')">브라우저</button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
-<div class="seg" id="accs"></div><span class="who" id="who"></span><button class="gbtn" id="refbtn" onclick="refreshTab(this)" title="지금 보는 화면을 새로 불러옵니다">↻ 새로고침</button><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button>
+<div class="seg" id="tabs"><button data-t="acct" onclick="tab('acct')">계정 연결</button><button data-t="br" onclick="tab('br')">브라우저</button><button data-t="inc" onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button data-t="set" onclick="tab('set')">설정</button></div>
+<div class="seg" id="accs" hidden></div><span class="who" id="who"></span><button class="gbtn" id="refbtn" onclick="refreshTab(this)" title="지금 보는 화면을 새로 불러옵니다">↻ 새로고침</button><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button>
 <div class="dd" id="umenu"><button class="gbtn" onclick="ddToggle('umenu',event)">관리자 ▾</button>
  <div class="ddm"><a onclick="changePw()">비밀번호 바꾸기</a><a onclick="logout()" class="bad">로그아웃</a></div></div></header>
 <div id="stopbar" hidden style="background:var(--warn);color:#fff;padding:8px 20px;font-size:14px"></div>
+<div id="shell"><aside id="side"></aside><div id="mainarea">
 <main id="setv" hidden></main>
 <main id="schv" hidden></main>
 <main id="acctv" hidden></main>
@@ -81,6 +91,7 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 <section class="card"><div class="top2"><h2 id="listTitle">작업</h2><button class="newbtn" onclick="edit(null)">+ 새 작업</button></div><div id="tasks"></div></section>
 <section class="card edit" id="edit"></section>
 </div>
+</div></div>
 <script>
 let M,T=[],acc='dept',ch=null,cur=null;
 const ST={draft:'초안',scheduled:'예약됨',running:'실행 중',done:'완료',failed:'실패',due:'발행할 차례'};
@@ -163,7 +174,14 @@ async function refreshTab(b){b.disabled=true;const old=b.textContent;b.textConte
     else if(CUR=='auto')await loadAuto();else if(CUR=='cont')await loadCont();else if(CUR=='inc'){IV=await api('/api/incidents/check',{});drawInc();badgeInc()}
     else{M=await api('/api/meta');await refresh();draw()}}catch(e){alert(e.message)}
   b.disabled=false;b.textContent=old}
-function tab(t){CUR=t;const ids=['acct','cont','work','inc','br','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
+const SIDE_T=['cont','work','auto','sch'];let VA='dept';
+function drawSide(){const G=[['dept','학과','','세명대 재난안전학과'],['personal','개인','p','GeoAI·기술사'],['common','공통','c','보고서·유지보수']];
+  const items={dept:[['cont','콘텐츠'],['work','작업'],['auto','자동 작업'],['sch','예약 목록']],personal:[['cont','콘텐츠'],['work','작업'],['auto','자동 작업'],['sch','예약 목록']],common:[['auto','자동 작업']]};
+  $('side').innerHTML=G.map(([a,l,c,sub])=>`<div class="grp"><div class="gh ${c}"><i></i>${l}<small>${sub}</small></div>
+    ${items[a].map(([tt,n])=>`<button class="${SIDE_T.includes(CUR)&&CUR==tt&&VA==a?'on':''}" onclick="goAcc('${a}','${tt}')">${n}${sideBadge(a,tt)}</button>`).join('')}</div>`).join('')}
+function sideBadge(a,tt){if(tt=='cont'&&typeof PV!='undefined'){const n=(PV.items||[]).filter(x=>x.status=='new'&&x.account==a).length;return n?`<b title="새 제안">${n}</b>`:''}return ''}
+function goAcc(a,tt){VA=a;if(tt=='work'&&a!='common'){acc=a;ch=A().channels[0].id;cur=null;INL=null}if(tt=='sch')F.acc=a=='common'?'common':a;tab(tt)}
+function tab(t){CUR=t;if(t=='work'&&typeof acc!='undefined')VA=acc;[...$('tabs').children].forEach(b=>b.classList.toggle('on',b.dataset.t==t));drawSide();
   $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('incv').hidden=t!='inc';$('brv').hidden=t!='br';if(t!='br')brStopPoll();$('accs').style.visibility=t=='work'?'':'hidden';
   if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else if(t=='inc')loadInc();else if(t=='br')loadBr();else refresh()}
 let BR={sessions:[],profiles:{}},bp='scratch',brTimer=null,brBusy=false,brLast='';
@@ -237,9 +255,9 @@ async function incAct(id,op){let note='';if(op=='resolve'){note=prompt('해결 �
 let CT={items:[],checks:{}},cc=null,vtab='original',cTimer;
 const CST={idea:'① 기획',drafting:'② 초안 작성 중',review:'③ 검토 대기',scheduled:'⑤ 예약됨',published:'⑥ 발행됨',failed:'발행 실패'};
 let PV={items:[],running:[]};
-function propCol(){const it=PV.items.filter(x=>x.status=='new');
+function propCol(){const it=PV.items.filter(x=>x.status=='new'&&x.account==VA);
   return `<div class="col"><h3>⓪ 제안 (${it.length})</h3>
-   <div class="pb" style="display:flex;gap:4px;margin-bottom:8px">${['dept','personal'].map(a=>`<button class="gbtn" style="font-size:11px" ${PV.running.includes(a)?'disabled':''} onclick="propRun('${a}')">${PV.running.includes(a)?ACCL[a]+' 만드는 중…':ACCL[a]+' 지금 제안 받기'}</button>`).join('')}</div>
+   <div class="pb" style="display:flex;gap:4px;margin-bottom:8px">${[VA].map(a=>`<button class="gbtn" style="font-size:11px" ${PV.running.includes(a)?'disabled':''} onclick="propRun('${a}')">${PV.running.includes(a)?ACCL[a]+' 만드는 중…':ACCL[a]+' 지금 제안 받기'}</button>`).join('')}</div>
    ${it.map(x=>`<div class="cc pc ${x.account=='personal'?'p':''}"><b>${esc(x.topic)}</b>
      <div class="mut">${ACCL[x.account]} · ${esc(x.format||'')} · ${(x.channels||[]).map(c=>CHL[c]).join(', ')}</div>
      <div class="why">${esc(x.summary||'')}</div>
@@ -254,9 +272,9 @@ const COLS=[['idea','① 기획'],['drafting','② 초안 작성 중'],['review'
 async function loadCont(keep){CT=await api('/api/contents');PV=await api('/api/proposals');if(cc)cc=CT.items.find(x=>x.id==cc.id)||null;drawCont(keep);
   clearTimeout(cTimer);if(CT.items.some(x=>x.status=='drafting'||x.status=='scheduled')||PV.running.length)cTimer=setTimeout(()=>{if(!$('contv').hidden)loadCont(true)},5000)}
 function drawCont(keep){
-  const board=`<div class="card"><div class="filt"><h2 style="margin:0 auto 0 0">콘텐츠 파이프라인</h2><button class="newbtn" onclick="cc=null;drawCont()">+ 새 기획</button></div>
+  const board=`<div class="card"><div class="filt"><h2 style="margin:0 auto 0 0">${ACCL[VA]} · 콘텐츠 파이프라인</h2><button class="newbtn" onclick="cc=null;drawCont()">+ 새 기획</button></div>
    <div class="pipe" style="margin-top:8px">${['⓪ 제안','① 기획','② AI 초안','③ 사람 검토·점검표','④ 제작(이미지·영상: 다음 단계)','⑤ 채널별 예약','⑥ 발행 확인','⑦ 성과(다음 단계)'].map((x,i)=>`<span class="${[0,1,2,3,5,6].includes(i)?'on':''}">${x}</span>`).join('')}</div>
-   <div class="board">${propCol()}${COLS.map(([st,lab])=>{const it=CT.items.filter(x=>x.status==st||(st=='scheduled'&&x.status=='failed'));
+   <div class="board">${propCol()}${COLS.map(([st,lab])=>{const it=CT.items.filter(x=>x.account==VA&&(x.status==st||(st=='scheduled'&&x.status=='failed')));
      return `<div class="col"><h3>${lab} (${it.length})</h3>${it.map(x=>`<div class="cc ${x.account=='personal'?'p':''} ${cc&&cc.id==x.id?'on':''}" onclick="pickC('${x.id}')">${esc(x.title||x.topic)}
       <div class="mut">${ACCL[x.account]} · ${x.channels.map(c=>CHL[c]).join(', ')}</div>${x.error?`<div class="warn" style="font-size:11px">${esc(x.error)}</div>`:''}${x.status=='failed'?'<div class="warn" style="font-size:11px">발행 실패</div>':''}</div>`).join('')||'<div class="mut">없음</div>'}</div>`}).join('')}</div></div>`;
   if(keep&&$('cedit')&&document.activeElement&&$('cedit').contains(document.activeElement)){$('cboard').innerHTML=board;return}
@@ -264,9 +282,9 @@ function drawCont(keep){
 function pickC(id){cc=CT.items.find(x=>x.id==id);vtab='original';drawCont()}
 function chBoxes(acc,sel){const a=M.accounts.find(x=>x.id==acc);return a.channels.filter(c=>c.status=='연결됨'||!c.status).map(c=>`<label style="display:inline-flex;gap:5px;margin:0 10px 4px 0;color:var(--ink)"><input type="checkbox" style="width:auto" value="${c.id}" ${sel.includes(c.id)?'checked':''}>${esc(c.label)}</label>`).join('')}
 function editorC(){
-  if(!cc){return `<h2>① 새 기획</h2><label>계정</label><select id="c_acc" onchange="$('c_chs').innerHTML=chBoxes(this.value,[])"><option value="dept">학과</option><option value="personal">개인</option></select>
+  if(!cc){return `<h2>① 새 기획</h2><label>계정</label><select id="c_acc" onchange="$('c_chs').innerHTML=chBoxes(this.value,[])"><option value="dept" ${VA=='dept'?'selected':''}>학과</option><option value="personal" ${VA=='personal'?'selected':''}>개인</option></select>
    <label>주제</label><input id="c_topic" placeholder="예: 겨울철 대설 대비 생활 수칙"><label>참고 메모 (자료·링크·강조할 점)</label><textarea id="c_notes" style="min-height:80px"></textarea>
-   <label>올릴 채널</label><div id="c_chs">${chBoxes('dept',['naver_blog','instagram'])}</div>
+   <label>올릴 채널</label><div id="c_chs">${chBoxes(VA=='personal'?'personal':'dept',VA=='personal'?['blogger','tistory']:['naver_blog','instagram'])}</div>
    <div class="btns"><button onclick="newC(false)">기획만 저장</button><button class="pri" onclick="newC(true)">저장하고 AI 초안 만들기</button></div><div class="msg" id="cmsg"></div>`}
   const x=cc,ro=!['idea','review'].includes(x.status);const tabs=[['original','원문'],...x.channels.map(c=>[c,CHL[c]])];
   const val=vtab=='original'?(x.original||''):((x.variants||{})[vtab]||'');
@@ -344,13 +362,13 @@ async function jobLog(job,b){const box=b.parentNode.nextElementSibling;if(box&&b
   b.textContent='읽는 중…';try{const L=await api('/api/automations/log?job='+encodeURIComponent(job));const d=document.createElement('div');d.className='jlog';
     d.innerHTML=L.length?L.map(l=>`<div class="mut" style="font-size:11px;margin-top:6px">${esc(l.path)} · ${fmt(l.mtime)} · ${Math.round(l.size/1024)}KB</div><pre>${esc(l.tail)||'(비어 있음)'}</pre>`).join(''):'<div class="mut">로그 파일이 없습니다.</div>';
     b.parentNode.after(d);d.querySelectorAll('pre').forEach(p=>p.scrollTop=p.scrollHeight);b.textContent='로그 닫기'}catch(e){alert(e.message);b.textContent='최근 로그'}}
-async function loadAuto(){await getAuto();const order=['dept','personal','common'];
+async function loadAuto(){await getAuto();const order=[VA];
   const chOrder={dept:['youtube','instagram','naver_blog','blogger','tiktok','x','threads'],personal:['blogger','youtube','tistory','naver_blog','homepage','kakao'],common:['analytics','maintenance']};
   const QQ=await api('/api/questions').catch(()=>[]);
   $('autov').innerHTML=`<div class="card" id="osbox" style="margin-bottom:16px"></div>
-   <div class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">개인 · 티스토리 친구 질문 대기열 <span class="mut" style="font-size:12px">(GeoAI_NA · Codex 자동화가 매일 23시 처리)</span></h2>
+   ${VA!='personal'?'':`<div class="card" style="margin-bottom:16px"><h2 style="margin:0 0 6px">개인 · 티스토리 친구 질문 대기열 <span class="mut" style="font-size:12px">(GeoAI_NA · Codex 자동화가 매일 23시 처리)</span></h2>
     ${QQ.map(q=>`<div class="run"><b>${esc(q.label)}</b> · 전체 ${q.total} · ${Object.entries(q.counts).map(([k,v])=>`${esc({queued:'대기',processing:'처리 중',published:'발행됨',done:'완료',ignored:'무시'}[k]||k)} ${v}`).join(' · ')||'없음'}
-      ${q.pending.map(x=>`<div class="mut" style="font-size:12px">· ${esc(x.at)} ${esc(x.title)} (${esc(x.status)})</div>`).join('')}</div>`).join('')}</div><div class="card" style="margin-bottom:16px"><h2 style="margin:0">launchd 자동 작업 ${AU.length}개 · 계정별 채널별</h2>
+      ${q.pending.map(x=>`<div class="mut" style="font-size:12px">· ${esc(x.at)} ${esc(x.title)} (${esc(x.status)})</div>`).join('')}</div>`).join('')}</div>`}<div class="card" style="margin-bottom:16px"><h2 style="margin:0">${ACCL[VA]} 자동 작업 ${AU.filter(j=>j.channels.some(c=>c[0]==VA)).length}개 · 채널별</h2>
    <p class="mut" style="margin:6px 0 0">한 작업이 여러 채널에 올리면 각 채널에 모두 표시합니다(주 채널 / 함께 게시). 분석 내용은 config/automations.json 에 있습니다.</p></div>`+
    order.map(acc=>{const chs=chOrder[acc].map(ch=>[ch,AU.filter(j=>j.channels.some(c=>c[0]==acc&&c[1]==ch))]);
      const n=AU.filter(j=>j.channels.some(c=>c[0]==acc)).length;
@@ -409,7 +427,7 @@ async function gLogin(a,s,al,sl){if(!confirm(`${al} 계정의 ${sl} 로그인 �
   try{GV=await api('/api/google/login',{account:a,service:s});drawG();loadG()}catch(e){alert(e.message)}}
 let SC,F={acc:'',ch:'',src:'',hide:true};
 const WD='일월화수목금토';
-async function loadSch(){SC=await api('/api/schedule');drawSch()}
+async function loadSch(){F.acc=VA;SC=await api('/api/schedule');drawSch()}
 function drawSch(){const L=SC.labels;const chs=[...new Set(SC.rows.map(r=>r.channel))];
   let rows=SC.rows.filter(r=>(!F.acc||r.account==F.acc)&&(!F.ch||r.channel==F.ch||(r.channels||[]).some(c=>c[1]==F.ch))&&(!F.src||r.source==F.src)&&!(F.hide&&r.job=='ytshorts.trigger'));
   const by={};rows.forEach(r=>(by[r.at?r.at.slice(0,10):'시각 없음']??=[]).push(r));
