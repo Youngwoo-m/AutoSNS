@@ -10,6 +10,7 @@ driver.quit() 하면 콘솔에 닫아 달라고 해 크롬이 정상 종료된�
 """
 import json
 import os
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -33,8 +34,15 @@ def _profile_of(options):
 def _call(path, body):
     req = urllib.request.Request(CONSOLE + path, data=json.dumps(body).encode(),
                                  headers={'Content-Type': 'application/json', 'X-AX-Internal': KEYFILE.read_text().strip()})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:     # 콘솔이 알려 준 이유를 로그에 남긴다(그냥 'HTTP 400' 이면 원인을 못 찾는다)
+        try:
+            why = json.loads(e.read() or b'{}').get('error', '')
+        except ValueError:
+            why = ''
+        raise RuntimeError(f'HTTP {e.code} {why}'.strip()) from None
 
 
 def attach(options, log=print):

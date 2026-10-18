@@ -10,6 +10,8 @@
 set -u
 cd "$(dirname "$0")"
 ROOT="$(cd .. && pwd)"
+# 크롬 프로필을 여는 수집은 그 프로필 잠금을 쥐고 돈다 — 발행 작업과 겹치지 않고, 콘솔 브라우저도 빌려 쓸 수 있다(2026-10-19)
+LOCKRUN() { local res="$1"; shift; /usr/bin/python3 "$ROOT/shared/axlock.py" run --job "report:${res#profile:}" --res "$res" --no-stop -- "$@"; }
 SINCE="2026-03-01"
 
 if [[ $# -ge 1 ]]; then
@@ -30,11 +32,11 @@ fi
 echo "== 수집 ($YM 말일 기준) =="
 "$ROOT/youtube-shorts-auto/.venv/bin/python" collect_youtube.py || echo "!! 유튜브 수집 실패 — 직전 결과로 진행"
 python3 collect_web.py "$SINCE"                                 || echo "!! 블로그·홈페이지 수집 실패 — 직전 결과로 진행"
-"$ROOT/naver-blog-auto/.venv/bin/python" collect_naver_stats.py || echo "!! 네이버 블로그 조회수 수집 실패 — 조회수 없이 진행"
+LOCKRUN profile:naver "$ROOT/naver-blog-auto/.venv/bin/python" collect_naver_stats.py || echo "!! 네이버 블로그 조회수 수집 실패 — 조회수 없이 진행"
 python3 collect_blogger.py "$SINCE"                             || echo "!! 블로거 수집 실패 — 직전 결과로 진행"
 python3 collect_x.py "$SINCE"                                   || echo "!! 엑스 수집 실패 — 직전 결과로 진행"
-"$ROOT/insta-cardnews/.venv/bin/python" collect_threads.py "$SINCE"   || echo "!! 스레드 수집 실패 — 직전 결과로 진행"
-"$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
+LOCKRUN profile:insta "$ROOT/insta-cardnews/.venv/bin/python" collect_threads.py "$SINCE"   || echo "!! 스레드 수집 실패 — 직전 결과로 진행"
+LOCKRUN profile:insta "$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
 
 echo "== 홍보활동 보고서 작성 =="
 OUT="out/[재난안전학과] 온라인 홍보활동 보고서 ${YM}.xlsx"

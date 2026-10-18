@@ -191,7 +191,7 @@ function drawBr(){const s=brSess(),P=BR.profiles[bp]||{};if(!s)brLast='';
   $('brv').innerHTML=`<div class="card" style="margin:16px 20px"><div class="filt" style="gap:8px">
     <select id="br_prof" style="width:auto" onchange="bp=this.value;drawBr()">${Object.entries(BR.profiles).map(([k,v])=>`<option value="${k}" ${k==bp?'selected':''}>${esc(v.name)}${BR.sessions.some(x=>x.profile==k)?' ●':''}</option>`).join('')}</select>
     ${s?`<button class="gbtn" onclick="brStop()">닫기</button>`:`<select id="br_mode" style="width:auto"><option value="headless">창 없이(기본)</option><option value="hidden">화면 밖 크롬(사이트가 막을 때)</option></select><button class="newbtn" onclick="brStart()">열기</button>`}
-    ${s&&P.has_check?`<button class="newbtn" onclick="brDone()">로그인 완료 · 저장하고 닫기</button>`:''}
+    ${s&&P.has_check?`<button class="newbtn" onclick="brDone()">로그인 완료 · 저장하고 닫기</button><span class="mut" style="font-size:12px;margin-left:8px">로그인할 때 '로그인 상태 유지'를 꼭 켜세요 — 안 켜면 창을 닫는 순간 풀립니다</span>`:''}
     <span class="mut" style="margin-left:auto;font-size:12px">${s?`${esc(s.mode=='headless'?'창 없음':'화면 밖')} · 프로필 잠금 중 · ${s.idle}초 전 조작 · 15분 안 쓰면 닫힘`:'바탕화면에 크롬 창을 띄우지 않고 콘솔 안에서 봅니다'}</span></div>
    ${s?`<div class="filt" style="gap:6px;margin-top:10px"><button class="gbtn" onclick="brIn({type:'back'})">←</button>
      <input id="br_url" value="${esc(s.url)}" onkeydown="if(event.key=='Enter')brIn({type:'navigate',url:this.value})" style="flex:1">
@@ -206,7 +206,7 @@ function drawBr(){const s=brSess(),P=BR.profiles[bp]||{};if(!s)brLast='';
    :`<p class="mut" style="margin:12px 0 0">${esc(P.name||'')} 프로필을 엽니다. 열린 동안은 같은 프로필을 쓰는 자동 작업이 기다립니다.</p>`}</div>`;
   if(s)brStartPoll();else brStopPoll()}
 function brStartPoll(){brStopPoll();const tick=async()=>{if($('brv').hidden||!$('br_img'))return;if(!brBusy){brBusy=true;
-    try{const r=await fetch('/api/browser/shot?profile='+bp);if(r.status==401){location.href='/login';return}if(r.ok){const u=URL.createObjectURL(await r.blob());const im=$('br_img');const old=brLast;if(im)im.src=u;brLast=u;if(old&&old!=u)setTimeout(()=>URL.revokeObjectURL(old),2000)}}catch(e){}brBusy=false}
+    try{const r=await fetch('/api/browser/shot?profile='+bp);if(r.status==401){location.href='/login';return}if(r.status==404){brBusy=false;brStopPoll();loadBr();return}if(r.ok){const u=URL.createObjectURL(await r.blob());const im=$('br_img');const old=brLast;if(im)im.src=u;brLast=u;if(old&&old!=u)setTimeout(()=>URL.revokeObjectURL(old),2000)}}catch(e){}brBusy=false}
     brTimer=setTimeout(tick,700)};tick()}
 function brStopPoll(){clearTimeout(brTimer);brTimer=null}
 async function brStart(){try{await api('/api/browser/start',{profile:bp,mode:$('br_mode').value});await loadBr()}catch(e){alert(e.message)}}
@@ -381,8 +381,11 @@ async function jobCtl(job,op,b){const j=AU.find(x=>x.job==job);let q;
   if(op=='on'){q=`'${j.name}' 자동 작업을 켭니다.\n일정(${j.when})대로 다시 자동으로 돕니다${j.live?' — 실제로 발행됩니다':''}.`;
     if(j.note)q+=`\n\n⚠ 일부러 꺼 둔 작업입니다:\n${j.note}`;if(j.reenable)q+=`\n\n⚠ ${j.reenable}`}
   if(op=='run')q=j.live?`지금 '${j.name}'을(를) 실행합니다.\n실제로 발행됩니다 → ${j.channels.map(c=>ACCL[c[0]]+' '+CHL[c[1]]).join(', ')}\n\n정말 실행할까요?`:`지금 '${j.name}'을(를) 실행합니다. (발행 없는 작업)`;
-  if(!confirm(q))return;b.disabled=true;b.textContent='처리 중…';
-  try{const n=await api(`/api/automations/${encodeURIComponent(job)}/${op}`,{});AU[AU.indexOf(j)]=n;
+  let reason='';
+  if(op=='off'){reason=prompt(q+'\n\n끄는 이유를 적어 주세요(장애 감시가 일부러 끈 작업으로 봅니다):','');if(reason===null)return}
+  else if(!confirm(q))return;
+  b.disabled=true;b.textContent='처리 중…';
+  try{const n=await api(`/api/automations/${encodeURIComponent(job)}/${op}`,{reason});AU[AU.indexOf(j)]=n;
     if(op=='run')alert(`'${j.name}' 실행을 시작했습니다. 잠시 뒤 [최근 로그]로 결과를 보세요.`)}catch(e){alert(e.message)}
   if(!$('autov').hidden)loadAuto();else draw()}
 async function jobLog(job,b){const box=b.parentNode.nextElementSibling;if(box&&box.classList.contains('jlog')){box.remove();b.textContent='최근 로그';return}

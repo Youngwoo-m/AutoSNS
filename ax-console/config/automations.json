@@ -31,7 +31,8 @@
       ],
       "locks": [
         "profile:insta"
-      ]
+      ],
+      "note": "2026-10-18 18:29 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인)"
     },
     {
       "job": "ytcareer.weekly",
@@ -97,7 +98,8 @@
           "dept",
           "youtube"
         ]
-      ]
+      ],
+      "note": "2026-10-18 18:36 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인)"
     },
     {
       "job": "disastershorts.weekly",
@@ -175,7 +177,8 @@
           "dept",
           "x"
         ]
-      ]
+      ],
+      "note": "2026-10-18 18:29 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인)"
     },
     {
       "job": "instacards.weekly",
@@ -207,7 +210,8 @@
       ],
       "locks": [
         "profile:insta"
-      ]
+      ],
+      "note": "2026-10-18 18:27 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인)"
     },
     {
       "job": "captionrecheck.weekly",
@@ -223,7 +227,8 @@
       ],
       "locks": [
         "profile:insta"
-      ]
+      ],
+      "note": "2026-10-18 18:27 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인)"
     },
     {
       "job": "naverblog.weekly",

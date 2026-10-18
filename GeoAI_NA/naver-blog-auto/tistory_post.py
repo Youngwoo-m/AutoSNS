@@ -168,7 +168,16 @@ def main():
         with hold(["profile:tistory"], job=f"{args.job}:tistory_post", wait=2400):
             os.environ["AX_LOCKED"] = "1"
             log(f"티스토리 {'발행' if args.go else '시험'}: [{args.category}] {args.title} (첨부 {len(files)}개)")
-            url = publish(args, body, files)
+            try:
+                url = publish(args, body, files)
+            except RuntimeError as e:
+                # 세션 만료 → 카카오 재로그인 직후 첫 시도는 글쓰기 화면에 못 들어가는 일이 있다(2026-10-19 06:01).
+                # 같은 잠금 안에서 크롬을 새로 띄워 한 번만 다시 한다(재로그인으로 받은 새 쿠키를 쓴다).
+                if "글쓰기 화면이 아님" not in str(e):
+                    raise
+                log(f"  글쓰기 화면 진입 실패 — 10초 뒤 한 번 더: {str(e)[:120]}")
+                time.sleep(10)
+                url = publish(args, body, files)
     except Timeout:
         return out("error", message="40분 기다려도 티스토리 크롬 프로필이 비지 않았습니다")
     except Exception as e:

@@ -22,6 +22,8 @@ def main():
     jobs = json.loads((HERE / 'jobs.json').read_text())['jobs']
     cat = json.loads(CATALOG.read_text())
     keep = [j for j in cat['jobs'] if not j['job'].startswith('claude.')]
+    # 콘솔에서 끈 이유(note)는 다시 만들어도 남긴다
+    notes = {j['job']: {k: j[k] for k in ('note', 'last_note') if k in j} for j in cat['jobs'] if j['job'].startswith('claude.')}
     (HERE / 'logs').mkdir(exist_ok=True)
     for j in jobs:
         label = f"com.smuds.claude.{j['key']}"
@@ -36,7 +38,8 @@ def main():
         f.write_bytes(plistlib.dumps(pl))
         keep.append({'job': f"claude.{j['key']}", 'account': 'personal', 'name': j['name'],
                      'what': f"클로드(claude -p, {j['model']})가 지시문 jobs/{j['key']}.md 대로 작성·발행 (Codex '{j['codex']}' 에서 옮김)",
-                     'entry': f"GeoAI_NA/claude-jobs/jobs/{j['key']}.md", 'channels': j['channels']})
+                     'entry': f"GeoAI_NA/claude-jobs/jobs/{j['key']}.md", 'channels': j['channels'],
+                     **notes.get(f"claude.{j['key']}", {})})
         print('작성', f.name)
         if '--load' in sys.argv:
             uid = os.getuid()

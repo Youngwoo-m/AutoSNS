@@ -632,7 +632,22 @@ def _lc(*args, ok=()):
     return p
 
 
-def job_control(job, op):
+def _set_note(job, note):
+    """automations.json 의 작업 note 를 쓰거나(note) 지운다(None). 지운 note 는 last_note 로 남긴다.
+    note 가 있는 작업은 장애 감시(내려감·놓침·로그)가 '일부러 끈 작업'으로 본다."""
+    data = _json(AUTOMATIONS, {})
+    for j in data.get('jobs', []):
+        if j['job'] == job:
+            if note:
+                j['note'] = note
+            elif j.get('note'):
+                j['last_note'] = j.pop('note')
+    tmp = AUTOMATIONS.with_suffix('.tmp')
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+    tmp.replace(AUTOMATIONS)
+
+
+def job_control(job, op, reason=''):
     f = _job_plist(job)
     dom, label = f'gui/{os.getuid()}', f'com.smuds.{job}'
     loaded = label in _launchd()[0]
@@ -640,10 +655,13 @@ def job_control(job, op):
         if loaded:
             _lc('bootout', f'{dom}/{label}')
         _lc('disable', f'{dom}/{label}')
+        # 콘솔에서 끈 작업은 '일부러 끈 작업' — 이유를 note 로 남겨 장애 감시가 '내려감'으로 잡지 않게(2026-10-19)
+        _set_note(job, f"{now():%Y-%m-%d %H:%M} 콘솔에서 끔 — {reason.strip()[:200] or '사유 미기록'}")
     elif op == 'on':
         _lc('enable', f'{dom}/{label}')
         if not loaded:
             _lc('bootstrap', dom, str(f))
+        _set_note(job, None)            # 다시 켰으니 끈 이유는 지운다(감시가 다시 이 작업을 본다)
     elif op == 'run':
         if not loaded:
             raise ValueError('꺼진 작업입니다. 먼저 켜세요')
@@ -651,7 +669,7 @@ def job_control(job, op):
     else:
         raise ValueError('없는 동작입니다')
     with open(DATA / 'logs' / 'launchd_control.log', 'a') as lf:
-        lf.write(f'{now().isoformat()} {op} {label}\n')
+        lf.write(f'{now().isoformat()} {op} {label}' + (f' — {reason.strip()[:200]}' if reason.strip() else '') + '\n')
     return next(j for j in automations() if j['job'] == job)
 
 
@@ -1476,10 +1494,15 @@ def bw_login_done(profile):
     name, _, check, save = BW_PROFILES[profile]
     ok = True
     if check:
-        names = bw_call(f'/cookies?profile={profile}&domain={check[0]}')['names']
-        ok = check[1] in names
+        ck = bw_call(f'/cookies?profile={profile}&domain={check[0]}')
+        ok = check[1] in ck['names']
         if not ok:
             raise ValueError(f'아직 로그인되지 않았습니다({check[0]} 의 {check[1]} 쿠키 없음). 로그인을 마친 뒤 다시 누르세요')
+        # 쿠키를 파일로 받아 두지 않는 프로필은 로그인 쿠키가 디스크에 남아야 한다 — 세션 쿠키면 창을 닫는 순간 풀린다
+        # (2026-10-18 23:00 네이버 로그인이 다음 날 아침 통계 수집에서 401: NID_AUT 가 세션 쿠키로만 있었다)
+        if not save and check[1] in ck.get('session', []):
+            raise ValueError(f"로그인은 됐지만 '로그인 상태 유지'가 꺼져 있어 창을 닫으면 풀립니다({check[1]} 가 세션 쿠키). "
+                             "로그아웃한 뒤 '로그인 상태 유지'를 켜고 다시 로그인하세요")
     saved = bw_call('/save_cookies', {'profile': profile, 'domains': save[0], 'path': save[1]})['saved'] if save else None
     bw_call('/stop', {'profile': profile})
     axlock.log(f'내부 브라우저 로그인 완료: {profile}' + (f' (쿠키 {saved}개 파일 저장)' if saved is not None else ''))
@@ -1634,7 +1657,11 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, {'sessions': sess, 'profiles': {k: {'name': v[0], 'login_url': v[1], 'has_check': bool(v[2])}
                                                                      for k, v in BW_PROFILES.items()}})
         if self.path.startswith('/api/browser/shot?profile='):
-            return self.send(200, body=bw_call('/shot?profile=' + self.path.split('=', 1)[1], raw=True, timeout=20), ctype='image/jpeg')
+            # 프로필이 닫혔거나(작업이 끝나 창을 닫음) 서비스가 꺼진 경우 — 화면은 404 를 받고 새로 그린다(예외를 흘리지 않음)
+            try:
+                return self.send(200, body=bw_call('/shot?profile=' + self.path.split('=', 1)[1], raw=True, timeout=20), ctype='image/jpeg')
+            except ValueError as e:
+                return self.send(404, {'error': str(e), 'closed': True})
         if self.path == '/api/incidents':
             return self.send(200, incidents_view())
         if self.path.startswith('/api/shot?'):
@@ -1879,7 +1906,7 @@ class H(BaseHTTPRequestHandler):
             if parts[:2] == ['api', 'tasks'] and len(parts) == 4 and parts[3] == 'reschedule':
                 return self.send(200, task_reschedule(parts[2], b))
             if parts[:2] == ['api', 'automations'] and len(parts) == 4 and parts[3] in ('on', 'off', 'run'):
-                return self.send(200, job_control(parts[2], parts[3]))
+                return self.send(200, job_control(parts[2], parts[3], str(b.get('reason', ''))))
             if parts == ['api', 'settings', 'accounts']:
                 save_accounts(b)
                 return self.send(200, {'ok': True})

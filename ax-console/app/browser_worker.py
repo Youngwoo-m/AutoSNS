@@ -177,6 +177,11 @@ class Session:
     def cookie_names(self, domain):
         return [c['name'] for c in self.cmd('Network.getAllCookies').get('cookies', []) if domain in c.get('domain', '')]
 
+    def session_cookie_names(self, domain):
+        """창을 닫으면 사라지는 세션 쿠키 이름 — '로그인 상태 유지'를 안 켜고 로그인했는지 가린다."""
+        return [c['name'] for c in self.cmd('Network.getAllCookies').get('cookies', [])
+                if domain in c.get('domain', '') and c.get('session')]
+
     def close(self):
         try:
             if self.ws:
@@ -234,7 +239,8 @@ class H(BaseHTTPRequestHandler):
                 return self.send(200, body=s.shot(), ctype='image/jpeg')
             if self.path.startswith('/cookies?'):
                 q = dict(x.split('=', 1) for x in self.path.split('?', 1)[1].split('&'))
-                return self.send(200, {'names': self.sess(q['profile']).cookie_names(q['domain'])})
+                se = self.sess(q['profile'])
+                return self.send(200, {'names': se.cookie_names(q['domain']), 'session': se.session_cookie_names(q['domain'])})
             self.send(404, {'error': '없음'})
         except Exception as e:
             self.send(400, {'error': str(e)[:300]})
