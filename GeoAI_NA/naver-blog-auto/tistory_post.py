@@ -5,6 +5,8 @@
 
 첨부: 본문에 자리표시 <p data-ax-attach="파일 경로"></p> 를 넣으면 그 자리에 파일을 티스토리 첨부로 올린다.
   그림은 이미지, pdf 등은 파일 카드(네이티브 첨부)로 들어간다. 경로는 HTML 파일 기준 상대 경로도 된다.
+유튜브 임베드: 본문의 <iframe src="https://www.youtube.com/embed/영상ID" …> 가 편집기에 넣은 뒤에도 남아 있는지 보고,
+  지워졌으면 발행하지 않고 error 로 끝난다(--dry 에서도 같은 점검).
 
     ./.venv/bin/python tistory_post.py --html 원고.html --title "제목" --category "노르딕워킹" --tags "a,b,c" --dry
     ./.venv/bin/python tistory_post.py --html 원고.html --title "제목" --category "노르딕워킹" --tags "a,b,c" --go
@@ -96,10 +98,12 @@ def upload_at(d, path):
 
 def publish(args, body, files):
     d = tc.build_driver(headless=not args.show)
+    embeds = set(tc.YT_EMBED.findall(body))
     try:
-        if not files:
+        if not files and not embeds:
             return tc.write_post(d, {"title": args.title}, body, args.category, args.tags, args.go)
-        # 첨부가 있으면: 본문을 먼저 넣고 자리표시마다 올린 뒤, 남은 단계(태그·발행)를 write_post 와 같게 한다
+        # 본문을 넣은 직후 끼어든다: 자리표시마다 첨부를 올리고, 유튜브 임베드가 편집기에 남았는지 본 뒤
+        # 남은 단계(태그·발행)를 write_post 와 같게 한다
         orig_set = d.execute_script
         state = {"done": False}
 
@@ -110,6 +114,12 @@ def publish(args, body, files):
                 for _, p in files:
                     upload_at(d, p)           # 올릴 때마다 앞 자리표시가 하나씩 첨부로 바뀐다
                 c = orig_set("return tinymce.activeEditor.getContent()")
+                lost = [v for v in embeds if f"embed/{v}" not in c]
+                if lost:   # 편집기가 iframe 을 걸러 내면 영상 없이 발행되므로 여기서 멈춘다
+                    tc._shot(d, "embed_lost")
+                    raise RuntimeError(f"편집기가 유튜브 임베드 iframe 을 지웠습니다: {lost} — 발행하지 않음")
+                if embeds:
+                    log(f"  유튜브 임베드 유지 확인: {sorted(embeds)}")
                 c = re.sub(r"\[##_Image\|.*?_##\]", "[그림]", re.sub(r"\[##_File\|.*?_##\]", "[파일]", c, flags=re.S), flags=re.S)
                 log(f"  본문 순서: {re.sub(r'<[^>]+>', ' ', c).split()[:40]}")
             return r

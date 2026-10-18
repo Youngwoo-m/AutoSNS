@@ -29,6 +29,9 @@ Codex '7'(측량 기출 숏츠, 유튜브만)은 티스토리·블로거 작업�
   파일 입력칸에 경로를 넣는 방식은 업로드가 시작되지 않았다).
 - `blogger_post.py` — 개인 Blogger(geoaina) 발행기. quota:blogger-personal 잠금, 같은 제목 건너뛰기, https 주소만 허용.
 - `kakao_notify.py "메시지" "링크"` — 카카오톡 나에게 보내기.
+- `youtube-shorts-auto/geoai_short_post.py` — 개인 유튜브(@geoai-safety) 숏츠 업로드·운영자 댓글·상태 확인(upload/comment/check).
+  profile:youtube-personal 잠금, 20.0초 초과·과거 예약 거부, 같은 제목 영상·기존 운영자 댓글이면 duplicate. AX_DRY=1 이면 점검만.
+- `youtube-shorts-auto/yt_transcript.py URL --out 자막.txt` — 유튜브 영상 정보(임베드 가능 여부 포함)와 한국어 자막 평문(yt-dlp, 영상은 안 받음). safekorea 12시 글의 내용 확인용.
 
 ## 시험 실행
 

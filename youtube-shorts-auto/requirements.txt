@@ -8,3 +8,4 @@ google-auth-oauthlib>=1.2.0
 google-auth-httplib2>=0.2.0
 requests>=2.31.0
 cryptography>=42  # shared/secret_env.py(암호화 환경설정)
+yt-dlp>=2026.8.19     # yt_transcript.py — 영상 정보·자막만(영상은 내려받지 않음)

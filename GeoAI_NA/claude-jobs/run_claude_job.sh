@@ -4,6 +4,7 @@
 # Codex 자동화에서 옮긴 개인 계정 글 작업을 claude -p 로 돌린다 — launchd com.smuds.claude.<작업> 이 호출.
 #   ./run_claude_job.sh nordic            실제 실행(발행됨)
 #   AX_DRY=1 ./run_claude_job.sh nordic   시험 실행(발행기는 발행 직전에 멈추고, 대기열·카톡·상태는 건드리지 않음)
+#   AX_DRY=1 AX_HOUR=12 ./run_claude_job.sh safekorea   회차(jobs.json runs)를 12시로 가정해 시험
 # 지시문 = 공통규칙.md + 실행 정보 + jobs/<작업>.md. 티스토리 크롬은 발행기(tistory_post.py)가 잠금을 잡고 연다.
 JOB="$1"
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -13,7 +14,7 @@ export PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 mkdir -p "$HERE/logs" "$HERE/state"
 LOG="$HERE/logs/$JOB.log"
 MODEL=$(/usr/bin/python3 -c "import json,sys;print(next(j.get('model','opus') for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]))" "$JOB")
-RUN_NOTE=$(/usr/bin/python3 -c "import json,sys,datetime;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('runs',{}).get(str(datetime.datetime.now().hour),''))" "$JOB")
+RUN_NOTE=$(/usr/bin/python3 -c "import json,sys,datetime;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('runs',{}).get(sys.argv[2],''))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 
 PROMPT=$(mktemp -t claudejob)
 {
@@ -22,6 +23,7 @@ PROMPT=$(mktemp -t claudejob)
     echo "# 이번 실행"
     echo "- 작업: $JOB (launchd com.smuds.claude.$JOB, 작업 기록 GeoAI_NA/claude-jobs/state/$JOB.jsonl)"
     echo "- 시각: $(date '+%Y-%m-%d %H:%M %Z (%a)')"
+    [ -n "$AX_HOUR" ] && echo "- (시험용: 회차는 ${AX_HOUR}시로 가정한다)"
     [ -n "$RUN_NOTE" ] && echo "- 회차: $RUN_NOTE"
     if [ "$AX_DRY" = "1" ]; then echo "- **시험 실행(AX_DRY=1)** — 공통 규칙의 '시험 실행'대로 한다."; else echo "- 실제 실행"; fi
     echo
