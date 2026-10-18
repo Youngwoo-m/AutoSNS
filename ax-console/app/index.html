@@ -62,7 +62,7 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 .scroll{max-height:420px;overflow:auto}
 </style></head><body>
 <header><h1>AX 발행 콘솔</h1>
-<div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
+<div class="seg" id="tabs"><button onclick="tab('acct')">계정 연결</button><button onclick="tab('cont')">콘텐츠</button><button class="on" onclick="tab('work')">작업</button><button onclick="tab('inc')">장애 <i id="incn" style="font-style:normal"></i></button><button onclick="tab('auto')">자동 작업</button><button onclick="tab('sch')">예약 목록</button><button onclick="tab('set')">설정</button></div>
 <div class="seg" id="accs"></div><span class="who" id="who"></span><button id="stopbtn" class="gbtn" onclick="toggleStop()">비상 정지</button></header>
 <div id="stopbar" hidden style="background:var(--warn);color:#fff;padding:8px 20px;font-size:14px"></div>
 <main id="setv" hidden></main>
@@ -70,6 +70,7 @@ th{color:var(--sub);font-size:12px;border-top:0}td input{padding:5px 8px}
 <main id="acctv" hidden></main>
 <main id="autov" hidden></main>
 <main id="contv" hidden></main>
+<main id="incv" hidden></main>
 <div class="wrap" id="workv">
 <nav class="card"><h2>채널</h2><div id="chans"></div></nav>
 <section class="card"><div class="top2"><h2 id="listTitle">작업</h2><button class="newbtn" onclick="edit(null)">+ 새 작업</button></div><div id="tasks"></div></section>
@@ -95,7 +96,7 @@ function drawOS(){if(!$('osbox')||!OS.holding)return;$('osbox').innerHTML=`<h2 s
   <div class="mut">실행 중</div>${OS.holding.length?[...new Map(OS.holding.map(h=>[h.pid,h])).values()].map(h=>`<div class="run"><b>${esc(h.job)}</b> · ${fmt(h.since)}부터 · <span class="mut">${esc(OS.holding.filter(x=>x.pid==h.pid).map(x=>x.resource).join(', '))}</span></div>`).join(''):'<div class="run mut">없음</div>'}
   <div class="mut" style="margin-top:6px">기다리는 중</div>${OS.waiting.length?OS.waiting.map(w=>`<div class="run"><b>${esc(w.job)}</b> · ${esc(w.blocked_by)} 비기를 기다림 (${fmt(w.since)}부터)</div>`).join(''):'<div class="run mut">없음</div>'}
   <details style="margin-top:6px"><summary class="mut" style="cursor:pointer">최근 기록</summary><pre>${esc(OS.log.slice().reverse().join('\n'))}</pre></details>`}
-async function init(){loadOS();setInterval(loadOS,10000);M=await api('/api/meta');await getAuto();ch=A().channels[0].id;T=await api('/api/tasks');draw();tab('acct');setInterval(()=>{if(!$('workv').hidden)refresh()},4000)}
+async function init(){loadOS();setInterval(loadOS,10000);api('/api/incidents').then(v=>{IV=v;badgeInc()});setInterval(()=>api('/api/incidents').then(v=>{IV.open_errors=v.open_errors;badgeInc()}),60000);M=await api('/api/meta');await getAuto();ch=A().channels[0].id;T=await api('/api/tasks');draw();tab('acct');setInterval(()=>{if(!$('workv').hidden)refresh()},4000)}
 async function refresh(){T=await api('/api/tasks');draw(false)}
 function draw(full=true){
   document.documentElement.dataset.acc=acc;
@@ -144,9 +145,44 @@ async function runNow(){const a=C().actions.find(x=>x.key==cur.action)||{live:tr
   if(a.live&&!confirm(`지금 '${a.label}'을(를) 실행합니다. 실제로 발행됩니다.`))return;
   try{await api(`/api/tasks/${cur.id}/run`,{});setTimeout(refresh,600)}catch(e){$('msg').textContent=e.message}}
 async function del(){if(!confirm('이 작업을 삭제할까요?'))return;await api(`/api/tasks/${cur.id}/delete`,{});cur=null;T=await api('/api/tasks');draw()}
-function tab(t){const ids=['acct','cont','work','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
-  $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('accs').style.visibility=t=='work'?'':'hidden';
-  if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else refresh()}
+function tab(t){const ids=['acct','cont','work','inc','auto','sch','set'];[...$('tabs').children].forEach((b,i)=>b.classList.toggle('on',ids[i]==t));
+  $('workv').hidden=t!='work';$('schv').hidden=t!='sch';$('setv').hidden=t!='set';$('acctv').hidden=t!='acct';$('autov').hidden=t!='auto';$('contv').hidden=t!='cont';$('incv').hidden=t!='inc';$('accs').style.visibility=t=='work'?'':'hidden';
+  if(t=='set')loadSet();else if(t=='sch')loadSch();else if(t=='acct')loadG();else if(t=='auto')loadAuto();else if(t=='cont')loadCont();else if(t=='inc')loadInc();else refresh()}
+let IV={items:[]},ic=null,iTimer;
+const IK={log:'로그 실패',missed:'실행 안 됨',unloaded:'작업 내려감',shot:'실패 화면',console:'콘솔 작업 실패',lock:'잠금 대기 초과',env:'환경'};
+const IS={open:'열림',resolved:'해결',ignored:'무시'};
+async function loadInc(keep){IV=await api('/api/incidents');if(ic)ic=IV.items.find(x=>x.id==ic.id)||null;drawInc();badgeInc();
+  clearTimeout(iTimer);if(IV.items.some(x=>x.analyzing))iTimer=setTimeout(()=>{if(!$('incv').hidden)loadInc()},5000)}
+function badgeInc(){$('incn').textContent=IV.open_errors?`(${IV.open_errors})`:'';$('incn').style.color=IV.open_errors?'var(--warn)':''}
+function drawInc(){const open=IV.items.filter(x=>x.status=='open'),rest=IV.items.filter(x=>x.status!='open');
+  const row=x=>`<div class="task ${ic&&ic.id==x.id?'on':''}" onclick="ic=IV.items.find(y=>y.id=='${x.id}');drawInc()"><div>
+    <div class="t"><span class="${x.severity=='error'?'bad':'mut'}">${x.severity=='error'?'●':'○'}</span> ${esc(x.name)} <span class="src">${IK[x.kind]||x.kind}</span>${x.count>1?` <span class="mut">×${x.count}</span>`:''}</div>
+    <div class="m">${esc(x.signature)}</div><div class="m">${fmt(x.first)}${x.last!=x.first?' ~ '+fmt(x.last):''}${x.analysis&&!x.analysis.error?' · 원인 분석됨':''}${x.analyzing?' · 분석 중…':''}</div></div>
+    <span class="st ${x.status=='open'?(x.severity=='error'?'failed':''):'done'}">${IS[x.status]}</span></div>`;
+  $('incv').innerHTML=`<div class="wrap" style="padding:0;grid-template-columns:1fr 1fr"><section class="card"><div class="top2"><h2>장애 · 열린 사건 ${open.length}</h2>
+     <button class="gbtn" onclick="checkInc(this)">지금 점검</button></div>
+     <div class="mut" style="font-size:12px;margin-bottom:6px">감시기 마지막 점검 ${fmt(IV.checked)||'—'} · 10분마다 · 자동 원인 분석 ${IV.auto?'켜짐':'꺼짐(설정 탭)'}</div>
+     ${open.map(row).join('')||'<div class="empty">열린 사건이 없습니다.</div>'}
+     ${rest.length?`<details style="margin-top:10px"><summary class="mut" style="cursor:pointer">해결·무시한 사건 ${rest.length}</summary>${rest.map(row).join('')}</details>`:''}</section>
+     <section class="card">${ic?incDetail(ic):'<div class="empty">사건을 고르세요.</div>'}</section></div>`}
+function incDetail(x){const a=x.analysis;
+  return `<h2>${esc(x.name)} <span class="mut">${esc(x.job)}</span></h2>
+   <div class="mut">${IK[x.kind]} · ${x.severity=='error'?'오류':'경고'} · ${x.count}회 · ${fmt(x.first)} ~ ${fmt(x.last)} · ${(x.channels||[]).map(c=>(ACCL[c[0]]||c[0])+' '+(CHL[c[1]]||c[1])).join(', ')}</div>
+   <h2 style="margin-top:12px">근거</h2>${x.evidence.slice().reverse().map(e=>`<div class="run">${fmt(e.at)} <span class="mut">${esc(e.file||'')}</span><pre style="margin:4px 0">${esc(e.text)}</pre>
+     ${e.screenshot?`<a href="/api/shot?p=${encodeURIComponent(e.screenshot)}" target="_blank"><img src="/api/shot?p=${encodeURIComponent(e.screenshot)}" style="max-width:100%;border:1px solid var(--line);border-radius:6px"></a>`:''}</div>`).join('')}
+   <h2 style="margin-top:12px">원인 분석</h2>
+   ${x.analyzing?'<div class="mut">에이전트가 로그·상태·설정을 살펴보는 중입니다(1~3분).</div>':a?(a.error?`<div class="warn">분석 실패: ${esc(a.error)}</div>`:`
+     <div class="run"><b>${esc(a.confidence||'')}</b> ${esc(a.cause||'')}</div>
+     ${(a.evidence||[]).length?`<div class="mut" style="margin-top:6px">근거</div>${a.evidence.map(e=>`<div class="run mut">· ${esc(e)}</div>`).join('')}`:''}
+     ${(a.fix_steps||[]).length?`<div class="mut" style="margin-top:6px">해결 방법 ${a.human_needed?'(사람이 할 일)':''}</div>${a.fix_steps.map((s,i)=>`<div class="run">${i+1}. ${esc(s)}</div>`).join('')}`:''}
+     <div class="mut" style="font-size:11px;margin-top:4px">${fmt(a.at)} · ${esc(a.log||'')}</div>`):'<div class="mut">아직 분석하지 않았습니다.</div>'}
+   <div class="btns">${x.analyzing?'':`<button class="pri" onclick="incAct('${x.id}','analyze')">원인 분석</button>`}
+     ${x.status=='open'?`<button onclick="incAct('${x.id}','resolve')">해결로 표시</button><button class="del" onclick="incAct('${x.id}','ignore')">무시(같은 문구 다시 안 띄움)</button>`:`<button onclick="incAct('${x.id}','reopen')">다시 열기</button>`}</div>
+   <div class="runs"><h2>기록</h2>${x.history.slice().reverse().map(h=>`<div class="run">${fmt(h.at)} ${esc(h.what)}</div>`).join('')}</div>`}
+async function checkInc(b){b.disabled=true;b.textContent='점검 중…';try{IV=await api('/api/incidents/check',{});drawInc();badgeInc()}catch(e){alert(e.message)}}
+async function incAct(id,op){let note='';if(op=='resolve'){note=prompt('해결 메모(선택)','');if(note===null)return}
+  if(op=='ignore'&&!confirm('이 문구의 사건은 앞으로 띄우지 않습니다.'))return;
+  try{IV=await api(`/api/incidents/${id}/${op}`,{note});ic=IV.items.find(x=>x.id==id);drawInc();badgeInc();if(op=='analyze')loadInc()}catch(e){alert(e.message)}}
 let CT={items:[],checks:{}},cc=null,vtab='original',cTimer;
 const CST={idea:'① 기획',drafting:'② 초안 작성 중',review:'③ 검토 대기',scheduled:'⑤ 예약됨',published:'⑥ 발행됨',failed:'발행 실패'};
 const COLS=[['idea','① 기획'],['drafting','② 초안 작성 중'],['review','③ 검토 대기'],['scheduled','⑤ 예약·발행 대기'],['published','⑥ 발행됨']];
@@ -322,13 +358,15 @@ function drawAg(v){const c=v.config,pa=(c.planner||{}).accounts||{},lim=c.monthl
     <td><input type="checkbox" class="sw" id="pa_${a}_e" ${x.enabled?'checked':''}></td><td><input id="pa_${a}_n" value="${x.count??5}" style="width:70px"></td>
     <td><select id="pa_${a}_w">${WDN.map((d,i)=>`<option value="${i}" ${i==(x.weekday??0)?'selected':''}>${d}</option>`).join('')}</select></td>
     <td><select id="pa_${a}_h">${[...Array(24).keys()].map(h=>`<option value="${h}" ${h==(x.hour??20)?'selected':''}>${h}시</option>`).join('')}</select></td></tr>`}).join('')}</table>
+   <h3 style="font-size:14px;margin:14px 0 4px">실패 대응 에이전트</h3>
+   <label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" class="sw" id="inc_auto" ${(c.incident||{}).enabled?'checked':''}> 새 오류 사건을 자동으로 원인 분석 (꺼져 있으면 장애 탭의 버튼으로만)</label>
    <h3 style="font-size:14px;margin:14px 0 4px">실행 한 번의 예산</h3>
    <table><tr><th>에이전트</th><th>토큰</th><th>도구 호출</th><th>턴</th></tr>${bud('planner','기획·초안')}${bud('incident','실패 대응')}</table>
    <h3 style="font-size:14px;margin:14px 0 4px">이번 달 사용량</h3>
    <p class="mut">${v.month_total.toLocaleString()} / ${lim.toLocaleString()} 토큰 (${pct}%) ${Object.entries(v.usage).map(([k,u])=>`· ${esc(k)} ${u.runs}회 ${(u.input+u.output).toLocaleString()}`).join(' ')}</p>
    <label>월 토큰 한도</label><input id="ag_lim" value="${lim}" style="width:160px">
    <div class="btns"><button class="pri" onclick="saveAg()">에이전트 설정 저장</button><span class="msg" id="agmsg"></span></div>`}
-async function saveAg(){const b={monthly_token_limit:$('ag_lim').value,planner_accounts:{},budgets:{}};
+async function saveAg(){const b={monthly_token_limit:$('ag_lim').value,planner_accounts:{},budgets:{},incident_enabled:$('inc_auto').checked};
   ['dept','personal'].forEach(a=>b.planner_accounts[a]={enabled:$(`pa_${a}_e`).checked,count:$(`pa_${a}_n`).value,weekday:$(`pa_${a}_w`).value,hour:$(`pa_${a}_h`).value});
   ['planner','incident'].forEach(ag=>b.budgets[ag]={max_tokens:$(`b_${ag}_t`).value,max_tool_calls:$(`b_${ag}_c`).value,max_turns:$(`b_${ag}_r`).value});
   try{drawAg(await api('/api/agents',b));$('agmsg').style.color='var(--ok)';$('agmsg').textContent='저장했습니다.'}catch(e){$('agmsg').style.color='var(--warn)';$('agmsg').textContent=e.message}}

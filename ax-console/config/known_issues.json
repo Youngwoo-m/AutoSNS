@@ -1,0 +1,33 @@
+{
+  "_설명": "실패 대응 에이전트의 해결법 모음. 사건을 해결로 표시할 때 새 항목을 덧붙인다.",
+  "issues": [
+    {"key": "profile-busy", "cause": "같은 크롬 프로필을 다른 작업(또는 Codex 자동화)이 열어 둠",
+     "signs": ["프로필 사용 중", "SessionNotCreatedException", "user data directory is already in use", "기다리다 건너뜀"],
+     "check": "process_list 로 --user-data-dir 가 같은 크롬을 찾고, 부모 프로세스·시작 시각을 본다",
+     "fix": ["오래 멈춘 크롬이면 사람이 닫는다(에이전트는 닫지 않는다)", "다음 회차는 잠금 대기로 자동 처리된다"]},
+    {"key": "kakao-password", "cause": "티스토리 세션이 풀린 뒤 카카오가 비밀번호를 다시 요구",
+     "signs": ["카카오가 비밀번호를 묻습니다", "글쓰기 화면이 아님(로그인 풀림?)", "accounts.kakao.com/login"],
+     "check": "account_status 의 티스토리 칸(카카오 로그인 유지 기한)",
+     "fix": ["naver-blog-auto 에서 ./.venv/bin/python tistory_login.py 로 사람이 로그인"]},
+    {"key": "gh-account", "cause": "gh 기본 계정이 저장소 주인과 달라 업로드 권한 없음",
+     "signs": ["gh api --method PUT 실패", "Not Found (HTTP 404)"],
+     "check": "account_status 의 GitHub 기본 계정, 저장소 주인(config geoai.assets.repo)",
+     "fix": ["geoai_assets 는 저장소 주인 토큰을 쓰도록 2026-10-18 고침 — 그 뒤에도 나면 gh auth status 에 주인 계정이 로그인돼 있는지 확인"]},
+    {"key": "google-token", "cause": "구글 OAuth 토큰 취소·만료", "signs": ["invalid_grant", "Token has been expired or revoked"],
+     "check": "account_status 의 구글 토큰 상태", "fix": ["콘솔 계정 연결 탭에서 해당 계정 다시 로그인"]},
+    {"key": "selector-changed", "cause": "사이트 화면 구조가 바뀌어 자동화가 버튼·입력칸을 못 찾음",
+     "signs": ["입력칸을 못 찾", "버튼을 찾지 못했", "no_caption_box", "no_file_input"],
+     "check": "view_screenshot 으로 실패 화면, search_code 로 해당 셀렉터",
+     "fix": ["화면을 보고 바뀐 요소를 코드에 반영(사람 승인 필요)"]},
+    {"key": "blogger-limit", "cause": "블로거 하루 한도·남용 제한", "signs": ["daily_limit", "The caller does not have permission", "403"],
+     "check": "같은 블로그의 오늘 발행 수", "fix": ["다음 날 자동으로 이어진다. 연달아 올리지 않게 간격 확인"]},
+    {"key": "gateway-credit", "cause": "세명대 게이트웨이 크레딧 소진·키 오류", "signs": ["크레딧 소진", "게이트웨이", "전환"],
+     "check": "설정 탭 게이트웨이 키 연결 확인", "fix": ["키 추가 또는 다음 달까지 Anthropic 키로 대비"]},
+    {"key": "naver-session", "cause": "네이버 로그인 세션 만료", "signs": ["로그인 세션이 만료되었습니다"],
+     "check": "naver-blog-auto/logs 의 최근 스크린샷", "fix": ["naver-blog-auto 에서 login_setup.py 로 사람이 로그인"]},
+    {"key": "disk-full", "cause": "디스크 여유 부족", "signs": ["No space left on device", "여유 부족"],
+     "check": "df", "fix": ["posts/ 산출물을 USB 보관(archive_to_usb.sh) 또는 정리"]},
+    {"key": "user-stopped", "cause": "사용자가 일부러 끈 작업", "signs": ["launchd 에서 내려감"],
+     "check": "config/automations.json 의 note, 다른 세션 기록", "fix": ["note 를 적어 두면 사건이 생기지 않는다"]}
+  ]
+}

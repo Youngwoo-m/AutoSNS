@@ -14,6 +14,8 @@ ROOT = CONSOLE.parent
 import sys
 sys.path.insert(0, str(ROOT))
 from shared import axlock  # noqa: E402  잠금·대기·비상 정지
+sys.path.insert(0, str(CONSOLE / 'app'))
+import watcher  # noqa: E402  실패 대응 감시기
 DATA = CONSOLE / 'data'
 TASKS = DATA / 'tasks.json'
 RUNS = DATA / 'runs'
@@ -1035,6 +1037,8 @@ def agents_save(b):
         t['count'] = num(a.get('count'), 1, 20, '제안 개수')
         t['weekday'] = num(a.get('weekday'), 0, 6, '요일')
         t['hour'] = num(a.get('hour'), 0, 23, '시각')
+    if 'incident_enabled' in b:
+        cfg.setdefault('incident', {})['enabled'] = bool(b['incident_enabled'])
     for ag in ('planner', 'incident'):
         bb = (b.get('budgets') or {}).get(ag)
         if bb:
@@ -1046,6 +1050,74 @@ def agents_save(b):
     tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
     tmp.replace(AGENTS_CFG)
     return agents_view()
+
+
+# ---- 실패 대응: 감시기·장애 ----
+WSTATE = {'running': False}
+
+
+def watch_loop():
+    while True:
+        run_watch()
+        time.sleep(600)
+
+
+def run_watch():
+    if WSTATE['running']:
+        return
+    WSTATE['running'] = True
+    try:
+        watcher.check()
+        cfg = _json(CONSOLE / 'config' / 'agents.json', {}).get('incident', {})
+        if cfg.get('enabled'):   # 자동 원인 분석(설정에서 켬): 아직 분석 안 된 '오류' 사건만
+            for x in watcher.incidents('open'):
+                if x['severity'] == 'error' and not x.get('analysis') and not x.get('analyzing'):
+                    analyze(x['id'])
+                    break        # 한 번에 하나씩
+    except Exception as e:
+        axlock.log(f'감시기 오류: {type(e).__name__}: {e}')
+    finally:
+        WSTATE['running'] = False
+
+
+def incidents_view():
+    items = watcher.incidents()
+    st = watcher._load(watcher.STATE, {})
+    return {'items': items, 'checked': st.get('checked'), 'counts': st.get('last_counts'),
+            'open_errors': sum(1 for x in items if x['status'] == 'open' and x['severity'] == 'error'),
+            'auto': bool(_json(CONSOLE / 'config' / 'agents.json', {}).get('incident', {}).get('enabled'))}
+
+
+def analyze(iid):
+    """② 원인 분석 에이전트를 백그라운드로 돌린다."""
+    p = watcher.incident_path(iid)
+    inc = watcher._load(p, None)
+    if not inc:
+        raise ValueError('사건을 찾지 못했습니다')
+    if inc.get('analyzing'):
+        raise ValueError('이미 분석 중입니다')
+    inc['analyzing'] = now().isoformat()
+    watcher._save(p, inc)
+
+    def work():
+        try:
+            r = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'incident.py'), iid], cwd=str(ROOT / 'youtube-shorts-auto'),
+                               capture_output=True, text=True, timeout=1200)
+            try:
+                res = json.loads(r.stdout.strip().splitlines()[-1])
+            except (IndexError, ValueError):
+                res = {'error': ((r.stderr or '').strip().splitlines() or ['출력 없음'])[-1][:300]}
+        except Exception as e:
+            res = {'error': str(e)[:300]}
+        x = watcher._load(p, inc)
+        x.pop('analyzing', None)
+        x['analysis'] = {**res, 'at': now().isoformat()}
+        x['history'].append({'at': now().isoformat(), 'what': '원인 분석 ' + ('실패: ' + res['error'] if res.get('error') else '완료')})
+        if res.get('human_needed') is False and res.get('confidence') == '확실':
+            x['history'].append({'at': now().isoformat(), 'what': '사람 조치가 필요 없다고 판단'})
+        watcher._save(p, x)
+
+    threading.Thread(target=work, daemon=True).start()
 
 
 class H(BaseHTTPRequestHandler):
@@ -1077,6 +1149,14 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/incidents':
+            return self.send(200, incidents_view())
+        if self.path.startswith('/api/shot?'):
+            from urllib.parse import unquote
+            f = Path(unquote(self.path.split('=', 1)[1])).resolve()
+            if f.suffix != '.png' or not str(f).startswith(str(ROOT)) or not f.exists():
+                return self.send(404, {'error': '없음'})
+            return self.send(200, body=f.read_bytes(), ctype='image/png')
         if self.path == '/api/orchestrator':
             st = axlock.status()
             try:
@@ -1123,6 +1203,16 @@ class H(BaseHTTPRequestHandler):
             if parts[:2] == ['api', 'tasks'] and parts[3:] == ['done']:
                 task_done(parts[2], b.get('url'))
                 return self.send(200, {'ok': True})
+            if parts == ['api', 'incidents', 'check']:
+                run_watch()
+                return self.send(200, incidents_view())
+            if parts[:2] == ['api', 'incidents'] and len(parts) == 4:
+                if parts[3] == 'analyze':
+                    analyze(parts[2])
+                else:
+                    watcher.set_status(parts[2], {'resolve': 'resolved', 'ignore': 'ignored', 'reopen': 'open'}[parts[3]],
+                                       str(b.get('note', ''))[:300])
+                return self.send(200, incidents_view())
             if parts == ['api', 'stop']:
                 if b.get('on'):
                     axlock.set_stop(str(b.get('reason') or '콘솔에서 정지')[:200], by='콘솔')
@@ -1229,6 +1319,7 @@ if __name__ == '__main__':
             c.update(status='idea', error='서버가 다시 켜져 초안 작성이 중단됐습니다')
             f.write_text(json.dumps(c, ensure_ascii=False, indent=2))
     threading.Thread(target=scheduler, daemon=True).start()
+    threading.Thread(target=watch_loop, daemon=True).start()
     threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
     print(f'AX 발행 콘솔: http://{HOST}:{PORT}')
     ThreadingHTTPServer((HOST, PORT), H).serve_forever()

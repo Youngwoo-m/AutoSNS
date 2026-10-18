@@ -416,7 +416,8 @@
           "common",
           "analytics"
         ]
-      ]
+      ],
+      "quiet": true
     },
     {
       "job": "cacheprune.daily",
@@ -429,6 +430,9 @@
           "common",
           "maintenance"
         ]
+      ],
+      "logs": [
+        "maintenance/logs/prune.log"
       ]
     },
     {
@@ -455,7 +459,8 @@
           "common",
           "maintenance"
         ]
-      ]
+      ],
+      "quiet": true
     }
   ]
 }
