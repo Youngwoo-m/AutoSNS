@@ -19,7 +19,7 @@
       }
     },
     "budget": {
-      "max_tokens": 80000,
+      "max_tokens": 150000,
       "max_tool_calls": 30,
       "max_turns": 25
     },

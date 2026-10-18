@@ -160,12 +160,18 @@ function editorC(){
   const pend=[x.original||'',...Object.values(x.variants||{})].join('').includes('[확인 필요]');
   let body=`<div class="filt"><h2 style="margin:0 auto 0 0">${esc(CST[x.status]||x.status)} · ${ACCL[x.account]} · ${esc(x.topic)}</h2>${x.model?`<span class="mut">초안 ${esc(x.model)}</span>`:''}</div>`;
   if(x.status=='idea')body+=`<p class="mut">참고 메모: ${esc(x.notes||'없음')}</p><div class="btns"><button class="pri" onclick="draftC()">AI 초안 만들기</button><button class="del" onclick="delC()">삭제</button></div>`;
-  if(x.status=='drafting')body+=`<p class="mut">세명대 게이트웨이로 원문과 채널별 변환본을 만드는 중입니다(1~2분).</p>`;
+  if(x.status=='drafting')body+=`<p class="mut">초안 에이전트가 자료를 찾아 읽고(조사) → 원문·변환본을 쓰고 → 출처와 대조하는 중입니다(3~6분).</p>`;
   if(['review','scheduled','published','failed'].includes(x.status)){
     body+=`<label>제목</label><input id="c_title" value="${esc(x.title||'')}" ${ro?'disabled':''}>
      <div class="vt">${tabs.map(([k,l])=>`<button class="${vtab==k?'on':''}" onclick="saveDraftLocal();vtab='${k}';drawCont()">${esc(l)}</button>`).join('')}</div>
      <textarea id="c_text" style="min-height:260px" ${ro?'disabled':''}>${esc(val)}</textarea>
-     ${x.sources&&x.sources.length?`<div class="mut">출처 후보: ${esc(x.sources.join(' · '))}</div>`:''}`;
+     ${x.sources&&x.sources.length?`<div class="mut">출처 후보: ${esc(x.sources.join(' · '))}</div>`:''}
+     ${x.review&&(x.review.unsupported||x.review.issues)?`<h2 style="margin-top:14px">자체 검토 <span class="mut">근거 확인 ${x.review.supported_count??0}건</span></h2>
+       ${(x.review.unsupported||[]).map(r=>`<div class="run"><b class="x">근거 없음</b> “${esc(r.quote)}” <span class="mut">${esc(r.reason)}</span></div>`).join('')||'<div class="mut">근거 없는 문장을 찾지 못했습니다.</div>'}
+       ${(x.review.issues||[]).map(i=>`<div class="run mut">· ${esc(i)}</div>`).join('')}`:''}
+     ${x.research&&x.research.notes&&x.research.notes.length?`<details style="margin-top:10px"><summary class="mut" style="cursor:pointer">조사 메모 ${x.research.notes.length}개 · 읽은 문서 ${Object.keys(x.research.pages||{}).length}개</summary>
+       ${x.research.notes.map(n=>`<div class="run">[${n.n}] ${esc(n.fact)} <a href="${esc(n.url)}" target="_blank">${esc(n.title||n.url)}</a>${n.quote?`<div class="mut" style="font-size:11px">“${esc(n.quote)}”</div>`:''}</div>`).join('')}</details>`:''}
+     ${x.outline?`<details><summary class="mut" style="cursor:pointer">개요</summary><pre>${esc(x.outline)}</pre></details>`:''}`;
     if(x.status=='review'){
       body+=`${pend?'<p class="warn">[확인 필요] 표시가 남아 있습니다. 사실을 확인해 고치거나 지워야 승인됩니다.</p>':''}
       <h2 style="margin-top:14px">③ 점검표</h2><div class="chk">${Object.entries(CT.checks).map(([k,l])=>`<label><input type="checkbox" id="ck_${k}" ${(x.checks||{})[k]?'checked':''}>${esc(l)}</label>`).join('')}</div>

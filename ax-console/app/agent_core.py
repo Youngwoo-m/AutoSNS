@@ -61,6 +61,8 @@ class Budget:
     max_tool_calls: int = 30
     max_turns: int = 25
     max_output: int = 4000            # 호출 한 번의 max_tokens
+    keep_turns: int = 2               # 이보다 오래된 도구 결과는 짧게 줄인다(문맥 압축)
+    compact_chars: int = 1500         # 이보다 긴 오래된 결과만 줄인다
 
 
 @dataclass
@@ -188,6 +190,20 @@ class Agent:
         return {'type': 'tool_result', 'tool_use_id': block.id, 'content': content,
                 **({'is_error': True} if is_err else {})}, summary
 
+    # ---- 문맥 압축 ----
+    def _compact(self, msgs):
+        """오래된 긴 도구 결과(웹 문서 본문 등)를 줄인다. 매 호출마다 앞 내용을 다시 보내므로
+        두지 않으면 입력 토큰이 턴마다 불어난다(2026-10-18 초안 에이전트: 6턴에 8만 토큰)."""
+        results = [m for m in msgs if m['role'] == 'user' and isinstance(m['content'], list)]
+        for m in results[:-self.budget.keep_turns] if self.budget.keep_turns else results:
+            for blk in m['content']:
+                c = blk.get('content')
+                if isinstance(c, str) and len(c) > self.budget.compact_chars and not blk.get('_compact'):
+                    blk['content'] = c[:400] + '\n…(앞에서 읽은 긴 결과를 줄였다. 필요한 내용은 이미 메모·판단에 반영했어야 한다)\n</data>'
+                    blk['_compact'] = True
+                elif isinstance(c, list):  # 이미지 결과는 설명만 남긴다
+                    blk['content'] = [x for x in c if x.get('type') == 'text'] or '(이미지 생략)'
+
     # ---- 루프 ----
     def run(self, prompt):
         self._log('start', agent=self.name, model=self.model, prompt=prompt[:2000],
@@ -204,11 +220,14 @@ class Agent:
         try:
             models = _Models(self.model)
             for turn in range(self.budget.max_turns):
+                self._compact(msgs)
                 if self.usage['input'] + self.usage['output'] >= self.budget.max_tokens:
                     res = Result('budget', detail=f'토큰 예산 {self.budget.max_tokens} 소진')
                     break
                 t0 = time.time()
-                r, via = models.create(system=self.system, messages=msgs, max_tokens=self.budget.max_output,
+                send = [{**m, 'content': [{k: v for k, v in b.items() if k != '_compact'} for b in m['content']]}
+                        if isinstance(m['content'], list) else m for m in msgs]
+                r, via = models.create(system=self.system, messages=send, max_tokens=self.budget.max_output,
                                        tools=[t.spec() for t in self.tools.values()])
                 u = getattr(r, 'usage', None)
                 self.usage['input'] += getattr(u, 'input_tokens', 0) or 0
@@ -233,7 +252,7 @@ class Agent:
                     results.append(blk)
                     self._log('tool', name=b.name, input=b.input, error=err, result=summary)
                     if tool and tool.kind == 'submit' and not err:
-                        submitted = _clean(b.input)
+                        submitted = _clean(_coerce(b.input, tool.schema))
                 msgs.append({'role': 'user', 'content': results})
                 if submitted is not None:
                     res = Result('submitted', result=submitted)
@@ -247,6 +266,22 @@ class Agent:
         self._log('end', status=res.status, detail=res.detail, usage=res.usage)
         self._add_usage()
         return res
+
+
+def _coerce(v, schema):
+    """스키마가 객체·배열인 칸에 모델이 JSON 문자열을 넣어 보내면 풀어 준다
+    (2026-10-18 초안 에이전트: variants 를 문자열로 제출)."""
+    props = (schema or {}).get('properties') or {}
+    if not isinstance(v, dict):
+        return v
+    out = dict(v)
+    for k, ps in props.items():
+        if ps.get('type') in ('object', 'array') and isinstance(out.get(k), str):
+            try:
+                out[k] = json.loads(out[k])
+            except ValueError:
+                pass
+    return out
 
 
 def _clean(v):

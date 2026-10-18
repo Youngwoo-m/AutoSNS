@@ -798,16 +798,29 @@ def content_draft(cid):
 
     def work():
         try:
-            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'draft_ai.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
-                               input=json.dumps({k: c[k] for k in ('account', 'topic', 'notes', 'channels')}, ensure_ascii=False),
-                               capture_output=True, text=True, timeout=600)
-            d = json.loads(p.stdout.strip().splitlines()[-1])
+            req = json.dumps({k: c[k] for k in ('account', 'topic', 'notes', 'channels')}, ensure_ascii=False)
+            # ② 초안 에이전트(조사 → 원문 → 자체 검토). 실패하면 한 번 호출 방식(draft_ai)으로 대신한다
+            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'drafter.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+                               input=req, capture_output=True, text=True, timeout=1500)
+            try:
+                d = json.loads(p.stdout.strip().splitlines()[-1])
+            except (IndexError, ValueError):
+                d = {'error': '초안 에이전트 출력 없음: ' + ((p.stderr or '').strip().splitlines() or [''])[-1][:200]}
+            fallback = ''
+            if d.get('error'):
+                fallback = d['error']
+                p = subprocess.run([GPY, str(CONSOLE / 'app' / 'draft_ai.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+                                   input=req, capture_output=True, text=True, timeout=600)
+                d = json.loads(p.stdout.strip().splitlines()[-1])
             with CLOCK:
                 x = cload(cid)
                 x.update(title=d.get('title', ''), summary=d.get('summary', ''), original=d.get('original', ''),
                          sources=d.get('sources', []), variants=d.get('variants', {}), status='review', checks={},
-                         model=d.get('model', ''), error='')
-                x['history'].append({'at': now().isoformat(), 'what': f"AI 초안 ({d.get('model', '')})"})
+                         model=d.get('model', ''), error='', outline=d.get('outline', ''),
+                         research=d.get('research', {}), review=d.get('review', {}),
+                         agent_logs=[v for v in (d.get('agent_log'), d.get('review_log')) if v], usage=d.get('usage', {}))
+                x['history'].append({'at': now().isoformat(), 'what': f"AI 초안 ({d.get('model', '')})"
+                                     + (f" — 에이전트 실패로 한 번 호출 방식 사용: {fallback[:120]}" if fallback else '')})
                 csave(x)
         except Exception as e:
             with CLOCK:
