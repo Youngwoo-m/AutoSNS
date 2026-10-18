@@ -1,4 +1,6 @@
 #!/bin/zsh
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job report.monthly -- "$0" "$@"
 # 월간 리포트 수집·생성·발송. 매월 1일에 '방금 끝난 달'을 다룬다.
 # 사용: ./run_monthly_report.sh [기준일 YYYY-MM-DD] [대상월 YYYY-MM]
 #      SMUDS_REPORT_DRYRUN=1 을 주면 수집·생성만 하고 메일은 보내지 않는다(점검용).

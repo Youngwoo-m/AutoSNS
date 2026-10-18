@@ -11,6 +11,9 @@ from pathlib import Path
 
 CONSOLE = Path(__file__).resolve().parents[1]
 ROOT = CONSOLE.parent
+import sys
+sys.path.insert(0, str(ROOT))
+from shared import axlock  # noqa: E402  잠금·대기·비상 정지
 DATA = CONSOLE / 'data'
 TASKS = DATA / 'tasks.json'
 RUNS = DATA / 'runs'
@@ -163,6 +166,13 @@ def run_task(tid, manual=False):
         save(tasks)
 
 
+def _is_live(t):
+    if t.get('action') == 'publish':
+        return True
+    a = find_action(t.get('account'), t.get('channel'), t.get('action'))
+    return bool(a and a.get('live'))
+
+
 def scheduler():
     while True:
         due = []
@@ -170,6 +180,8 @@ def scheduler():
             for t in load():
                 if t.get('status') == 'scheduled' and t.get('schedule') and \
                         datetime.datetime.fromisoformat(t['schedule']) <= now():
+                    if axlock.stopped() and _is_live(t):
+                        continue  # 비상 정지 중: 발행 작업은 예약된 채로 둔다(풀리면 바로 돈다)
                     due.append(t['id'])
             # 콘텐츠 예약(메모)은 실제 발행 연결이 없으므로 '발행할 차례'로만 바꾼다
             ts = load()
@@ -889,6 +901,12 @@ AUTO_PUBLISH = {  # (계정, 채널) → 실행할 모듈 폴더
 }
 
 
+PUBLISH_LOCKS = {  # 자동 발행이 함께 잡는 자원 — launchd 작업과 같은 이름(automations.json locks)
+    ('dept', 'naver_blog'): ['profile:naver'], ('dept', 'blogger'): ['quota:blogger-dept'],
+    ('personal', 'blogger'): ['quota:blogger-personal'],
+}
+
+
 def publish_call(cid, account, channel, dry):
     folder = AUTO_PUBLISH[(account, channel)]
     args = [str(ROOT / folder / '.venv' / 'bin' / 'python'), str(CONSOLE / 'app' / 'publishers.py'),
@@ -908,7 +926,11 @@ def run_publish(t, manual):
     day.mkdir(parents=True, exist_ok=True)
     log = day / f"{start.strftime('%H%M%S')}_{t['id']}.log"
     try:
-        r, out = publish_call(t['content'], t['account'], t['channel'], dry=False)
+        if axlock.stopped():
+            raise RuntimeError('비상 정지 중이라 발행하지 않았습니다')
+        with axlock.hold(PUBLISH_LOCKS.get((t['account'], t['channel']), []) + [f"job:console-{t['account']}-{t['channel']}"],
+                         job=f"console:{t['id']}"):
+            r, out = publish_call(t['content'], t['account'], t['channel'], dry=False)
     except Exception as e:
         r, out = {'status': 'error', 'detail': str(e)[:300]}, ''
     log.write_text(f"자동 발행: {t['title']} → {t['account']}/{t['channel']}\n시작: {start}\n결과: {json.dumps(r, ensure_ascii=False)}\n\n{out}")
@@ -1055,6 +1077,13 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/orchestrator':
+            st = axlock.status()
+            try:
+                st['log'] = axlock.LOG.read_text(errors='ignore').splitlines()[-30:]
+            except OSError:
+                st['log'] = []
+            return self.send(200, st)
         if self.path == '/api/agents':
             return self.send(200, agents_view())
         if self.path == '/api/contents':
@@ -1094,6 +1123,12 @@ class H(BaseHTTPRequestHandler):
             if parts[:2] == ['api', 'tasks'] and parts[3:] == ['done']:
                 task_done(parts[2], b.get('url'))
                 return self.send(200, {'ok': True})
+            if parts == ['api', 'stop']:
+                if b.get('on'):
+                    axlock.set_stop(str(b.get('reason') or '콘솔에서 정지')[:200], by='콘솔')
+                else:
+                    axlock.clear_stop(by='콘솔')
+                return self.send(200, axlock.status())
             if parts == ['api', 'agents']:
                 return self.send(200, agents_save(b))
             if parts == ['api', 'contents']:
@@ -1114,7 +1149,12 @@ class H(BaseHTTPRequestHandler):
                         raise ValueError('네이버 점검은 5분에 한 번만 할 수 있습니다(편집기 자동저장이 섞이지 않게)')
                     GW_STATE['naver_check'] = now()
                     c = cload(cid)
-                    return self.send(200, {'naver_blog': publish_call(cid, c['account'], 'naver_blog', dry=True)[0]})
+                    try:
+                        with axlock.hold(['profile:naver'], job=f'console:naver-check-{cid}', wait=5):
+                            r = publish_call(cid, c['account'], 'naver_blog', dry=True)[0]
+                    except axlock.Timeout as e:
+                        raise ValueError(f'네이버 프로필을 다른 작업이 쓰고 있습니다: {e}')
+                    return self.send(200, {'naver_blog': r})
                 if op == 'approve':
                     return self.send(200, content_approve(cid, b))
                 if op == 'cancel':
@@ -1164,6 +1204,8 @@ class H(BaseHTTPRequestHandler):
                     save(tasks)
                     return self.send(200, {'ok': True})
                 if parts[3:] == ['run']:
+                    if axlock.stopped() and _is_live(t):
+                        raise ValueError('비상 정지 중이라 발행 작업을 실행하지 않습니다')
                     t['_was'] = t['status']
                     save(tasks)
             if parts[3:] == ['run']:

@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job captionbackfill.daily -- "$0" "$@"
 # 기존 영상 자막 소급 적용 — launchd 가 매일 17:10 호출(할당량 리셋 직후).
 #
 # 유튜브 API 하루 한도는 10,000유닛인데 자막 업로드는 1편당 400유닛, 자막 확인은

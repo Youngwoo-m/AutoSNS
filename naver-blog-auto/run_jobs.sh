@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job naverjobs.weekly -- "$0" "$@"
 # 고용24 재난안전 분야 채용정보를 네이버 블로그 '채용정보'에 올린다 — launchd 가 일요일 20:00 호출.
 #
 # 매일 19:00 브리핑 발행과 같은 크롬 프로필(chrome-profile)을 쓴다. 한 프로필을 두 크롬이

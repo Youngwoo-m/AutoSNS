@@ -1,4 +1,6 @@
 #!/bin/zsh
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job promoreport.monthly -- "$0" "$@"
 # 학교 제출용 '온라인 홍보활동 보고서'를 그달 말일에 작성한다.
 #
 # launchd 에는 '말일' 이 없어 매일 23:00 에 깨어나 내일이 1일일 때만 일한다.

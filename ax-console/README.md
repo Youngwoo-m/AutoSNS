@@ -31,6 +31,13 @@ python3 ax-console/app/server.py      # http://127.0.0.1:8700
   다시 시작: `launchctl kickstart -k gui/$(id -u)/com.smuds.axconsole` · 로그: `data/logs/server.*.log`
 - 예약은 서버가 켜져 있을 때만 실행된다(USB가 빠져 있으면 서버도 못 켠다). `data/tasks.json` 에 작업, `data/runs/` 에 실행 기록이 쌓인다.
 
+## 오케스트레이터 (D1)
+
+- 모든 launchd 작업(`run_*.sh` 맨 앞 한 줄)과 콘솔 자동 발행이 `shared/axlock.py` 의 잠금을 거친다.
+  같은 크롬 프로필·하루 한도(`config/automations.json` 의 `locks`)를 쓰는 작업은 차례로 돈다(최대 40분 대기).
+- **비상 정지**: 화면 위 버튼. 켜면 발행 작업이 새로 시작하지 않는다(돌던 작업은 끝까지). 유지보수·보고서는 계속 돈다.
+- '자동 작업' 탭 맨 위에 실행 중·기다리는 작업과 기록(`data/logs/orchestrator.log`).
+
 ## 진행 상황 (2026-10-18)
 
 설계 문서(`docs/설계.md`)의 단계 기준.

@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job instacards.weekly -- "$0" "$@"
 # 주간 인스타 카드뉴스 자동 게시 래퍼 (launchd 가 호출). run.bat 의 macOS 판.
 # 실제 인스타 카드뉴스 게시가 나가는 스크립트다. 손으로 확인하려다(예: --help) 발행이
 # 나가는 사고를 막기 위해, 인자가 하나라도 붙으면 거부한다.

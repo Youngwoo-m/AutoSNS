@@ -24,6 +24,11 @@
 기존 자동 발행 파이프라인(make_video.py 등 ffmpeg 기반)은 아직 이 지침으로 바꾸지 않았다.
 바꿀 때는 사용자와 범위를 정한 뒤 옮긴다.
 
+## 자동 작업 잠금·비상 정지 (2026-10-18)
+
+크롬 프로필을 열거나 글을 올리는 작업은 `shared/axlock.py run --job … --res profile:… -- 명령` 으로 실행한다.
+자세한 규칙은 `AGENTS.md`. launchd `run_*.sh` 맨 앞의 AX_LOCKED 한 줄은 지우지 않는다.
+
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.

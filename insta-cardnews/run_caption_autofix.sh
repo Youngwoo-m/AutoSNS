@@ -1,4 +1,6 @@
 #!/bin/zsh
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job captionautofix.daily -- "$0" "$@"
 # 빈 캡션으로 올라간 릴을 찾아 발행 때 기록해 둔 캡션으로 되돌린다.
 # 주간 리포트(월 08:00)보다 먼저 돌아야 리포트가 이미 고친 것을 두고 경고하지 않는다.
 # 사용: ./run_caption_autofix.sh [최근 N일=14]      DRY=1 이면 목록만 만들고 편집하지 않는다.

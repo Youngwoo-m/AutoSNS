@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job cacheprune.daily -- "$0" "$@"
 # AutoSNS chrome-profile 캐시 정리 — 로그인 세션은 보존, 재생성되는 캐시만 삭제.
 # launchd(com.smuds.cacheprune.daily)가 매일 새벽 호출. 수동 실행도 가능.
 # 안전장치: 해당 프로필을 점유한 프로세스가 있으면 그 프로필은 건너뛴다(손상 방지).

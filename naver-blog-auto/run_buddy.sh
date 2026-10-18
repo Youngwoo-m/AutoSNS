@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job naverbuddy.weekly -- "$0" "$@"
 # 주간 서로이웃 선신청(안전형) 래퍼 — launchd 가 매주 금 21:00 호출.
 # 신청 후 지난 신청분의 수락 현황을 집계해 카카오톡으로 알린다(집계 실패해도 신청은 유지).
 #

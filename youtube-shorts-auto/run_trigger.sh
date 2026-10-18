@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job ytshorts.trigger -- "$0" "$@"
 # 사건 즉시 발행 트리거 점검 (launchd 가 하루 몇 번 호출).
 # check_trigger.py 가 스스로 '큰 사건인지 + 쿨다운/상한'을 판단해, 조건일 때만 발행한다.
 cd "$(dirname "$0")" || exit 1

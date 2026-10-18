@@ -1,4 +1,6 @@
 #!/bin/bash
+# AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job tiktok.queue -- "$0" "$@"
 # 틱톡 대기열 — 유튜브 공개 30분 뒤 학과 틱톡에 1편씩 올린다(launchd com.smuds.tiktok.queue, 15분마다).
 # 실제로 게시된다. 확인만 하려면: ./.venv/bin/python tiktok_queue.py --plan
 if [ "$#" -ne 0 ]; then

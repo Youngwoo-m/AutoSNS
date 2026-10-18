@@ -1,5 +1,5 @@
 {
-  "_설명": "launchd 자동 작업 분석 결과(2026-10-18). job = com.smuds.<job>.plist. channels 의 첫 항목이 주 채널이고 나머지는 같은 실행에서 함께 올리는 채널이다. 시각은 plist 에서 직접 읽는다.",
+  "_설명": "launchd 자동 작업 분석 결과(2026-10-18). job = com.smuds.<job>.plist. channels 의 첫 항목이 주 채널이고 나머지는 같은 실행에서 함께 올리는 채널이다. 시각은 plist 에서 직접 읽는다. locks 는 실행할 때 함께 잡는 자원(크롬 프로필 profile:*, 하루 한도를 함께 쓰는 블로그 quota:*). shared/axlock.py 가 읽는다.",
   "jobs": [
     {
       "job": "ytshorts.weekly",
@@ -28,6 +28,9 @@
           "dept",
           "tiktok"
         ]
+      ],
+      "locks": [
+        "profile:insta"
       ]
     },
     {
@@ -57,6 +60,9 @@
           "dept",
           "tiktok"
         ]
+      ],
+      "locks": [
+        "profile:insta"
       ]
     },
     {
@@ -133,6 +139,11 @@
           "dept",
           "threads"
         ]
+      ],
+      "locks": [
+        "profile:insta",
+        "profile:naver",
+        "quota:blogger-dept"
       ]
     },
     {
@@ -148,7 +159,10 @@
         ]
       ],
       "note": "2026-10-17 13:30 사용자 요청으로 중지(launchd bootout+disable, tiktok_web.daily=false). 캡션 입력칸을 못 찾는 실패가 반복된 뒤. 다시 켜려면 둘 다 되돌린다.",
-      "reenable": "youtube-shorts-auto/config.json 의 tiktok_web.daily 도 false 로 꺼져 있습니다. launchd 만 켜면 실행돼도 업로드하지 않으니, 정말 다시 올리려면 이 값을 true 로 직접 바꿔야 합니다."
+      "reenable": "youtube-shorts-auto/config.json 의 tiktok_web.daily 도 false 로 꺼져 있습니다. launchd 만 켜면 실행돼도 업로드하지 않으니, 정말 다시 올리려면 이 값을 true 로 직접 바꿔야 합니다.",
+      "locks": [
+        "profile:tiktok"
+      ]
     },
     {
       "job": "xpromo.daily",
@@ -174,6 +188,9 @@
           "dept",
           "instagram"
         ]
+      ],
+      "locks": [
+        "profile:insta"
       ]
     },
     {
@@ -187,6 +204,9 @@
           "dept",
           "instagram"
         ]
+      ],
+      "locks": [
+        "profile:insta"
       ]
     },
     {
@@ -200,6 +220,9 @@
           "dept",
           "instagram"
         ]
+      ],
+      "locks": [
+        "profile:insta"
       ]
     },
     {
@@ -217,6 +240,10 @@
           "dept",
           "blogger"
         ]
+      ],
+      "locks": [
+        "profile:naver",
+        "quota:blogger-dept"
       ]
     },
     {
@@ -230,6 +257,9 @@
           "dept",
           "blogger"
         ]
+      ],
+      "locks": [
+        "quota:blogger-dept"
       ]
     },
     {
@@ -251,6 +281,11 @@
           "personal",
           "tistory"
         ]
+      ],
+      "locks": [
+        "profile:naver",
+        "profile:insta",
+        "profile:tistory"
       ]
     },
     {
@@ -264,6 +299,9 @@
           "dept",
           "naver_blog"
         ]
+      ],
+      "locks": [
+        "profile:naver"
       ]
     },
     {
@@ -285,6 +323,10 @@
           "dept",
           "tiktok"
         ]
+      ],
+      "locks": [
+        "profile:youtube-personal",
+        "quota:blogger-personal"
       ]
     },
     {
@@ -302,6 +344,10 @@
           "dept",
           "threads"
         ]
+      ],
+      "locks": [
+        "profile:insta",
+        "quota:blogger-personal"
       ]
     },
     {
@@ -315,6 +361,9 @@
           "personal",
           "tistory"
         ]
+      ],
+      "locks": [
+        "profile:tistory"
       ]
     },
     {
