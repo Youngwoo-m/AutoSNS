@@ -462,10 +462,11 @@ async function loadSet(){SV=await api('/api/settings');const L=SV.channel_labels
     <table>${SV.plugins.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.market)} · ${esc(x.version)}</div></td><td style="text-align:right"><input type="checkbox" class="sw" ${x.enabled?'checked':''} onchange="plug('${esc(x.id)}',this)"></td></tr>`).join('')}</table>
     <h2 style="margin-top:16px">커넥터 (MCP)</h2><p class="mut">claude.ai 계정 커넥터(Gmail, 캘린더, 노션 등)는 claude.ai 설정에서 관리합니다.</p>
     <div class="scroll"><table>${SV.connectors.map(x=>`<tr><td>${esc(x.name)}<div class="mut">${esc(x.source)} · ${esc(x.type)}</div></td><td class="${x.state=='인증 필요'?'bad':'ok'}">${esc(x.state)}</td></tr>`).join('')}</table></div></div></div>
+   <div class="card" id="bscard"><h2>발행할 때 쓰는 브라우저</h2><div class="mut">불러오는 중…</div></div>
    <div class="card" id="agcard"><h2>에이전트 설정</h2><div class="mut">불러오는 중…</div></div>
    <div class="card" id="gwcard"><h2>세명대 AI 게이트웨이</h2><div class="mut">불러오는 중…</div></div>
    <div class="card"><h2>설치된 스킬 (${SV.skills.length})</h2><input id="sq" placeholder="스킬 검색" oninput="skl()"><div class="scroll" style="margin-top:8px"><table id="sk"></table></div></div>`;
-  skl();loadGw();loadAg()}
+  skl();loadGw();loadAg();loadBs()}
 const WDN=['일','월','화','수','목','금','토'];
 async function saveSecret(n){const isNew=!n;const name=isNew?$('sv_new_name').value.trim().toUpperCase():n;const el=isNew?$('sv_new_val'):$('sv_'+n);const v=el.value;
   if(!name||!v){$('svmsg').style.color='var(--warn)';$('svmsg').textContent='이름과 값을 넣으세요';return}
@@ -473,6 +474,13 @@ async function saveSecret(n){const isNew=!n;const name=isNew?$('sv_new_name').va
   if(was&&!confirm(`${name} 에 저장된 값을 새 값으로 바꿉니다. 이 키를 쓰는 자동 작업은 다음 실행부터 새 값을 씁니다.`))return;
   try{await api('/api/secrets',{name,value:v});el.value='';if(isNew)$('sv_new_name').value='';$('svmsg').style.color='var(--ok)';$('svmsg').textContent=`${name} 을(를) 암호화해 저장했습니다.`;loadSet()}
   catch(e){$('svmsg').style.color='var(--warn)';$('svmsg').textContent=e.message}}
+async function loadBs(){const c=await api('/api/browser/config');
+  $('bscard').innerHTML=`<h2>발행할 때 쓰는 브라우저</h2><p class="mut">켜면 그 프로필로 발행하는 자동 작업이 바깥 크롬 창 대신 콘솔 브라우저 서비스(창 없음)를 씁니다. 진행은 '브라우저' 탭에서 보입니다. 콘솔이 응답하지 않으면 저절로 예전 방식으로 돌아갑니다.</p>
+   <table>${Object.entries(c.names).map(([k,n])=>`<tr><td>${esc(n)}</td><td><select onchange="saveBs('${k}',this.value)" style="width:auto">
+     ${[['','예전 방식(바깥 창)'],['headless','콘솔 브라우저 · 창 없이'],['hidden','콘솔 브라우저 · 화면 밖 크롬']].map(([v,l])=>`<option value="${v}" ${(c.profiles[k]||'')==v?'selected':''}>${l}</option>`).join('')}</select></td></tr>`).join('')}</table>
+   <div class="mut" style="font-size:12px;margin-top:6px">시험 완료: 티스토리(창 없이, 2026-10-18 게시 직전 점검). 네이버·인스타·틱톡은 처음 켤 때 '화면 밖 크롬'을 권합니다(붙여넣기·업로드 창 때문).</div>`}
+async function saveBs(p,m){if(m&&!confirm(`이 프로필의 자동 발행을 콘솔 브라우저(${m=='headless'?'창 없이':'화면 밖 크롬'})로 바꿉니다. 다음 실행부터 적용됩니다.`)){loadBs();return}
+  try{await api('/api/browser/config',{profile:p,mode:m});loadBs()}catch(e){alert(e.message);loadBs()}}
 async function loadAg(){drawAg(await api('/api/agents'))}
 function drawAg(v){const c=v.config,pa=(c.planner||{}).accounts||{},lim=c.monthly_token_limit||0,pct=lim?Math.round(v.month_total*100/lim):0;
   const bud=(ag,l)=>{const b=(c[ag]||{}).budget||{};return `<tr><td>${l}</td><td><input id="b_${ag}_t" value="${b.max_tokens||''}"></td><td><input id="b_${ag}_c" value="${b.max_tool_calls||''}"></td><td><input id="b_${ag}_r" value="${b.max_turns||''}"></td></tr>`};

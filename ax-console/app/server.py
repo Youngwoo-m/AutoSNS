@@ -1328,6 +1328,27 @@ def bw_start():
             pass
 
 
+BS_CFG = CONSOLE / 'config' / 'browser_service.json'
+
+
+def bs_save(b):
+    cfg = _json(BS_CFG, {'profiles': {}})
+    prof, mode = str(b.get('profile', '')), str(b.get('mode', ''))
+    if prof not in BW_PROFILES or prof == 'scratch':
+        raise ValueError('없는 프로필입니다')
+    if mode not in ('', 'headless', 'hidden'):
+        raise ValueError('없는 방식입니다')
+    if mode:
+        cfg.setdefault('profiles', {})[prof] = mode
+    else:
+        cfg.setdefault('profiles', {}).pop(prof, None)
+    tmp = BS_CFG.with_suffix('.tmp')
+    tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + '\n')
+    tmp.replace(BS_CFG)
+    axlock.log(f"브라우저 서비스 설정: {prof} → {mode or '예전 방식(바깥 창)'}")
+    return cfg
+
+
 def bw_login_done(profile):
     """사람이 내부 브라우저에서 로그인한 뒤: 로그인 쿠키 확인 → (필요하면) 쿠키 파일 저장 → 크롬을 정상 종료해 저장."""
     name, _, check, save = BW_PROFILES[profile]
@@ -1394,6 +1415,8 @@ class H(BaseHTTPRequestHandler):
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
+        if self.path == '/api/browser/config':
+            return self.send(200, {**_json(BS_CFG, {'profiles': {}}), 'names': {k: v[0] for k, v in BW_PROFILES.items() if k != 'scratch'}})
         if self.path == '/api/browser/list':
             try:
                 sess = bw_call('/list', timeout=5) if BW_PROC['p'] and BW_PROC['p'].poll() is None else []
@@ -1593,13 +1616,19 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'google', 'check']:
                 google_check()
                 return self.send(200, google_view())
+            if parts == ['api', 'browser', 'config']:
+                return self.send(200, bs_save(b))
             if parts[:2] == ['api', 'browser'] and len(parts) == 3:
                 op, prof = parts[2], str(b.get('profile', ''))
                 if prof not in BW_PROFILES:
                     raise ValueError('없는 프로필입니다')
                 if op == 'start':
-                    return self.send(200, bw_call('/start', {'profile': prof, 'mode': b.get('mode') or 'headless',
-                                                             'url': b.get('url') or BW_PROFILES[prof][1]}))
+                    body = {'profile': prof, 'mode': b.get('mode') or 'headless'}
+                    if b.get('owner_pid'):    # 발행 작업이 빌려 쓰기(잠금은 그 작업이 쥐고 있다)
+                        body.update(owner_pid=int(b['owner_pid']), extra=b.get('extra') or [])
+                    else:
+                        body['url'] = b.get('url') or BW_PROFILES[prof][1]
+                    return self.send(200, bw_call('/start', body))
                 if op == 'stop':
                     return self.send(200, bw_call('/stop', {'profile': prof}))
                 if op == 'input':

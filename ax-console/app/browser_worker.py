@@ -40,9 +40,20 @@ VW, VH = 1280, 860   # 화면 크기(이름 H 는 아래 HTTP 처리 클래스�
 SESS = {}
 LOCK = threading.Lock()
 
+ALLOWED_EXTRA = {'--disable-blink-features=AutomationControlled'}
 MARK = '--ax-browser-worker'   # 이 워커가 띄운 크롬 표시(남은 크롬 정리용)
 KEYS = {'Enter': (13, '\r'), 'Backspace': (8, ''), 'Tab': (9, '\t'), 'Escape': (27, ''), 'ArrowLeft': (37, ''),
         'ArrowUp': (38, ''), 'ArrowRight': (39, ''), 'ArrowDown': (40, ''), 'Delete': (46, '')}
+
+
+def _ancestors(pid):
+    """pid 와 그 부모들(잠금을 쥔 래퍼가 그 위에 있는지 확인용)."""
+    out, seen = [], 0
+    while pid and pid > 1 and seen < 30:
+        out.append(pid)
+        r = subprocess.run(['ps', '-o', 'ppid=', '-p', str(pid)], capture_output=True, text=True).stdout.strip()
+        pid, seen = int(r or 0), seen + 1
+    return out
 
 
 def _free_port():
@@ -54,15 +65,23 @@ def _free_port():
 
 
 class Session:
-    def __init__(self, profile, mode):
+    def __init__(self, profile, mode, owner_pid=None, extra=()):
         if profile not in axlock.PROFILES:
             raise ValueError(f'없는 프로필: {profile}')
-        self.profile, self.mode = profile, mode
-        self.fds = axlock.acquire([f'profile:{profile}'], job=f'browser:{profile}', wait=5)
+        self.profile, self.mode, self.owner = profile, mode, owner_pid
+        # 발행 작업이 빌려 쓰는 경우(owner_pid): 그 작업이 run_*.sh 래퍼로 이미 프로필 잠금을 쥐고 있다.
+        # 그 잠금을 쥔 프로세스가 맞는지 확인하고, 다시 잡지 않는다.
+        if owner_pid:
+            h = axlock.holder_of(f'profile:{profile}')
+            if not h or int(h['pid']) not in _ancestors(int(owner_pid)):
+                raise ValueError('빌려 쓰려면 그 작업이 프로필 잠금을 쥐고 있어야 합니다(shared/axlock.py run 으로 실행)')
+            self.fds = []
+        else:
+            self.fds = axlock.acquire([f'profile:{profile}'], job=f'browser:{profile}', wait=5)
         self.port = _free_port()
         args = [CHROME, f'--user-data-dir={axlock.PROFILES[profile]}', f'--remote-debugging-port={self.port}', MARK,
-                '--remote-allow-origins=*', '--no-first-run', '--no-default-browser-check', '--disable-features=Translate',
-                f'--window-size={VW},{VH}', '--lang=ko-KR']
+                '--remote-allow-origins=*', '--no-first-run', '--no-default-browser-check', '--disable-features=Translate,MacAppCodeSignClone',
+                f'--window-size={VW},{VH}', '--lang=ko-KR'] + [a for a in extra if a in ALLOWED_EXTRA]
         args += ['--headless=new'] if mode == 'headless' else ['--window-position=-3000,-3000']
         self.proc = subprocess.Popen(args + ['about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.ws, self.mid, self.last = None, 0, time.time()
@@ -107,7 +126,7 @@ class Session:
         r = self.cmd('Runtime.evaluate', expression='JSON.stringify({u:location.href,t:document.title})', returnByValue=True)
         v = json.loads(r.get('result', {}).get('value') or '{}')
         return {'profile': self.profile, 'mode': self.mode, 'url': v.get('u', ''), 'title': v.get('t', ''),
-                'idle': int(time.time() - self.last)}
+                'idle': int(time.time() - self.last), 'port': self.port, 'owner': self.owner}
 
     def shot(self):
         r = self.cmd('Page.captureScreenshot', format='jpeg', quality=65)
@@ -173,10 +192,11 @@ class Session:
 
 def reaper():
     while True:
-        time.sleep(30)
+        time.sleep(10)
         with LOCK:
             for p, s in list(SESS.items()):
-                if time.time() - s.last > IDLE or s.proc.poll() is not None:
+                gone = s.owner and not axlock._alive(s.owner)       # 빌려 간 작업이 끝났거나 죽음
+                if (not s.owner and time.time() - s.last > IDLE) or gone or s.proc.poll() is not None:
                     s.close()
                     SESS.pop(p, None)
                     axlock.log(f'내부 브라우저 {p}: 15분 동안 안 써서 닫음')
@@ -228,8 +248,10 @@ class H(BaseHTTPRequestHandler):
             if self.path == '/start':
                 with LOCK:
                     if p not in SESS:
-                        SESS[p] = Session(p, b.get('mode') or 'headless')
-                        axlock.log(f"내부 브라우저 {p} 열림 ({SESS[p].mode})")
+                        SESS[p] = Session(p, b.get('mode') or 'headless', owner_pid=b.get('owner_pid'), extra=b.get('extra') or ())
+                        axlock.log(f"내부 브라우저 {p} 열림 ({SESS[p].mode})" + (f" — 작업 pid {b['owner_pid']} 가 빌려 씀" if b.get('owner_pid') else ''))
+                    elif b.get('owner_pid') and SESS[p].owner != b.get('owner_pid'):
+                        raise ValueError('그 프로필은 이미 콘솔 브라우저에서 열려 있습니다. 닫은 뒤 다시 하세요')
                 if b.get('url'):
                     SESS[p].input({'type': 'navigate', 'url': b['url']})
                 return self.send(200, SESS[p].info())

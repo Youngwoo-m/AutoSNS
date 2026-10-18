@@ -85,6 +85,18 @@ def start_chrome(options, tries=3, wait=90):
     from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     options.add_argument("--disable-features=MacAppCodeSignClone")
+    # 콘솔 브라우저 서비스가 켜진 프로필이면 창 없는 크롬을 빌려 쓴다(D3, ax-console/config/browser_service.json)
+    try:
+        import sys
+        _root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from shared.ax_browser import attach
+        d = attach(options, log)
+        if d is not None:
+            return d
+    except Exception as e:
+        log(f"콘솔 브라우저 연결 실패 — 예전 방식으로 띄웁니다: {type(e).__name__}: {str(e)[:150]}")
     last = None
     for n in range(1, tries + 1):
         try:
