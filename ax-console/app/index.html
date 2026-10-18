@@ -229,7 +229,7 @@ function drawInc(){const open=IV.items.filter(x=>x.status=='open'),rest=IV.items
     <div class="m">${esc(x.signature)}</div><div class="m">${fmt(x.first)}${x.last!=x.first?' ~ '+fmt(x.last):''}${x.analysis&&!x.analysis.error?' · 원인 분석됨':''}${x.analyzing?' · 분석 중…':''}</div></div>
     <span class="st ${x.status=='open'?(x.severity=='error'?'failed':''):'done'}">${IS[x.status]}</span></div>`;
   $('incv').innerHTML=`<div class="wrap" style="padding:0;grid-template-columns:1fr 1fr"><section class="card"><div class="top2"><h2>장애 · 열린 사건 ${open.length}</h2>
-     <button class="gbtn" onclick="checkInc(this)">지금 점검</button></div>
+     <span><button class="gbtn" onclick="checkInc(this)">지금 점검</button> <button class="gbtn" onclick="resetInc(this)">목록 초기화</button></span></div>
      <div class="mut" style="font-size:12px;margin-bottom:6px">감시기 마지막 점검 ${fmt(IV.checked)||'—'} · 10분마다 · 자동 원인 분석 ${IV.auto?'켜짐':'꺼짐(설정 탭)'}</div>
      ${open.map(row).join('')||'<div class="empty">열린 사건이 없습니다.</div>'}
      ${rest.length?`<details style="margin-top:10px"><summary class="mut" style="cursor:pointer">해결·무시한 사건 ${rest.length}</summary>${rest.map(row).join('')}</details>`:''}</section>
@@ -245,9 +245,33 @@ function incDetail(x){const a=x.analysis;
      ${(a.evidence||[]).length?`<div class="mut" style="margin-top:6px">근거</div>${a.evidence.map(e=>`<div class="run mut">· ${esc(e)}</div>`).join('')}`:''}
      ${(a.fix_steps||[]).length?`<div class="mut" style="margin-top:6px">해결 방법 ${a.human_needed?'(사람이 할 일)':''}</div>${a.fix_steps.map((s,i)=>`<div class="run">${i+1}. ${esc(s)}</div>`).join('')}`:''}
      <div class="mut" style="font-size:11px;margin-top:4px">${fmt(a.at)} · ${esc(a.log||'')}</div>`):'<div class="mut">아직 분석하지 않았습니다.</div>'}
-   <div class="btns">${x.analyzing?'':`<button class="pri" onclick="incAct('${x.id}','analyze')">원인 분석</button>`}
+   <div class="btns">${x.analyzing?'':`<button class="pri" onclick="incAct('${x.id}','analyze')">원인 분석</button>`}${ddMenu('act_'+x.id,'조치하기 ▾',incActs(x))}
      ${x.status=='open'?`<button onclick="incAct('${x.id}','resolve')">해결로 표시</button><button class="del" onclick="incAct('${x.id}','ignore')">무시(같은 문구 다시 안 띄움)</button>`:`<button onclick="incAct('${x.id}','reopen')">다시 열기</button>`}</div>
    <div class="runs"><h2>기록</h2>${x.history.slice().reverse().map(h=>`<div class="run">${fmt(h.at)} ${esc(h.what)}</div>`).join('')}</div>`}
+const PRN={naver:'네이버',tistory:'티스토리',insta:'인스타','youtube-personal':'유튜브(개인)','youtube-dept':'유튜브(학과)',tiktok:'틱톡'};
+function incActs(x){const id=x.id,t=(x.signature+' '+x.evidence.map(e=>e.text).join(' ')),it=[];
+  if(x.ctl)it.push(x.kind=='unloaded'?[`incDo('${id}','jobon')`,'작업 다시 켜기']:[`incDo('${id}','rerun')`,'작업 지금 다시 실행']);
+  const login=/로그인|login|세션|쿠키|cookie/i.test(t);
+  for(const p of x.profiles||[]){
+    if(login&&(p.name=='naver'||p.name=='tistory'))it.push([`incLogin('${id}','${p.name}')`,`콘솔 브라우저에서 ${PRN[p.name]} 다시 로그인`]);
+    if(p.mode){it.push([`incDo('${id}','bs_off','${p.name}')`,`${PRN[p.name]||p.name}: 콘솔 브라우저 끄기(예전 방식으로)`]);
+      if(p.mode=='headless')it.push([`incDo('${id}','bs_hidden','${p.name}')`,`${PRN[p.name]||p.name}: 숨김 창 방식으로 바꾸기`])}}
+  if(/invalid_grant|토큰|token|oauth|구글/i.test(t))it.push([`incNote('${id}','계정 연결 탭에서 구글 다시 연결');tab('acct')`,'계정 연결 탭에서 구글 다시 연결']);
+  const sh=x.evidence.slice().reverse().find(e=>e.screenshot);
+  if(sh)it.push([`window.open('/api/shot?p='+encodeURIComponent('${sh.screenshot.replace(/'/g,"\\'")}'))`,'실패 화면 크게 보기']);
+  it.push([`incNote('${id}',prompt('한 일을 적어 두세요','')||'')`,'한 일 기록하기']);
+  if(x.status=='open')it.push([`incAct('${id}','resolve')`,'해결로 표시']);
+  return it}
+async function incDo(id,act,prof){const x=IV.items.find(y=>y.id==id);
+  const q={rerun:`'${x.name}' 작업을 지금 다시 실행합니다.\n발행 작업이면 실제로 발행됩니다.\n\n실행할까요?`,jobon:`'${x.name}' 자동 작업을 다시 켭니다. 일정대로 다시 돕니다.`,
+    bs_off:`${PRN[prof]||prof} 프로필을 콘솔 브라우저에서 빼고 예전 방식(바깥 크롬 창)으로 돌립니다.`,
+    bs_hidden:`${PRN[prof]||prof} 프로필을 숨김 창 방식(보통 크롬을 화면 밖에 띄움)으로 바꿉니다.`}[act];
+  if(!confirm(q))return;
+  try{await api(`/api/incidents/${id}/act`,{action:act,profile:prof||''});await loadInc();alert('했습니다. 사건 기록에 남겼습니다.')}catch(e){alert(e.message)}}
+async function incNote(id,note){if(!note)return;try{await api(`/api/incidents/${id}/act`,{action:'note',note});await loadInc()}catch(e){alert(e.message)}}
+async function incLogin(id,prof){await incNote(id,`콘솔 브라우저에서 ${PRN[prof]} 다시 로그인 시작`);brOpenLogin(prof)}
+async function resetInc(b){if(!confirm('장애 목록을 비웁니다.\n지금까지 사건은 지우지 않고 보관함(data/incidents/archive)으로 옮깁니다.\n\'무시\'한 문구는 계속 무시하고, 이미 읽은 로그 줄은 다시 띄우지 않습니다.'))return;
+  b.disabled=true;try{IV=await api('/api/incidents/reset',{});ic=null;drawInc();badgeInc();alert(`${IV.reset.moved}건을 보관함으로 옮겼습니다.`)}catch(e){alert(e.message)}finally{b.disabled=false}}
 async function checkInc(b){b.disabled=true;b.textContent='점검 중…';try{IV=await api('/api/incidents/check',{});drawInc();badgeInc()}catch(e){alert(e.message)}}
 async function incAct(id,op){let note='';if(op=='resolve'){note=prompt('해결 메모(선택)','');if(note===null)return}
   if(op=='ignore'&&!confirm('이 문구의 사건은 앞으로 띄우지 않습니다.'))return;

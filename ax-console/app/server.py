@@ -1330,9 +1330,38 @@ def run_watch():
 def incidents_view():
     items = watcher.incidents()
     st = watcher._load(watcher.STATE, {})
+    cat, bs = catalog(), _json(BS_CFG, {}).get('profiles', {})
+    for x in items:   # 조치하기 메뉴에 쓸 정보: 다시 실행할 수 있나, 어느 크롬 프로필을 쓰나
+        j = cat.get(x['job'], {})
+        x['ctl'] = x['job'] in cat and x['job'] not in SELF_JOBS and (AGENTS / f"com.smuds.{x['job']}.plist").exists()
+        x['profiles'] = [{'name': l.split(':', 1)[1], 'mode': bs.get(l.split(':', 1)[1], '')}
+                         for l in j.get('locks', []) if l.startswith('profile:')]
     return {'items': items, 'checked': st.get('checked'), 'counts': st.get('last_counts'),
             'open_errors': sum(1 for x in items if x['status'] == 'open' and x['severity'] == 'error'),
             'auto': bool(_json(CONSOLE / 'config' / 'agents.json', {}).get('incident', {}).get('enabled'))}
+
+
+ACT_LABEL = {'rerun': '작업 다시 실행', 'jobon': '작업 다시 켬', 'bs_off': '콘솔 브라우저 끔(예전 방식)',
+             'bs_hidden': '콘솔 브라우저를 숨김 창 방식으로'}
+
+
+def incident_act(iid, b):
+    """조치하기 — 사건 기록에 무엇을 했는지 남긴다. 사람이 콘솔 다른 화면에서 하는 조치(다시 로그인 등)는 note 로 기록만."""
+    inc = watcher._load(watcher.incident_path(iid), None)
+    if not inc:
+        raise ValueError('사건을 찾지 못했습니다')
+    act, prof = str(b.get('action', '')), str(b.get('profile', ''))
+    if act == 'rerun':
+        job_control(inc['job'], 'run')
+    elif act == 'jobon':
+        job_control(inc['job'], 'on')
+    elif act in ('bs_off', 'bs_hidden'):
+        bs_save({'profile': prof, 'mode': '' if act == 'bs_off' else 'hidden'})
+    elif act != 'note':
+        raise ValueError('없는 조치입니다')
+    what = '조치: ' + (str(b.get('note', ''))[:200] if act == 'note' else ACT_LABEL[act] + (f' ({prof})' if prof else ''))
+    watcher.add_history(iid, what)
+    axlock.log(f"장애 {iid} {what}")
 
 
 def analyze(iid):
@@ -1742,8 +1771,14 @@ class H(BaseHTTPRequestHandler):
             if parts == ['api', 'incidents', 'check']:
                 run_watch()
                 return self.send(200, incidents_view())
+            if parts == ['api', 'incidents', 'reset']:
+                r = watcher.reset()
+                axlock.log(f"장애 목록 초기화: {r['moved']}건 보관함으로")
+                return self.send(200, {**incidents_view(), 'reset': r})
             if parts[:2] == ['api', 'incidents'] and len(parts) == 4:
-                if parts[3] == 'analyze':
+                if parts[3] == 'act':
+                    incident_act(parts[2], b)
+                elif parts[3] == 'analyze':
                     analyze(parts[2])
                 else:
                     watcher.set_status(parts[2], {'resolve': 'resolved', 'ignore': 'ignored', 'reopen': 'open'}[parts[3]],

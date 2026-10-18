@@ -80,6 +80,8 @@ def record(job, kind, severity, sig, evidence, at=None):
     p = incident_path(iid)
     at = at or now().isoformat()
     inc = _load(p, None)
+    if inc is None and iid in _load(STATE, {}).get('ignored_ids', []):
+        return False     # 초기화 전에 '무시'한 문구
     new = inc is None or inc.get('status') in ('resolved',) and inc.get('resolved_at', '') < at
     if inc and inc.get('status') == 'ignored':
         return False
@@ -328,6 +330,36 @@ def set_status(iid, status, note=''):
                                                           'open': '다시 열기'}.get(status, status) + (f' — {note}' if note else '')})
     _save(p, inc)
     return inc
+
+
+def add_history(iid, what):
+    p = incident_path(iid)
+    inc = _load(p, None)
+    if not inc:
+        raise ValueError('사건을 찾지 못했습니다')
+    inc['history'].append({'at': now().isoformat(), 'what': what})
+    _save(p, inc)
+    return inc
+
+
+def reset():
+    """장애 목록 초기화 — 지우지 않고 archive/<시각>/ 으로 옮긴다. 로그 읽은 위치(state)는 그대로 두어
+    지난 로그 줄이 다시 사건이 되지 않게 하고, '무시'한 문구는 계속 무시한다."""
+    files = [f for f in DIR.glob('*/*.json') if f.parent.name != 'archive']
+    if not files:
+        return {'moved': 0}
+    dest = DIR / 'archive' / now().strftime('%Y%m%d-%H%M%S')
+    dest.mkdir(parents=True, exist_ok=True)
+    st = _load(STATE, {})
+    ign = set(st.get('ignored_ids', []))
+    for f in files:
+        x = _load(f, None)
+        if x and x.get('status') == 'ignored':
+            ign.add(x['id'])
+        f.replace(dest / f.name)
+    st['ignored_ids'] = sorted(ign)
+    _save(STATE, st)
+    return {'moved': len(files), 'archive': str(dest.relative_to(CONSOLE))}
 
 
 if __name__ == '__main__':
