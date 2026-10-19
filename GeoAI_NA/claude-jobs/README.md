@@ -36,6 +36,13 @@ Codex '7'(측량 기출 숏츠, 유튜브만)도 사용자 요청으로 같은 �
 - 따라쓰기 PDF 파이썬: `GeoAI_NA/claude-jobs/.venv` (requirements.txt — reportlab·pypdf·pypdfium2·pdfplumber·pillow, git 제외). Codex 런타임은 쓰지 않는다.
 - `youtube-shorts-auto/yt_transcript.py URL --out 자막.txt` — 유튜브 영상 정보(임베드 가능 여부 포함)와 한국어 자막 평문(yt-dlp, 영상은 안 받음). safekorea 12시 글의 내용 확인용.
 
+## 발행 전 검토 — 검토·출처 에이전트
+
+모든 작업은 올리기 전에 Claude Code 서브에이전트 `source-reviewer`(`.claude/agents/source-reviewer.md`)를 부른다.
+출처 링크를 실제로 열어 주장과 맞는지, 기출 표기(Q-net 확인), 허위 경력·건강 효과 보장, 지시문의 표기 규칙,
+문체를 보고 `block / fix / pass` JSON 을 돌려준다(원고는 고치지 않음). `block` 이면 고쳐서 다시 받고, 두 번째도
+`block` 이면 발행하지 않는다. 결과는 작업 기록의 `review` 칸에 남는다. 다른 작업·세션에서도 같은 이름으로 부를 수 있다.
+
 ## 시험 실행
 
 ```bash
