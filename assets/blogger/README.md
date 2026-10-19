@@ -10,7 +10,7 @@ Blogger API v3 에는 테마·레이아웃 엔드포인트가 없다. 그래서 
 ## 헤더 이미지
 - 원본: `smuds2026_header.png` (2400×420) — 홈페이지 상단바 구성(로고 · 구분선 ·
   학과명 · 영문 · 마스코트 · 아래 남색/금색 띠)
-- CDN: https://cdn.jsdelivr.net/gh/SMUDS-m/geoai-assets@main/smuds2026/header_20260920_1.jpg
+- CDN: https://cdn.jsdelivr.net/gh/Youngwoo-m/geoai-assets@main/smuds2026/header_20260920_1.jpg
 - 다시 만들기: `naver-blog-auto/make_blogger_header.py`
 - 넣는 곳: Blogger → 레이아웃 → 헤더 '수정' → 이미지 업로드 → '제목과 설명 대신'
 

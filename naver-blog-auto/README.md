@@ -239,7 +239,7 @@ Blogger 에는 카테고리가 없고 **라벨**이 그 역할을 한다. 주제
 - **머리글 이미지**: `make_blog_header.py` 로 만든 배너를 공개 저장소에 올리고,
   레이아웃 > 머리글 구성 > **이미지 URL 입력** 에 그 주소를 넣는다(이미지 위치는
   '제목 및 설명 대신 이미지 표시' — 그림 안에 제목이 이미 있다).
-  현재 주소: `https://cdn.jsdelivr.net/gh/SMUDS-m/geoai-assets@main/brand/header_1.jpg`
+  현재 주소: `https://cdn.jsdelivr.net/gh/Youngwoo-m/geoai-assets@main/brand/header_1.jpg`
 - **카드형 디자인**: 테마 > 맞춤설정 > 고급 > **CSS 추가** 에 `blog_theme.css` 내용을
   넣는다(글 목록을 흰 카드로, 사이드바 위젯도 카드로, 날짜 헤더 숨김).
   Blogger API 로는 테마를 못 바꿔 브라우저로 직접 넣어야 하고, 이 파일은 그 사본이다.
@@ -252,7 +252,7 @@ Blogger 에는 카테고리가 없고 **라벨**이 그 역할을 한다. 주제
 - `geoai.media_style` — `banner`(기본) / `cards` / `none`
 - `geoai.banner` — 배너 문구(브랜드·킥커)
 - `geoai.cards` — 카드뉴스 장수·비율·테마(`media_style: cards` 일 때)
-- `geoai.assets` — 이미지 저장소(`SMUDS-m/geoai-assets`, 공개)와 축소 폭
+- `geoai.assets` — 이미지 저장소(`Youngwoo-m/geoai-assets`, 공개)와 축소 폭
 - `geoai.daily_video` — 매일 카드 쇼츠 올리기(기본 true)
 - `geoai.video_weekdays` / `video_privacy` — 아바타 영상 요일(0=월)과 공개 범위
 - 카드 영상의 상단·하단 문구는 `youtube-shorts-auto/config.json` 의

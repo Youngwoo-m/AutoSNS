@@ -139,7 +139,7 @@
           },
           {
             "id": "SMUDS-m",
-            "use": "geoai-assets(GeoAI 이미지)·insta-cardnews-publisher 저장소 소유. 이미지 업로드는 기본 계정과 상관없이 이 계정 토큰을 씀"
+            "use": "옛 geoai-assets 주소를 잠시 살려 두는 복사본 저장소(곧 정리). geoai-assets·insta-cardnews-publisher 는 2026-10-20 에 Youngwoo-m 으로 옮김"
           },
           {
             "id": "surveymadang",
