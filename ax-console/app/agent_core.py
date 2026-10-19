@@ -96,11 +96,12 @@ class _Models:
     def __init__(self, model):
         from anthropic import Anthropic
         from common import load_config
-        from shared.llm import DEFAULT_BASE, gateway_keys
+        from shared.llm import DEFAULT_BASE, usable_gateway_keys
         cfg = load_config()
         base = (cfg.get('llm_gateway') or {}).get('base_url') or DEFAULT_BASE
-        self.clients = [(f'게이트웨이{"" if i == 0 else f"[추가{i}]"}', Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180), model)
-                        for i, k in enumerate(gateway_keys(cfg))]
+        # 월 할당이 바닥난 키는 뺀다(구매 크레딧을 쓰지 않게) — shared/llm.py 와 같은 규칙
+        self.clients = [(f'게이트웨이{label}', Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180), model)
+                        for label, k in usable_gateway_keys(cfg)]
         if cfg.get('anthropic_api_key'):
             fb = load_settings().get('fallback_model', 'claude-sonnet-4-6')
             self.clients.append(('Anthropic 키', Anthropic(api_key=cfg['anthropic_api_key'], max_retries=1, timeout=180), fb))

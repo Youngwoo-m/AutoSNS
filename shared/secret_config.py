@@ -76,7 +76,7 @@ def apply(cfg, warn=print):
 
 
 # 게이트웨이 추가 키는 목록이라 MAP 에 못 넣는다. 저장소에는 JSON 목록 하나로 두고, 각 config 의
-# llm_gateway.extra_key_count(모듈마다 쓰는 개수)만큼 앞에서부터 채운다(2026-10-18 평문에서 옮김).
+# 모든 모듈에 전부 채운다(2026-10-18 평문에서 옮김, 10-19 모듈별 개수 제한 없앰).
 EXTRA_KEYS = "LLM_GATEWAY_EXTRA_KEYS"
 
 
@@ -87,7 +87,9 @@ def _apply_extra_keys(cfg, vals):
         return
     import json
     keys = json.loads(raw) if isinstance(raw, str) else list(raw)
-    g["extra_keys"] = keys[:int(g.get("extra_key_count", len(keys)))]
+    # 모든 모듈이 추가 키를 전부 차례로 쓴다(2026-10-19). extra_key_count 는 평문에서 옮길 때 모듈마다 남은 개수라
+    # 네이버·인스타 쪽이 추가1 만 알아 추가2~4 에 크레딧이 남았는데도 Anthropic 키로 넘어갔다. 이제 그 값은 보지 않는다.
+    g["extra_keys"] = keys
 
 
 def strip(cfg):

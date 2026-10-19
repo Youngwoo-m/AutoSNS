@@ -88,13 +88,55 @@ def gateway_keys(cfg):
     return list(dict.fromkeys(k for k in keys if k))
 
 
+# 키별 남은 '월 할당' 크레딧(10분 기억). 구매 크레딧은 쓰지 않는 것이 원칙이라, 월 할당이 바닥난 키는
+# 건너뛴다 — 안 그러면 게이트웨이가 구매 크레딧부터 깎는다(2026-10 주 키 구매분 5,500 이 다 쓰였다).
+_CREDITS = {}
+CREDITS_URL = "https://factchat-cloud.mindlogic.ai/v1/gateway/credits/"
+
+
+def monthly_left(key, ttl=600):
+    """그 키의 남은 월 할당. 확인하지 못하면 None(그때는 쓸 수 있다고 본다)."""
+    import json
+    import time
+    import urllib.request
+    hit = _CREDITS.get(key)
+    if hit and time.time() - hit[0] < ttl:
+        return hit[1]
+    try:
+        req = urllib.request.Request(CREDITS_URL, headers={"Authorization": f"Bearer {key}", "x-api-key": key,
+                                                           "User-Agent": "smuds-autosns/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            left = float(json.load(r)["monthly_allocated"]["remaining"])
+    except Exception:
+        left = None
+    _CREDITS[key] = (time.time(), left)
+    return left
+
+
+def usable_gateway_keys(cfg):
+    """[(이름표, 키)] — 월 할당이 llm_gateway.monthly_reserve(기본 500) 아래로 떨어진 키는 뺀다.
+    이름표는 설정 순서 그대로(주 키 '', 추가 키 '[추가N]')라 로그로 어느 계정인지 알 수 있다.
+    모두 빠지면 빈 목록 — 부르는 쪽이 Anthropic 키로 넘어간다."""
+    g = cfg.get("llm_gateway") or {}
+    reserve = float(g.get("monthly_reserve", 500))
+    out, skipped = [], []
+    for i, k in enumerate(gateway_keys(cfg)):
+        label = "" if i == 0 else f"[추가{i}]"
+        left = monthly_left(k)
+        if left is not None and left < reserve:
+            skipped.append(f"게이트웨이{label} 월 할당 {left:.0f}")
+            continue
+        out.append((label, k))
+    if skipped:
+        _log(f"LLM: 월 할당이 {reserve:.0f} 아래라 건너뜀(구매 크레딧 안 씀) — {', '.join(skipped)}")
+    return out
+
+
 def client(cfg):
     from anthropic import Anthropic
     g = cfg.get("llm_gateway") or {}
     base = g.get("base_url") or DEFAULT_BASE
-    keys = gateway_keys(cfg)
-    gws = [("" if i == 0 else f"[추가{i}]",
-            Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180))
-           for i, k in enumerate(keys)]
+    gws = [(label, Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180))
+           for label, k in usable_gateway_keys(cfg)]
     direct = Anthropic(api_key=cfg["anthropic_api_key"]) if cfg.get("anthropic_api_key") else None
     return _Client(gws, direct, {**DEFAULT_MAP, **(g.get("model_map") or {})})
