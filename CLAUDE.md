@@ -30,6 +30,12 @@
 크롬 프로필을 열거나 글을 올리는 작업은 `shared/axlock.py run --job … --res profile:… -- 명령` 으로 실행한다.
 자세한 규칙은 `AGENTS.md`. launchd `run_*.sh` 맨 앞의 AX_LOCKED 한 줄은 지우지 않는다.
 
+## 세명대 AI 게이트웨이 크레딧 (2026-10-19 사용자 지정)
+
+게이트웨이 크레딧은 **영상 제작에만** 쓴다(영상 클립 생성, 숏츠 디오라마 그림). 글 작성은 `shared/llm.py` 가
+Max 구독(`claude -p`)으로 보내고, 안 되면 Anthropic 키로 간다. 콘솔 에이전트(도구 호출)는 Anthropic 키.
+게이트웨이로 글을 쓰려면 `llm_gateway.text_enabled` 를 일부러 켜야 한다.
+
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.

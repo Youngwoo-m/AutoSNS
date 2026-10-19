@@ -99,9 +99,12 @@ class _Models:
         from shared.llm import DEFAULT_BASE, usable_gateway_keys
         cfg = load_config()
         base = (cfg.get('llm_gateway') or {}).get('base_url') or DEFAULT_BASE
-        # 월 할당이 바닥난 키는 뺀다(구매 크레딧을 쓰지 않게) — shared/llm.py 와 같은 규칙
-        self.clients = [(f'게이트웨이{label}', Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180), model)
-                        for label, k in usable_gateway_keys(cfg)]
+        # 게이트웨이 크레딧은 영상 제작에만 쓴다(2026-10-19 사용자 지정). 도구 호출 루프라 claude CLI 로는 못 돌려서
+        # 에이전트는 Anthropic 키로 간다. llm_gateway.text_enabled 를 켜면 예전처럼 게이트웨이를 먼저 쓴다.
+        self.clients = []
+        if (cfg.get('llm_gateway') or {}).get('text_enabled'):
+            self.clients = [(f'게이트웨이{label}', Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180), model)
+                            for label, k in usable_gateway_keys(cfg)]
         if cfg.get('anthropic_api_key'):
             fb = load_settings().get('fallback_model', 'claude-sonnet-4-6')
             self.clients.append(('Anthropic 키', Anthropic(api_key=cfg['anthropic_api_key'], max_retries=1, timeout=180), fb))
