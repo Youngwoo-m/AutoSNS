@@ -25,14 +25,19 @@ def _inside(p):
     return any(str(p).startswith(str(a.resolve())) for a in ALLOWED) and not any(s in str(p) for s in SKIP_DIRS[:2])
 
 
-def read_log(path, lines=80, grep=''):
+def read_log(path, lines=40, grep=''):
+    """로그 끝부분. 기본 40줄·최대 120줄, 한 줄은 300자에서 자른다(HTML 응답이 통째로 찍힌 줄이 토큰을 다 먹었다).
+    grep 이 없으면 파일 끝 256KB 만 읽는다."""
     p = Path(path) if os.path.isabs(path) else ROOT / path
     if not _inside(p) or p.suffix not in ('.log', '.txt') or not p.exists():
         raise ValueError('저장소 안의 .log 파일만 읽을 수 있습니다')
-    rows = p.read_text(errors='ignore').splitlines()
     if grep:
-        rows = [r for r in rows if grep in r]
-    return '\n'.join(rows[-min(int(lines), 300):])
+        rows = [r for r in p.read_text(errors='ignore').splitlines() if grep in r]
+    else:
+        with open(p, 'rb') as f:
+            f.seek(max(0, p.stat().st_size - 262144))
+            rows = f.read().decode('utf-8', 'ignore').splitlines()
+    return '\n'.join(r if len(r) <= 300 else r[:300] + ' …(잘림)' for r in rows[-min(int(lines), 120):])
 
 
 def job_status(job):
@@ -143,13 +148,13 @@ def main():
     st, it = {'type': 'string'}, {'type': 'integer'}
     tools = [
         Tool('job_status', '작업의 launchd 상태·일정·스크립트·로그 파일·사용자 메모', S(job=st), job_status, max_calls=4),
-        Tool('read_log', '로그 파일 끝부분(grep 으로 거르기 가능)', S(path=st, lines=it, grep=st), read_log, max_calls=8),
+        Tool('read_log', '로그 파일 끝부분(기본 40줄, grep 으로 거르기 가능)', S(path=st, lines=it, grep=st), read_log, max_calls=4),
         Tool('process_list', '실행 중 프로세스(명령줄에 pattern 이 든 것)', S(pattern=st), process_list, max_calls=4),
         Tool('account_status', '구글 토큰·네이버·카카오·티스토리·GitHub·Netlify 로그인 상태', S(), account_status, max_calls=2),
         Tool('orchestrator_status', '잠금을 잡은 작업·기다리는 작업·비상 정지', S(), orchestrator_status, max_calls=2),
-        Tool('view_screenshot', '실패 스크린샷 보기', S(path=st), view_screenshot, max_calls=3),
-        Tool('search_code', '코드에서 글자 찾기(.py/.sh)', S(pattern=st, folder=st), search_code, max_calls=5),
-        Tool('read_code', '코드 일부 읽기', S(path=st, start=it, lines=it), read_code, max_calls=5),
+        Tool('view_screenshot', '실패 스크린샷 보기', S(path=st), view_screenshot, max_calls=1),
+        Tool('search_code', '코드에서 글자 찾기(.py/.sh)', S(pattern=st, folder=st), search_code, max_calls=3),
+        Tool('read_code', '코드 일부 읽기', S(path=st, start=it, lines=it), read_code, max_calls=3),
         Tool('read_config', '모듈 config.json (비밀값은 가림)', S(module=st), read_config, max_calls=3),
         Tool('past_incidents', '해결법 모음과 지난 사건', S(query=st), past_incidents, max_calls=2),
         Tool('git_log', '파일·폴더의 최근 커밋', S(path=st), git_log, max_calls=3),
@@ -173,7 +178,7 @@ def main():
               f"{inc['first']} ~ {inc['last']}\n문구: {inc['signature']}\n근거:\n<data>\n{ev}\n</data>\n원인을 찾아 제출하라.")
     r = Agent('incident', system, tools, Budget(max_tokens=int(b.get('max_tokens', 60000)),
                                                 max_tool_calls=int(b.get('max_tool_calls', 20)),
-                                                max_turns=int(b.get('max_turns', 20)), max_output=3000)).run(prompt)
+                                                max_turns=int(b.get('max_turns', 12)), max_output=2000)).run(prompt)
     if r.status != 'submitted':
         print(json.dumps({'error': f'{r.status}: {r.detail}', 'log': r.log}, ensure_ascii=False))
         return

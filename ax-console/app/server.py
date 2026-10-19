@@ -1372,9 +1372,14 @@ def run_watch():
         cfg = _json(CONSOLE / 'config' / 'agents.json', {}).get('incident', {})
         if cfg.get('enabled'):   # 자동 원인 분석(설정에서 켬): 아직 분석 안 된 '오류' 사건만
             for x in watcher.incidents('open'):
-                if x['severity'] == 'error' and not x.get('analysis') and not x.get('analyzing'):
-                    analyze(x['id'])
-                    break        # 한 번에 하나씩
+                if x['severity'] != 'error' or x.get('analysis') or x.get('analyzing'):
+                    continue
+                if rule_analysis(x):      # 원인이 뻔한 사건은 AI 없이 규칙으로 끝낸다
+                    continue
+                if not _auto_quota(int(cfg.get('max_per_day', 5))):
+                    break                 # 오늘 자동 분석 상한 — 남은 사건은 [분석] 버튼으로
+                analyze(x['id'])
+                break        # 한 번에 하나씩
     except Exception as e:
         axlock.log(f'감시기 오류: {type(e).__name__}: {e}')
     finally:
@@ -1416,6 +1421,51 @@ def incident_act(iid, b):
     what = '조치: ' + (str(b.get('note', ''))[:200] if act == 'note' else ACT_LABEL[act] + (f' ({prof})' if prof else ''))
     watcher.add_history(iid, what)
     axlock.log(f"장애 {iid} {what}")
+
+
+def rule_analysis(x):
+    """AI 를 부르지 않고 끝낼 수 있는 사건이면 분석 결과를 규칙으로 붙이고 True.
+    - 일부러 끈 작업(내려감·사용자 메모)  - 해결법 모음(known_issues.json)의 표시 문구와 맞는 사건
+    10-18 하루 자동 분석 38번(약 4,300크레딧) 중 상당수가 이런 사건이었다(2026-10-19 비용 검토)."""
+    note = catalog().get(x['job'], {}).get('note', '')
+    res = None
+    if x['kind'] == 'unloaded' or note:
+        res = {'cause': '사용자가 일부러 끈 작업' + (f' — {note}' if note else '(launchd 에서 내려감)'),
+               'confidence': '확실', 'evidence': [note or x.get('signature', '')],
+               'fix_steps': ['다시 돌리려면 자동 작업 탭에서 [켜기]'], 'human_needed': False, 'known_issue': 'user-stopped'}
+    else:
+        text = ' '.join([x.get('signature', '')] + [e.get('text', '') for e in x.get('evidence', [])[-8:]])
+        for k in _json(CONSOLE / 'config' / 'known_issues.json', {}).get('issues', []):
+            # 숫자만 있거나 너무 짧은 표시 문구('403' 등)는 엉뚱한 사건에 붙을 수 있어 쓰지 않는다
+            hit = next((sg for sg in k.get('signs', []) if len(sg) >= 4 and not sg.isdigit() and sg in text), None)
+            if hit:
+                res = {'cause': k['cause'], 'confidence': '가능성 높음', 'evidence': [f"표시 문구 '{hit}' 일치"],
+                       'fix_steps': k.get('fix', []), 'human_needed': True, 'known_issue': k['key']}
+                break
+    if not res:
+        return False
+    p = watcher.incident_path(x['id'])
+    inc = watcher._load(p, x)
+    inc['analysis'] = {**res, 'by': 'rule', 'at': now().isoformat()}
+    inc['history'].append({'at': now().isoformat(), 'what': f"규칙으로 원인 판정({res['known_issue']}) — AI 분석 안 함"})
+    watcher._save(p, inc)
+    return True
+
+
+def _auto_quota(limit):
+    """오늘 자동 분석을 하나 더 해도 되면 세고 True. 수동 [분석] 버튼은 세지 않는다."""
+    st = watcher._load(watcher.STATE, {})
+    day = now().strftime('%Y-%m-%d')
+    used = st.get('auto_analyses', {}).get(day, 0)
+    if used >= limit:
+        if st.get('auto_quota_logged') != day:
+            axlock.log(f'장애 자동 분석: 오늘 상한 {limit}건에 닿음 — 남은 사건은 [분석] 버튼으로')
+            st['auto_quota_logged'] = day
+            watcher._save(watcher.STATE, st)
+        return False
+    st['auto_analyses'] = {day: used + 1}          # 오늘 것만 남긴다
+    watcher._save(watcher.STATE, st)
+    return True
 
 
 def analyze(iid):

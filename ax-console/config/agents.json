@@ -28,10 +28,11 @@
   "incident": {
     "enabled": true,
     "budget": {
-      "max_tokens": 60000,
-      "max_tool_calls": 20,
-      "max_turns": 20
+      "max_tokens": 40000,
+      "max_tool_calls": 12,
+      "max_turns": 12
     },
-    "notify_per_day": 3
+    "notify_per_day": 3,
+    "max_per_day": 5
   }
 }
