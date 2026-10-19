@@ -1,0 +1,365 @@
+"""무료 Google News RSS 에서 최신 재난안전 뉴스를 가져온다. (API 키 불필요)
+
+표준 라이브러리만 사용. 반환: [{title, link, source, published(dt), published_str}]
+실제 기사 목록만 돌려주므로, 생성 단계에서 '없는 사실'을 지어낼 여지를 줄인다.
+
+세 모듈(naver-blog-auto·youtube-shorts-auto·insta-cardnews)이 같은 파일을 복사해 쓰던 것을 2026-10-19 한곳으로 모았다.
+각 모듈의 fetch_news.py 는 이 모듈을 다시 내보내는 얇은 파일이다. 모듈별 차이는 그 모듈 config.json 의 news 설정으로 켠다:
+  network_naver   이웃새글에서 재난 이슈 검색어를 더함(naver-blog-auto 의 network_keywords)
+  network_youtube 구독 채널이 다루는 이슈를 검색어에 더함(youtube-shorts-auto 의 network_keywords)
+  web_youtube     유튜브 동영상 검색 결과를 소스 풀에 더함(youtube-shorts-auto 의 web_search)
+  fetch_recent_raw  중복 병합 전 목록(사건 규모 세기용, check_trigger 가 씀)
+`common`(load_config·log)은 이 모듈을 부른 쪽 폴더의 것이 쓰인다(import 시 그 폴더가 맨 앞 경로).
+"""
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+from xml.etree import ElementTree as ET
+
+from common import load_config, log
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from shared.keyword_terms import is_disaster_relevant  # noqa: E402
+
+UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+      "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+
+
+def _rss_url(query):
+    q = urllib.parse.quote(query)
+    return f"https://news.google.com/rss/search?q={q}&hl=ko&gl=KR&ceid=KR:ko"
+
+
+# 구글 뉴스 RSS 는 가끔 멀쩡한 질의에 404/5xx 를 돌려준다(9월 한 회차에 1~6건 산발,
+# 같은 회차의 나머지 질의는 정상, 재현 안 됨). 요청 단위의 일시 오류라 잠깐 쉬고 다시 묻는다.
+_RSS_RETRY_WAITS = (2, 5)
+
+
+def _get_rss(url):
+    for attempt in range(len(_RSS_RETRY_WAITS) + 1):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                return resp.read()
+        except urllib.error.HTTPError as e:
+            if (e.code == 404 or e.code == 429 or e.code >= 500) \
+                    and attempt < len(_RSS_RETRY_WAITS):
+                time.sleep(_RSS_RETRY_WAITS[attempt])
+                continue
+            raise
+
+
+def _fetch_one(query, within_days):
+    raw = _get_rss(_rss_url(query))
+    root = ET.fromstring(raw)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
+    items = []
+    for item in root.iter("item"):
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        source_el = item.find("source")
+        source = (source_el.text.strip() if source_el is not None and source_el.text
+                  else "")
+        pub_raw = item.findtext("pubDate")
+        try:
+            pub = parsedate_to_datetime(pub_raw)
+            if pub.tzinfo is None:
+                pub = pub.replace(tzinfo=timezone.utc)
+        except Exception:
+            pub = datetime.now(timezone.utc)
+        if pub < cutoff:
+            continue
+        items.append({
+            "title": title,
+            "link": link,
+            "source": source,
+            "published": pub,
+            "published_str": pub.astimezone().strftime("%Y-%m-%d"),
+        })
+    return items
+
+
+
+def _active_blocks(cfg):
+    """block_sources + 기한이 남은 임시 제외어(news.exclude_until = {"말": "YYYY-MM-DD"}).
+
+    큰 사건을 특별판으로 따로 다룬 날, 정기 발행·트리거가 같은 사건을 또 고르지 않게
+    그날까지만 뺀다(2026-10-07 누리호 5차 — 예고판·결과판을 따로 냈다). 기한 다음 날부터
+    저절로 다시 포함된다."""
+    from datetime import date
+    today = date.today().isoformat()
+    extra = [w for w, until in (cfg.get("exclude_until") or {}).items() if str(until) >= today]
+    return list(cfg.get("block_sources", [])) + extra
+
+def _is_blocked(item, block_sources):
+    """외국/비한국 출처를 걸러낸다. (source 또는 title 에 차단 키워드 포함 시)"""
+    hay = (item.get("source", "") + " " + item.get("title", "")).lower()
+    return any(b.lower() in hay for b in block_sources)
+
+
+# 지역명 별칭: 기사 제목/출처에 이 중 하나가 들어가면 해당 지역으로 인식한다.
+REGION_ALIASES = {
+    "제천": ["제천"],
+    # 충북 시·군(제천은 위에서 따로 최우선). 흔한 낱말과 겹치는 음성(음성 안내)·
+    # 영동(강원 영동지방·영동고속도로)·보은·옥천(옥천동)은 '군'이 붙은 이름으로만 잡는다.
+    # (2026-09-27: '증평소방서' 기사가 충북으로 인식되지 않아 지역 가점을 못 받았다)
+    "충북": ["충북", "충청북도", "청주", "충주", "증평", "진천", "괴산", "단양",
+             "음성군", "영동군", "보은군", "옥천군"],
+    "충남": ["충남", "충청남도"],
+    "강원": ["강원"],
+    "경기": ["경기"],
+    "서울": ["서울"],
+    "인천": ["인천"],
+}
+
+
+def _region_rank(item, region_priority, exclude=()):
+    """기사가 어느 우선 지역에 속하는지 순위를 매긴다.
+
+    region_priority 앞쪽일수록 높은 우선순위(작은 값). 어디에도 안 걸리면 가장 낮은 값.
+    exclude: 지역명을 '오탐'으로 포함하는 어구(예: "평택제천고속도로")를 매칭 전에 지운다.
+    """
+    hay = item.get("title", "") + " " + item.get("source", "")
+    for term in exclude:
+        hay = hay.replace(term, "")
+    for rank, region in enumerate(region_priority):
+        for alias in REGION_ALIASES.get(region, [region]):
+            if alias in hay:
+                return rank
+    return len(region_priority)
+
+
+def _select_rank(item, region_priority, exclude=(), extra_terms=()):
+    """최종 선정 순서: 재난 관련 지역 기사 → 재난 관련 기타 지역 → 재난 무관 기사.
+
+    지역 가점은 재난·안전 관련 말이 제목에 든 기사에만 준다. 무관한 기사는
+    버리지 않고 맨 뒤로 보낸다(기사가 모자란 날엔 자리를 채우게).
+    """
+    n = len(region_priority)
+    if not is_disaster_relevant(item.get("title", ""), extra_terms):
+        return n + 1
+    return _region_rank(item, region_priority, exclude)
+
+
+def _norm_title(title):
+    """제목을 비교용으로 정규화: 끝의 ' - 출처' 제거 후 한글/영숫자만 남긴다."""
+    t = re.sub(r"\s*-\s*[^-]+$", "", title)      # 끝에 붙는 ' - 언론사' 제거
+    return re.sub(r"[^0-9A-Za-z\uac00-\ud7a3]", "", t)
+
+
+def _dedup_similar(items, threshold):
+    """같은 사건을 다룬 유사 제목 기사를 하나만 남긴다(먼저 온 것 유지).
+
+    threshold(0~1)가 높을수록 '거의 같아야' 중복으로 본다. 0 이면 병합 안 함.
+    """
+    if threshold <= 0:
+        return items
+    from difflib import SequenceMatcher
+    kept, kept_norm = [], []
+    for it in items:
+        nt = _norm_title(it.get("title", ""))
+        if any(SequenceMatcher(None, nt, k).ratio() >= threshold for k in kept_norm):
+            continue
+        kept.append(it)
+        kept_norm.append(nt)
+    return kept
+
+
+def fetch_recent_raw(within_days=2):
+    """최근 기사를 '중복 병합/자르기 전' 상태로 모아 최신순으로 돌려준다.
+
+    check_trigger 가 '같은 사건을 다룬 기사 수(=사건 규모)'를 세는 데 쓴다.
+    (fetch_news 는 병합/자르기 후 목록이라 규모 정보가 사라진다.)
+    """
+    cfg = load_config().get("news", {})
+    queries = cfg.get("queries", ["재난안전"])
+    block_sources = _active_blocks(cfg)
+    seen, results = set(), []
+    for q in queries:
+        try:
+            for it in _fetch_one(q, within_days):
+                key = it["title"]
+                if not key or key in seen or _is_blocked(it, block_sources):
+                    continue
+                seen.add(key)
+                results.append(it)
+        except Exception as e:
+            log(f"뉴스 수집 실패(query='{q}'): {e}")
+    results.sort(key=lambda x: x["published"], reverse=True)
+    return results
+
+
+def fetch_news():
+    cfg = load_config().get("news", {})
+    queries = cfg.get("queries", ["재난안전"])
+    # 재난 관련 이웃새글 주제를 검색어에 추가(재난 키워드만 필터링됨)
+    if cfg.get("network_naver", False):
+        try:
+            from network_keywords import naver_neighbor_keywords
+            extra = naver_neighbor_keywords(limit=cfg.get("network_max", 5))
+            if extra:
+                queries = list(dict.fromkeys(queries + extra))
+                log(f"이웃새글 이슈 검색어 추가: {', '.join(extra)}")
+        except Exception as e:
+            log(f"이웃새글 키워드 건너뜀({type(e).__name__})")
+    # 구독 채널이 지금 다루는 재난 이슈를 검색어에 추가(재난 키워드만 필터링됨)
+    if cfg.get("network_youtube", False):
+        try:
+            from network_keywords import youtube_sub_keywords
+            extra = youtube_sub_keywords(limit=cfg.get("network_max", 5))
+            if extra:
+                queries = list(dict.fromkeys(queries + extra))
+                log(f"구독채널 이슈 검색어 추가: {', '.join(extra)}")
+        except Exception as e:
+            log(f"구독채널 키워드 건너뜀({type(e).__name__})")
+    within = cfg.get("within_days", 7)
+    max_items = cfg.get("max_items", 8)
+    block_sources = _active_blocks(cfg)
+    region_priority = cfg.get("region_priority", [])
+    region_exclude = cfg.get("region_exclude", [])
+    dedup_similarity = cfg.get("dedup_similarity", 0.6)
+
+    seen, results, blocked = set(), [], 0
+    for q in queries:
+        try:
+            for it in _fetch_one(q, within):
+                key = it["title"]
+                if not key or key in seen:
+                    continue
+                if _is_blocked(it, block_sources):
+                    blocked += 1
+                    continue
+                seen.add(key)
+                results.append(it)
+        except Exception as e:
+            log(f"뉴스 수집 실패(query='{q}'): {e}")
+    if blocked:
+        log(f"외국/차단 출처 {blocked}건 제외.")
+
+    # 웹(유튜브 동영상) 검색 결과를 소스 풀에 추가 (config.news.web_youtube=true)
+    if cfg.get("web_youtube", False):
+        try:
+            from web_search import youtube_search
+            yts = youtube_search(queries, within_days=within,
+                                 total=cfg.get("web_max", 8))
+            new = [it for it in yts if it["title"] not in seen]
+            results.extend(new)
+            log(f"유튜브 동영상 검색 {len(new)}건 추가")
+        except Exception as e:
+            log(f"유튜브 검색 건너뜀({type(e).__name__})")
+
+    esri_added = []
+    # Esri ArcGIS 블로그(GeoAI·재난) 글을 소스 풀에 추가 (config.news.esri_blog=true)
+    if cfg.get("esri_blog", False):
+        try:
+            from esri_feed import fetch_esri_blog
+            eb = fetch_esri_blog(within_days=cfg.get("esri_within_days", 30),
+                                 limit=cfg.get("esri_max", 4))
+            links = {r.get("link") for r in results}
+            new = [it for it in eb if it["link"] not in links]
+            results.extend(new)
+            esri_added = new
+            log(f"Esri 블로그 {len(new)}건 추가")
+        except Exception as e:
+            log(f"Esri 블로그 건너뜀({type(e).__name__})")
+
+
+    # 커넥트데일리(i-eumnews) 공간정보 기사 추가 (config.news.ieum=true)
+
+    # GeoAI 판에서 공간정보 업계 소식은 구글/네이버 검색에 잘 안 잡혀 전문지로 보완한다.
+
+    if cfg.get("ieum", False):
+
+        try:
+
+            from ieum_feed import fetch_ieum_news
+
+            ie = fetch_ieum_news(sections=cfg.get("ieum_sections", ["공간정보"]),
+
+                                 within_days=cfg.get("ieum_within_days", 30),
+
+                                 limit=cfg.get("ieum_max", 3))
+
+            links = {r.get("link") for r in results}
+
+            new = [it for it in ie if it["link"] not in links]
+
+            results.extend(new)
+
+            log(f"커넥트데일리 공간정보 {len(new)}건 추가")
+
+        except Exception as e:
+
+            log(f"커넥트데일리 건너뜀({type(e).__name__})")
+
+    # 웹(네이버 블로그) 검색 결과를 소스 풀에 추가 (config.news.web_naver=true + 키)
+    ns = cfg.get("naver_search", {})
+    if cfg.get("web_naver", False) and ns.get("client_id"):
+        try:
+            from naver_search import naver_blog_search
+            nb = naver_blog_search(queries, ns.get("client_id"), ns.get("client_secret"),
+                                   within_days=within, total=cfg.get("web_max", 8),
+                                   exclude_links=ns.get("exclude", []))
+            links = {r.get("link") for r in results}
+            new = [it for it in nb if it["link"] not in links]
+            results.extend(new)
+            log(f"네이버 블로그 검색 {len(new)}건 추가")
+        except Exception as e:
+            log(f"네이버 블로그 검색 건너뜀({type(e).__name__})")
+
+    # 네이버 뉴스 검색(구글뉴스 외 국내 언론) 결과를 소스 풀에 추가
+    # (config.news.web_naver_news=true + naver_search 키). 구글 RSS 를 보완한다.
+    if cfg.get("web_naver_news", False) and ns.get("client_id"):
+        try:
+            from naver_search import naver_news_search
+            nn = naver_news_search(queries, ns.get("client_id"), ns.get("client_secret"),
+                                   within_days=within, total=cfg.get("naver_news_max", 10),
+                                   exclude_links=ns.get("exclude", []))
+            links = {r.get("link") for r in results}
+            new = [it for it in nn if it["link"] not in links]
+            results.extend(new)
+            log(f"네이버 뉴스 검색 {len(new)}건 추가")
+        except Exception as e:
+            log(f"네이버 뉴스 검색 건너뜀({type(e).__name__})")
+
+    # 최신순 정렬 → 유사(중복)기사 병합 → 지역 우선 안정정렬 → 상위 N건
+    results.sort(key=lambda x: x["published"], reverse=True)
+    before_dedup = len(results)
+    results = _dedup_similar(results, dedup_similarity)
+    merged = before_dedup - len(results)
+    if region_priority:
+        rel_extra = cfg.get("relevance_extra", [])
+        results.sort(key=lambda x: _select_rank(x, region_priority, region_exclude, rel_extra))
+    results = results[:max_items]
+    # Esri 글은 날짜가 조금 지나도 참고 가치가 커서, 최소 N건은 자리를 보장한다
+    keep = cfg.get("esri_keep", 2)
+    if esri_added and keep:
+        have = {r.get("link") for r in results}
+        missing = [e for e in esri_added[:keep] if e.get("link") not in have]
+        if missing:
+            results = results[:max(0, max_items - len(missing))] + missing
+            log(f"Esri 글 {len(missing)}건 자리 보장(참고용)")
+    if region_priority:
+        matched = sum(1 for x in results
+                      if _select_rank(x, region_priority, region_exclude, rel_extra)
+                      < len(region_priority))
+        log(f"뉴스 {len(results)}건 수집(최근 {within}일, 지역우선 "
+            f"{' > '.join(region_priority)}; 우선지역 {matched}건, 중복 {merged}건 병합).")
+    else:
+        log(f"뉴스 {len(results)}건 수집(최근 {within}일, 중복 {merged}건 병합).")
+    return results
+
+
+def main():
+    for i, n in enumerate(fetch_news(), 1):
+        print(f"{i}. [{n['published_str']}] {n['title']}  ({n['source']})")
+
+
+if __name__ == "__main__":
+    main()
