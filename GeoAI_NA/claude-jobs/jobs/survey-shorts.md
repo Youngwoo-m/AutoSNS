@@ -23,6 +23,5 @@ Voicebox 내 목소리(1샘플) 프로필 9ae4198e-a2c5-4604-9165-7d39adf0143c, 
 예약 실행 위치: Chrome 조작 도구를 사용할 수 있는 소스 이동 관리 채팅으로 연결했다. /Volumes/USB256/devAPP/AutoSNS/AGENTS.md와 shared/axlock.py의 잠금·비상 정지 지침을 확인하고, Chrome 사용·발행은 profile:tistory 잠금을 잡은 상태에서 순차 실행한다. 사용자 브라우저나 다른 작업의 세션을 종료하지 않는다.
 
 2026-10-18 사용자 변경 — 클로드 이전 후 숏츠 제작 방식 (위 지침보다 우선)
-숏츠는 AutoSNS CLAUDE.md 의 영상 제작 지침을 따른다. 편집은 Remotion 으로 하고(공용 템플릿 remotion-shorts/src/survey-short, 렌더는 render_survey_short.py), ffmpeg 는 음성·소스 준비에만 쓴다. 영상마다 주제 장면을 아이소메트릭 미니어처 디오라마로 그린 그림을 2~3장 넣는다(youtube-shorts-auto/diorama_image.py). 그림 안에는 글자를 넣지 않고 글자는 편집 단계에서 얹는다. 측량 작업·관측·기준점·장비처럼 대비·작업 장면으로 그리고, 실제 사진처럼 보이지 않게 미니어처·틸트시프트 질감을 분명히 한다. 글꼴은 위 KoPub 대신 템플릿의 Pretendard Bold 를 쓴다.
-음성은 그대로 Voicebox 내 목소리(1샘플, 프로필 9ae4198e-a2c5-4604-9165-7d39adf0143c)를 쓴다. Voicebox 는 평소 꺼 두므로 음성을 만들기 직전에 `shared/voicebox.sh up survey-shorts` 로 켜고(응답할 때까지 기다림), 음성 파일을 다 받으면 바로 `shared/voicebox.sh down survey-shorts` 로 끈다. 화면과 설명에 'AI 생성 그림 · AI 합성 음성(본인 목소리 복제)' 고지를 넣는다.
-업로드·예약·댓글·상태 확인은 youtube-shorts-auto/geoai_short_post.py(upload/comment/check)로만 한다. 렌더 뒤 장면별 확인 프레임을 직접 보고 글자 겹침·잘림·그림 속 글자를 확인한다. 하루 한 문제 숏츠(claude.survey-daily, 08:00 공개)와 같은 기출·주제를 겹치지 않게 채널 영상 목록과 양쪽 상태를 대조한다.
+숏츠 제작은 `shorts-maker` 서브에이전트에 맡긴다(공통규칙 '숏츠 제작'): CLAUDE.md 영상 지침(Remotion 편집, 디오라마 2~3장, Pretendard Bold, AI 합성 고지), Voicebox 내 목소리, 20.0초 이하·한 영상 한 질문·질문형 첫 화면·큰 자막·학습 분야 표시는 그 에이전트가 지킨다. 업로드와 댓글은 youtube-shorts-auto/geoai_short_post.py 로만 한다.
+하루 한 문제 숏츠(claude.survey-daily, 08:00 공개)와 같은 기출·주제를 겹치지 않게 `published_history.py` 와 양쪽 상태를 대조한다.
