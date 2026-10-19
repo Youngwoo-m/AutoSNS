@@ -13,5 +13,5 @@ if [ "$#" -ne 0 ]; then
 fi
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
-../backup_state.sh >> "logs/caption_recheck.log" 2>&1
+../tools/backup_state.sh >> "logs/caption_recheck.log" 2>&1
 exec ./.venv/bin/python ig_caption_boost.py --go 150 --recheck >> "logs/caption_recheck.log" 2>&1

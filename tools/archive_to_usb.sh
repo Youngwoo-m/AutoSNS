@@ -4,13 +4,13 @@
 # 오늘 만든 파일은 두고, 하루 이상 지난 것만 옮긴다(발행 직후 파일을 건드리지 않기 위함).
 # 복사한 뒤 크기를 대조하고, 일치할 때만 원본을 지운다. USB 가 없으면 아무것도 안 한다.
 #
-#   미리 보기 : ./archive_to_usb.sh
-#   실제 이동 : ./archive_to_usb.sh --go
+#   미리 보기 : ./tools/archive_to_usb.sh
+#   실제 이동 : ./tools/archive_to_usb.sh --go
 set -u
 USB="${USB_DIR:-/Volumes/USB256}"
 DEST="$USB/AutoSNS_archive"
 GO=0; [ "${1:-}" = "--go" ] && GO=1
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 
 if [ ! -d "$USB" ]; then
   echo "USB 가 연결돼 있지 않습니다: $USB" >&2

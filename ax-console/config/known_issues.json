@@ -26,7 +26,7 @@
     {"key": "naver-session", "cause": "네이버 로그인 세션 만료", "signs": ["로그인 세션이 만료되었습니다"],
      "check": "naver-blog-auto/logs 의 최근 스크린샷", "fix": ["naver-blog-auto 에서 login_setup.py 로 사람이 로그인"]},
     {"key": "disk-full", "cause": "디스크 여유 부족", "signs": ["No space left on device", "여유 부족"],
-     "check": "df", "fix": ["posts/ 산출물을 USB 보관(archive_to_usb.sh) 또는 정리"]},
+     "check": "df", "fix": ["posts/ 산출물을 USB 보관(tools/archive_to_usb.sh) 또는 정리"]},
     {"key": "user-stopped", "cause": "사용자가 일부러 끈 작업", "signs": ["launchd 에서 내려감"],
      "check": "config/automations.json 의 note, 다른 세션 기록", "fix": ["note 를 적어 두면 사건이 생기지 않는다"]}
   ]

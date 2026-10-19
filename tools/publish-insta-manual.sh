@@ -4,10 +4,10 @@
 # 작업은 계속 AutoSNS/insta-manual 에서 하고, 공개할 때만 이걸 돌린다.
 # subtree split 이 그 폴더의 커밋만 뽑아 별도 이력을 만들어 준다.
 #
-#   사용법:  ./publish-insta-manual.sh
+#   사용법:  ./tools/publish-insta-manual.sh
 #   최초 1회는 gh auth login 과 저장소 생성이 먼저 필요하다(README 참고).
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 REPO="${INSTA_MANUAL_REPO:-}"
 if [ -z "$REPO" ]; then

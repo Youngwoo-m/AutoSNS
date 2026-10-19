@@ -13,7 +13,7 @@
 | `data/runs/` | 발행 실행 기록·로그 (`YYYY-MM-DD.jsonl`) | 제외 |
 | `data/analytics/` | 매체별 성과 수집 결과 | 제외 |
 
-`data/` 는 실행할 때 생기는 산출물이라 git 에 올리지 않는다. 백업은 `backup_state.sh` 대상에 넣는다.
+`data/` 는 실행할 때 생기는 산출물이라 git 에 올리지 않는다. 백업은 `tools/backup_state.sh` 대상에 넣는다.
 
 ## 실행
 

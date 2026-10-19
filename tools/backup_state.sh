@@ -5,8 +5,8 @@
 #   trigger_state.json        : 속보 트리거 중복 발행 방지 기록
 # 날짜별 폴더에 복사하고 90일 지난 백업은 지운다. 백업 폴더는 git 에 올리지 않는다.
 set -u
-ROOT="$(cd "$(dirname "$0")" && pwd)"
-DEST="$ROOT/.state-backups/$(date +%Y-%m-%d)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DEST="$ROOT/backups/state/$(date +%Y-%m-%d)"
 mkdir -p "$DEST"
 for f in naver-blog-auto/buddy_request_state.json \
          insta-cardnews/follow_back_state.json \
@@ -14,6 +14,6 @@ for f in naver-blog-auto/buddy_request_state.json \
     [ -f "$ROOT/$f" ] || continue
     cp -p "$ROOT/$f" "$DEST/$(echo "$f" | tr '/' '_')" && echo "백업: $f"
 done
-find "$ROOT/.state-backups" -maxdepth 1 -type d -mtime +90 -not -path "$ROOT/.state-backups" \
+find "$ROOT/backups/state" -maxdepth 1 -type d -mtime +90 -not -path "$ROOT/backups/state" \
      -exec rm -rf {} + 2>/dev/null
 echo "백업 위치: $DEST (보관 90일)"

@@ -21,6 +21,6 @@ fi
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
 # 신청 전에 누적 기록부터 백업(파일 유실 시 같은 사람에게 재신청되는 것을 막는다)
-../backup_state.sh >> "logs/buddy.out.log" 2>&1
+../tools/backup_state.sh >> "logs/buddy.out.log" 2>&1
 ./.venv/bin/python naver_buddy_request.py --go >> "logs/buddy.out.log" 2>&1
 ./.venv/bin/python buddy_report.py          >> "logs/buddy.out.log" 2>&1

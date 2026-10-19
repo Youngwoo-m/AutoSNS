@@ -4,7 +4,7 @@
 
 매일 한국시간(Asia/Seoul) 밤 11시에 토목시공기술사 친구 요청을 확인하고, 가장 오래된 미완료 요청 1건의 정답예시와 따라쓰기 PDF를 작성하여 https://na-geoai.tistory.com/ 에 별도로 공개 발행한다. 요청이 없으면 알림 없이 종료한다. 웹 접수는 상시 가능하며 23:00은 요청 확인·작성·발행 작업 시작 시각이다. 검토·자료 준비 지연 시 실제 완료 후 발행하며 정각 발행을 허위로 주장하지 않는다. 사용자는 2026-10-17 매일 밤 11시 정답예시 블로그 게시를 요청했다.
 
-작업 기준은 /Volumes/USB256/devAPP/AutoSNS/civil-engineer-writing/작성기준.txt 및 기존 01일차_흙의다짐 글 https://na-geoai.tistory.com/99 를 따른다. 첫 단계로 /Volumes/USB256/devAPP/AutoSNS/engineer-question-worker/queue.py --exam civil sync를 실행하고 civil-state.json을 확인한다. queued는 claim, processing은 기존 원고와 공개 ‘접수번호: ID’ 검색으로 중복 방지, published는 미완료 목록 후처리만 복구한다. 모든 queue 명령에는 --exam civil을 붙인다. 측량 state.json과 매일 오전 8시 정기 원고의 일차·주제를 변경하지 않는다. 기존에 준비한 요청 원고가 있으면 검토·발행부터 이어간다.
+작업 기준은 /Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing/작성기준.txt 및 기존 01일차_흙의다짐 글 https://na-geoai.tistory.com/99 를 따른다. 첫 단계로 /Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/engineer-question-worker/queue.py --exam civil sync를 실행하고 civil-state.json을 확인한다. queued는 claim, processing은 기존 원고와 공개 ‘접수번호: ID’ 검색으로 중복 방지, published는 미완료 목록 후처리만 복구한다. 모든 queue 명령에는 --exam civil을 붙인다. 측량 state.json과 매일 오전 8시 정기 원고의 일차·주제를 변경하지 않는다. 기존에 준비한 요청 원고가 있으면 검토·발행부터 이어간다.
 
 원고 제목은 ‘[토목시공기술사] 주제 | 친구 요청’, 카테고리는 ‘토목시공기술사’(ID 1406134)다. 상단 제목2 링크는 ‘함께 푸는 [토목시공기술사] 답안지 요청’으로 쓰고 https://geoai-na.netlify.app/civil-questions/ 로 연결한다. 바로 아래에는 ‘문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.’라고 설명한다. 문제 위에 종목·과목(학습 분류)·유형·검증된 관련 기출을 표시한다. 제출한 문제를 우선하며 빈출 문제로 바꾸지 않는다. 문제·답안 목차·시험형 답안예시·필요한 그림/표/계산·자가점검·공식 출처·접수번호·태그를 포함한다. 기출/변형/창작을 구분하고 법령·KCS/KDS/KS의 적용판과 수치·단위·가정을 확인한다. 전문가 해설체로 쓰되 허위 자격·현장 경험을 만들지 않는다.
 

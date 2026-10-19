@@ -1,7 +1,7 @@
 from pathlib import Path
 import json,re,urllib.request,urllib.parse,concurrent.futures
 P=Path(__file__).resolve().parent
-old=Path('/Volumes/USB256/devAPP/AutoSNS/reference-posts/2026-10-09-five-years')
+old=Path('/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/reference-posts/2026-10-09-five-years')
 info=json.loads((old/'출처와검산.json').read_text())
 def fetch(pair):
  rnd,url=pair;s=urllib.request.urlopen(url,timeout=45).read().decode('utf-8','replace');(P/f'{rnd}-source.html').write_text(s)

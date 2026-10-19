@@ -33,14 +33,14 @@ def shorts():
 
 def series():
     rows = []
-    for d in sorted((ROOT / 'civil-engineer-writing').glob('*일차_*')):
+    for d in sorted((ROOT / 'GeoAI_NA' / 'civil-engineer-writing').glob('*일차_*')):
         st = load(d / '발행결과.json', None) or load(d / '작성상태.json', {})
         rows.append((st.get('종목', ''), st.get('일차', d.name), d.name.split('_', 1)[-1], st.get('상태', '상태 파일 없음')))
     return rows
 
 
 def queue():
-    jobs = load(ROOT / 'engineer-question-worker/state.json', {}).get('jobs', {}).values()
+    jobs = load(ROOT / 'GeoAI_NA' / 'engineer-question-worker' / 'state.json', {}).get('jobs', {}).values()
     return Counter(j.get('status') for j in jobs), sorted(jobs, key=lambda j: j.get('created_at', ''), reverse=True)[:8]
 
 
