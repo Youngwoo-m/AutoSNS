@@ -96,15 +96,18 @@ class _Models:
     def __init__(self, model):
         from anthropic import Anthropic
         from common import load_config
-        from shared.llm import DEFAULT_BASE, usable_gateway_keys
+        from shared.llm import DEFAULT_BASE, _Cli, cli_available, usable_gateway_keys
         cfg = load_config()
         base = (cfg.get('llm_gateway') or {}).get('base_url') or DEFAULT_BASE
-        # 게이트웨이 크레딧은 영상 제작에만 쓴다(2026-10-19 사용자 지정). 도구 호출 루프라 claude CLI 로는 못 돌려서
-        # 에이전트는 Anthropic 키로 간다. llm_gateway.text_enabled 를 켜면 예전처럼 게이트웨이를 먼저 쓴다.
+        # 게이트웨이 크레딧은 영상 제작에만 쓴다(2026-10-19 사용자 지정). 에이전트는 claude CLI(Max 구독)로 돌리고 —
+        # 도구 호출은 shared/llm 의 CLI 어댑터가 <tool_call> 형식으로 흉내 낸다 — 실패하면 Anthropic 키.
+        # llm_gateway.text_enabled 를 켜면 예전처럼 게이트웨이를 맨 앞에 둔다.
         self.clients = []
         if (cfg.get('llm_gateway') or {}).get('text_enabled'):
             self.clients = [(f'게이트웨이{label}', Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180), model)
                             for label, k in usable_gateway_keys(cfg)]
+        if cli_available(cfg):
+            self.clients.append(('Max 구독(claude CLI)', _Cli(), model))
         if cfg.get('anthropic_api_key'):
             fb = load_settings().get('fallback_model', 'claude-sonnet-4-6')
             self.clients.append(('Anthropic 키', Anthropic(api_key=cfg['anthropic_api_key'], max_retries=1, timeout=180), fb))

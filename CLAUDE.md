@@ -33,7 +33,8 @@
 ## 세명대 AI 게이트웨이 크레딧 (2026-10-19 사용자 지정)
 
 게이트웨이 크레딧은 **영상 제작에만** 쓴다(영상 클립 생성, 숏츠 디오라마 그림). 글 작성은 `shared/llm.py` 가
-Max 구독(`claude -p`)으로 보내고, 안 되면 Anthropic 키로 간다. 콘솔 에이전트(도구 호출)는 Anthropic 키.
+Max 구독(`claude -p`)으로 보내고, 안 되면 Anthropic 키로 간다. 그림이 든 요청과 콘솔 에이전트(도구 호출)도
+claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<tool_call>` 흉내).
 게이트웨이로 글을 쓰려면 `llm_gateway.text_enabled` 를 일부러 켜야 한다.
 
 ## 발행

@@ -15,6 +15,8 @@ CLI 가 실패하면(사용 한도·로그인·시간 초과) Anthropic 키로 �
 사용: from shared.llm import client;  client(cfg).messages.create(model=..., ...)
       — Anthropic(api_key=...) 자리에 그대로 바꿔 끼우면 된다.
 """
+import re
+
 DEFAULT_BASE = "https://factchat-cloud.mindlogic.ai/v1/gateway/claude"
 # 게이트웨이 목록에 없는 모델은 가까운 모델로(2026-09-29 목록 기준)
 DEFAULT_MAP = {"claude-sonnet-4-6": "claude-sonnet-5", "claude-sonnet-4-5": "claude-sonnet-5",
@@ -134,58 +136,127 @@ def usable_gateway_keys(cfg):
 
 
 class _Unsupported(Exception):
-    """이 창구가 받을 수 없는 요청(그림·도구) — 실패로 세지 않고 다음 창구로 넘긴다."""
+    """이 창구가 받을 수 없는 요청 — 실패로 세지 않고 다음 창구로 넘긴다."""
 
 
-def _text_of(content):
-    if isinstance(content, str):
-        return content
-    out = []
-    for b in content or []:
-        t = b.get("type") if isinstance(b, dict) else getattr(b, "type", "")
-        if t != "text":
-            raise _Unsupported(f"글이 아닌 블록({t})")
-        out.append(b["text"] if isinstance(b, dict) else b.text)
-    return "\n".join(out)
+class _Block:
+    """Anthropic 응답 블록 흉내(text·tool_use). 에이전트 루프가 model_dump() 로 대화에 다시 넣는다."""
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+    def model_dump(self, exclude_none=True):
+        return {k: v for k, v in self.__dict__.items() if not (exclude_none and v is None)}
+
+
+def _get(b, k, default=None):
+    return b.get(k, default) if isinstance(b, dict) else getattr(b, k, default)
 
 
 class _CliMessages:
-    """claude CLI(`claude -p`, Max 구독)를 Anthropic messages.create 처럼 쓴다. 글만 주고받는다.
-    도구·훅·MCP·프로젝트 지시문(CLAUDE.md)을 끄고 빈 폴더에서 돌려, 요청한 글만 돌려받는다(호출 한 번 5~30초)."""
+    """claude CLI(`claude -p`, Max 구독)를 Anthropic messages.create 처럼 쓴다.
+    - 글: 도구·훅·MCP·프로젝트 지시문(CLAUDE.md)을 끄고 빈 폴더에서 돌려 요청한 글만 받는다(한 번 5~30초).
+    - 그림(image 블록): 작업 폴더에 파일로 저장하고 CLI 의 Read 도구로만 열게 한다.
+    - 도구(tools): 도구 설명을 시스템 지시에 넣고 <tool_call>{json}</tool_call> 로 부르게 해 tool_use 블록으로 바꾼다.
+      도구 결과(tool_result)는 다음 호출 때 대화 기록에 <tool_result> 로 넣는다(호출마다 전체 대화를 다시 보낸다)."""
     MODELS = (("opus", "opus"), ("haiku", "haiku"))
+    CALL = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.S)
+
+    def __init__(self):
+        import os
+        self.work = os.path.expanduser("~/.cache/autosns-llm")
+        os.makedirs(self.work, exist_ok=True)
+        self.images = []
+
+    def _image(self, b):
+        import base64
+        import hashlib
+        import os
+        src = _get(b, "source") or {}
+        if _get(src, "type") != "base64":
+            raise _Unsupported("주소로 준 그림")
+        data = base64.b64decode(_get(src, "data"))
+        ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}.get(
+            _get(src, "media_type"), ".png")
+        path = os.path.join(self.work, "img_" + hashlib.sha1(data).hexdigest()[:16] + ext)
+        if not os.path.exists(path):
+            with open(path, "wb") as f:
+                f.write(data)
+        self.images.append(path)
+        return f"[그림 파일: {path} — Read 도구로 열어 본다]"
+
+    def _render(self, content):
+        """메시지 내용 → 글. 글·그림·tool_use·tool_result 블록을 모두 글로 바꾼다."""
+        import json
+        if isinstance(content, str):
+            return content
+        out = []
+        for b in content or []:
+            t = _get(b, "type")
+            if t == "text":
+                out.append(_get(b, "text") or "")
+            elif t == "image":
+                out.append(self._image(b))
+            elif t == "tool_use":
+                out.append("<tool_call>" + json.dumps({"name": _get(b, "name"), "input": _get(b, "input") or {}},
+                                                      ensure_ascii=False) + "</tool_call>")
+            elif t == "tool_result":
+                c = _get(b, "content")
+                body = c if isinstance(c, str) else self._render(c)
+                err = " 오류" if _get(b, "is_error") else ""
+                out.append(f"<tool_result{err}>\n{body}\n</tool_result>")
+            elif t in ("thinking", "redacted_thinking"):
+                continue
+            else:
+                raise _Unsupported(f"모르는 블록({t})")
+        return "\n".join(out)
+
+    def _tools_text(self, tools):
+        import json
+        lines = ["## 쓸 수 있는 도구",
+                 "도구를 부르려면 답에 다음 형식의 줄을 쓴다(여러 개 가능). 형식 밖의 말은 짧게.",
+                 '<tool_call>{"name": "도구이름", "input": {…입력…}}</tool_call>',
+                 "도구를 부른 차례에는 결과를 지어내지 말고 거기서 답을 끝낸다. 결과는 다음 차례에 <tool_result> 로 온다.",
+                 "아래 도구 말고 다른 도구(파일 읽기 등)는 없다고 여긴다.", ""]
+        for t in tools:
+            lines.append(f"- {t['name']}: {t.get('description', '')}\n  입력 스키마: "
+                         + json.dumps(t.get("input_schema") or {}, ensure_ascii=False))
+        return "\n".join(lines)
 
     def create(self, **kw):
         import json
         import os
         import subprocess
-        from types import SimpleNamespace
-        if kw.get("tools"):
-            raise _Unsupported("도구 요청")
-        system = _text_of(kw.get("system") or "")
+        import uuid
+        self.images = []
+        tools = kw.get("tools") or []
+        system = self._render(kw.get("system") or "")
+        if tools:
+            system = (system + "\n\n" if system else "") + self._tools_text(tools)
         msgs = list(kw.get("messages") or [])
         prefill = ""
-        if msgs and msgs[-1].get("role") == "assistant":       # 응답 앞부분을 정해 둔 요청
-            prefill = _text_of(msgs.pop()["content"])
-        turns = [(m.get("role"), _text_of(m.get("content"))) for m in msgs]
-        if len(turns) == 1:
+        if msgs and msgs[-1].get("role") == "assistant" and isinstance(msgs[-1].get("content"), str):
+            prefill = msgs.pop()["content"]                     # 응답 앞부분을 정해 둔 요청
+        turns = [(m.get("role"), self._render(m.get("content"))) for m in msgs]
+        if len(turns) == 1 and not tools:
             prompt = turns[0][1]
         else:
             prompt = "\n\n".join(f"[{'사용자' if r == 'user' else '어시스턴트'}]\n{t}" for r, t in turns) + \
-                     "\n\n위 대화에 이어 [어시스턴트]의 다음 답만 써라."
+                     "\n\n위 대화에 이어 [어시스턴트]의 다음 차례만 써라([어시스턴트] 머리표는 빼고)."
         if prefill:
             prompt += f"\n\n답은 반드시 다음 글자로 시작한다(그대로 이어서 쓴다): {prefill}"
         name = str(kw.get("model") or "")
         model = next((a for k, a in self.MODELS if k in name), "sonnet")
-        work = os.path.expanduser("~/.cache/autosns-llm")
-        os.makedirs(work, exist_ok=True)
         env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}   # 구독 로그인으로만
         env["PATH"] = "/usr/local/bin:/opt/homebrew/bin:" + env.get("PATH", "/usr/bin:/bin")
         env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(int(kw.get("max_tokens") or 4000))
-        cmd = ["claude", "-p", "--model", model, "--tools", "", "--setting-sources", "", "--strict-mcp-config",
+        allow = "Read" if self.images else ""
+        cmd = ["claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
                "--disable-slash-commands", "--no-session-persistence", "--output-format", "json"]
+        if allow:
+            cmd += ["--allowedTools", allow]
         if system:
             cmd += ["--system-prompt", system]
-        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=work, env=env, timeout=600)
+        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=self.work, env=env, timeout=900)
         try:
             d = json.loads(p.stdout)
         except ValueError:
@@ -195,11 +266,27 @@ class _CliMessages:
         text = d.get("result") or ""
         if prefill and text.startswith(prefill):
             text = text[len(prefill):]
+        blocks, stop = [], "end_turn"
+        if tools:
+            known = {t["name"] for t in tools}
+            for m in self.CALL.finditer(text):
+                try:
+                    c = json.loads(m.group(1))
+                except ValueError:
+                    continue
+                if c.get("name") in known:
+                    blocks.append(_Block(type="tool_use", id="toolu_cli_" + uuid.uuid4().hex[:20],
+                                         name=c["name"], input=c.get("input") or {}))
+            if blocks:
+                stop = "tool_use"
+                text = self.CALL.sub("", text).strip()
+        if text or not blocks:
+            blocks.insert(0, _Block(type="text", text=text))
         u = d.get("usage") or {}
-        return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)], stop_reason="end_turn",
-                               model=f"claude-cli:{model}", role="assistant",
-                               usage=SimpleNamespace(input_tokens=u.get("input_tokens", 0),
-                                                     output_tokens=u.get("output_tokens", 0)))
+        return _Block(content=blocks, stop_reason=stop, model=f"claude-cli:{model}", role="assistant",
+                      usage=_Block(input_tokens=(u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+                                                 + u.get("cache_creation_input_tokens", 0)),
+                                   output_tokens=u.get("output_tokens", 0)))
 
 
 class _Cli:
