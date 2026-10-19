@@ -11,6 +11,7 @@
     python3 shared/axlock.py status          # 잡고 있는 작업·기다리는 작업·비상 정지(JSON)
     python3 shared/axlock.py stop "사유"      # 비상 정지 켜기
     python3 shared/axlock.py resume          # 비상 정지 끄기
+    python3 shared/axlock.py skip <작업> <YYYY-MM-DD> [사유]   # 그날 그 작업을 한 번만 건너뛰기
 
 파이썬에서
     from shared.axlock import hold, stopped
@@ -34,6 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DIR = ROOT / 'ax-console' / 'data' / 'locks'
 STOP = ROOT / 'ax-console' / 'data' / 'STOP.json'
+SKIP = ROOT / 'ax-console' / 'data' / 'skip_once.json'   # {작업: {'date': 'YYYY-MM-DD', 'reason': …}} — 그날 한 번만 건너뛴다
 LOG = ROOT / 'ax-console' / 'data' / 'logs' / 'orchestrator.log'
 CATALOG = ROOT / 'ax-console' / 'config' / 'automations.json'
 
@@ -238,6 +240,31 @@ PROFILES = {
 }
 
 
+def set_skip(job, date, reason='', by='명령줄'):
+    """그 날짜에 그 작업의 실행을 한 번 건너뛴다(그날 첫 실행이 건너뛰고 기록은 지워진다)."""
+    d = json.loads(SKIP.read_text()) if SKIP.exists() else {}
+    d[job] = {'date': date, 'reason': reason, 'by': by, 'at': _now()}
+    SKIP.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    log(f'{job}: {date} 한 번 건너뛰기 등록 ({by}) — {reason}')
+
+
+def take_skip(job):
+    """오늘 건너뛸 차례면 그 기록(지움)을, 아니면 None. 지난 날짜 기록은 지운다."""
+    try:
+        d = json.loads(SKIP.read_text())
+    except (OSError, ValueError):
+        return None
+    e = d.get(job)
+    if not e:
+        return None
+    today = datetime.date.today().isoformat()
+    if e.get('date') > today:
+        return None
+    d.pop(job)
+    SKIP.write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    return e if e.get('date') == today else None
+
+
 def main(argv):
     if not argv or argv[0] == 'status':
         print(json.dumps(status(), ensure_ascii=False, indent=2))
@@ -247,6 +274,9 @@ def main(argv):
         return 0
     if argv[0] == 'resume':
         clear_stop(by='명령줄')
+        return 0
+    if argv[0] == 'skip' and len(argv) >= 3:      # axlock.py skip <작업> <YYYY-MM-DD> [사유]
+        set_skip(argv[1], argv[2], ' '.join(argv[3:]))
         return 0
     if argv[0] != 'run' or '--' not in argv:
         print(__doc__)
@@ -270,6 +300,11 @@ def main(argv):
     if check_stop and st and is_publish(job):
         log(f"{job}: 비상 정지 중이라 건너뜀 ({st.get('reason')})")
         print(f"[{_now()}] 비상 정지 중이라 건너뜁니다: {st.get('reason')}")
+        return 0
+    sk = take_skip(job)
+    if sk:
+        log(f"{job}: 오늘 한 번 건너뛰기로 등록돼 건너뜀 ({sk.get('reason', '')})")
+        print(f"[{_now()}] 오늘 한 번 건너뛰기로 등록돼 건너뜁니다: {sk.get('reason', '')}")
         return 0
     res = resources_for(job, extra)
     try:

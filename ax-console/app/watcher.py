@@ -187,19 +187,37 @@ def check_logs(state, first_run):
     return found
 
 
+def _orch_seen():
+    """오케스트레이터 기록에서 작업마다 마지막으로 보인 시각(시작·건너뜀 등). 끝 256KB 만 읽는다.
+    '한 번 건너뛰기'·비상 정지로 건너뛴 실행은 작업 로그를 안 건드리므로 이것도 실행 흔적으로 본다."""
+    p = ROOT / 'ax-console' / 'data' / 'logs' / 'orchestrator.log'
+    seen = {}
+    try:
+        with open(p, 'rb') as f:
+            f.seek(max(0, os.path.getsize(p) - 262144))
+            for line in f.read().decode('utf-8', 'ignore').splitlines():
+                m = re.match(r'\[(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)\] ([\w.\-]+): ', line)
+                if m:
+                    seen[m.group(2)] = datetime.datetime.fromisoformat(m.group(1)).timestamp()
+    except OSError:
+        pass
+    return seen
+
+
 def check_missed(state):
     found = 0
     last = state.get('missed_checked')
     end = now() - datetime.timedelta(minutes=GRACE_MIN)
     start = datetime.datetime.fromisoformat(last) if last else end - datetime.timedelta(hours=24)
     loaded = subprocess.run(['launchctl', 'list'], capture_output=True, text=True).stdout
+    seen = _orch_seen()
     for job, info in catalog().items():
         pl = plist(job)
         iv = pl.get('StartCalendarInterval')
         if not iv or info.get('note') or info.get('quiet') or f'com.smuds.{job}' not in loaded:
             continue
         logs = job_logs(pl, job)
-        mt = max((os.path.getmtime(f) for f in logs), default=0)
+        mt = max([os.path.getmtime(f) for f in logs] + [seen.get(job, 0)])
         for t in _next_times(iv, start, end):
             if mt < t.timestamp():
                 found += record(job, 'missed', 'error', f'{t:%H:%M} 예정 실행 흔적 없음',
