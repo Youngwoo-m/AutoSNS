@@ -1097,7 +1097,9 @@ def content_create(b):
         raise ValueError('계정·주제·채널을 고르세요')
     c = {'id': uuid.uuid4().hex[:8], 'created': now().isoformat(), 'account': acc, 'topic': topic,
          'notes': str(b.get('notes', ''))[:5000], 'channels': chans, 'status': 'idea', 'variants': {},
-         'checks': {}, 'history': [{'at': now().isoformat(), 'what': '기획 등록'}]}
+         'checks': {}, 'history': [{'at': now().isoformat(), 'what': '기획 등록' + (' (자동 진행)' if b.get('auto') else '')}]}
+    if b.get('auto'):
+        c['auto'] = True
     csave(c)
     return c
 
@@ -1136,6 +1138,8 @@ def content_draft(cid):
                 x['history'].append({'at': now().isoformat(), 'what': f"AI 초안 ({d.get('model', '')})"
                                      + (f" — 에이전트 실패로 한 번 호출 방식 사용: {fallback[:120]}" if fallback else '')})
                 csave(x)
+            if x.get('auto'):
+                auto_finish(cid, bool(fallback))
         except Exception as e:
             with CLOCK:
                 x = cload(cid)
@@ -1143,6 +1147,83 @@ def content_draft(cid):
                 csave(x)
 
     threading.Thread(target=work, daemon=True).start()
+
+
+# ---- 자동 진행: 초안 → AI 검토 → 자동 승인·예약 (사람 검토 없음, 통과 못 하면 ③ 검토 대기에 멈춤) ----
+AUTO_DEFAULT = {'times': {'blogger': '08:00', 'naver_blog': '09:00', 'x': '12:00', 'tistory': '08:30', 'instagram': '18:00',
+                          'youtube': '18:00', 'threads': '12:30'}, 'default_time': '09:00', 'min_lead_minutes': 30}
+
+
+def auto_times(c):
+    """채널마다 기본 시각 규칙: 규칙 시각 중 지금 + 최소 간격 뒤의 첫 날짜. 같은 계정·채널에 이미 예약된 날은 건너뛴다."""
+    cfg = {**AUTO_DEFAULT, **(_json(AGENTS_CFG, {}).get('auto') or {})}
+    lead = datetime.timedelta(minutes=int(cfg.get('min_lead_minutes', 30)))
+    busy = {}
+    for t in load():
+        if t.get('content') and t.get('status') in ('scheduled', 'due', 'running') and t.get('schedule'):
+            busy.setdefault((t['account'], t['channel']), set()).add(t['schedule'][:10])
+    out = {}
+    for ch in c['channels']:
+        hh, mm = (cfg['times'].get(ch) or cfg['default_time']).split(':')
+        d = now().replace(hour=int(hh), minute=int(mm), second=0, microsecond=0, tzinfo=None)
+        while d < now().replace(tzinfo=None) + lead or str(d.date()) in busy.get((c['account'], ch), set()):
+            d += datetime.timedelta(days=1)
+        out[ch] = d.isoformat(timespec='minutes')
+    return out
+
+
+def auto_gate(cid, fallback):
+    """자동 승인 조건. 통과하면 None, 아니면 막힌 이유."""
+    c = cload(cid)
+    texts = [c.get('original', '')] + list((c.get('variants') or {}).values())
+    if not c.get('original') or any(not (c.get('variants') or {}).get(ch) for ch in c['channels']):
+        return '원문 또는 채널별 변환본이 비어 있음'
+    if fallback:
+        return '초안 에이전트가 실패해 자체 검토 없이 한 번 호출 방식으로 만들어짐'
+    rv = c.get('review') or {}
+    if not rv or any('마치지 못함' in i for i in rv.get('issues', [])):
+        return '자체 검토를 마치지 못함'
+    if rv.get('unsupported') or any('[확인 필요]' in t for t in texts):
+        return f"근거 없는 문장 {len(rv.get('unsupported') or [])}건·[확인 필요] 표시가 남음"
+    if rv.get('issues'):
+        return '자체 검토 지적: ' + ' / '.join(rv['issues'])[:150]
+    return None
+
+
+def auto_finish(cid, fallback):
+    why = auto_gate(cid, fallback)
+    sr = None
+    if not why:
+        p = subprocess.run([sys.executable, str(CONSOLE / 'app' / 'auto_review.py'), str(_cdir(cid))],
+                           capture_output=True, text=True, timeout=1000)
+        try:
+            sr = json.loads(p.stdout.strip().splitlines()[-1])
+        except (IndexError, ValueError):
+            sr = {'verdict': 'error', 'summary': '출처 검토 출력 없음'}
+        if sr.get('verdict') != 'pass':
+            why = f"출처 검토 {sr.get('verdict')}: {sr.get('summary', '')[:160]}"
+    with CLOCK:
+        c = cload(cid)
+        if sr:
+            c['source_review'] = sr
+        if why:
+            c['error'] = ''
+            c['history'].append({'at': now().isoformat(), 'what': f'자동 진행 멈춤 — 사람 검토가 필요합니다: {why}'})
+            csave(c)
+            return
+    try:
+        c = cload(cid)
+        modes = {ch: 'auto' for ch in c['channels'] if (c['account'], ch) in AUTO_PUBLISH}
+        c['checks'] = {k: True for k in CHECKS}   # 점검표는 AI 검토(자체 검토 + 출처 검토)로 대신한다
+        c['history'].append({'at': now().isoformat(), 'what': '자동 진행: AI 검토 통과 → 점검표 자동 확인'})
+        with CLOCK:
+            csave(c)
+        content_approve(cid, {'schedule': auto_times(c), 'modes': modes})
+    except Exception as e:
+        with CLOCK:
+            c = cload(cid)
+            c['history'].append({'at': now().isoformat(), 'what': f'자동 승인 실패: {str(e)[:160]}'})
+            csave(c)
 
 
 def content_update(cid, b):
@@ -1655,7 +1736,7 @@ def planner_due():
             run_planner(acc, '예약')
 
 
-def prop_decide(pid, decision, reason=''):
+def prop_decide(pid, decision, reason='', auto=False):
     for f in prop_files():
         d = _json(f, {})
         for it in d.get('items', []):
@@ -1667,7 +1748,9 @@ def prop_decide(pid, decision, reason=''):
             res = {}
             if decision == 'accepted':
                 notes = f"{it.get('summary', '')}\n왜 지금: {it.get('why_now', '')}\n근거: " + ' / '.join(it.get('evidence', []))
-                c = content_create({'account': d['account'], 'topic': it['topic'], 'notes': notes, 'channels': it.get('channels', [])})
+                c = content_create({'account': d['account'], 'topic': it['topic'], 'notes': notes, 'channels': it.get('channels', []), 'auto': auto})
+                if auto:
+                    content_draft(c['id'])
                 it['content'] = c['id']
                 res = {'content': c['id']}
             f.write_text(json.dumps(d, ensure_ascii=False, indent=2))
@@ -1912,7 +1995,7 @@ class H(BaseHTTPRequestHandler):
                 run_planner(acc)
                 return self.send(200, proposals_view())
             if parts[:2] == ['api', 'proposals'] and len(parts) == 4 and parts[3] in ('accept', 'reject'):
-                return self.send(200, prop_decide(parts[2], 'accepted' if parts[3] == 'accept' else 'rejected', str(b.get('reason', ''))))
+                return self.send(200, prop_decide(parts[2], 'accepted' if parts[3] == 'accept' else 'rejected', str(b.get('reason', '')), bool(b.get('auto'))))
             if parts == ['api', 'agents']:
                 return self.send(200, agents_save(b))
             if parts == ['api', 'contents']:
