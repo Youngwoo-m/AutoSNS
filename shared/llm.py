@@ -258,20 +258,31 @@ class _CliMessages:
         env["PATH"] = "/usr/local/bin:/opt/homebrew/bin:" + env.get("PATH", "/usr/bin:/bin")
         env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(int(kw.get("max_tokens") or 4000))
         allow = "Read" if self.images else ""
+        # stream-json 으로 받아 모든 assistant 메시지의 글을 이어 붙인다. 긴 글은 한 응답이 두 메시지로 나뉘어 올 때가 있고
+        # (문장 중간에서 끊겨 다음 메시지가 이어짐) json 출력의 result 는 마지막 메시지 글만 담는다 —
+        # 2026-10-19 18:00 GeoAI 시리즈 글이 result 의 꼬리(약 290자)만 받아 '형식 파싱 실패'로 멈췄다.
         cmd = ["claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
-               "--disable-slash-commands", "--no-session-persistence", "--output-format", "json"]
+               "--disable-slash-commands", "--no-session-persistence", "--output-format", "stream-json", "--verbose"]
         if allow:
             cmd += ["--allowedTools", allow]
         if system:
             cmd += ["--system-prompt", system]
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=self.work, env=env, timeout=900)
-        try:
-            d = json.loads(p.stdout)
-        except ValueError:
+        d, pieces = None, []
+        for line in p.stdout.splitlines():
+            try:
+                ev = json.loads(line)
+            except ValueError:
+                continue
+            if ev.get("type") == "assistant":
+                pieces += [b.get("text", "") for b in (ev.get("message") or {}).get("content", []) if b.get("type") == "text"]
+            elif ev.get("type") == "result":
+                d = ev
+        if d is None:
             raise RuntimeError(f"claude CLI 출력 없음(코드 {p.returncode}): {(p.stderr or p.stdout).strip()[:200]}")
         if d.get("is_error") or p.returncode != 0:
             raise RuntimeError(f"claude CLI 오류: {str(d.get('result') or d.get('subtype'))[:200]}")
-        text = d.get("result") or ""
+        text = "".join(pieces) if pieces else (d.get("result") or "")
         if prefill and text.startswith(prefill):
             text = text[len(prefill):]
         blocks, stop = [], "end_turn"
