@@ -101,6 +101,17 @@ class Research:
 
 
 def past_titles(query=''):
+    """지난 글·영상 제목. 모든 채널(티스토리·블로거·네이버·유튜브)의 공개 목록과 기록 파일을 shared/published_history 로 한 번에 본다.
+    그게 안 되면 예전처럼 기록 파일만."""
+    try:
+        sys.path.insert(0, str(ROOT))
+        from shared.published_history import history
+        r = history(query, limit=30)
+        rows = [f"{i['date'] or '날짜 모름'} [{','.join(i['channels'])}]{' (예정)' if i['planned'] else ''} {i['title']}"
+                for i in r['items']]
+        return rows or '겹치는 지난 글 없음'
+    except Exception:
+        pass
     titles = []
     for f in ('naver-blog-auto/title_history.json', 'youtube-shorts-auto/title_history.json'):
         try:
