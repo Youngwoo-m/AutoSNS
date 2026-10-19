@@ -13,6 +13,7 @@ AX_DRY=1 이면 --go 를 --dry 로 바꾼다: 점검(길이·화면비·중복·
 결과는 마지막 줄에 JSON 한 줄. status:
   upload  → uploaded | scheduled | dry | duplicate | error
   comment → commented | dry | duplicate | error
+  delete  → deleted | dry | error        (사용자가 지정한 영상만. 되돌릴 수 없음)
   check   → ok | error
 duplicate 면 같은 제목 영상(또는 이 채널의 기존 댓글)이 이미 있다는 뜻 — 다시 올리지 말고 그 video_id/comment_id 를 쓴다.
 """
@@ -249,6 +250,29 @@ def cmd_comment(a):
     return locked(a.job, "youtube_comment", go)
 
 
+def cmd_delete(a):
+    """영상 삭제(되돌릴 수 없음) — 사용자가 영상을 지정해 시킨 경우에만. --replaced-by 가 공개 상태로 있어야 한다."""
+    yt, err = api()
+    if yt is None:
+        return out("dry" if a.dry else "error", message=err, video_id=a.video_id)
+    info = video_info(yt, a.video_id)
+    if not info or not info["channel_ok"]:
+        return out("error", message="@geoai-safety 채널의 영상이 아닙니다(또는 없음)", video_id=a.video_id)
+    if a.replaced_by:
+        new = video_info(yt, a.replaced_by)
+        if not new or not new["channel_ok"] or new["privacy"] != "public":
+            return out("error", message="교체할 새 영상이 공개 상태가 아니라 지우지 않았습니다", video_id=a.video_id)
+    if a.dry:
+        return out("dry", video_id=a.video_id, title=info.get("title", ""), message="실제라면 이 영상을 삭제했을 것")
+
+    def go():
+        yt.videos().delete(id=a.video_id).execute()
+        gone = not yt.videos().list(part="id", id=a.video_id).execute().get("items")
+        return out("deleted" if gone else "error", video_id=a.video_id,
+                   message="" if gone else "삭제 요청 뒤에도 영상이 조회됩니다")
+    return locked(a.job, "youtube_delete", go)
+
+
 def cmd_check(a):
     yt, err = api()
     if yt is None:
@@ -291,6 +315,10 @@ def main():
     c.add_argument("--video-id", required=True)
     c.add_argument("--text", required=True)
     mode(c)
+    d = sub.add_parser("delete")
+    d.add_argument("--video-id", required=True)
+    d.add_argument("--replaced-by", default="", help="대신 올린 새 영상 id(공개 상태일 때만 삭제)")
+    mode(d)
     k = sub.add_parser("check")
     k.add_argument("--video-id", required=True)
     a = ap.parse_args()
@@ -299,7 +327,7 @@ def main():
         log("  AX_DRY=1 — 시험 실행이라 --go 를 --dry 로 바꿉니다")
         a.go, a.dry = False, True
     try:
-        return {"upload": cmd_upload, "comment": cmd_comment, "check": cmd_check}[a.cmd](a)
+        return {"upload": cmd_upload, "comment": cmd_comment, "delete": cmd_delete, "check": cmd_check}[a.cmd](a)
     except Exception as e:  # noqa: BLE001
         return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
 
