@@ -375,13 +375,26 @@ def connectors():
     return rows
 
 
+_SECRET_NAMES = {'mtime': None, 'names': None}
+
+
 def secret_names():
+    """암호화 저장소에 있는 비밀값 이름. 복호화에 파이썬을 하나 더 띄워 0.15초 걸리므로
+    저장소 파일(secrets.env.enc)이 바뀌었을 때만 다시 읽는다."""
+    try:
+        mt = (ROOT / 'secrets.env.enc').stat().st_mtime
+    except OSError:
+        mt = None
+    if mt is not None and _SECRET_NAMES['mtime'] == mt and _SECRET_NAMES['names'] is not None:
+        return set(_SECRET_NAMES['names'])
     try:
         p = subprocess.run(['python3', '-m', 'shared.secret_env', 'names'], cwd=str(ROOT),
                            capture_output=True, text=True, timeout=20)
-        return set(p.stdout.split()) if p.returncode == 0 else None
+        names = set(p.stdout.split()) if p.returncode == 0 else None
     except Exception:
-        return None
+        names = None
+    _SECRET_NAMES.update(mtime=mt if names is not None else None, names=names)
+    return None if names is None else set(names)
 
 
 def settings_view():
@@ -764,20 +777,24 @@ def google_check():
         raise ValueError('토큰 확인 실패: ' + (p.stderr.strip().splitlines() or ['알 수 없는 오류'])[-1][:200])
     GSTATE['result'] = json.loads(p.stdout.strip().splitlines()[-1])
     GSTATE['checked'] = now().isoformat()
-    cli_logins()
+    cli_logins(force=True)
     _safe(site_info)
 
 
 CLI_LOGINS = {}
 
 
-def cli_logins():
-    """gh·netlify CLI 에 로그인된 계정 이름(토큰은 읽지 않는다)."""
+def cli_logins(force=False):
+    """gh·netlify CLI 에 로그인된 계정 이름(토큰은 읽지 않는다).
+    gh auth status 는 네트워크로 토큰을 확인해 한 번에 0.7초쯤 걸린다 — 계정 연결 화면을 열 때마다 돌면
+    화면이 무거워서 5분 동안 결과를 쓰고, 계정을 바꿀 때(force)만 바로 다시 읽는다(2026-10-19)."""
+    if not force and CLI_LOGINS.get('_at') and time.time() - CLI_LOGINS['_at'] < 300:
+        return
     gh = set()
     for exe in ('/opt/homebrew/bin/gh', '/usr/local/bin/gh'):
         if os.path.exists(exe):
-            out = subprocess.run([exe, 'auth', 'status'], capture_output=True, text=True).stdout
-            out += subprocess.run([exe, 'auth', 'status'], capture_output=True, text=True).stderr
+            p = subprocess.run([exe, 'auth', 'status'], capture_output=True, text=True, timeout=30)
+            out = p.stdout + p.stderr
             gh = set(__import__('re').findall(r'account (\S+)', out))
             act = __import__('re').search(r'account (\S+)[^\n]*\n\s*- Active account: true', out)
             CLI_LOGINS['github_active'] = act.group(1) if act else None
@@ -785,11 +802,11 @@ def cli_logins():
             break
     nl = {u.get('email') for u in _json(Path.home() / 'Library' / 'Preferences' / 'netlify' / 'config.json', {})
           .get('users', {}).values()}
-    CLI_LOGINS.update(github=gh, netlify=nl)
+    CLI_LOGINS.update(github=gh, netlify=nl, _at=time.time())
 
 
 def github_switch(user):
-    cli_logins()
+    cli_logins(force=True)
     known = {x['id'] for a in _json(ACCOUNTS, {}).get('accounts', {}).values() for x in (a.get('github') or {}).get('accounts', [])}
     if user not in known:
         raise ValueError('설정에 없는 GitHub 계정입니다')
@@ -799,6 +816,7 @@ def github_switch(user):
                        capture_output=True, text=True, timeout=30)
     if p.returncode != 0:
         raise ValueError((p.stderr or p.stdout).strip()[:200])
+    cli_logins(force=True)
 
 
 TISTORY_DIR = ROOT / 'GeoAI_NA' / 'naver-blog-auto'
@@ -884,6 +902,18 @@ def _safe(fn):
         pass
 
 
+def google_check_bg():
+    """콘솔이 켜질 때 한 번 도는 토큰 확인. 도는 동안만 checking=True — 화면은 그동안만 다시 묻는다.
+    전에는 '확인 안 됨'(실패 포함)이면 계정 연결 화면이 3초마다 /api/google(1.6초짜리)을 끝없이 불렀다."""
+    GSTATE['checking'], GSTATE['check_error'] = True, ''
+    try:
+        google_check()
+    except Exception as e:
+        GSTATE['check_error'] = f'{type(e).__name__}: {str(e)[:200]}'
+    finally:
+        GSTATE['checking'] = False
+
+
 def google_view():
     cfg = _json(ACCOUNTS, {})
     have = secret_names()
@@ -929,7 +959,7 @@ def google_view():
                 for x in a['github'].get('accounts', [])]}
         accs.append({'id': acc, 'label': a['label'], 'email': a['google']['email'], 'services': svcs, 'others': others,
                      'github': gh})
-    return {'checked': GSTATE['checked'], 'accounts': accs}
+    return {'checked': GSTATE['checked'], 'checking': GSTATE.get('checking', False), 'check_error': GSTATE.get('check_error', ''), 'accounts': accs}
 
 
 def google_login(acc, svc):
@@ -1673,7 +1703,9 @@ class H(BaseHTTPRequestHandler):
         if self.path == '/api/orchestrator':
             st = axlock.status()
             try:
-                st['log'] = axlock.LOG.read_text(errors='ignore').splitlines()[-30:]
+                with open(axlock.LOG, 'rb') as f:     # 10초마다 불리므로 끝 16KB 만 읽는다(로그는 계속 자란다)
+                    f.seek(max(0, os.path.getsize(axlock.LOG) - 16384))
+                    st['log'] = f.read().decode('utf-8', 'ignore').splitlines()[-30:]
             except OSError:
                 st['log'] = []
             return self.send(200, st)
@@ -1965,6 +1997,6 @@ if __name__ == '__main__':
     if not TEST:   # 시험용 서버(AX_NO_BG=1)는 예약 실행기·감시기·토큰 확인을 돌리지 않는다
         threading.Thread(target=scheduler, daemon=True).start()
         threading.Thread(target=watch_loop, daemon=True).start()
-        threading.Thread(target=lambda: _safe(google_check), daemon=True).start()
+        threading.Thread(target=google_check_bg, daemon=True).start()
     print(f'AX 발행 콘솔: http://{HOST}:{PORT}')
     ThreadingHTTPServer((HOST, PORT), H).serve_forever()

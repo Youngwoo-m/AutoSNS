@@ -114,11 +114,16 @@ async function loadOS(){OS=await api('/api/orchestrator');const s=OS.stop;$('sto
   if($('osbox'))drawOS()}
 async function toggleStop(){if(OS.stop){if(!confirm('비상 정지를 풀고 자동 발행을 다시 시작할까요?'))return;await api('/api/stop',{on:false})}
   else{const r=prompt('비상 정지 사유(모든 자동 발행이 새로 시작하지 않습니다)','');if(r===null)return;await api('/api/stop',{on:true,reason:r})}loadOS()}
-function drawOS(){if(!$('osbox')||!OS.holding)return;$('osbox').innerHTML=`<h2 style="margin:0 0 8px">실행 현황 (오케스트레이터)</h2>
+let osLast='';
+function drawOS(){if(!$('osbox')||!OS.holding)return;const h=`<h2 style="margin:0 0 8px">실행 현황 (오케스트레이터)</h2>
   <div class="mut">실행 중</div>${OS.holding.length?[...new Map(OS.holding.map(h=>[h.pid,h])).values()].map(h=>`<div class="run"><b>${esc(h.job)}</b> · ${fmt(h.since)}부터 · <span class="mut">${esc(OS.holding.filter(x=>x.pid==h.pid).map(x=>x.resource).join(', '))}</span></div>`).join(''):'<div class="run mut">없음</div>'}
   <div class="mut" style="margin-top:6px">기다리는 중</div>${OS.waiting.length?OS.waiting.map(w=>`<div class="run"><b>${esc(w.job)}</b> · ${esc(w.blocked_by)} 비기를 기다림 (${fmt(w.since)}부터)</div>`).join(''):'<div class="run mut">없음</div>'}
-  <details style="margin-top:6px"><summary class="mut" style="cursor:pointer">최근 기록</summary><pre>${esc(OS.log.slice().reverse().join('\n'))}</pre></details>`}
-async function init(){loadOS();setInterval(loadOS,10000);api('/api/incidents').then(v=>{IV=v;badgeInc()});setInterval(()=>api('/api/incidents').then(v=>{IV.open_errors=v.open_errors;badgeInc()}),60000);M=await api('/api/meta');await getAuto();ch=A().channels[0].id;T=await api('/api/tasks');draw();tab('acct');setInterval(()=>{if(!$('workv').hidden)refresh()},4000)}
+  <details style="margin-top:6px"><summary class="mut" style="cursor:pointer">최근 기록</summary><pre>${esc(OS.log.slice().reverse().join('\n'))}</pre></details>`;
+  if(h==osLast&&$('osbox').innerHTML)return;const open=$('osbox').querySelector('details')?.open;osLast=h;$('osbox').innerHTML=h;if(open)$('osbox').querySelector('details').open=true}
+const seen=()=>!document.hidden;   // 창이 가려지면(최소화·다른 창 뒤) 주기 요청을 쉰다
+const pollInc=()=>api('/api/incidents').then(v=>{IV.open_errors=v.open_errors;badgeInc()});
+document.addEventListener('visibilitychange',()=>{if(seen()){loadOS();pollInc()}});
+async function init(){loadOS();setInterval(()=>{if(seen())loadOS()},10000);api('/api/incidents').then(v=>{IV=v;badgeInc()});setInterval(()=>{if(seen())pollInc()},60000);M=await api('/api/meta');await getAuto();ch=A().channels[0].id;T=await api('/api/tasks');draw();tab('acct');setInterval(()=>{if(seen()&&!$('workv').hidden)refresh()},4000)}
 async function refresh(){T=await api('/api/tasks');draw(false)}
 function draw(full=true){
   document.documentElement.dataset.acc=acc;
@@ -205,7 +210,7 @@ function drawBr(){const s=brSess(),P=BR.profiles[bp]||{};if(!s)brLast='';
    <p class="mut" style="font-size:12px;margin:8px 0 0">화면을 누르면 그 자리를 클릭합니다. 비밀번호·인증번호는 여기서 직접 입력하세요 — 콘솔은 입력한 글자를 저장하지 않습니다.</p>`
    :`<p class="mut" style="margin:12px 0 0">${esc(P.name||'')} 프로필을 엽니다. 열린 동안은 같은 프로필을 쓰는 자동 작업이 기다립니다.</p>`}</div>`;
   if(s)brStartPoll();else brStopPoll()}
-function brStartPoll(){brStopPoll();const tick=async()=>{if($('brv').hidden||!$('br_img'))return;if(!brBusy){brBusy=true;
+function brStartPoll(){brStopPoll();const tick=async()=>{if($('brv').hidden||!$('br_img'))return;if(!brBusy&&seen()){brBusy=true;
     try{const r=await fetch('/api/browser/shot?profile='+bp);if(r.status==401){location.href='/login';return}if(r.status==404){brBusy=false;brStopPoll();loadBr();return}if(r.ok){const u=URL.createObjectURL(await r.blob());const im=$('br_img');const old=brLast;if(im)im.src=u;brLast=u;if(old&&old!=u)setTimeout(()=>URL.revokeObjectURL(old),2000)}}catch(e){}brBusy=false}
     brTimer=setTimeout(tick,700)};tick()}
 function brStopPoll(){clearTimeout(brTimer);brTimer=null}
@@ -407,10 +412,10 @@ async function loadAuto(){await getAuto();const order=[VA];
 let GV,gTimer;
 const lt=s=>{if(!s)return'';const d=new Date(s.endsWith('Z')||s.includes('+')?s:s+'Z');return d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})};
 async function loadG(){GV=await api('/api/google');drawG();
-  clearTimeout(gTimer);if(GV.accounts.some(a=>a.services.some(x=>x.login&&x.login.state=='진행 중')||(a.others||[]).some(o=>o.site_login&&o.site_login.state=='진행 중'))||!GV.checked)gTimer=setTimeout(()=>{if(!$('acctv').hidden)loadG()},3000)}
+  clearTimeout(gTimer);if(GV.accounts.some(a=>a.services.some(x=>x.login&&x.login.state=='진행 중')||(a.others||[]).some(o=>o.site_login&&o.site_login.state=='진행 중'))||GV.checking)gTimer=setTimeout(()=>{if(!$('acctv').hidden)loadG()},3000)}
 function drawG(){
   $('acctv').innerHTML=`<div class="card" style="margin-bottom:16px"><div class="filt"><h2 style="margin:0 auto 0 0">계정 연결</h2>
-   <span class="mut">${GV.checked?'마지막 확인 '+fmt(GV.checked):'확인 중…'}</span><button class="gbtn" onclick="gCheck(this)">지금 확인</button></div>
+   <span class="mut">${GV.checked?'마지막 확인 '+fmt(GV.checked):GV.checking?'확인 중…':GV.check_error?'자동 확인 실패 — [다시 확인]을 눌러 주세요':'아직 확인 안 함'}</span><button class="gbtn" onclick="gCheck(this)">지금 확인</button></div>
    <p class="mut" style="margin:8px 0 0">로그인은 시스템 브라우저의 구글 창에서 직접 합니다. 콘솔은 비밀번호를 받지 않고, 토큰은 암호화 저장소에 저장됩니다. 연결 대상(채널·블로그)이 맞는 계정인지 꼭 확인하세요.</p></div>
    <div class="sgrid">${GV.accounts.map(a=>`<div class="card gcard ${a.id=='personal'?'p':''}"><div class="filt"><h2 style="color:var(--ink);font-size:17px;margin:0 auto 0 0">${esc(a.label)}</h2>
      ${ddMenu('ga_'+a.id,'구글 계정 ▾',[[`gLogoutAll('${a.id}','${esc(a.label)}')`,'구글 계정 로그아웃(모든 서비스 취소)','bad']])}</div><div class="mut">${esc(a.email)}</div>
