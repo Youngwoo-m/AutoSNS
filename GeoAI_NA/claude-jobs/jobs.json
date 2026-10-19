@@ -85,6 +85,11 @@
      "personal",
      "kakao"
     ]
+   ],
+   "precheck": [
+    "python3",
+    "precheck_friend.py",
+    "survey"
    ]
   },
   {
@@ -105,6 +110,11 @@
      "personal",
      "blogger"
     ]
+   ],
+   "precheck": [
+    "python3",
+    "precheck_friend.py",
+    "civil"
    ]
   },
   {

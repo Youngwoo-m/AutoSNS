@@ -18,6 +18,9 @@ CLI 가 실패하면(사용 한도·로그인·시간 초과) Anthropic 키로 �
 import re
 
 DEFAULT_BASE = "https://factchat-cloud.mindlogic.ai/v1/gateway/claude"
+# Anthropic 키(대비책)로 나갈 때: 옛 모델 이름을 같은 값 싼 새 모델로. Sonnet 4.6($3/$15) → Sonnet 5($2/$10), 33% 절약(2026-10-19 비용 검토).
+# 5.5 가 아니라 5 인 까닭: Sonnet 5.5 는 thinking disabled 를 400 으로 거절해 지금 코드(사고 끔)를 그대로 못 쓴다.
+DIRECT_MAP = {"claude-sonnet-4-6": "claude-sonnet-5", "claude-sonnet-4-5": "claude-sonnet-5"}
 # 게이트웨이 목록에 없는 모델은 가까운 모델로(2026-09-29 목록 기준)
 DEFAULT_MAP = {"claude-sonnet-4-6": "claude-sonnet-5", "claude-sonnet-4-5": "claude-sonnet-5",
                "claude-opus-4-6": "claude-opus-5"}
@@ -73,8 +76,13 @@ class _Messages:
                 _log(f"LLM: {label} 실패 → {nxt}로 전환 ({type(e).__name__}: {str(e)[:120]})")
         if self._direct is None:
             raise RuntimeError("쓸 수 있는 LLM 이 없습니다(claude CLI / anthropic_api_key).")
-        _log(f"LLM: Anthropic 키({kw.get('model')})")
-        return self._direct.messages.create(**kw)
+        dkw = dict(kw)
+        dkw["model"] = DIRECT_MAP.get(kw.get("model"), kw.get("model"))
+        if dkw["model"] in DIRECT_MAP.values():
+            # sonnet-5 는 사고를 켜 두면 max_tokens 를 사고에 다 써 글 블록이 비는 일이 있었다(게이트웨이 때와 같다) — 끈다
+            dkw.setdefault("thinking", {"type": "disabled"})
+        _log(f"LLM: Anthropic 키({dkw['model']})")
+        return _text_first(self._direct.messages.create(**dkw))
 
 
 class _Client:

@@ -16,6 +16,19 @@ LOG="$HERE/logs/$JOB.log"
 MODEL=$(/usr/bin/python3 -c "import json,sys;print(next(j.get('model','opus') for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]))" "$JOB")
 RUN_NOTE=$(/usr/bin/python3 -c "import json,sys,datetime;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('runs',{}).get(sys.argv[2],''))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 
+# 실행 전 점검(jobs.json 의 precheck): 종료 코드 3 = 할 일 없음 → claude 를 부르지 않고 끝낸다. 그 밖의 실패는 그냥 돌린다.
+PRECHECK=$(/usr/bin/python3 -c "import json,sys;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(' '.join(j.get('precheck',[])))" "$JOB")
+if [ -n "$PRECHECK" ]; then
+    PRE_OUT=$(cd "$HERE" && $PRECHECK 2>&1); PRE_RC=$?
+    if [ "$PRE_RC" = "3" ]; then
+        echo "===== [$(date '+%F %T')] $JOB 시작 (점검: 할 일 없음) =====" >> "$LOG"
+        echo "변화 없음: 처리할 요청이 없어 AI 를 부르지 않았습니다. ($PRE_OUT)" >> "$LOG"
+        echo "{\"at\":\"$(date '+%Y-%m-%dT%H:%M%z')\",\"status\":\"skipped\",\"title\":null,\"urls\":{},\"review\":\"n/a\",\"calc\":\"n/a\",\"note\":\"사전 점검: 접수 없음, AI 호출 생략\"}" >> "$HERE/state/$JOB.jsonl"
+        echo "===== [$(date '+%F %T')] $JOB 끝 (코드 0, AI 호출 없음) =====" >> "$LOG"
+        exit 0
+    fi
+fi
+
 PROMPT=$(mktemp -t claudejob)
 {
     cat "$HERE/공통규칙.md"
