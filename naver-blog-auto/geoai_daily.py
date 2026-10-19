@@ -319,7 +319,10 @@ def main():
             raise SystemExit(1)
         # 따로 올리는 연재(예: 'NaGeoAI 실제 QGIS 실습')는 자동 편성 몫이 아니다 — 이것까지
         # 세니 아침에 실습 글이 올라간 날은 저녁 자동 글이 상한에 걸려 빠졌다(9/30, 10/1).
-        skip = tuple(_gcfg(cfg).get("cap_exclude_prefixes", ["NaGeoAI 실제 QGIS 실습"]))
+        # 토목시공기술사 연재(클로드 작업 claude.civil-daily·civil-friend 가 같은 블로그에 올림)도 별도 몫이다 —
+        # 빼지 않으면 그 글이 상한을 먹어 GeoAI 저녁 글이 빠졌다(2026-10-18 18:00).
+        skip = tuple(dict.fromkeys(list(_gcfg(cfg).get("cap_exclude_prefixes", ["NaGeoAI 실제 QGIS 실습"]))
+                                   + ["NaGeoAI 실제 QGIS 실습", "[토목시공기술사]"]))
         other = [t for t in done if skip and t.startswith(skip)]
         if other:
             log(f"GeoAI: 상한 계산에서 제외한 별도 연재 {len(other)}편 — {other[0][:40]}")
