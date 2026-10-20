@@ -58,7 +58,7 @@ python3 ax-console/app/server.py      # http://127.0.0.1:8700
 
 - 설정 탭 **발행할 때 쓰는 브라우저**에서 프로필마다 '예전 방식(바깥 창) / 콘솔 브라우저 · 창 없이 / 화면 밖 크롬'.
   (`config/browser_service.json`, 기본은 모두 예전 방식)
-- 켜진 프로필이면 `naver-blog-auto/common.start_chrome()` 이 `shared/ax_browser.attach()` 로 콘솔에 크롬을 빌려
+- 켜진 프로필이면 `channels/naver-blog-auto/common.start_chrome()` 이 `shared/ax_browser.attach()` 로 콘솔에 크롬을 빌려
   selenium 을 붙인다(debuggerAddress). 발행 작업이 run_*.sh 래퍼로 쥔 프로필 잠금을 그대로 쓰고(워커가 잠금 주인이
   작업의 부모인지 확인), 작업이 끝나거나 죽으면 크롬을 닫는다. 콘솔이 응답하지 않으면 예전 방식으로 띄운다.
 - 시험: 티스토리 --dry 2편이 창 없이 '공개 발행' 직전까지 진행(2026-10-18 17:58).

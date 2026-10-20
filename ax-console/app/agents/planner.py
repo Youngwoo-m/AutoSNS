@@ -57,7 +57,7 @@ def season_now():
 def series_status():
     out = {}
     try:
-        sch = json.loads((ROOT / 'youtube-shorts-auto' / 'publish_schedule.json').read_text())
+        sch = json.loads((ROOT / 'channels' / 'youtube-shorts-auto' / 'publish_schedule.json').read_text())
         out['숏츠 예정'] = [f"{x['date']} {x.get('label', '')} {x.get('title', '')[:40]}" for x in sch if not x.get('published')][:5]
     except (OSError, ValueError):
         pass

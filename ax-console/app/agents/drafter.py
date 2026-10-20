@@ -113,13 +113,13 @@ def past_titles(query=''):
     except Exception:
         pass
     titles = []
-    for f in ('naver-blog-auto/title_history.json', 'youtube-shorts-auto/title_history.json'):
+    for f in ('channels/naver-blog-auto/title_history.json', 'channels/youtube-shorts-auto/title_history.json'):
         try:
             titles += json.load(open(ROOT / f))
         except (OSError, ValueError):
             pass
     try:
-        titles += [x['title'] for x in json.load(open(ROOT / 'youtube-shorts-auto' / 'publish_schedule.json'))]
+        titles += [x['title'] for x in json.load(open(ROOT / 'channels' / 'youtube-shorts-auto' / 'publish_schedule.json'))]
     except (OSError, ValueError, KeyError):
         pass
     words = [w for w in re.split(r'\s+', query) if len(w) > 1]

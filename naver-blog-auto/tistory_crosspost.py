@@ -1,1 +1,0 @@
-../GeoAI_NA/naver-blog-auto/tistory_crosspost.py

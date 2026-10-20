@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 from PIL import Image,ImageDraw,ImageFont
-P=Path(__file__).resolve().parent;A=json.loads((P/'analysis.json').read_text());fn='/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf';font=lambda n:ImageFont.truetype(fn,n)
+P=Path(__file__).resolve().parent;A=json.loads((P/'analysis.json').read_text());fn='/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/KoPubWorld Dotum_Pro Bold.otf';font=lambda n:ImageFont.truetype(fn,n)
 im=Image.new('RGB',(1600,900),'#f7f9fc');d=ImageDraw.Draw(im)
 d.text((80,45),'최근 5개 시행연도: 주요 기술 관련 표현의 등장',font=font(46),fill='#0f172a');d.text((80,112),'Q-net 공식 문제지 10회차·310문항 / 각 연도 62문항',font=font(28),fill='#475569')
 colors=['#155e75','#6d28d9','#c2410c'];names=['GNSS·RTK·보정정보','LiDAR·레이저·점군','AI·온톨로지']

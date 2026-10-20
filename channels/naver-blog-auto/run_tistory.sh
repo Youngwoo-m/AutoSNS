@@ -1,0 +1,1 @@
+../../GeoAI_NA/naver-blog-auto/run_tistory.sh

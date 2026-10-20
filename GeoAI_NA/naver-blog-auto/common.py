@@ -1,1 +1,1 @@
-../../naver-blog-auto/common.py
+../../channels/naver-blog-auto/common.py

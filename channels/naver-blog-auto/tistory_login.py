@@ -1,0 +1,1 @@
+../../GeoAI_NA/naver-blog-auto/tistory_login.py

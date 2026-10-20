@@ -344,6 +344,8 @@ function editorC(){
   let body=stepper(x)+`<div class="filt"><h2 style="margin:0 auto 0 0">${esc(CST[x.status]||x.status)} · ${ACCL[x.account]} · ${esc(x.topic)}</h2>${x.model?`<span class="mut">초안 ${esc(x.model)}</span>`:''}</div>`;
   if(x.status=='idea')body+=`<p class="mut">참고 메모: ${esc(x.notes||'없음')}</p>`;
   body+=actionsC(x);
+  if(x.auto&&x.status=='scheduled'){const first=Object.values(x.tasks||{}).map(tid=>(T.find(y=>y.id==tid)||{}).schedule).filter(Boolean).sort()[0];
+    body+=`<p class="warn">자동 승인되어 예약됐습니다.${first?` 가장 이른 발행은 <b>${fmt(first)}</b> — 그 전에 위 ‘예약 취소’ 또는 ‘예약 취소하고 삭제’로 막을 수 있습니다.`:''}</p>`}
   if(x.auto)body+=`<p class="mut">자동 진행 콘텐츠 — 초안·AI 검토를 통과하면 사람 검토 없이 예약됩니다.${x.status=='review'?' <b class="warn">AI 검토를 통과하지 못해 여기서 멈췄습니다(기록 참고). 고치고 직접 승인하세요.</b>':''}</p>${x.source_review?`<div class="run">출처 검토 <b>${esc(x.source_review.verdict)}</b> <span class="mut">${esc(x.source_review.summary||'')}</span></div>`:''}`;
   if(x.status=='drafting')body+=`<p class="mut">초안 에이전트가 자료를 찾아 읽고(조사) → 원문·변환본을 쓰고 → 출처와 대조하는 중입니다(3~6분).</p>`;
   if(['review','scheduled','published','failed'].includes(x.status)){

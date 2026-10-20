@@ -20,13 +20,13 @@ if ! ./wait_network.sh; then
 fi
 
 echo "== 수집 시작 ($TODAY) =="
-"$ROOT/youtube-shorts-auto/.venv/bin/python" collect_youtube.py || echo "!! 유튜브 수집 실패 — 직전 결과로 진행"
+"$ROOT/channels/youtube-shorts-auto/.venv/bin/python" collect_youtube.py || echo "!! 유튜브 수집 실패 — 직전 결과로 진행"
 python3 collect_web.py "$SINCE"                                 || echo "!! 블로그·홈페이지 수집 실패 — 직전 결과로 진행"
-LOCKRUN profile:naver "$ROOT/naver-blog-auto/.venv/bin/python" collect_naver_stats.py || echo "!! 네이버 블로그 조회수 수집 실패 — 조회수 없이 진행"
+LOCKRUN profile:naver "$ROOT/channels/naver-blog-auto/.venv/bin/python" collect_naver_stats.py || echo "!! 네이버 블로그 조회수 수집 실패 — 조회수 없이 진행"
 python3 collect_blogger.py "$SINCE"                             || echo "!! 블로거 수집 실패 — 직전 결과로 진행"
 python3 collect_x.py "$SINCE"                                   || echo "!! 엑스 수집 실패 — 직전 결과로 진행"
-LOCKRUN profile:insta "$ROOT/insta-cardnews/.venv/bin/python" collect_threads.py "$SINCE"   || echo "!! 스레드 수집 실패 — 직전 결과로 진행"
-LOCKRUN profile:insta "$ROOT/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
+LOCKRUN profile:insta "$ROOT/channels/insta-cardnews/.venv/bin/python" collect_threads.py "$SINCE"   || echo "!! 스레드 수집 실패 — 직전 결과로 진행"
+LOCKRUN profile:insta "$ROOT/channels/insta-cardnews/.venv/bin/python" collect_instagram.py "$SINCE" || echo "!! 인스타 수집 실패 — 직전 결과로 진행"
 
 echo "== 월간 리포트 생성 =="
 if [[ $# -ge 2 ]]; then YM="$2"; else YM=""; fi

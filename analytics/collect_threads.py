@@ -17,7 +17,7 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "insta-cardnews"))
+sys.path.insert(0, os.path.join(ROOT, "channels", "insta-cardnews"))
 from analytics.common import log, save_part      # noqa: E402
 from post_instagram import build_driver          # noqa: E402
 

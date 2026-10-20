@@ -10,7 +10,7 @@
 
 공식 Q-net 원문으로 실제 시행 연도·회차·교시·문항을 검증한 기출에서 선정한다. 제140회부터 공식 확인 가능한 이전 회차 역순 진행을 유지하되 최근 5년 빈출 분석의 반복 유형을 먼저 고려한다. 기존 상태와 채널 영상 ID를 확인해 숏츠 중복을 방지한다. 전체 명칭 ‘측량및지형공간정보기술사’, 과목·학습 분야, 검증된 기출 정보를 제목·설명과 화면에 읽기 쉽게 표시한다. 학습 분야는 공식 시험과목과 구분한다. 미검증 기출을 추정하지 않는다. 공식 출처와 블로그 링크 및 학습용 예시 표시를 설명에 제공한다.
 
-Voicebox 내 목소리(1샘플) 프로필 9ae4198e-a2c5-4604-9165-7d39adf0143c, 로컬 ffmpeg, /Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf를 사용한다. 유료 API·새 계정을 추가하지 않는다. 초안·편집은 Sol Medium, 어려운 답안 검토만 Astra를 사용하고 실제 모델·검토 증빙을 남긴다. 자연스럽고 정확한 전문가 문체로 쓴다.
+Voicebox 내 목소리(1샘플) 프로필 9ae4198e-a2c5-4604-9165-7d39adf0143c, 로컬 ffmpeg, /Volumes/USB256/devAPP/AutoSNS/assets/FONTS/KoPubWorld Dotum_Pro Bold.otf를 사용한다. 유료 API·새 계정을 추가하지 않는다. 초안·편집은 Sol Medium, 어려운 답안 검토만 Astra를 사용하고 실제 모델·검토 증빙을 남긴다. 자연스럽고 정확한 전문가 문체로 쓴다.
 
 긴 영상 제작·공개·관련 동영상 연결을 숏츠 게시의 선행 조건으로 두지 않는다. 같은 주제의 기존 공개 영상만 선택적으로 연결하고 이를 위해 장편을 만들지 않는다. 자료·상태·증빙은 /Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/engineer-video-output/exam-compilations/ 아래 별도 shorts 폴더에 저장한다. 대상 채널·실제 영상 ID·예약 설정 저장을 확인한 경우에만 예약 완료로 기록한다. 공개 후 개별 Shorts URL·제목·재생·설명 링크를 검증한다. 실패한 단계만 복구하고 중복 업로드하지 않는다. 새 완료·새 실패·필요한 사용자 조치만 알리며 같은 실패와 변화 없는 상태는 조용히 보존한다. 블로그·PDF·카카오톡·친구 요청 및 하루 한 문제 일차와 일정은 유지한다.
 
@@ -23,5 +23,5 @@ Voicebox 내 목소리(1샘플) 프로필 9ae4198e-a2c5-4604-9165-7d39adf0143c, 
 예약 실행 위치: Chrome 조작 도구를 사용할 수 있는 소스 이동 관리 채팅으로 연결했다. /Volumes/USB256/devAPP/AutoSNS/AGENTS.md와 shared/axlock.py의 잠금·비상 정지 지침을 확인하고, Chrome 사용·발행은 profile:tistory 잠금을 잡은 상태에서 순차 실행한다. 사용자 브라우저나 다른 작업의 세션을 종료하지 않는다.
 
 2026-10-18 사용자 변경 — 클로드 이전 후 숏츠 제작 방식 (위 지침보다 우선)
-숏츠 제작은 `shorts-maker` 서브에이전트에 맡긴다(공통규칙 '숏츠 제작'): CLAUDE.md 영상 지침(Remotion 편집, 디오라마 2~3장, Pretendard Bold, AI 합성 고지), Voicebox 내 목소리, 20.0초 이하·한 영상 한 질문·질문형 첫 화면·큰 자막·학습 분야 표시는 그 에이전트가 지킨다. 업로드와 댓글은 youtube-shorts-auto/geoai_short_post.py 로만 한다.
+숏츠 제작은 `shorts-maker` 서브에이전트에 맡긴다(공통규칙 '숏츠 제작'): CLAUDE.md 영상 지침(Remotion 편집, 디오라마 2~3장, Pretendard Bold, AI 합성 고지), Voicebox 내 목소리, 20.0초 이하·한 영상 한 질문·질문형 첫 화면·큰 자막·학습 분야 표시는 그 에이전트가 지킨다. 업로드와 댓글은 channels/youtube-shorts-auto/geoai_short_post.py 로만 한다.
 하루 한 문제 숏츠(claude.survey-daily, 08:00 공개)와 같은 기출·주제를 겹치지 않게 `published_history.py` 와 양쪽 상태를 대조한다.

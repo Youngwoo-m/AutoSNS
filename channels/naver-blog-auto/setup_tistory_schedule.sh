@@ -1,0 +1,1 @@
+../../GeoAI_NA/naver-blog-auto/setup_tistory_schedule.sh

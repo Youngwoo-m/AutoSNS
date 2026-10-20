@@ -9,7 +9,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, 'youtube-shorts-auto'))
+sys.path.insert(0, os.path.join(ROOT, 'channels', 'youtube-shorts-auto'))
 
 from common import load_config  # noqa: E402
 from shared.llm import DEFAULT_BASE, gateway_keys  # noqa: E402

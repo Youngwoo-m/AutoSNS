@@ -24,7 +24,7 @@ def esc(s):
 
 
 def shorts():
-    items = load(ROOT / 'youtube-shorts-auto/publish_schedule.json', [])
+    items = load(ROOT / 'channels/youtube-shorts-auto/publish_schedule.json', [])
     done = [x for x in items if x.get('published')]
     todo = sorted((x for x in items if not x.get('published')), key=lambda x: x['date'])
     overdue = [x for x in todo if x['date'] < TODAY.isoformat()]
@@ -87,7 +87,7 @@ def build():
 TEMPLATE = '''<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>AutoSNS 운영 현황</title>
 <style>
-@font-face{{font-family:P;src:url(../../../FONTS/Pretendard-Bold.otf);font-weight:700}}
+@font-face{{font-family:P;src:url(../../../assets/FONTS/Pretendard-Bold.otf);font-weight:700}}
 :root{{--bg:#f4f6f8;--card:#fff;--ink:#17202a;--sub:#5f6b78;--line:#e3e7ec;--accent:#1f6feb;--warn:#c2410c;--ok:#15803d}}
 @media (prefers-color-scheme:dark){{:root:not([data-theme=light]){{--bg:#0f1419;--card:#182029;--ink:#e6edf3;--sub:#93a1b0;--line:#2a3541;--accent:#58a6ff;--warn:#fb923c;--ok:#4ade80}}}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:700 15px/1.5 P,-apple-system,sans-serif}}
