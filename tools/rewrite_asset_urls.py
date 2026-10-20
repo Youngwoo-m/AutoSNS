@@ -1,8 +1,8 @@
 """공개 글·파일에 박힌 이미지 저장소 주소(CDN)를 새 주소로 한꺼번에 고친다 — geoai-assets 를 SMUDS-m → Youngwoo-m 으로 옮길 때 만들었다.
 
     # naver-blog-auto 가상환경 파이썬으로 실행(블로거 API 인증이 거기 있다)
-    cd naver-blog-auto && ./.venv/bin/python ../tools/rewrite_asset_urls.py blogger          # 시험(고치지 않음)
-    cd naver-blog-auto && ./.venv/bin/python ../tools/rewrite_asset_urls.py blogger --go     # 실제 수정
+    cd channels/naver-blog-auto && ./.venv/bin/python ../../tools/rewrite_asset_urls.py blogger          # 시험(고치지 않음)
+    cd channels/naver-blog-auto && ./.venv/bin/python ../../tools/rewrite_asset_urls.py blogger --go     # 실제 수정
     python3 tools/rewrite_asset_urls.py files [--go]                                          # 저장소 안 파일
 
   --old / --new   바꿀 문구(기본 SMUDS-m/geoai-assets → Youngwoo-m/geoai-assets)
@@ -22,9 +22,9 @@ STAMP = datetime.date.today().strftime("%Y%m%d")
 BK = os.path.join(ROOT, "backups", f"asset_urls_{STAMP}")
 
 # 저장소 안에서 고칠 파일(옛 백업 html 은 역사 기록이라 건드리지 않는다)
-FILES = ["naver-blog-auto/assets/widget/dinner_banner.json",
-         "naver-blog-auto/assets/widget/shuttle_banner.json", "geoai-site/index.html",
-         "naver-blog-auto/README.md", "naver-blog-auto/shots/README.md", "assets/blogger/README.md"]
+FILES = ["channels/naver-blog-auto/assets/widget/dinner_banner.json",
+         "channels/naver-blog-auto/assets/widget/shuttle_banner.json", "site/geoai-site/index.html",
+         "channels/naver-blog-auto/README.md", "channels/naver-blog-auto/shots/README.md", "assets/blogger/README.md"]
 
 
 def cmd_files(a):
@@ -45,13 +45,13 @@ def cmd_files(a):
             open(p, "w", encoding="utf-8").write(s.replace(a.old, a.new))
     print(("수정 완료" if a.go else "시험(고치지 않음)") + f": 파일 {n}곳")
     if a.go:
-        print("geoai-site/index.html 을 고쳤으면 Netlify 사이트를 다시 배포해야 반영된다.")
+        print("site/geoai-site/index.html 을 고쳤으면 Netlify 사이트를 다시 배포해야 반영된다.")
 
 
 def cmd_blogger(a):
-    sys.path.insert(0, os.path.join(ROOT, "naver-blog-auto"))
+    sys.path.insert(0, os.path.join(ROOT, "channels", "naver-blog-auto"))
     sys.path.insert(0, ROOT)
-    os.chdir(os.path.join(ROOT, "naver-blog-auto"))
+    os.chdir(os.path.join(ROOT, "channels", "naver-blog-auto"))
     import geoai_blogger as gb
     svc, bid = gb.service(), gb.blog_id()
     posts, tok = [], None

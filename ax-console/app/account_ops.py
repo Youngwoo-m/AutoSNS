@@ -20,14 +20,14 @@ ROOT = CONSOLE.parent
 sys.path.insert(0, str(ROOT))
 from shared import axlock  # noqa: E402
 
-GPY = str(ROOT / 'youtube-shorts-auto' / '.venv' / 'bin' / 'python')
+GPY = str(ROOT / 'channels' / 'youtube-shorts-auto' / '.venv' / 'bin' / 'python')
 NAME = re.compile(r'^[A-Z][A-Z0-9_]{2,60}$')
 
 # 사이트 → (프로필 이름, 지울 쿠키 도메인, 함께 지울 파일, 다시 로그인 스크립트(폴더, 파일))
 BROWSER = {
-    'naver': ('naver', ['naver.com'], [], ('naver-blog-auto', 'login_setup.py')),
+    'naver': ('naver', ['naver.com'], [], ('channels/naver-blog-auto', 'login_setup.py')),
     'tistory': ('tistory', ['tistory.com', 'kakao.com'], ['GeoAI_NA/naver-blog-auto/tistory_cookies.json'],
-                ('naver-blog-auto', 'tistory_login.py')),
+                ('channels/naver-blog-auto', 'tistory_login.py')),
 }
 
 

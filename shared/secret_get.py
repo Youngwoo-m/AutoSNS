@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VENV_PY = os.path.join(ROOT, "naver-blog-auto", ".venv", "bin", "python")
+VENV_PY = os.path.join(ROOT, "channels", "naver-blog-auto", ".venv", "bin", "python")
 
 
 def _direct():

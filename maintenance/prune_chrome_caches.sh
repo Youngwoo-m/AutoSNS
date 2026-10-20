@@ -27,7 +27,7 @@ freed_before=$(df -k "$ROOT" | awk 'NR==2{print $4}')
 echo "[$(ts)] prune 시작 — $ROOT" >> "$LOG"
 
 # 각 chrome-profile* 디렉터리 순회
-find "$ROOT" -maxdepth 2 -type d -name "chrome-profile*" 2>/dev/null | while IFS= read -r prof; do
+find "$ROOT" -maxdepth 3 -type d -name "chrome-profile*" 2>/dev/null | while IFS= read -r prof; do
   # 프로필 점유 확인: 이 경로를 연 프로세스가 있으면 스킵
   if pgrep -f -- "$prof" >/dev/null 2>&1; then
     echo "[$(ts)] SKIP(사용중): $prof" >> "$LOG"; continue

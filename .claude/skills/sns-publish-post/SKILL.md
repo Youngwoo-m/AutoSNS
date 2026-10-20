@@ -6,7 +6,7 @@ description: AutoSNS 에서 주제·링크를 받아 학과 채널(네이버 블
 # 학과 채널에 글·영상 발행하기
 
 ## 채널 이름(사용자가 부르는 말 → 실제 대상)
-- **블로그** = 네이버 블로그 studs23 — `naver-blog-auto/publish_naver.py` 의 `publish(data)`. 구조형 data: `title, category, summary, intro, news_blocks[{heading, paragraph, image, keep_image, source{title,link}, video_url, video_label}], faq, outro, tags, no_images`.
+- **블로그** = 네이버 블로그 studs23 — `channels/naver-blog-auto/publish_naver.py` 의 `publish(data)`. 구조형 data: `title, category, summary, intro, news_blocks[{heading, paragraph, image, keep_image, source{title,link}, video_url, video_label}], faq, outro, tags, no_images`.
 - **블로거** = 학과 Blogger smuds2026 — `post_blogger.py`. 그림은 `geoai_assets.upload` 로 CDN 에 올려 `<img>`, 영상은 `<iframe>`. CTA 는 `post_blogger.build_html({"intro": ""}, cfg)`.
 - **GeoAI 블로그** = geoaina.blogspot.com, **티스토리** = na-geoai.tistory.com(요약 + 원문 '전체 글 보기' 링크만, `tistory_crosspost.summary_html`).
 - **유튜브** = 학과 @smds2023(token.json), 개인 GeoAI @geoai-safety(token_youtube_geoai.json, `SMUDS_EDITION=geoai`).

@@ -18,7 +18,7 @@ if [ ! -d "$USB" ]; then
 fi
 
 total=0; moved=0
-for proj in naver-blog-auto insta-cardnews youtube-shorts-auto; do
+for proj in channels/naver-blog-auto channels/insta-cardnews channels/youtube-shorts-auto; do
   src="$proj/posts"
   [ -d "$src" ] || continue
   while IFS= read -r f; do
@@ -40,7 +40,7 @@ for proj in naver-blog-auto insta-cardnews youtube-shorts-auto; do
 done
 
 # 빈 폴더 정리
-[ "$GO" -eq 1 ] && find naver-blog-auto/posts insta-cardnews/posts youtube-shorts-auto/posts \
+[ "$GO" -eq 1 ] && find channels/naver-blog-auto/posts channels/insta-cardnews/posts channels/youtube-shorts-auto/posts \
   -type d -empty -delete 2>/dev/null
 
 if [ "$GO" -eq 0 ]; then

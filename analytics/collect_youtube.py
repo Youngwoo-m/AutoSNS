@@ -23,7 +23,7 @@ from google.auth.transport.requests import Request      # noqa: E402
 from google.oauth2.credentials import Credentials       # noqa: E402
 from googleapiclient.discovery import build             # noqa: E402
 
-TOKEN = os.path.join(ROOT_DIR, "youtube-shorts-auto", "token.json")
+TOKEN = os.path.join(ROOT_DIR, "channels", "youtube-shorts-auto", "token.json")
 # 업로드 재생목록 UUyB8... 의 앞 두 글자만 UC 로 바꾸면 채널 ID 다.
 CHANNEL_ID = "UCyB8hWjVghfgzZgj8fwmZrQ"
 RSS_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=" + CHANNEL_ID

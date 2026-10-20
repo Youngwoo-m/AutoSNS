@@ -19,8 +19,8 @@ from analytics.common import ROOT_DIR, log  # noqa: E402
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly",
           "https://www.googleapis.com/auth/yt-analytics.readonly"]
-TOKENS = {"dept": os.path.join(ROOT_DIR, "youtube-shorts-auto", "token.json"),
-          "geoai": os.path.join(ROOT_DIR, "youtube-shorts-auto", "token_youtube_geoai.json")}
+TOKENS = {"dept": os.path.join(ROOT_DIR, "channels", "youtube-shorts-auto", "token.json"),
+          "geoai": os.path.join(ROOT_DIR, "channels", "youtube-shorts-auto", "token_youtube_geoai.json")}
 
 
 def _creds(path):

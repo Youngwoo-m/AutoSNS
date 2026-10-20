@@ -8,9 +8,9 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$ROOT/backups/state/$(date +%Y-%m-%d)"
 mkdir -p "$DEST"
-for f in naver-blog-auto/buddy_request_state.json \
-         insta-cardnews/follow_back_state.json \
-         youtube-shorts-auto/trigger_state.json; do
+for f in channels/naver-blog-auto/buddy_request_state.json \
+         channels/insta-cardnews/follow_back_state.json \
+         channels/youtube-shorts-auto/trigger_state.json; do
     [ -f "$ROOT/$f" ] || continue
     cp -p "$ROOT/$f" "$DEST/$(echo "$f" | tr '/' '_')" && echo "백업: $f"
 done

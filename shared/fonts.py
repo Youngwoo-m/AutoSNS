@@ -22,7 +22,7 @@ DOTUM_BOLD = "KoPubWorld Dotum_Pro Bold.otf"
 REQUIRED = (DOTUM_LIGHT, DOTUM_MEDIUM, DOTUM_BOLD)
 
 
-ROOT_FONT_DIR = os.path.join(ROOT_DIR, "FONTS")
+ROOT_FONT_DIR = os.path.join(ROOT_DIR, "assets", "FONTS")
 
 
 def kopub_bold_css(font_dir=None, doubled=False):
@@ -41,7 +41,7 @@ def kopub_bold_css(font_dir=None, doubled=False):
 
 def default_font_dir(base_dir):
     """프로젝트 폴더 한 단계 위의 공용 FONTS/."""
-    return os.path.join(os.path.dirname(base_dir), "FONTS")
+    return ROOT_FONT_DIR
 
 
 def require_fonts(font_dir, needed=REQUIRED):

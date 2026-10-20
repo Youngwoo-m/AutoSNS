@@ -8,8 +8,8 @@
 
 | 파일 | 역할 | 실행 인터프리터 |
 |---|---|---|
-| `collect_youtube.py` | 업로드 목록·길이·조회수·구독자 | `youtube-shorts-auto/.venv` |
-| `collect_instagram.py` | 게시물·팔로워 (저장된 크롬 세션) | `insta-cardnews/.venv` |
+| `collect_youtube.py` | 업로드 목록·길이·조회수·구독자 | `channels/youtube-shorts-auto/.venv` |
+| `collect_instagram.py` | 게시물·팔로워 (저장된 크롬 세션) | `channels/insta-cardnews/.venv` |
 | `collect_web.py` | 블로그·홈페이지 공개 목록 | 시스템 `python3` |
 | `build_report.py` | 주간 리포트 HTML + 스냅샷 | 시스템 `python3` |
 | `build_monthly.py` | 월간 분석 HTML·md·xlsx | `analytics/.venv` |

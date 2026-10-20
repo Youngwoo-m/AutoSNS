@@ -20,7 +20,7 @@ from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "naver-blog-auto"))
+sys.path.insert(0, os.path.join(ROOT, "channels", "naver-blog-auto"))
 from analytics.common import load_part, log, save_part   # noqa: E402
 
 BLOG_ID = "studs23"

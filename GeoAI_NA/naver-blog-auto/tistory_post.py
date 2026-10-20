@@ -11,6 +11,10 @@
     ./.venv/bin/python tistory_post.py --html 원고.html --title "제목" --category "노르딕워킹" --tags "a,b,c" --dry
     ./.venv/bin/python tistory_post.py --html 원고.html --title "제목" --category "노르딕워킹" --tags "a,b,c" --go
 
+이미 올린 글의 본문만 바꿀 때(제목·태그·카테고리·주소는 그대로):
+    ./.venv/bin/python tistory_post.py --edit-post 109 --html 수정본.html --title "현재 제목" --dry|--go
+    --title 은 글 번호가 맞는지 확인하는 용도다(편집기의 현재 제목과 다르면 중단). 첨부 자리표시는 지원하지 않는다.
+
 결과는 마지막 줄에 JSON 한 줄: {"status": "published"|"dry"|"duplicate"|"error", "url": …, "message": …}
 같은 제목 글이 공개 RSS 에 이미 있으면 올리지 않고 duplicate 로 끝난다(--allow-duplicate 로 끌 수 있음).
 """
@@ -27,7 +31,7 @@ import tistory_crosspost as tc  # noqa: E402
 
 def out(status, url="", message=""):
     print(json.dumps({"status": status, "url": url, "message": message}, ensure_ascii=False))
-    return 0 if status in ("published", "dry") else 1
+    return 0 if status in ("published", "dry", "saved") else 1
 
 
 def existing_url(title):
@@ -133,11 +137,50 @@ def publish(args, body, files):
         tc.close(d)
 
 
+def edit_body(args, body):
+    """기존 글(args.edit_post)의 본문만 교체한다. 편집기의 현재 제목이 --title 과 다르면 저장하지 않는다."""
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.support.ui import WebDriverWait
+    d = tc.build_driver(headless=not args.show)
+    try:
+        W = WebDriverWait(d, 25)
+        u = f"{tc.BLOG}/manage/newpost/{args.edit_post}?type=post&returnURL=ENTRY"
+        d.get(u)
+        if "/manage/newpost" not in tc._cur_url(d) and tc.kakao_relogin(d):
+            d.get(u)
+        W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
+        time.sleep(1.5)
+        cur_title = d.find_element(By.ID, "post-title-inp").get_attribute("value")
+        if cur_title != args.title:
+            raise RuntimeError(f"{args.edit_post}번 글 제목이 다름: {cur_title!r} — 저장하지 않음")
+        d.execute_script("tinymce.activeEditor.setContent(arguments[0]);"
+                         "tinymce.activeEditor.fire('change'); tinymce.activeEditor.save();", body)
+        new = d.execute_script("return tinymce.activeEditor.getContent();")
+        if len(new) < len(body) // 2:
+            raise RuntimeError("편집기가 본문을 많이 지움 — 저장하지 않음")
+        if not args.go:
+            tc._shot(d, "edit_dry")
+            return f"{tc.BLOG}/{args.edit_post}"
+        d.execute_script("arguments[0].click();", d.find_element(By.ID, "publish-layer-btn"))
+        W.until(EC.presence_of_element_located((By.ID, "publish-btn")))
+        time.sleep(0.8)
+        d.execute_script("document.getElementById('open20') && document.getElementById('open20').click();")
+        d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();",
+                         d.find_element(By.ID, "publish-btn"))
+        W.until(lambda x: "/manage/newpost" not in x.current_url)
+        time.sleep(2)
+        return f"{tc.BLOG}/{args.edit_post}"
+    finally:
+        tc.close(d)
+
+
 def main():
     ap = argparse.ArgumentParser(description="티스토리 공용 발행기")
     ap.add_argument("--html", required=True, help="본문 HTML 파일")
     ap.add_argument("--title", required=True)
-    ap.add_argument("--category", required=True, help="티스토리 관리 화면의 카테고리 이름 그대로")
+    ap.add_argument("--category", default="", help="티스토리 관리 화면의 카테고리 이름 그대로(--edit-post 에서는 쓰지 않음)")
+    ap.add_argument("--edit-post", type=int, default=0, help="이미 올린 글 번호 — 본문만 교체")
     ap.add_argument("--tags", default="", help="쉼표로 구분")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry", action="store_true", help="발행 직전에 멈춤(실제로 올리지 않음)")
@@ -156,6 +199,23 @@ def main():
         files = attachments(body, os.path.dirname(os.path.abspath(args.html)))
     except (OSError, FileNotFoundError) as e:
         return out("error", message=str(e))
+    if args.edit_post:
+        from shared.axlock import Timeout, hold, stopped
+        if args.go and stopped():
+            return out("error", message="비상 정지 중이라 수정하지 않았습니다(ax-console/data/STOP.json)")
+        if files:
+            return out("error", message="--edit-post 는 첨부 자리표시를 지원하지 않습니다")
+        try:
+            with hold(["profile:tistory"], job=f"{args.job}:tistory_edit", wait=2400):
+                os.environ["AX_LOCKED"] = "1"
+                url = edit_body(args, body)
+        except Timeout:
+            return out("error", message="40분 기다려도 티스토리 크롬 프로필이 비지 않았습니다")
+        except Exception as e:
+            return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
+        return out("saved" if args.go else "dry", url)
+    if not args.category:
+        return out("error", message="--category 가 필요합니다")
     if not args.allow_duplicate:
         u = existing_url(args.title)
         if u:
