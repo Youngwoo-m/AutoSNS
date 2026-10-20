@@ -23,18 +23,18 @@ Codex '7'(측량 기출 숏츠, 유튜브만)도 사용자 요청으로 같은 �
 - `run_claude_job.sh` — 실행기. 3시간 넘으면 끊는다. 출력은 `logs/<작업>.log`.
 - `state/<작업>.jsonl` — 회차별 결과 기록(대화 기록 대신, git 제외).
 
-## 발행 도구 (`naver-blog-auto/`)
+## 발행 도구 (`channels/naver-blog-auto/`)
 
 - `tistory_post.py` — 티스토리 공용 발행기. profile:tistory 잠금을 잡고, 같은 제목 글이 있으면 건너뛴다.
   본문의 `<p data-ax-attach="파일"></p>` 자리에 그림·PDF 를 네이티브 첨부로 올린다(편집기에 끌어다 놓기 방식 —
   파일 입력칸에 경로를 넣는 방식은 업로드가 시작되지 않았다).
 - `blogger_post.py` — 개인 Blogger(geoaina) 발행기. quota:blogger-personal 잠금, 같은 제목 건너뛰기, https 주소만 허용.
 - `kakao_notify.py "메시지" "링크"` — 카카오톡 나에게 보내기.
-- `youtube-shorts-auto/geoai_short_post.py` — 개인 유튜브(@geoai-safety) 숏츠 업로드·운영자 댓글·상태 확인(upload/comment/check).
+- `channels/youtube-shorts-auto/geoai_short_post.py` — 개인 유튜브(@geoai-safety) 숏츠 업로드·운영자 댓글·상태 확인(upload/comment/check).
   profile:youtube-personal 잠금, 20.0초 초과·과거 예약 거부, 같은 제목 영상·기존 운영자 댓글이면 duplicate. AX_DRY=1 이면 점검만.
-- `youtube-shorts-auto/diorama_image.py` · `remotion-shorts/render_survey_short.py` — 측량 숏츠 디오라마 그림(게이트웨이)과 Remotion 렌더(src/survey-short). CLAUDE.md 영상 지침(2026-10-18 survey-daily 에 적용).
+- `channels/youtube-shorts-auto/diorama_image.py` · `remotion-shorts/render_survey_short.py` — 측량 숏츠 디오라마 그림(게이트웨이)과 Remotion 렌더(src/survey-short). CLAUDE.md 영상 지침(2026-10-18 survey-daily 에 적용).
 - 따라쓰기 PDF 파이썬: `GeoAI_NA/claude-jobs/.venv` (requirements.txt — reportlab·pypdf·pypdfium2·pdfplumber·pillow, git 제외). Codex 런타임은 쓰지 않는다.
-- `youtube-shorts-auto/yt_transcript.py URL --out 자막.txt` — 유튜브 영상 정보(임베드 가능 여부 포함)와 한국어 자막 평문(yt-dlp, 영상은 안 받음). safekorea 12시 글의 내용 확인용.
+- `channels/youtube-shorts-auto/yt_transcript.py URL --out 자막.txt` — 유튜브 영상 정보(임베드 가능 여부 포함)와 한국어 자막 평문(yt-dlp, 영상은 안 받음). safekorea 12시 글의 내용 확인용.
 
 ## 발행 전 검토 — 검토·출처 에이전트
 

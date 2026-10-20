@@ -14,4 +14,4 @@ if ! ./wait_network.sh; then
 fi
 
 echo "== 색인 점검 =="
-"$ROOT/naver-blog-auto/.venv/bin/python" check_indexing.py "$@"
+"$ROOT/channels/naver-blog-auto/.venv/bin/python" check_indexing.py "$@"

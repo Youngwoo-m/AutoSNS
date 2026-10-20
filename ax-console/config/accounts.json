@@ -88,7 +88,7 @@
         },
         "tistory": {
           "blog": "na-geoai.tistory.com",
-          "login": "naver-blog-auto/chrome-profile-tistory",
+          "login": "channels/naver-blog-auto/chrome-profile-tistory",
           "module": "GeoAI_NA"
         },
         "homepage": {

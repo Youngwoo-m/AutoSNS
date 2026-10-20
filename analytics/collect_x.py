@@ -18,7 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from analytics.common import ROOT_DIR, log, save_part  # noqa: E402
 
-YT_DIR = os.path.join(ROOT_DIR, "youtube-shorts-auto")
+YT_DIR = os.path.join(ROOT_DIR, "channels", "youtube-shorts-auto")
 POSTS_LOG = os.path.join(YT_DIR, "x_posts.json")
 LOG_GLOB = os.path.join(YT_DIR, "logs", "20*.log")
 LINE = re.compile(r"^\[(\d{4}-\d{2}-\d{2}) [\d:]+\].*게시 완료.*?(https://x\.com/\S+/status/(\d+))")

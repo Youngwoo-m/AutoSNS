@@ -118,14 +118,14 @@ def _local():
         if isinstance(title, str) and title.strip():
             out.append({"title": title.strip(), "url": url, "date": _day(date)})
 
-    for f in ("naver-blog-auto/title_history.json", "youtube-shorts-auto/title_history.json"):
+    for f in ("channels/naver-blog-auto/title_history.json", "channels/youtube-shorts-auto/title_history.json"):
         try:
             for t in json.loads((ROOT / f).read_text()):
                 add(t if isinstance(t, str) else (t or {}).get("title"))
         except (OSError, ValueError):
             pass
     try:
-        for x in json.loads((ROOT / "youtube-shorts-auto/publish_schedule.json").read_text()):
+        for x in json.loads((ROOT / "channels/youtube-shorts-auto/publish_schedule.json").read_text()):
             add(x.get("title"), x.get("date") or x.get("publish_at") or "")
     except (OSError, ValueError, AttributeError):
         pass

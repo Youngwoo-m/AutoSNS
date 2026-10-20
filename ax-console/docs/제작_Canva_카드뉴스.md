@@ -36,7 +36,7 @@ data/media/YYYY/MM/<콘텐츠ID>/card_01.png …
 |---|---|
 | 크기 | 1080 × 1350 (인스타 세로 4:5) |
 | 쪽 | 6쪽: 1 표지, 2~5 본문, 6 마무리 |
-| 글꼴 | 제목·쪽 번호 **Pretendard Bold**, 본문 **KoPub 돋움 Bold** (CLAUDE.md, `FONTS/`). 굵기 대신 크기·색으로 위계 |
+| 글꼴 | 제목·쪽 번호 **Pretendard Bold**, 본문 **KoPub 돋움 Bold** (CLAUDE.md, `assets/FONTS/`). 굵기 대신 크기·색으로 위계 |
 | 필드 이름 | 표지 `C1_TITLE`, `C1_BODY`, 이미지 `COVER_IMAGE` / 본문 `C2_TITLE`·`C2_BODY` … `C5_TITLE`·`C5_BODY` / 마무리 `C6_TITLE`, `C6_BODY` / 모든 쪽 `HANDLE`(계정 이름) |
 | 글자 한도 | 제목 22자, 본문 60자 안팎(템플릿 상자 크기에 맞춰 정한 뒤 알려 주면 1단계 검사에 반영) |
 | 이미지 | 표지 이미지 칸만. 그림 안에 글자 없음(AI 이미지 한글 깨짐), 사고·부상 장면 없음 |
@@ -53,5 +53,5 @@ data/media/YYYY/MM/<콘텐츠ID>/card_01.png …
 
 ## 대비책
 
-- 템플릿이 없거나 autofill 이 실패하면 지금처럼 Gamma 카드 생성기(`insta-cardnews/gamma_make.py`)를 쓴다.
+- 템플릿이 없거나 autofill 이 실패하면 지금처럼 Gamma 카드 생성기(`channels/insta-cardnews/gamma_make.py`)를 쓴다.
 - `design_generation`(Canva AI 디자인 생성)은 결과 모양이 매번 달라 정기 카드에는 쓰지 않는다.

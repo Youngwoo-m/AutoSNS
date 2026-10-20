@@ -76,7 +76,7 @@
       "earth_observation_satellite"
     ],
     "style": "question_based",
-    "font_path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "font_path": "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/KoPubWorld Dotum_Pro Bold.otf",
     "apply_to": "future_videos_only",
     "existing_public_videos": "unchanged",
     "main_copy": "영상에서 답하는 질문 1개, 짧고 큰 글씨",
@@ -183,7 +183,7 @@
     "official_help": "https://support.google.com/youtube/answer/14075157?hl=ko"
   },
   "font": {
-    "path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "path": "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/KoPubWorld Dotum_Pro Bold.otf",
     "family": "KoPubWorld Dotum_Pro Bold",
     "scope": [
       "영상 제목",
@@ -209,7 +209,7 @@
     "publication_delay_seconds": 3600,
     "timing_basis": "normal_publication_08:00_KST; delayed_run_actual_time_verified",
     "normal_publication_time_kst": "08:00",
-    "font_path": "/Volumes/USB256/devAPP/AutoSNS/FONTS/KoPubWorld Dotum_Pro Bold.otf",
+    "font_path": "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/KoPubWorld Dotum_Pro Bold.otf",
     "thumbnail": "question_based_with_full_exam_name_day_topic_and_provided_bold_font",
     "status_tracking": "blog_url -> video_id -> scheduled_publication_at -> public_verified",
     "first_run": "2026-10-12 07:00 Asia/Seoul",

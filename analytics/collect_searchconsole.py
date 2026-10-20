@@ -23,7 +23,7 @@ from analytics.common import log, save_part  # noqa: E402
 SCOPES = ["https://www.googleapis.com/auth/webmasters.readonly"]
 BASE = os.path.dirname(os.path.abspath(__file__))
 TOKEN_PATH = os.path.join(BASE, "token_searchconsole.json")
-CLIENT_SECRET = os.path.join(os.path.dirname(BASE), "youtube-shorts-auto", "client_secret.json")
+CLIENT_SECRET = os.path.join(os.path.dirname(BASE), "channels", "youtube-shorts-auto", "client_secret.json")
 DAYS = 28            # 서치콘솔은 2~3일 지연이 있어 넉넉히 본다
 TOP_N = 20
 

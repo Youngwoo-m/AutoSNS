@@ -16,14 +16,14 @@
    - 사고 순간·부상자·불길 한가운데처럼 고통스러운 장면은 피하고, 대비·대응·구조 장면으로.
    - 실제 사진처럼 보이지 않게 디오라마 질감(미니어처·틸트시프트)을 분명히 한다.
 3. 글꼴: 제목·보조 모두 **Pretendard Bold**, 인스타 카드 본문만 KoPub 돋움 Bold
-   (FONTS/). 굵기 대신 글자 크기와 색으로 위계를 준다 — Black·검은고딕은 "너무 두꺼워
+   (assets/FONTS/). 굵기 대신 글자 크기와 색으로 위계를 준다 — Black·검은고딕은 "너무 두꺼워
    읽기 어렵다"고 반려됐다(2026-10-14). 글꼴을 바꿀 때는 `shared/fonts.py` 의 DISPLAY
    한 줄만 고치면 썸네일·영상 프레임·카드·배너가 모두 따라온다.
    AI가 만든 사람·목소리가 나오면 화면과 설명에 AI 합성 고지를 넣는다.
 
 기존 자동 발행 파이프라인(make_video.py 등 ffmpeg 기반)은 아직 이 지침으로 바꾸지 않았다.
 바꿀 때는 사용자와 범위를 정한 뒤 옮긴다.
-(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `youtube-shorts-auto/diorama_image.py`.)
+(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `channels/youtube-shorts-auto/diorama_image.py`.)
 
 ## 자동 작업 잠금·비상 정지 (2026-10-18)
 

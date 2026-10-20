@@ -30,22 +30,22 @@ COMMON = [{'key': 'memo', 'label': '메모 (실행 없음)', 'cmd': None, 'live'
           {'key': 'test', 'label': '실행 점검 (발행 안 함)', 'cmd': ['/bin/echo', 'AX 콘솔 실행 점검 OK'], 'live': False}]
 ACTIONS = {
     'dept': {
-        'youtube': [('shorts_weekly', '숏츠 주간 발행', 'youtube-shorts-auto/run.sh'),
-                    ('career_publish', '진로 숏츠 발행', 'youtube-shorts-auto/run_career_publish.sh'),
-                    ('caption_backfill', '자막 보충', 'youtube-shorts-auto/run_caption_backfill.sh')],
-        'instagram': [('cards_weekly', '카드뉴스 발행', 'insta-cardnews/run.sh'),
-                      ('caption_autofix', '캡션 자동 수정', 'insta-cardnews/run_caption_autofix.sh')],
-        'naver_blog': [('naver_weekly', '블로그 글 발행', 'naver-blog-auto/run.sh'),
-                       ('career_series', '진로 시리즈 발행', 'naver-blog-auto/run_career_series.sh'),
-                       ('naver_jobs', '채용 소식 발행', 'naver-blog-auto/run_jobs.sh')],
-        'tiktok': [('tiktok_queue', '틱톡 대기열 발행', 'youtube-shorts-auto/run_tiktok_queue.sh')],
-        'x': [('x_promo', 'X 홍보글 발행', 'youtube-shorts-auto/run_x_promo.sh')],
+        'youtube': [('shorts_weekly', '숏츠 주간 발행', 'channels/youtube-shorts-auto/run.sh'),
+                    ('career_publish', '진로 숏츠 발행', 'channels/youtube-shorts-auto/run_career_publish.sh'),
+                    ('caption_backfill', '자막 보충', 'channels/youtube-shorts-auto/run_caption_backfill.sh')],
+        'instagram': [('cards_weekly', '카드뉴스 발행', 'channels/insta-cardnews/run.sh'),
+                      ('caption_autofix', '캡션 자동 수정', 'channels/insta-cardnews/run_caption_autofix.sh')],
+        'naver_blog': [('naver_weekly', '블로그 글 발행', 'channels/naver-blog-auto/run.sh'),
+                       ('career_series', '진로 시리즈 발행', 'channels/naver-blog-auto/run_career_series.sh'),
+                       ('naver_jobs', '채용 소식 발행', 'channels/naver-blog-auto/run_jobs.sh')],
+        'tiktok': [('tiktok_queue', '틱톡 대기열 발행', 'channels/youtube-shorts-auto/run_tiktok_queue.sh')],
+        'x': [('x_promo', 'X 홍보글 발행', 'channels/youtube-shorts-auto/run_x_promo.sh')],
         'threads': [], 'blogger': [],
     },
     'personal': {
-        'blogger': [('geoai_morning', 'GeoAI 아침 글 발행', 'naver-blog-auto/run_geoai.sh'),
-                    ('geoai_evening', 'GeoAI 저녁 글 발행', 'naver-blog-auto/run_geoai_evening.sh')],
-        'tistory': [('tistory', '티스토리 발행', 'naver-blog-auto/run_tistory.sh')],
+        'blogger': [('geoai_morning', 'GeoAI 아침 글 발행', 'channels/naver-blog-auto/run_geoai.sh'),
+                    ('geoai_evening', 'GeoAI 저녁 글 발행', 'channels/naver-blog-auto/run_geoai_evening.sh')],
+        'tistory': [('tistory', '티스토리 발행', 'channels/naver-blog-auto/run_tistory.sh')],
         'homepage': [], 'naver_blog': [], 'tiktok': [], 'youtube': [], 'instagram': [], 'kakao': [],
     },
 }
@@ -750,14 +750,14 @@ def schedule_view(days=8):
 
 
 # ---- 구글 계정 연결: 토큰 상태 확인과 로그인 ----
-GPY = str(ROOT / 'youtube-shorts-auto' / '.venv' / 'bin' / 'python')
+GPY = str(ROOT / 'channels' / 'youtube-shorts-auto' / '.venv' / 'bin' / 'python')
 SERVICE_LABEL = {'youtube': '유튜브', 'blogger': '블로거', 'searchconsole': '서치콘솔'}
 # (계정, 서비스) → 기존 인증 스크립트. 이미 토큰이 있으면 묻는 스크립트에는 'y' 를 넣는다.
 LOGIN = {
-    ('dept', 'youtube'): ('youtube-shorts-auto', ['youtube_login_setup.py']),
-    ('personal', 'youtube'): ('youtube-shorts-auto', ['geoai_youtube_auth.py']),
-    ('dept', 'blogger'): ('naver-blog-auto', ['blogger_auth_setup.py']),
-    ('personal', 'blogger'): ('naver-blog-auto', ['geoai_auth_setup.py']),
+    ('dept', 'youtube'): ('channels/youtube-shorts-auto', ['youtube_login_setup.py']),
+    ('personal', 'youtube'): ('channels/youtube-shorts-auto', ['geoai_youtube_auth.py']),
+    ('dept', 'blogger'): ('channels/naver-blog-auto', ['blogger_auth_setup.py']),
+    ('personal', 'blogger'): ('channels/naver-blog-auto', ['geoai_auth_setup.py']),
     ('dept', 'searchconsole'): ('analytics', ['searchconsole_auth_setup.py', 'dept']),
     ('personal', 'searchconsole'): ('analytics', ['searchconsole_auth_setup.py']),
 }
@@ -819,7 +819,7 @@ def github_switch(user):
     cli_logins(force=True)
 
 
-TISTORY_DIR = ROOT / 'GeoAI_NA' / 'naver-blog-auto'
+TISTORY_DIR = ROOT / 'GeoAI_NA' / 'channels/naver-blog-auto'
 
 
 def tistory_status():
@@ -992,7 +992,7 @@ def google_login(acc, svc):
 
 
 # ---- 세명대 AI 게이트웨이 ----
-GW_MODULES = ['youtube-shorts-auto', 'naver-blog-auto', 'insta-cardnews', 'insta-manual']
+GW_MODULES = ['channels/youtube-shorts-auto', 'channels/naver-blog-auto', 'channels/insta-cardnews', 'channels/insta-manual']
 GW_STATE = {'checked': None, 'result': None}
 
 
@@ -1023,7 +1023,7 @@ def gateway_view():
 
 
 def gateway_check():
-    p = subprocess.run([GPY, str(CONSOLE / 'app' / 'gateway_check.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+    p = subprocess.run([GPY, str(CONSOLE / 'app' / 'gateway_check.py')], cwd=str(ROOT / 'channels' / 'youtube-shorts-auto'),
                        capture_output=True, text=True, timeout=300)
     if p.returncode != 0:
         raise ValueError('게이트웨이 확인 실패: ' + (p.stderr.strip().splitlines() or ['알 수 없는 오류'])[-1][:200])
@@ -1116,7 +1116,7 @@ def content_draft(cid):
         try:
             req = json.dumps({k: c[k] for k in ('account', 'topic', 'notes', 'channels')}, ensure_ascii=False)
             # ② 초안 에이전트(조사 → 원문 → 자체 검토). 실패하면 한 번 호출 방식(draft_ai)으로 대신한다
-            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'drafter.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+            p = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'drafter.py')], cwd=str(ROOT / 'channels' / 'youtube-shorts-auto'),
                                input=req, capture_output=True, text=True, timeout=1500)
             try:
                 d = json.loads(p.stdout.strip().splitlines()[-1])
@@ -1125,7 +1125,7 @@ def content_draft(cid):
             fallback = ''
             if d.get('error'):
                 fallback = d['error']
-                p = subprocess.run([GPY, str(CONSOLE / 'app' / 'draft_ai.py')], cwd=str(ROOT / 'youtube-shorts-auto'),
+                p = subprocess.run([GPY, str(CONSOLE / 'app' / 'draft_ai.py')], cwd=str(ROOT / 'channels' / 'youtube-shorts-auto'),
                                    input=req, capture_output=True, text=True, timeout=600)
                 d = json.loads(p.stdout.strip().splitlines()[-1])
             with CLOCK:
@@ -1320,8 +1320,8 @@ def content_approve(cid, b):
 
 # ---- ⑥ 자동 발행: 승인된 콘텐츠를 채널별 기존 발행 코드로 ----
 AUTO_PUBLISH = {  # (계정, 채널) → 실행할 모듈 폴더
-    ('dept', 'blogger'): 'naver-blog-auto', ('personal', 'blogger'): 'naver-blog-auto',
-    ('dept', 'naver_blog'): 'naver-blog-auto', ('dept', 'x'): 'youtube-shorts-auto',
+    ('dept', 'blogger'): 'channels/naver-blog-auto', ('personal', 'blogger'): 'channels/naver-blog-auto',
+    ('dept', 'naver_blog'): 'channels/naver-blog-auto', ('dept', 'x'): 'channels/youtube-shorts-auto',
 }
 
 
@@ -1610,7 +1610,7 @@ def analyze(iid):
 
     def work():
         try:
-            r = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'incident.py'), iid], cwd=str(ROOT / 'youtube-shorts-auto'),
+            r = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'incident.py'), iid], cwd=str(ROOT / 'channels' / 'youtube-shorts-auto'),
                                capture_output=True, text=True, timeout=1200)
             try:
                 res = json.loads(r.stdout.strip().splitlines()[-1])
@@ -1753,7 +1753,7 @@ def run_planner(acc, why='수동'):
     def work():
         try:
             p = subprocess.run([GPY, str(CONSOLE / 'app' / 'agents' / 'planner.py'), acc, str(count)],
-                               cwd=str(ROOT / 'youtube-shorts-auto'), capture_output=True, text=True, timeout=1800)
+                               cwd=str(ROOT / 'channels' / 'youtube-shorts-auto'), capture_output=True, text=True, timeout=1800)
             d = json.loads((p.stdout or '').strip().splitlines()[-1])
             if d.get('error'):
                 raise RuntimeError(d['error'])

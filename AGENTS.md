@@ -13,11 +13,11 @@ python3 shared/axlock.py run --job <작업이름> --res profile:<프로필> -- <
 
 | 프로필 이름 | 폴더 |
 |---|---|
-| `profile:naver` | naver-blog-auto/chrome-profile |
+| `profile:naver` | channels/naver-blog-auto/chrome-profile |
 | `profile:tistory` | GeoAI_NA/naver-blog-auto/chrome-profile-tistory |
-| `profile:insta` | insta-cardnews/chrome-profile-insta (인스타·스레드) |
-| `profile:tiktok` | youtube-shorts-auto/chrome-profile-tiktok |
-| `profile:youtube-personal` / `profile:youtube-dept` | youtube-shorts-auto/chrome-profile-youtube(-dept) |
+| `profile:insta` | channels/insta-cardnews/chrome-profile-insta (인스타·스레드) |
+| `profile:tiktok` | channels/youtube-shorts-auto/chrome-profile-tiktok |
+| `profile:youtube-personal` / `profile:youtube-dept` | channels/youtube-shorts-auto/chrome-profile-youtube(-dept) |
 
 - 다른 작업이 쓰는 중이면 비기를 기다린다(기본 40분). 작업이 끝나면 크롬을 닫는다.
 - **비상 정지** 중(`ax-console/data/STOP.json` 이 있음)에는 발행 작업을 시작하지 않는다. 상태: `python3 shared/axlock.py status`

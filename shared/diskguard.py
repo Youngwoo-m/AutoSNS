@@ -80,7 +80,7 @@ def _notify(text):
         # 카톡 토큰은 암호화 저장소에 있고 그걸 열려면 cryptography 가 필요하다. 이 스크립트는
         # 시스템 파이썬(/usr/bin/python3)으로 돌아 그게 없으니 유튜브 venv 로 보낸다(2026-10-17).
         import subprocess
-        yt = os.path.join(ROOT, "youtube-shorts-auto")
+        yt = os.path.join(ROOT, "channels", "youtube-shorts-auto")
         subprocess.run([os.path.join(yt, ".venv", "bin", "python"), "kakao_notify.py", text],
                        cwd=yt, timeout=60, check=True, capture_output=True)
         with open(STATE, "w") as f:

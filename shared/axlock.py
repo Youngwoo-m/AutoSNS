@@ -229,13 +229,13 @@ def status():
 
 # 크롬 프로필 이름 → 폴더(잠금 밖 프로세스 감지용)
 PROFILES = {
-    'naver': str(ROOT / 'naver-blog-auto' / 'chrome-profile'),
+    'naver': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile'),
     'tistory': str(ROOT / 'GeoAI_NA' / 'naver-blog-auto' / 'chrome-profile-tistory'),
-    'insta': str(ROOT / 'insta-cardnews' / 'chrome-profile-insta'),
-    'tiktok': str(ROOT / 'youtube-shorts-auto' / 'chrome-profile-tiktok'),
-    'youtube-personal': str(ROOT / 'youtube-shorts-auto' / 'chrome-profile-youtube'),
-    'youtube-dept': str(ROOT / 'youtube-shorts-auto' / 'chrome-profile-youtube-dept'),
-    'insta-manual': str(ROOT / 'insta-manual' / 'chrome-profile'),
+    'insta': str(ROOT / 'channels' / 'insta-cardnews' / 'chrome-profile-insta'),
+    'tiktok': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-tiktok'),
+    'youtube-personal': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-youtube'),
+    'youtube-dept': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-youtube-dept'),
+    'insta-manual': str(ROOT / 'channels' / 'insta-manual' / 'chrome-profile'),
     'scratch': str(ROOT / 'ax-console' / 'data' / 'browser-scratch'),   # 콘솔 내부 브라우저용 빈 프로필
 }
 

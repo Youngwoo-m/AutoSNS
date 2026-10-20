@@ -32,7 +32,7 @@ from typing import Callable
 CONSOLE = Path(__file__).resolve().parents[1]
 ROOT = CONSOLE.parent
 DATA = CONSOLE / 'data' / 'agent'
-for p in (str(ROOT), str(ROOT / 'youtube-shorts-auto')):
+for p in (str(ROOT), str(ROOT / 'channels' / 'youtube-shorts-auto')):
     if p not in sys.path:
         sys.path.insert(0, p)
 
