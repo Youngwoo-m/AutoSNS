@@ -1151,13 +1151,19 @@ def content_draft(cid):
 
 # ---- 자동 진행: 초안 → AI 검토 → 자동 승인·예약 (사람 검토 없음, 통과 못 하면 ③ 검토 대기에 멈춤) ----
 AUTO_DEFAULT = {'times': {'blogger': '08:00', 'naver_blog': '09:00', 'x': '12:00', 'tistory': '08:30', 'instagram': '18:00',
-                          'youtube': '18:00', 'threads': '12:30'}, 'default_time': '09:00', 'min_lead_minutes': 30}
+                          'youtube': '18:00', 'threads': '12:30'}, 'default_time': '09:00', 'min_lead_minutes': 30,
+                'max_per_day': 3, 'cancel_window_minutes': 120, 'dup_similarity': 0.72, 'dup_days': 60}
+
+
+def auto_cfg():
+    return {**AUTO_DEFAULT, **(_json(AGENTS_CFG, {}).get('auto') or {})}
 
 
 def auto_times(c):
     """채널마다 기본 시각 규칙: 규칙 시각 중 지금 + 최소 간격 뒤의 첫 날짜. 같은 계정·채널에 이미 예약된 날은 건너뛴다."""
-    cfg = {**AUTO_DEFAULT, **(_json(AGENTS_CFG, {}).get('auto') or {})}
-    lead = datetime.timedelta(minutes=int(cfg.get('min_lead_minutes', 30)))
+    cfg = auto_cfg()
+    # 자동 승인 글은 발행 전에 사람이 취소할 시간을 둔다(취소 창)
+    lead = datetime.timedelta(minutes=max(int(cfg.get('min_lead_minutes', 30)), int(cfg.get('cancel_window_minutes', 120))))
     busy = {}
     for t in load():
         if t.get('content') and t.get('status') in ('scheduled', 'due', 'running') and t.get('schedule'):
@@ -1187,6 +1193,38 @@ def auto_gate(cid, fallback):
         return f"근거 없는 문장 {len(rv.get('unsupported') or [])}건·[확인 필요] 표시가 남음"
     if rv.get('issues'):
         return '자체 검토 지적: ' + ' / '.join(rv['issues'])[:150]
+    return auto_limits(c)
+
+
+def _sim(a, b):
+    import difflib
+    norm = lambda t: ''.join(ch for ch in (t or '').lower() if ch.isalnum())
+    a, b = norm(a), norm(b)
+    return difflib.SequenceMatcher(None, a, b).ratio() if a and b else 0.0
+
+
+def auto_limits(c):
+    """하루 자동 승인 상한과 중복 거절. 걸리면 막힌 이유, 아니면 None."""
+    cfg = auto_cfg()
+    today = now().strftime('%Y-%m-%d')
+    done = [x for x in contents() if x['id'] != c['id'] and x.get('auto') and str(x.get('auto_approved', ''))[:10] == today]
+    if len(done) >= int(cfg['max_per_day']):
+        return f"오늘 자동 승인 상한({cfg['max_per_day']}건)에 도달 — 내일 자동으로 풀리거나 직접 승인하세요"
+    thr, since = float(cfg['dup_similarity']), (now() - datetime.timedelta(days=int(cfg['dup_days']))).isoformat()
+    mine = [c.get('title', ''), c.get('topic', '')]
+    for x in contents():   # 콘솔 안의 다른 콘텐츠(같은 계정, 최근)
+        if x['id'] == c['id'] or x['account'] != c['account'] or x.get('created', '') < since or x['status'] == 'idea':
+            continue
+        if max(_sim(m, t) for m in mine for t in (x.get('title', ''), x.get('topic', ''))) >= thr:
+            return f"콘솔의 다른 콘텐츠와 겹침: {x.get('title') or x['topic']}"
+    try:   # 이미 올라간 글·영상(채널 전체 기록)
+        from shared.published_history import history
+        chans = ['blogger-dept', 'naver', 'youtube-dept', 'local'] if c['account'] == 'dept' else ['tistory', 'blogger-personal', 'youtube-personal', 'local']
+        for it in history('', chans, int(cfg['dup_days']), 300).get('items', []):
+            if max(_sim(m, it.get('title', '')) for m in mine) >= thr:
+                return f"이미 올라간 글과 겹침: {it.get('title', '')[:60]}"
+    except Exception as e:   # 기록 조회 실패는 막지 않는다(기록에만 남김)
+        axlock.log(f'자동 진행 중복 확인 실패: {type(e).__name__}: {str(e)[:120]}')
     return None
 
 
@@ -1216,6 +1254,9 @@ def auto_finish(cid, fallback):
         modes = {ch: 'auto' for ch in c['channels'] if (c['account'], ch) in AUTO_PUBLISH}
         c['checks'] = {k: True for k in CHECKS}   # 점검표는 AI 검토(자체 검토 + 출처 검토)로 대신한다
         c['history'].append({'at': now().isoformat(), 'what': '자동 진행: AI 검토 통과 → 점검표 자동 확인'})
+        with CLOCK:
+            csave(c)
+        c['auto_approved'] = now().isoformat()
         with CLOCK:
             csave(c)
         content_approve(cid, {'schedule': auto_times(c), 'modes': modes})
