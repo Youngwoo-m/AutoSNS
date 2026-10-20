@@ -40,3 +40,7 @@ claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<too
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.
+
+## 브랜치
+
+브랜치 이름·병합 순서·커밋 메시지 규칙은 `docs/브랜치규칙.md` 를 따른다.
