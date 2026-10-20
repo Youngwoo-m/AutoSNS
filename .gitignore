@@ -80,7 +80,9 @@ channels/youtube-shorts-auto/drafts/
 
 # 티스토리 전용 로그인 프로필(tistory_crosspost.py)
 chrome-profile-tistory/
-chrome-profile-safeworking/# 티스토리 로그인 쿠키(세션) — 비밀정보
+# 개인 네이버(safeworking) 로그인 프로필(login_setup_safeworking.py) — 쿠키라 비밀정보
+chrome-profile-safeworking/
+# 티스토리 로그인 쿠키(세션) — 비밀정보
 **/tistory_cookies.json
 # 티스토리 교차 발행 기록(실행 중 계속 바뀜)
 **/tistory_state.json
