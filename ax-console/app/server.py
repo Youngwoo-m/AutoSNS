@@ -1380,8 +1380,15 @@ def task_done(tid, url):
 def content_delete(cid):
     with CLOCK:
         c = cload(cid)
-        if c['status'] in ('scheduled', 'drafting'):
-            raise ValueError('예약·초안 작성 중에는 지울 수 없습니다')
+        if c['status'] == 'drafting':
+            raise ValueError('초안 작성 중에는 지울 수 없습니다. 끝난 뒤 지우세요')
+        if c['status'] == 'scheduled':   # 아직 안 나간 예약은 함께 취소한다. 발행 중이면 막는다
+            ids = set((c.get('tasks') or {}).values())
+            with LOCK:
+                ts = load()
+                if any(t['id'] in ids and t.get('status') == 'running' for t in ts):
+                    raise ValueError('발행이 진행 중입니다. 끝난 뒤 지우세요')
+                save([t for t in ts if not (t['id'] in ids and t.get('status') in ('scheduled', 'due'))])
         import shutil
         shutil.rmtree(_cdir(cid))
 
