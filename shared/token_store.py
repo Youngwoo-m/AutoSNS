@@ -15,7 +15,7 @@ import json
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from shared.paths import ROOT_DIR as ROOT
 
 NAMES = {
     "token.json": "YOUTUBE_TOKEN_DEPT",                  # 학과 유튜브(semyungds) 업로드

@@ -13,6 +13,8 @@ FONTS/ 는 용량·라이선스 때문에 git 에서 제외되어 있다(.gitign
 """
 import os
 
+from shared.paths import ROOT_DIR
+
 # 실제로 쓰이는 것은 Dotum 3종뿐이다(Batang 은 어디서도 참조하지 않는다).
 DOTUM_LIGHT = "KoPubWorld Dotum_Pro Light.otf"
 DOTUM_MEDIUM = "KoPubWorld Dotum_Pro Medium.otf"
@@ -20,7 +22,7 @@ DOTUM_BOLD = "KoPubWorld Dotum_Pro Bold.otf"
 REQUIRED = (DOTUM_LIGHT, DOTUM_MEDIUM, DOTUM_BOLD)
 
 
-ROOT_FONT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "FONTS")
+ROOT_FONT_DIR = os.path.join(ROOT_DIR, "FONTS")
 
 
 def kopub_bold_css(font_dir=None, doubled=False):
