@@ -6,7 +6,8 @@ from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
-PROFILE_DIR = os.path.join(BASE_DIR, "chrome-profile")
+# AX_NAVER_PROFILE: 다른 네이버 계정(개인 safeworking 등)용 프로필 폴더를 쓸 때
+PROFILE_DIR = os.environ.get("AX_NAVER_PROFILE") or os.path.join(BASE_DIR, "chrome-profile")
 POSTS_DIR = os.path.join(BASE_DIR, "posts")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 HISTORY_PATH = os.path.join(BASE_DIR, "title_history.json")

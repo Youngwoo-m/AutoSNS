@@ -407,7 +407,7 @@ def type_structured_post(driver, data):
         _type_text(driver, data["outro"])
     # 글 끝 CTA: 이웃추가 유도 + 학과 홈페이지·유튜브 링크(체류시간·교차 유입↑).
     # config.blog.cta = {"text": "...", "links": [{"label","url"}, ...]} 로 지정.
-    cta = (load_config().get("blog", {}) or {}).get("cta") or {}
+    cta = {} if data.get("no_cta") else (load_config().get("blog", {}) or {}).get("cta") or {}
     cta_text = (cta.get("text") or "").strip()
     cta_links = [l for l in (cta.get("links") or []) if (l.get("url") or "").strip()]
     if cta_text or cta_links:
@@ -615,7 +615,7 @@ def _save_payload(data, dry_run):
 
 def publish(data, dry_run=None):
     cfg = load_config()
-    naver_id = cfg["naver_id"]
+    naver_id = os.environ.get("AX_NAVER_ID") or cfg["naver_id"]
     pub = cfg.get("publish", {})
     if dry_run is None:
         dry_run = pub.get("dry_run", True)
