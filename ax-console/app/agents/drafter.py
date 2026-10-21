@@ -190,7 +190,8 @@ def review(draft, rs):
         'required': ['unsupported', 'supported_count', 'issues']})]
     a = Agent('reviewer', """너는 사실 확인 담당이다. 원문의 숫자·날짜·기관 주장·법령 문장을 하나씩 메모와 대조한다.
 메모 번호 [n] 이 붙어 있어도 그 메모 내용과 맞지 않으면 근거 없음이다. 숫자·기관명이 없는 상식 수준의 행동 요령(예: 외출 전 날씨 확인)과, 채널 주인(학과·필자)이 자기 소개로 쓴 문장은 대조하지 않는다.
-근거 없는 문장은 unsupported 에 원문 구절을 그대로 옮겨 적는다.""", tools, Budget(max_tokens=40000, max_turns=4, max_output=3000))
+근거 없는 문장은 unsupported 에 원문 구절을 그대로 옮겨 적는다.""", tools, Budget(max_tokens=40000, max_turns=4, max_output=3000),
+              model=load_settings().get('drafter_model') or None)
     r = a.run(f"<data>\n메모:\n{notes}\n\n원문:\n{draft['original']}\n</data>")
     return r
 
