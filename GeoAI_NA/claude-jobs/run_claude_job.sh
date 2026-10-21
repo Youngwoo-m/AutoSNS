@@ -47,6 +47,9 @@ PROMPT=$(mktemp -t claudejob)
 
 echo "===== [$(date '+%F %T')] $JOB 시작 (모델 $MODEL${AX_DRY:+, 시험 실행}) =====" >> "$LOG"
 cd "$ROOT" || exit 1
+# 서브에이전트(숏츠 제작 등)가 길어져도 마지막 응답 뒤 10분 만에 끊기지 않게 기다리는 한도를 2시간으로 늘린다
+# (2026-10-21 survey-shorts 17:00: 제작 에이전트가 백그라운드로 돌다 10분 뒤 끊겨 영상이 안 만들어졌다)
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=7200000
 # 3시간이 지나도 안 끝나면 끊는다(멈춘 채로 다음 회차·잠금을 막지 않게)
 claude -p --model "$MODEL" --permission-mode bypassPermissions --no-chrome \
     --add-dir /Volumes/USB256/기술사 --add-dir /Volumes/USB256/devAPP/safekorea --add-dir "$HOME/.codex/skills" \

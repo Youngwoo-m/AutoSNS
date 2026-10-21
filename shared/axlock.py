@@ -87,6 +87,19 @@ def clear_stop(by='사람'):
         log(f'비상 정지 끔 ({by})')
 
 
+# ---- 카카오톡 '나에게' 알림 ----
+def kakao(text):
+    """실패 알림. 스스로 알리지 않는 작업만 automations.json 의 notify_fail 로 켠다. 실패해도 작업 결과는 바꾸지 않는다."""
+    try:
+        nb = ROOT / 'channels' / 'naver-blog-auto'
+        r = subprocess.run([str(nb / '.venv' / 'bin' / 'python'), str(nb / 'kakao_notify.py'), text[:190]],
+                           capture_output=True, text=True, timeout=60)
+        if r.returncode != 0:
+            log(f'카카오 알림 실패: {(r.stderr or r.stdout).strip()[-120:]}')
+    except Exception as e:  # noqa: BLE001
+        log(f'카카오 알림 실패: {type(e).__name__}: {e}')
+
+
 # ---- 작업 정보 ----
 def job_info(job):
     try:
@@ -320,6 +333,8 @@ def main(argv):
     finally:
         _release(fds)
     log(f'{job}: 끝 (코드 {code}, {int(time.time() - t0)}초)')
+    if code != 0 and os.environ.get('AX_DRY') != '1' and job_info(job).get('notify_fail'):
+        kakao(f"[AX] 작업 실패: {job} (코드 {code}, {int(time.time() - t0)}초). 콘솔 '자동 작업' 탭에서 기록을 확인하세요.")
     return code
 
 
