@@ -105,7 +105,7 @@
       "job": "disastershorts.weekly",
       "account": "dept",
       "name": "재난 숏츠 제작·예약 업로드",
-      "what": "다가오는 화요일 편을 만들어 화 08:00 예약 공개로 유튜브에 올림. 이미 올렸으면 아무것도 안 함(일·월 재시도). 틱톡 대기열 등록",
+      "what": "다가오는 화요일 편을 만들어 화 19:00 예약 공개로 유튜브에 올림. 이미 올렸으면 아무것도 안 함(일·월 재시도). 틱톡 대기열 등록",
       "entry": "/Volumes/USB256/shorts-disaster/tools/weekly.py",
       "channels": [
         [
