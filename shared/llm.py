@@ -290,7 +290,7 @@ class _CliMessages:
             known = {t["name"] for t in tools}
             for m in self.CALL.finditer(text):
                 try:
-                    c = json.loads(m.group(1))
+                    c = json.loads(m.group(1), strict=False)   # 문자열 안의 줄바꿈 글자도 받는다
                 except ValueError:
                     continue
                 if c.get("name") in known:

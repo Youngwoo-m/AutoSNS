@@ -242,6 +242,8 @@ def main():
         x = note_by_n.get(n)
         if x and x['url'] not in [s['url'] for s in sources]:
             sources.append({'url': x['url'], 'title': x['title']})
+    if used and '## 출처' not in original:   # 각주 번호가 본문에서 따라가지는 목록 — 출처 검토가 각주와 주소를 맞춰 본다
+        original += '\n\n## 출처\n' + '\n'.join(f"[{n}] {note_by_n[n]['title']} — {note_by_n[n]['url']}" for n in used if n in note_by_n)
     print(json.dumps({
         'title': d['title'], 'summary': d.get('summary', ''), 'outline': d.get('outline', ''),
         'original': original, 'variants': variants,
