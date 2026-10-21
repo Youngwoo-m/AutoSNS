@@ -16,5 +16,19 @@
     "cause": "사전 제작 결과와 예약 저장 기록을 찾지 못함. 미실행 원인은 확인되지 않음.",
     "recovery_action": "확인 실행에서는 새 문제 생성 금지 지침을 적용. 기존 완료물 재발행·재전송하지 않음. 다음 정기 사전 제작에서 10일차부터 이어감.",
     "notification_sent": true
+  },
+  "2026-10-18": {
+    "date": "2026-10-18",
+    "status": "published_verified",
+    "checked_at": "2026-10-18T14:26:08.757394+09:00",
+    "last_completed_day": 10,
+    "last_completed_blog_url": "https://na-geoai.tistory.com/106",
+    "next_day": 11,
+    "next_field": "측지학·좌표계",
+    "cycle": 2,
+    "type": "단답형",
+    "pdf_download_verified": true,
+    "list_verified": true,
+    "kakao_sent": true
   }
 }

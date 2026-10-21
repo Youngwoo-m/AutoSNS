@@ -1,0 +1,114 @@
+{
+  "작성일": "2026-10-19",
+  "일차": 3,
+  "제목": "[토목시공기술사] 흙막이 공사의 계측관리 | 하루 한 문제 3일차",
+  "카테고리": {
+    "이름": "토목시공기술사",
+    "ID": 1406134
+  },
+  "유형": "단답형·기출 원문(제137회 1교시 6번)",
+  "선정근거": {
+    "기간": "2022~2026 제126~140회",
+    "전체문항": 465,
+    "관련4문항": [
+      {
+        "id": "127-3-4",
+        "year": 2022,
+        "round": 127,
+        "period": 3,
+        "number": 4,
+        "kind": "논술형",
+        "question": "가시설 흙막이 구조물의 계측 시 고려사항과 계측관리에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210073&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "129-2-1",
+        "year": 2023,
+        "round": 129,
+        "period": 2,
+        "number": 1,
+        "kind": "논술형",
+        "question": "지반굴착공사 시 건설안전관리를 위한 스마트계측의 필요성 및 활용방안에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211642&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "132-3-2",
+        "year": 2024,
+        "round": 132,
+        "period": 3,
+        "number": 2,
+        "kind": "논술형",
+        "question": "지반굴착공사 시 흙막이벽의 변위로 발생하는 지반침하의 원인과 방지대책에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212868&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "137-1-6",
+        "year": 2025,
+        "round": 137,
+        "period": 1,
+        "number": 6,
+        "kind": "단답형",
+        "question": "흙막이 공사의 계측관리",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242759&brdId=Q006&gSite=Q"
+      }
+    ],
+    "후보비교": "숏크리트 리바운드(126-1-7·134-1-9·140-1-7)도 같은 유형 3회 반복으로 유력. 지시문의 우선 분야(기초·흙막이·연약지반)와 작성기준 다음 후보 목록을 따라 흙막이 계측관리를 먼저 선정",
+    "한계": "단답1+논술3 학습용 묶음, 동일 문제 반복 횟수·공식 비중 아님. 그룹 키워드 64문항과 구분",
+    "기출검증": "137_layout.txt 13행, 127_layout 50행, 129_layout 29행, 132_layout 50행 원문 문구 대조"
+  },
+  "검증": {
+    "기준": "KCS 11 10 15(시공 중 지반계측)·KDS 11 10 15(지반계측) 명칭은 확인. 현행판 조문은 KCSC에서 열람하지 못해 기준 수치 인용 없음",
+    "PDF": "2쪽 전 페이지 pypdfium2 렌더(렌더-1/2.png) 눈으로 확인, 겹침·잘림 없음, 작성요소 RGB184, Q-net 원본 1교시 답안지 작성면 보존",
+    "출처링크": "TRB E-C129 PDF 제목 대조, 법령정보센터 200. FHWA-HI-98-034(rosap 403, 내용 미확인)는 출처에서 제외"
+  },
+  "모델": {
+    "실행모델": "claude (claude-opus-5-5)",
+    "독립검산": "계산 문항 아님. 기출 원문·기준 명칭·출처 링크 재확인 1회",
+    "Sol Medium·Astra": "사용하지 않음"
+  },
+  "파일": {
+    "흙막이_계측기_배치_개념도.jpg": {
+      "bytes": 224624,
+      "sha256": "b5319ac8e53764bcf1b4591222fe9a7c1c41d086f0c8fd165a7a75f4ff221218"
+    },
+    "03일차_흙막이계측관리_답안예시_따라쓰기.pdf": {
+      "bytes": 152703,
+      "sha256": "8270770a29ddbc5f1c69ef0b0b52dd97358c800d8ca51f70a58fed17e3d77a37"
+    },
+    "블로그미리보기.html": {
+      "bytes": 11528,
+      "sha256": "068bebcdd682c19ff19f56eab0d3560b1cfb0a2cb09b571d5fabc84fb24de0b5"
+    },
+    "Blogger게시본문.html": {
+      "bytes": 11001,
+      "sha256": "d7891de15163611fcbbaf2d613600aebebc7403c49a808172f7af0497e881436"
+    },
+    "티스토리게시본문.html": {
+      "bytes": 10690,
+      "sha256": "f53956828d45bcff52f775013f41f27fc8765d6c678b9fb0e43421663012083e"
+    }
+  },
+  "공개자료": {
+    "그림": "https://geoai-na.netlify.app/civil-questions/materials/day03/support-monitoring.jpg",
+    "PDF": "https://geoai-na.netlify.app/civil-questions/materials/day03/answer-tracing.pdf",
+    "해시일치": true
+  },
+  "티스토리": {
+    "url": "https://na-geoai.tistory.com/110",
+    "published": true,
+    "verified": true,
+    "pdf_sha256_verified": true,
+    "image_verified": true
+  },
+  "Blogger": {
+    "id": "2125756696829457992",
+    "url": "https://geoaina.blogspot.com/2026/10/3.html",
+    "published": true,
+    "verified": true,
+    "public_image_linked": true,
+    "public_pdf_linked": true
+  },
+  "공개URL": "https://na-geoai.tistory.com/110",
+  "목록검증": true,
+  "다음일차": 4
+}

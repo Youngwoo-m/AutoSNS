@@ -1,0 +1,224 @@
+{
+  "deploy": {
+    "id": "6ad4582bdf72ec02e7ccac76",
+    "site_id": "2b48a04b-d979-4a63-bc37-a83659678647",
+    "build_id": null,
+    "state": "ready",
+    "name": "geoai-na",
+    "url": "http://geoai-na.netlify.app",
+    "ssl_url": "https://geoai-na.netlify.app",
+    "admin_url": "https://app.netlify.com/projects/geoai-na",
+    "deploy_url": "http://6ad4582bdf72ec02e7ccac76--geoai-na.netlify.app",
+    "deploy_ssl_url": "https://6ad4582bdf72ec02e7ccac76--geoai-na.netlify.app",
+    "created_at": "2026-10-18T05:24:59.550Z",
+    "updated_at": "2026-10-18T05:25:01.631Z",
+    "user_id": "6a69aebce8abd2a8b8faf64b",
+    "error_message": null,
+    "required": [],
+    "required_functions": [],
+    "required_edge_functions": [],
+    "required_server": [],
+    "commit_ref": null,
+    "review_id": null,
+    "branch": "main",
+    "commit_url": null,
+    "skipped": null,
+    "locked": null,
+    "title": "dinner-roulette+functions",
+    "commit_message": null,
+    "review_url": null,
+    "published_at": "2026-10-18T05:25:01.569Z",
+    "context": "production",
+    "deploy_time": 2,
+    "available_functions": [
+      {
+        "n": "alerts",
+        "d": "fe805cca4f5ecefbb81679b6362a63c88bb385b017ee83926d83987ede0d3c15",
+        "dn": null,
+        "g": null,
+        "bd": null,
+        "id": "a047ce7cde6ecbc11f7b03c2f9cc8487d580b7b03152eadbe2cdfaace80d21a8",
+        "rg": "us-east-1",
+        "m": 1024,
+        "s": 4658,
+        "r": "nodejs24.x",
+        "c": "2026-10-15T10:56:06.165Z",
+        "a": "554032339015",
+        "oid": "f4caec0acdb5132c5f5ca81dd2679ad62dc98adc47b28a79e7766adbdad38469",
+        "obl": "netlify-observability-extension",
+        "oblv": 32
+      },
+      {
+        "n": "busarr",
+        "d": "78eee505ee428dd2a46bc698d56ca41c0497058d2332f0ecbebfb1e40b421bc0",
+        "dn": null,
+        "g": null,
+        "bd": null,
+        "id": "31094b14ecf8d611743b8f9b5ba6d8b53b175005ccfa810a919f27312a30cdf6",
+        "rg": "us-east-1",
+        "m": 1024,
+        "s": 2464,
+        "r": "nodejs24.x",
+        "c": "2026-10-15T10:56:11.241Z",
+        "a": "365020585580",
+        "oid": "3e5e4b1b3a550f3917020af6cbf4a886fb0af50e48bdf9418f3c496e3bfcb2c9",
+        "obl": "netlify-observability-extension",
+        "oblv": 32
+      },
+      {
+        "n": "hak",
+        "d": "d5b9495861df247428d4f892c2c2418c714a34f59b7109b9fc1297cb06c6912c",
+        "dn": null,
+        "g": null,
+        "bd": null,
+        "id": "7336c65bddc8c75fadc14842ab85de23763ba8433ab1269faebad0778d91d982",
+        "a": "689786375862",
+        "c": "2026-10-15T10:58:17.895Z",
+        "m": 1024,
+        "obl": "netlify-observability-extension",
+        "oblv": 32,
+        "oid": "7dd54c00e44fca81a0baf407365385f0aef3e9f3edee03f4b483f2046e05f6f9",
+        "r": "nodejs24.x",
+        "rg": "us-east-1",
+        "s": 2640
+      },
+      {
+        "n": "kroute",
+        "d": "d489c846e40286bbb1a32448527befeb517736f0bfd769c2abf779554a781337",
+        "dn": null,
+        "g": null,
+        "bd": null,
+        "id": "a8c27ccc68ed467a395270a31a83f22002f2dcf3f6ded664a225e5524811eea1",
+        "rg": "us-east-1",
+        "m": 1024,
+        "s": 3360,
+        "r": "nodejs24.x",
+        "c": "2026-10-15T10:56:16.761Z",
+        "a": "280924795880",
+        "oid": "f566e544ce6092dbc008e90330a6d02d9e2045d50f73febef6a51a7bcfb1dfad",
+        "obl": "netlify-observability-extension",
+        "oblv": 32
+      },
+      {
+        "n": "wthr",
+        "d": "112403ade92f65cba1905aa5182c23c48205aaa8a387d3e7a8631f58dffa43a4",
+        "dn": null,
+        "g": null,
+        "bd": null,
+        "id": "431fc0874364e22e57d10bd096963719524414012686152d3920990af401d9c0",
+        "rg": "us-east-1",
+        "m": 1024,
+        "s": 1560,
+        "r": "nodejs24.x",
+        "c": "2026-10-15T10:56:19.365Z",
+        "a": "689786375862",
+        "oid": "8aba62f1b0f23b7ce302d14b3ec80126262dbc393af28906a5d05e8a66e71685",
+        "obl": "netlify-observability-extension",
+        "oblv": 32
+      }
+    ],
+    "screenshot_url": null,
+    "committer": null,
+    "skipped_log": null,
+    "manual_deploy": true,
+    "plugin_state": "none",
+    "lighthouse_plugin_scores": null,
+    "links": {
+      "permalink": "https://6ad4582bdf72ec02e7ccac76--geoai-na.netlify.app",
+      "alias": "https://geoai-na.netlify.app",
+      "branch": null
+    },
+    "framework": null,
+    "entry_path": null,
+    "views_count": null,
+    "function_schedules": [],
+    "public_repo": true,
+    "pending_review_reason": null,
+    "lighthouse": null,
+    "edge_functions_present": null,
+    "expires_at": null,
+    "blobs_region": "us-east-1",
+    "deploy_validations_report": null,
+    "strict_contributor_verification_failure": false,
+    "agent_runner_id": null,
+    "deploy_source": "api",
+    "database_branch_id": null,
+    "database_migrations": null,
+    "database_snapshots": null,
+    "skew_protection_token": "cb85da3ab20bf7a6a64ac265bb91f07d9b5369e363bb708565990cc78b2740b8366164343538326264663732656330326537636361633736",
+    "has_source_zip": false,
+    "subdomain_alias": "6ad4582bdf72ec02e7ccac76",
+    "functions_region": "iad",
+    "functions_region_overrides": [],
+    "server": null,
+    "summary": {
+      "status": "ready",
+      "messages": [
+        {
+          "type": "info",
+          "title": "1 new file uploaded",
+          "description": "1 asset changed.",
+          "details": null
+        },
+        {
+          "type": "info",
+          "title": "3 redirect rules processed",
+          "description": "All redirect rules deployed without errors.",
+          "details": ""
+        },
+        {
+          "type": "info",
+          "title": "2 header rules processed",
+          "description": "All header rules deployed without errors.",
+          "details": ""
+        },
+        {
+          "type": "info",
+          "title": "5 functions deployed",
+          "description": "We have deployed 5 functions. [Visit your Functions](/projects/geoai-na/logs/functions) for more information.",
+          "details": null
+        },
+        {
+          "type": "info",
+          "title": "No edge functions deployed",
+          "description": "This deploy did not include any edge functions. [Learn more about Edge Functions](https://docs.netlify.com/edge-functions/overview/)",
+          "details": null
+        }
+      ]
+    }
+  },
+  "verified": [
+    {
+      "route": "questions",
+      "entry": {
+        "title": "공공측량 성과 품질검수와 성과심사",
+        "url": "https://na-geoai.tistory.com/106",
+        "kind": "daily",
+        "date": "2026-10-18",
+        "tags": [
+          "관련 제도·실무",
+          "공공측량",
+          "성과심사"
+        ],
+        "tracingPdf": true,
+        "day": 10
+      }
+    },
+    {
+      "route": "civil-questions",
+      "entry": {
+        "title": "서중콘크리트 품질관리와 초기균열 저감",
+        "url": "https://na-geoai.tistory.com/107",
+        "kind": "daily",
+        "date": "2026-10-18",
+        "tags": [
+          "콘크리트공",
+          "서중콘크리트",
+          "양생"
+        ],
+        "tracingPdf": true,
+        "day": 2
+      }
+    }
+  ]
+}

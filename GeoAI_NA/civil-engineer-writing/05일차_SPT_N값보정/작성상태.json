@@ -1,0 +1,125 @@
+{
+  "작성일": "2026-10-21",
+  "일차": 5,
+  "제목": "[토목시공기술사] 표준관입시험(SPT) N값 보정 | 하루 한 문제 5일차",
+  "카테고리": {
+    "이름": "토목시공기술사",
+    "ID": 1406134
+  },
+  "유형": "단답형·기출 원문(제137회 1교시 7번)",
+  "선정근거": {
+    "기간": "2022~2026 제126~140회",
+    "전체문항": 465,
+    "관련3문항": [
+      {
+        "id": "126-1-11",
+        "year": 2022,
+        "round": 126,
+        "period": 1,
+        "number": 11,
+        "kind": "단답형",
+        "question": "표준관입시험(SPT, Standard Penetration Test)",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209527&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "132-1-12",
+        "year": 2024,
+        "round": 132,
+        "period": 1,
+        "number": 12,
+        "kind": "단답형",
+        "question": "지반조사 시 표준관입시험(SPT, Standard Penetration Test) 결과로 파악 및 추정할 수 있는 사항",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212868&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "137-1-7",
+        "year": 2025,
+        "round": 137,
+        "period": 1,
+        "number": 7,
+        "kind": "단답형",
+        "question": "표준관입시험(SPT)에서의 N값 보정",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242759&brdId=Q006&gSite=Q"
+      }
+    ],
+    "후보비교": "숏크리트 리바운드(126-1-7·134-1-9·140-1-7, 터널)·거푸집 해체(132-1-5·140-1-12)도 반복 유력. 홀수 일차 단답형, 지시문 우선 분야(기초·흙막이·연약지반 등 지반)에 따라 SPT 문구 직접 3문항(모두 1교시 단답형) 유형 선정. 3일차 흙막이 계측(시공 중)과 구분",
+    "한계": "묻는 각도가 다른 단답 3문항 학습용 묶음, 동일 문제 반복 횟수·공식 비중 아님. 지반 그룹 키워드 64문항과 구분",
+    "기출검증": "126_layout 17행, 132_layout 19행, 137_layout 14행 원문 대조"
+  },
+  "이미작성유형": [
+    "흙의 다짐(1)",
+    "서중콘크리트(2)",
+    "흙막이 계측관리(3)",
+    "온도균열(4)",
+    "SPT N값 보정(5)"
+  ],
+  "검증": {
+    "기준": "WSDOT GDM M46-03.08 Ch.5 식 5-1~5-3 원문 열람(출처메모.md). KS F 2307 조문·Terzaghi·Peck 원문 미열람을 본문에 표기",
+    "PDF": "2쪽 전 페이지 pypdfium2 렌더(렌더-1~2.png) 확인, 기호(−,<) 깨짐 수정 후 재확인, RGB184, Q-net 1교시 답안지 작성면 사용",
+    "calc": {
+      "verdict": "ok",
+      "checked": 9,
+      "fixed": 0
+    },
+    "review": {
+      "verdict": "fix",
+      "fixed": 2,
+      "sources_opened": 7
+    }
+  },
+  "모델": {
+    "실행모델": "claude (claude-opus-5-5)",
+    "독립검산": "calc-verifier ok(PDF log10 표기 보완)",
+    "검토": "source-reviewer fix → 2건 수정(Blogger 자료 선배포, 채점 암시 문장)",
+    "Sol Medium·Astra": "사용하지 않음"
+  },
+  "파일": {
+    "SPT_N값보정_개념도.jpg": {
+      "bytes": 238231,
+      "sha256": "d37ef78ee76fe77f3c22b298b3dedd73b16b026ffcbfccd7d4775ee864c8dfc9"
+    },
+    "05일차_SPT_N값보정_답안예시_따라쓰기.pdf": {
+      "bytes": 153896,
+      "sha256": "5c098ef5bafa4a77cb449f3fd34eb65f8e7bedc12b7562d481c7806fe1de1f72"
+    },
+    "블로그미리보기.html": {
+      "bytes": 11801,
+      "sha256": "337b1038caca8110db3df193a7775981048d921acc4f6da51ebe5fa206f12a6a"
+    },
+    "Blogger게시본문.html": {
+      "bytes": 11302,
+      "sha256": "33948c3361538b8de56306205f46aec586387dd05615c555abe8c4f7f3283bda"
+    },
+    "티스토리게시본문.html": {
+      "bytes": 10915,
+      "sha256": "3c21f7a842840f1b7606f81695368a78e159574f2135782a7a83c081e3179c90"
+    }
+  },
+  "공개자료": {
+    "그림": "https://geoai-na.netlify.app/civil-questions/materials/day05/spt-correction.jpg",
+    "PDF": "https://geoai-na.netlify.app/civil-questions/materials/day05/answer-tracing.pdf",
+    "해시일치": true
+  },
+  "티스토리": {
+    "url": "https://na-geoai.tistory.com/123",
+    "published": true,
+    "verified": true,
+    "pdf_sha256_verified": true,
+    "image_verified": true
+  },
+  "Blogger": {
+    "url": "https://geoaina.blogspot.com/2026/10/spt-n-5.html",
+    "published": true,
+    "verified": true,
+    "public_image_linked": true,
+    "public_pdf_linked": true
+  },
+  "네이버": {
+    "url": "https://blog.naver.com/safeworking/224448564638",
+    "published": true,
+    "verified": true
+  },
+  "공개URL": "https://na-geoai.tistory.com/123",
+  "목록검증": true,
+  "다음일차": 6
+}

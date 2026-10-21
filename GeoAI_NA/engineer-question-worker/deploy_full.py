@@ -13,7 +13,9 @@ import hashlib, io, json, sys, time, urllib.parse, zipfile
 from pathlib import Path
 from netlify_api import api, SITE_ID, SITE_DIR
 
-FUNC_DIR = SITE_DIR.parent / "geoai-functions"
+# geoai-site 는 GeoAI_NA 로 옮긴 뒤 원래 자리(AutoSNS/site/geoai-site)를 가리키는 링크다(2026-10-17 이전).
+# 링크를 풀어야 함수 폴더(AutoSNS/site/geoai-functions)를 찾는다 — 못 찾으면 함수 없이 배포돼 학식·특보가 사라진다.
+FUNC_DIR = SITE_DIR.resolve().parent / "geoai-functions"
 
 
 def site_files():
@@ -65,6 +67,8 @@ def deploy(check=False):
     files = site_files()
     digests = {p: hashlib.sha1(f.read_bytes()).hexdigest() for p, f in files.items()}
     funcs = function_zips()
+    if not funcs:   # 함수 없이 올리면 Netlify 가 기존 함수를 지운다(2026-10-18 학식·특보 중단 사례)
+        raise SystemExit(f"함수를 찾지 못했습니다({FUNC_DIR}) — 배포 중단")
     fdig = {name: hashlib.sha256(z).hexdigest() for name, z in funcs.items()}
     print(f"파일 {len(files)}개, 함수 {list(funcs)}")
     if check:

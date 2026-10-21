@@ -1,0 +1,75 @@
+{
+  "day": 10,
+  "date": "2026-10-18",
+  "status": "published_verified",
+  "published": false,
+  "kakao_sent": true,
+  "field": "관련 제도·실무",
+  "cycle": 1,
+  "topic": "공공측량 성과 품질검수와 성과심사",
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "medium",
+  "astra_review_required": false,
+  "astra_reason": "복잡한 수식·수치 계산·법령 해석 쟁점 없이 현행 조문과 공식 업무 안내를 요약. 성과별 법정 수치는 제시하지 않음.",
+  "sources_verified": true,
+  "sources": [
+    [
+      "국가법령정보센터: 공간정보의 구축 및 관리 등에 관한 법률 제18조",
+      "https://law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1029430287"
+    ],
+    [
+      "공간정보품질관리원: 공공측량 성과심사 안내",
+      "https://www.siqms.or.kr/M1001010/asset.do"
+    ],
+    [
+      "공간정보품질관리원: 관련자료·제출 서식·제도이행 안내",
+      "https://www.siqms.or.kr/M1001050/board.do"
+    ]
+  ],
+  "source_verification_date": "2026-10-18",
+  "law_effective_date": "2026-07-01",
+  "pdf_pages": 3,
+  "qnet_source_page_index": 4,
+  "source_sha256": "d742cd0260e5176c112ae4a5068e1e388ac93a4f35fd46206ea5ca1aea38fde9",
+  "selection": {
+    "priority_theme": "법·정책·기본계획·안전 및 공간정보 품질·표준·구조 연계",
+    "evidence_question_ids": [
+      "126-1-8",
+      "129-1-10",
+      "134-1-13",
+      "134-3-2"
+    ],
+    "reason": "관련 제도·실무 첫 순환에서 품질관리의 제도적 기초를 학습. 9일차 위상 검증을 반복하지 않고 전체 성과 검수와 공공측량 성과심사를 구분. 빈도는 출제 확률로 해석하지 않음."
+  },
+  "image_placeholder": "DIAGRAM_UPLOAD",
+  "pdf_native_attachment_required": true,
+  "visual_qa_all_pages": true,
+  "visual_qa": {
+    "pages_rendered": 3,
+    "all_pages_inspected": true,
+    "korean_glyphs": "pass",
+    "clipping": "none",
+    "overlap": "none",
+    "form_original_preserved": true,
+    "authored_rgb": [
+      184,
+      184,
+      184
+    ],
+    "font_size_pt": 11.7,
+    "diagram_jpg_inspected": true
+  },
+  "artifact_files": {
+    "html": "10일차_블로그원고.html",
+    "pdf": "10일차_공공측량_성과품질검수_모범답안_따라쓰기.pdf",
+    "jpg": "공공측량_성과품질검수_흐름도.jpg"
+  },
+  "public_url": "https://na-geoai.tistory.com/106",
+  "pdf_download_verified": true,
+  "pdf_download_bytes": 208575,
+  "공개URL": "https://na-geoai.tistory.com/106",
+  "published_at": "2026-10-18T14:26:08.757394+09:00",
+  "public_image_verified": true,
+  "list_verified": true,
+  "next_day": 11
+}

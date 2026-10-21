@@ -1,24 +1,11 @@
-"""Deploy only the static website; credentials and queue are never included."""
-import io, json, time, zipfile
-from netlify_api import api, SITE_ID, SITE_DIR
+"""Deploy the static website together with the Netlify functions.
 
-def deploy():
-    archive=io.BytesIO()
-    with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
-        for path in sorted(SITE_DIR.rglob('*')):
-            relative=path.relative_to(SITE_DIR)
-            if path.is_file() and not any(part.startswith('.') for part in relative.parts):
-                z.write(path,relative.as_posix())
-    result=api('/sites/'+SITE_ID+'/deploys?title=Engineer-question-portal', 'POST', archive.getvalue(),'application/zip')
-    deploy_id=result['id']
-    print(json.dumps({'deploy_id':deploy_id,'state':result.get('state')},ensure_ascii=False),flush=True)
-    for attempt in range(20):
-        current=api('/deploys/'+deploy_id)
-        if current['state']=='ready':
-            print(json.dumps({'state':'ready','url':current.get('ssl_url'),'deploy_url':current.get('deploy_ssl_url')},ensure_ascii=False))
-            return current
-        if current['state']=='error': raise RuntimeError(current.get('error_message','Deploy failed'))
-        time.sleep(3)
-    raise RuntimeError('Deploy confirmation timed out: '+deploy_id)
+예전에는 사이트 파일만 zip 으로 올렸는데, zip 배포에는 함수가 빠져 Netlify 가 기존 함수
+(학식 hak · 기상특보 wthr · 재난 소식 alerts · 길찾기 kroute · 버스 도착 busarr)를 지웠다
+(2026-10-18 문제 목록 배포 뒤 저녁 룰렛·셔틀 앱 기능 중단). 그래서 함수까지 함께 올리는
+deploy_full 로 넘긴다. 자격 증명·대기열은 여전히 사이트에 들어가지 않는다.
+"""
+from deploy_full import deploy
 
-if __name__=='__main__': deploy()
+if __name__ == '__main__':
+    deploy()

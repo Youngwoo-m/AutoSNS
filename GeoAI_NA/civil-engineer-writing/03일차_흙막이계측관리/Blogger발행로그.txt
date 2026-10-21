@@ -1,0 +1,2 @@
+[2026-10-19 08:04:05] GeoAI 발행 완료: https://geoaina.blogspot.com/2026/10/3.html
+{"status": "published", "url": "https://geoaina.blogspot.com/2026/10/3.html", "message": ""}

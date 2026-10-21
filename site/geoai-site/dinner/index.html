@@ -30,13 +30,37 @@ html,body{margin:0;background:var(--bg);color:var(--ink);
   -webkit-tap-highlight-color:transparent}
 /* 셔틀 앱(세명대 통학 길잡이)처럼: 위·아래 바는 고정, 가운데만 스크롤 */
 html{scroll-padding-top:calc(var(--top,96px) + 10px);scroll-padding-bottom:calc(var(--bottom,64px) + 10px)}
-main{max-width:480px;margin:0 auto;padding:calc(var(--top,96px) + 14px) 16px calc(var(--bottom,64px) + 24px)}
+main{max-width:none;margin:0 auto;padding:calc(var(--top,96px) + 14px) 16px calc(var(--bottom,64px) + 24px)}
 .appbar,.appfoot{position:fixed;left:0;right:0;z-index:50}
 .appbar{top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 10px;background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.18);text-align:center}
-.appfoot{bottom:0;padding:8px 16px calc(env(safe-area-inset-bottom,0px) + 8px);background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px -10px rgba(0,0,0,.35)}
-.bar-in{max-width:480px;margin:0 auto}
+.appfoot{bottom:0;padding:0 0 env(safe-area-inset-bottom,0px);background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 14px -10px rgba(0,0,0,.35)}
+/* 아래 탭 바: 룰렛 · 사다리 · 학식 · 맛집 · 안전 */
+.tabbar{display:grid;grid-template-columns:repeat(5,1fr)}
+.tabbar button{min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:0;border-top:3px solid transparent;color:var(--sub);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.tabbar button span{font-size:22px;line-height:1}
+@media (max-width:360px){.tabbar button{font-size:11px}.tabbar button span{font-size:20px}}
+.tabbar button[aria-selected="true"]{color:var(--accent);border-top-color:var(--accent)}
+.tab[hidden]{display:none}
+/* 🪜 사다리 */
+.lcount{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 12px}
+.lcount button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:22px;font-weight:800}
+.lcount b{min-width:64px;text-align:center;font-size:17px}
+.lgrid{display:grid;gap:4px}
+.lgrid input{width:100%;min-width:0;padding:9px 2px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px;font-weight:700;text-align:center}
+.lgrid button.lname{padding:9px 2px;border-radius:10px;border:0;color:#fff;font:inherit;font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgrid .lres{background:var(--card);border:2px dashed var(--line)}
+.lgrid .lres.hit{border-style:solid;color:var(--ink)}
+.lcv{display:block;width:100%;height:340px;margin:2px 0}
+.lbtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.lbtns button{flex:1;min-width:100px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:800}
+.lbtns .main{background:var(--accent);border-color:var(--accent);color:#fff}
+.lout{list-style:none;margin:12px 0 0;padding:0}
+.lout li{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
+.lout li:first-child{border-top:0}
+.lout i{width:12px;height:12px;border-radius:50%;flex:none}
+.lout b{margin-left:auto}
+.bar-in{max-width:none;margin:0 auto}
 h1{font-size:clamp(18px,5.4vw,24px);margin:0;letter-spacing:-.5px;white-space:nowrap}
-.appbar p{margin:4px 0 0;color:rgba(255,255,255,.88);font-size:13px}
 /* 재난 소식 한 줄 띠(셔틀 앱과 같은 모양): 기상특보·예비특보·재난뉴스가 오른쪽에서 왼쪽으로 흐른다 */
 .ticker{margin-top:8px;overflow:hidden;white-space:nowrap;font-size:13px;line-height:24px;border-radius:6px;background:rgba(0,0,0,.18);text-align:left;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent);mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent)}
 .tk-in{display:inline-block;padding-left:100%;animation:tk var(--tkdur,40s) linear infinite}
@@ -47,22 +71,34 @@ h1{font-size:clamp(18px,5.4vw,24px);margin:0;letter-spacing:-.5px;white-space:no
 .tk-in b.k-예비특보{background:#9a3412}
 @keyframes tk{to{transform:translateX(-100%)}}
 @media (prefers-reduced-motion:reduce){.tk-in{animation:none;padding-left:0}}
-.appfoot .bar-in{display:flex;align-items:center;gap:10px}
-.appfoot .deptlogo{display:flex;padding:4px 8px;border-radius:8px;background:#fff}
-.appfoot .deptlogo img{display:block;height:26px;width:auto}
+.deptbar{display:flex;align-items:center;gap:10px}
+.deptbar .deptlogo{display:flex;padding:4px 8px;border-radius:8px;background:#fff}
+.deptbar .deptlogo img{display:block;height:26px;width:auto}
+/* 좁은 화면에서 로고·전화·학과 홈이 한 줄에 다 보이게 조금 줄인다 */
+@media (max-width:420px){.deptbar{gap:8px;padding-left:12px;padding-right:12px}.deptbar .deptlogo{padding:3px 6px}.deptbar .deptlogo img{height:21px}.deptbar .ftxt{font-size:12px}.deptbar .ftxt a{font-size:13px}.deptbar .fhome{padding:0 10px;font-size:14px}}
 .ftxt{display:grid;font-size:13px;line-height:1.35;color:var(--sub);min-width:0}
-.ftxt a{color:var(--ink);font-weight:800;text-decoration:none;font-variant-numeric:tabular-nums;display:inline-block;padding:6px 0;margin:-6px 0}
+.ftxt a{white-space:nowrap;color:var(--ink);font-weight:800;text-decoration:none;font-variant-numeric:tabular-nums;display:inline-block;padding:6px 0;margin:-6px 0}
 .fhome{margin-left:auto;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--accent);font-weight:800;font-size:15px;text-decoration:none;white-space:nowrap}
-.ages{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:360px;margin:0 auto 16px}
-.ages button{padding:9px 4px;border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
+/* 메뉴 묶음: 옆으로 넘기는 칩 한 줄 */
+.ages{display:flex;gap:6px;overflow-x:auto;margin:0 -16px 8px;padding:2px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ages::-webkit-scrollbar{display:none}
+.ages button{flex:none;padding:9px 14px;border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
 .ages button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .ages .emg-btn{border-style:dashed}
-.ages .emg-btn{grid-column:span 2}
 .ages .near-btn{border-color:#2563eb;color:#2563eb}
 .ages .near-btn.on{background:#2563eb;border-color:#2563eb;color:#fff}
-.ages .hak-btn{border-color:#2f7d5b;color:#2f7d5b}
-.ages .hak-btn.on{background:#2f7d5b;border-color:#2f7d5b;color:#fff}
-.hakview .wheel-wrap,.hakview #spin,.hakview #browseBtn,.hakview #browse,.hakview #result,.hakview #nearby,.hakview #prep,.hakview #shop,.hakview #vs{display:none!important}
+.wrow{display:flex;align-items:center;gap:8px;margin:0 0 12px}
+.wrow p{flex:1;min-width:0;margin:0;color:var(--sub);font-size:13.5px;line-height:1.45}
+.editbtn{flex:none;padding:7px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:13px;font-weight:700}
+/* 메뉴 편집: 아래에서 올라오는 창 */
+.sheet{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.42);display:flex;align-items:flex-end}
+.sheet[hidden]{display:none}
+.sheet .panel{width:100%;max-height:80vh;overflow:auto;background:var(--card);border-radius:18px 18px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sheet .phead h2{margin:0;font-size:17px}
+.sheet .close{width:40px;height:40px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);font-size:18px}
+.linkbtn{display:block;margin-top:10px;padding:12px;border-radius:12px;text-align:center;font-weight:800;text-decoration:none;background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.bigbtn{display:block;width:100%;margin-top:12px;padding:14px;border-radius:14px;border:0;background:#1d3557;color:#fff;font:inherit;font-weight:800;font-size:15px}
 .ages .emg-btn.on{background:#1d3557;border-color:#1d3557;border-style:solid}
 .emg .maps,.emg .delivery,.emg #eatsTip{display:none}
 .info{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--bg);text-align:left;font-size:14px;line-height:1.6}
@@ -75,14 +111,14 @@ h1{font-size:clamp(18px,5.4vw,24px);margin:0;letter-spacing:-.5px;white-space:no
 .checks small{display:block;color:var(--sub);font-size:12px}
 .prog{height:8px;border-radius:8px;background:var(--bg);overflow:hidden;margin:4px 0 2px}
 .prog i{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
-.wheel-wrap{position:relative;width:100%;aspect-ratio:1;max-width:320px;margin:0 auto}
+.wheel-wrap{position:relative;width:100%;aspect-ratio:1;max-width:min(100%,62vh);margin:0 auto}
 canvas{width:100%;height:100%;display:block;filter:drop-shadow(0 8px 20px rgba(120,50,20,.18))}
 .pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;
   border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--ink);z-index:2}
 .hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;aspect-ratio:1;border-radius:50%;
   background:var(--card);border:4px solid var(--ink);display:grid;place-items:center;font-size:24px;pointer-events:none}
 button{font:inherit;border:0;cursor:pointer}
-.spin{display:block;width:100%;max-width:320px;margin:18px auto 0;padding:16px;border-radius:16px;
+.spin{display:block;width:100%;max-width:none;margin:18px auto 0;padding:16px;border-radius:16px;
   background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:20px;font-weight:800;
   box-shadow:0 6px 16px rgba(255,107,61,.35)}
 .spin:disabled{opacity:.6}
@@ -95,7 +131,7 @@ button{font:inherit;border:0;cursor:pointer}
 .hlist{list-style:none;margin:0;padding:4px 2px;display:flex;flex-wrap:wrap;gap:6px}
 .hlist li{padding:6px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:14px}
 .hlist li.empty{border:0;background:none;color:var(--sub);padding:6px 0}
-.browse-btn{display:block;width:100%;max-width:320px;margin:10px auto 0;padding:12px;border-radius:14px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;border:1px solid var(--line)}
+.browse-btn{display:block;width:100%;max-width:none;margin:10px auto 0;padding:12px;border-radius:14px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;border:1px solid var(--line)}
 .cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 .cats button{padding:8px 2px;border-radius:10px;background:var(--bg);color:var(--ink);font-weight:600;font-size:13.5px;border:1px solid var(--line)}
 .cats button.on{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -146,6 +182,7 @@ h2 small{font-weight:500;color:var(--sub);font-size:12px}
 .dist{flex:none;font-weight:700;color:var(--accent);font-size:14px}
 .tag{display:inline-block;background:var(--good);color:#fff;font-size:11px;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
 .radius{display:flex;gap:6px;margin-bottom:10px}
+#safety .safe .st{display:none}
 .safe .wx{padding:2px 0 6px;margin-bottom:4px;border-bottom:1px dashed var(--line)}
 .safe .wx.on{color:#c2410c;font-weight:700}
 .safe{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--safe);color:var(--ink);font-size:13.5px;line-height:1.5}
@@ -183,27 +220,19 @@ details summary::after{content:" ▾";color:var(--sub)}
 <header class="appbar" id="appbar">
   <div class="bar-in">
     <h1 id="title">🍽️ 오늘 저녁 뭐 먹지?</h1>
-    <p id="subtitle">고민은 룰렛에게 맡기고, 맛집은 바로 찾아요</p>
     <div class="ticker" id="ticker" hidden aria-label="재난 소식"><div class="tk-in" id="tkIn"></div></div>
   </div>
 </header>
 
 <main>
-
+<!-- 🎡 룰렛 탭 -->
+<div class="tab" id="tab-roulette" data-tab="roulette">
   <div class="ages" id="ages">
     <button data-p="all">전체</button><button data-p="10">10대</button><button data-p="20">20대</button>
-    <button data-p="3040">30·40대</button><button data-v="hak" class="hak-btn" id="hakBtn">🍚 학식</button><button data-p="night">🌙 야식</button>
-    <button data-p="near" class="near-btn">📍 내 주변</button><button data-p="emergency" class="emg-btn">🔦 비상식량 (정전·재난 대비)</button>
+    <button data-p="3040">30·40대</button><button data-p="night">🌙 야식</button>
+    <button data-p="near" class="near-btn">📍 내 주변</button><button data-p="emergency" class="emg-btn">🔦 비상식량</button>
   </div>
-
-  <section class="card hidden" id="hak">
-    <h2>🍚 오늘의 학식 <small id="hdate"></small></h2>
-    <div class="hnav">
-      <button type="button" id="hprev">‹ 전날</button><button type="button" id="htoday">오늘</button><button type="button" id="hnext">다음날 ›</button>
-    </div>
-    <div id="hlist"></div>
-    <p class="disclose" id="hnote"></p>
-  </section>
+  <div class="wrow"><p id="subtitle">고민은 룰렛에게 맡기고, 맛집은 바로 찾아요</p><button type="button" class="editbtn" id="editBtn">✏️ 메뉴 편집</button></div>
 
   <div class="wheel-wrap">
     <div class="pointer"></div>
@@ -211,24 +240,8 @@ details summary::after{content:" ▾";color:var(--sub)}
     <div class="hub">🍚</div>
   </div>
   <button class="spin" id="spin">룰렛 돌리기</button>
-  <button class="browse-btn" id="browseBtn" type="button">🔍 룰렛 없이 주변 맛집 바로 보기</button>
 
 
-  <section class="card hidden" id="browse">
-    <h2>🔍 주변 맛집 둘러보기 <small id="bsrc"></small></h2>
-    <div class="cats" id="bcats">
-      <button data-q="" class="on">전체</button><button data-q="한식">한식</button><button data-q="중식">중식</button><button data-q="일식">일식</button>
-      <button data-q="양식">양식</button><button data-q="분식">분식</button><button data-q="치킨">치킨</button><button data-q="카페">카페</button>
-    </div>
-    <div class="radius" id="bradius">
-      <button data-r="500">500m</button><button data-r="1000" class="on">1km</button><button data-r="2000">2km</button>
-    </div>
-    <div class="status" id="bstatus"></div>
-    <ul class="list" id="blist"></ul>
-    <button class="more hidden" id="bmore" type="button">더 보기</button>
-    <div class="safe"></div>
-    <div class="locbar"><span class="locmsg"></span><button type="button" id="brelocate">📍 위치 다시 찾기</button></div>
-  </section>
 
   <section class="card result hidden" id="result">
     <div class="label" id="label">오늘 저녁은</div>
@@ -256,14 +269,6 @@ details summary::after{content:" ▾";color:var(--sub)}
     <div class="vsgrid" id="vsgrid"></div>
   </section>
 
-  <section class="card hidden" id="prep">
-    <h2>🎒 3일 비상용품 체크리스트 <small id="pcount"></small></h2>
-    <div class="prog"><i id="pbar"></i></div>
-    <ul class="checks" id="checks"></ul>
-    <p class="disclose">1인 3일 기준 예시예요. 행정안전부 국민재난안전포털의 비상용품 안내를 참고해 가족 수에 맞게 준비하세요.</p>
-    <div class="safe"></div>
-    <div class="locbar"><span class="locmsg" id="pstatus">재난 땐 가까운 대피소부터 확인해 두세요.</span><button type="button" id="psafety">🏠 가까운 대피소·AED</button></div>
-  </section>
 
   <section class="card hidden" id="nearby">
     <h2>📍 주변 맛집 <small id="src"></small></h2>
@@ -272,21 +277,9 @@ details summary::after{content:" ▾";color:var(--sub)}
     </div>
     <div class="status" id="status"></div>
     <ul class="list" id="list"></ul>
-    <div class="safe"></div>
     <div class="locbar"><span class="locmsg" id="loc"></span><button type="button" id="relocate">📍 위치 다시 찾기</button></div>
   </section>
 
-  <section class="card">
-    <details>
-      <summary>메뉴 편집</summary>
-      <div class="chips" id="chips"></div>
-      <form class="add" id="addForm">
-        <input id="addInput" maxlength="10" placeholder="메뉴 추가 (예: 마라탕)" enterkeyhint="done">
-        <button type="submit">추가</button>
-      </form>
-      <button class="reset" id="reset" type="button">기본 메뉴로 되돌리기</button>
-    </details>
-  </section>
 
   <section class="card shop hidden" id="shop">
     <h2>🛒 집에서 해 먹는다면</h2>
@@ -300,20 +293,105 @@ details summary::after{content:" ▾";color:var(--sub)}
     <p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>
   </section>
 
-  <p class="notes">
-    주변 식당 정보: 카카오맵 · 안전시설·특보: 공공데이터포털<br>
-    위치 정보는 주변 검색에만 쓰이고 저장되지 않아요 · 방문 통계(Google Analytics)를 사용해요 · <a href="/">geoai-na</a>
-  </p>
-</main>
+</div>
 
-<footer class="appfoot" id="appfoot">
-  <div class="bar-in">
+<!-- 🍚 학식 탭 -->
+<div class="tab" id="tab-hak" data-tab="hak" hidden>
+  <section class="card" id="hak">
+    <h2>🍚 오늘의 학식 <small id="hdate"></small></h2>
+    <div class="hnav">
+      <button type="button" id="hprev">‹ 전날</button><button type="button" id="htoday">오늘</button><button type="button" id="hnext">다음날 ›</button>
+    </div>
+    <div id="hlist"></div>
+    <p class="disclose" id="hnote"></p>
+    <a class="linkbtn" id="hakGo" target="_blank" rel="noopener">🗺️ 학생회관 길찾기</a>
+  </section>
+</div>
+
+<!-- 📍 맛집 탭 -->
+<div class="tab" id="tab-near" data-tab="near" hidden>
+  <section class="card" id="browse">
+    <h2>📍 주변 맛집 둘러보기 <small id="bsrc"></small></h2>
+    <div class="cats" id="bcats">
+      <button data-q="" class="on">전체</button><button data-q="한식">한식</button><button data-q="중식">중식</button><button data-q="일식">일식</button>
+      <button data-q="양식">양식</button><button data-q="분식">분식</button><button data-q="치킨">치킨</button><button data-q="카페">카페</button>
+    </div>
+    <div class="radius" id="bradius">
+      <button data-r="500">500m</button><button data-r="1000" class="on">1km</button><button data-r="2000">2km</button>
+    </div>
+    <div class="status" id="bstatus"></div>
+    <ul class="list" id="blist"></ul>
+    <button class="more hidden" id="bmore" type="button">더 보기</button>
+    <div class="locbar"><span class="locmsg"></span><button type="button" id="brelocate">📍 위치 다시 찾기</button></div>
+  </section>
+</div>
+
+<!-- 🪜 사다리 탭 -->
+<div class="tab" id="tab-ladder" data-tab="ladder" hidden>
+  <section class="card">
+    <h2>🪜 사다리 타기 <small>밥값·당번 정하기</small></h2>
+    <div class="lcount"><button type="button" id="lminus" aria-label="한 명 줄이기">－</button><b id="lnum">4명</b><button type="button" id="lplus" aria-label="한 명 늘리기">＋</button></div>
+    <div class="lgrid" id="ltop"></div>
+    <canvas class="lcv" id="lcv"></canvas>
+    <div class="lgrid" id="lbot"></div>
+    <p class="disclose" id="lhint">이름을 누르면 그 사람의 길이 내려가요. 아래 칸은 눌러서 고칠 수 있어요(예: 쏘기, 통과, 당번, 커피).</p>
+    <div class="lbtns">
+      <button type="button" class="main" id="lall">전체 결과 보기</button>
+      <button type="button" id="lshuffle">결과 칸 섞기</button>
+      <button type="button" id="lnew">다시 하기</button>
+      <button type="button" id="ledit">✏️ 이름 고치기</button>
+    </div>
+    <ul class="lout" id="lout"></ul>
+  </section>
+</div>
+
+<!-- 🛟 안전 탭 -->
+<div class="tab" id="tab-safe" data-tab="safe" hidden>
+  <section class="card deptbar">
     <a class="deptlogo" href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener" title="세명대학교 재난안전학과 홈페이지">
       <img src="smu_logo.png" width="131" height="28" alt="세명대학교 재난안전학과"></a>
     <div class="ftxt"><span>학과 사무실</span><a href="tel:043-649-1778">☎ 043-649-1778</a></div>
     <a class="fhome" href="https://www.semyung.ac.kr/smds.do" target="_blank" rel="noopener">학과 홈</a>
+  </section>
+  <section class="card" id="safety">
+    <h2>🛟 내 주변 안전시설</h2>
+    <div class="safe"><p class="disclose">위치를 확인하면 가까운 AED·민방위 대피소와 우리 동네 기상특보를 보여 드려요.</p></div>
+    <div class="locbar"><span class="locmsg" id="pstatus">재난 땐 가까운 대피소부터 확인해 두세요.</span><button type="button" id="psafety">📍 내 위치로 찾기</button></div>
+  </section>
+  <section class="card" id="prep">
+    <h2>🎒 3일 비상용품 체크리스트 <small id="pcount"></small></h2>
+    <div class="prog"><i id="pbar"></i></div>
+    <ul class="checks" id="checks"></ul>
+    <p class="disclose">1인 3일 기준 예시예요. 행정안전부 국민재난안전포털의 비상용품 안내를 참고해 가족 수에 맞게 준비하세요.</p>
+    <button type="button" class="bigbtn" id="emgSpin">🔦 비상식량 룰렛 돌리기</button>
+  </section>
+  <p class="notes">
+    주변 식당 정보: 카카오맵 · 안전시설·특보: 공공데이터포털<br>
+    위치 정보는 주변 검색에만 쓰이고 저장되지 않아요 · 방문 통계(Google Analytics)를 사용해요 · <a href="/">geoai-na</a>
+  </p>
+</div>
+</main>
+
+<!-- 메뉴 편집 창 -->
+<div class="sheet" id="editSheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="phead"><h2 id="editTitle">✏️ 메뉴 편집</h2><button type="button" class="close" id="editClose" aria-label="닫기">✕</button></div>
+    <div class="chips" id="chips"></div>
+    <form class="add" id="addForm">
+      <input id="addInput" maxlength="10" placeholder="메뉴 추가 (예: 마라탕)" enterkeyhint="done">
+      <button type="submit">추가</button>
+    </form>
+    <button class="reset" id="reset" type="button">기본 메뉴로 되돌리기</button>
   </div>
-</footer>
+</div>
+
+<nav class="appfoot tabbar" id="appfoot" role="tablist" aria-label="화면 선택">
+  <button type="button" role="tab" data-go="roulette"><span>🎡</span>룰렛</button>
+  <button type="button" role="tab" data-go="ladder"><span>🪜</span>사다리</button>
+  <button type="button" role="tab" data-go="hak"><span>🍚</span>학식</button>
+  <button type="button" role="tab" data-go="near"><span>📍</span>맛집</button>
+  <button type="button" role="tab" data-go="safe"><span>🛟</span>안전</button>
+</nav>
 
 <script>
 // 고정 바 높이만큼 본문 위아래 여백을 맞춘다(특보 띠가 생기면 위 바가 길어진다)
@@ -456,14 +534,14 @@ function done(menu){
     $('menu').insertAdjacentHTML('afterend', `<p class="info" id="einfo">${body} · 학생회관 1층</p>`);
     $('kakao').href = hakDir; $('kakao').textContent = '학생회관 길찾기';
     $('naver').href = 'https://map.naver.com/p/search/' + encodeURIComponent(HAK_POS.n);
-    $('nearby').classList.add('hidden'); $('shop').classList.add('hidden'); $('prep').classList.add('hidden');
+    $('nearby').classList.add('hidden'); $('shop').classList.add('hidden');
     $('result').scrollIntoView({behavior:'smooth',block:'start'});
     return;
   }
   $('kakao').textContent = '카카오맵 검색';
   if(PRESETS[preset].emergency){
     $('menu').insertAdjacentHTML('afterend', `<p class="info" id="einfo">${EMG_INFO[menu] || '포장의 유통기한과 보관 방법을 확인하세요.'}</p>`);
-    $('prep').classList.remove('hidden'); prepChecks();
+    $('einfo').insertAdjacentHTML('beforeend', ` <a href="#safe">🎒 3일 비상용품 체크리스트 →</a>`);
     $('shop').querySelector('h2').textContent = '🛒 비상식량 미리 준비하기';
     $('kit').classList.add('hidden');
     setOrder(menu);
@@ -501,7 +579,7 @@ function locate(force, stEl){
       if(best.acc <= GPS_GOOD) finish();
     }, e=>{
       if(e.code===1){ ended = true; navigator.geolocation.clearWatch(id); clearTimeout(timer);
-        return fail(new Error('위치 권한이 꺼져 있어요. 위의 지도 검색 버튼을 이용해 주세요.')); }
+        return fail(new Error('위치 권한이 꺼져 있어요. 휴대폰 설정에서 이 사이트의 위치 접근을 허용해 주세요.')); }
       // 시간 초과 등은 그때까지 받은 가장 좋은 값으로 진행
     }, {enableHighAccuracy:true, maximumAge:0, timeout:GPS_WAIT});
     timer = setTimeout(finish, GPS_WAIT);
@@ -620,16 +698,6 @@ function showVs(places){
       <div class="vs2">🛵 배달·포장도 가능</div><div class="vs2">${p0 ? `🚶 ${fmtM(+p0.distance)} · ${walk(+p0.distance)}` : '🗺️ 지도에서 찾아보기'}</div>
       <a href="${p0 ? esc(p0.place_url) : $('kakao').href}" target="_blank" rel="noopener" data-pick="rou">이 메뉴로 결정</a></div>`;
   $('vs').classList.remove('hidden'); tally();
-}
-// 학식 보기: 룰렛 자리에 학식 칸 + 학식 vs 룰렛(룰렛은 지금 묶음에서 임의로 하나 뽑아 가장 가까운 가게와 비교)
-let hakView = false;
-function setHakView(on){
-  if(spinning) return;
-  hakView = on;
-  document.body.classList.toggle('hakview', on);
-  $('hakBtn').classList.toggle('on', on);
-  $('hak').classList.toggle('hidden', !on);
-  if(on){ hakOff = 0; loadHak(); $('hak').scrollIntoView({behavior:'smooth',block:'start'}); }
 }
 $('vsgrid').addEventListener('click', e=>{ const a = e.target.closest('a[data-pick]'); if(a) tally(a.dataset.pick); });
 $('htoday').addEventListener('click',()=>{ hakOff = 0; loadHak(); });
@@ -855,11 +923,6 @@ async function browse(reset, force){
     st.textContent = e.message || '맛집 정보를 불러오지 못했어요.';
   }finally{ busy = false; }
 }
-$('browseBtn').addEventListener('click',()=>{
-  $('browse').classList.remove('hidden');
-  $('browse').scrollIntoView({behavior:'smooth',block:'start'});
-  if(!bitems.length) browse(true);
-});
 $('bcats').addEventListener('click',e=>{
   const q = e.target.dataset.q; if(q===undefined || busy) return;
   bq = q; [...$('bcats').children].forEach(b=>b.classList.toggle('on',b===e.target)); browse(true);
@@ -918,19 +981,171 @@ function applyPreset(){
   document.body.classList.toggle('emg', emg);
   $('subtitle').textContent = emg ? '정전·재난 때 먹을 것, 룰렛으로 하나씩 챙겨 두세요' : near ? (nearInfo || '📍 내 위치 주변 음식점으로 룰렛을 만들어요') : '고민은 룰렛에게 맡기고, 맛집은 바로 찾아요';
   if(emg){ $('nearby').classList.add('hidden'); }
-  else { $('prep').classList.add('hidden'); $('einfo')?.remove(); }
+  else { $('einfo')?.remove(); }
   [...$('ages').children].forEach(b=>{ if(b.dataset.p) b.classList.toggle('on', b.dataset.p===preset); });
 }
 $('ages').addEventListener('click',e=>{
-  if(e.target.dataset.v==='hak'){ setHakView(!hakView); return; }
-  const p = e.target.dataset.p; if(!p || spinning) return;
-  if(hakView) setHakView(false);
-  if(p===preset) return;
+  const p = e.target.dataset.p; if(p) setPreset(p);
+});
+function setPreset(p){
+  if(spinning || p===preset) return;
   preset = p; try{localStorage.setItem('dinner-preset',p)}catch(err){}
   menus = store.get() || PRESETS[p].menus.slice();
   angle = 0; applyPreset(); chips(); draw();
   if(p==='near') buildNear();
+}
+
+// ---- 탭: 🎡 룰렛 · 🍚 학식 · 📍 맛집 · 🛟 안전 (주소 #roulette 등, 뒤로 가기 = 이전 탭) ----
+const TABS = ['roulette','ladder','hak','near','safe'], tabScroll = {};
+let tab = null;
+function goTab(t, push){
+  if(!TABS.includes(t)) t = 'roulette';
+  if(t === tab) return;
+  if(tab) tabScroll[tab] = scrollY;
+  tab = t;
+  document.querySelectorAll('.tab').forEach(el=>el.hidden = el.dataset.tab !== t);
+  document.querySelectorAll('#appfoot [data-go]').forEach(b=>b.setAttribute('aria-selected', b.dataset.go===t));
+  if(push) history.pushState(null, '', '#' + t);
+  window.scrollTo(0, tabScroll[t] || 0);
+  if(t==='near' && !bitems.length) browse(true);
+  if(t==='safe'){ prepChecks(); if(pos) showSafety(); }
+  if(t==='ladder') ladderInit();
+  if(window.gtag) gtag('event','tab_view',{tab:t});
+}
+// ---- 🪜 사다리: 이름 2~8명 · 아래 결과 칸 · 가려진 가로줄 · 한 명씩/전체 길 따라가기 ----
+const L_COLORS = ['#e4572e','#2f7d5b','#2563eb','#c2185b','#f59e0b','#7c3aed','#0891b2','#6b7280'];
+const L_ROWS = 14;
+let L = null;
+function lRand(n){ const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+function lSave(){ try{ localStorage.setItem('ladder', JSON.stringify({names:L.names, res:L.res})); }catch(e){} }
+function lDefaultRes(n){ return Array.from({length:n}, (_,i)=> i===n-1 ? '쏘기' : '통과'); }
+function lBuildRungs(n){
+  // 같은 높이에서 이웃한 가로줄은 겹치지 않게 놓고, 모든 세로줄에 가로줄이 하나 이상 닿게 한다
+  for(let tries=0; tries<50; tries++){
+    const r = Array.from({length:L_ROWS}, ()=>Array(n-1).fill(false));
+    for(let y=0;y<L_ROWS;y++) for(let x=0;x<n-1;x++) if(!r[y][x-1] && lRand(100) < 40) r[y][x] = true;
+    const touched = Array(n).fill(false);
+    r.forEach(row=>row.forEach((on,x)=>{ if(on){ touched[x]=touched[x+1]=true; } }));
+    if(touched.every(Boolean)) return r;
+  }
+  return Array.from({length:L_ROWS}, (_,y)=>Array.from({length:n-1}, (_,x)=> (y+x)%2===0 && y%3===0));
+}
+function lPath(start){            // 시작 칸에서 내려가며 지나는 점들과 도착 칸
+  let x = start; const pts = [[x,0]];
+  for(let y=0;y<L_ROWS;y++){
+    const yy = y + 0.5;
+    if(L.rungs[y][x]){ pts.push([x,yy],[x+1,yy]); x++; }
+    else if(x>0 && L.rungs[y][x-1]){ pts.push([x,yy],[x-1,yy]); x--; }
+  }
+  pts.push([x,L_ROWS]);
+  return {pts, end:x};
+}
+function ladderInit(){
+  if(!L){
+    let saved = null; try{ saved = JSON.parse(localStorage.getItem('ladder')); }catch(e){}
+    const n = saved && saved.names ? Math.min(8, Math.max(2, saved.names.length)) : 4;
+    L = {n, names: (saved && saved.names || []).slice(0,n), res: (saved && saved.res || []).slice(0,n), rungs:null, shown:{}, drawn:false};
+    while(L.names.length<n) L.names.push((L.names.length+1)+'번');
+    if(L.res.length!==n) L.res = lDefaultRes(n);
+    L.rungs = lBuildRungs(n);
+  }
+  ladderRender();
+}
+function ladderRender(){
+  const n = L.n, cols = `repeat(${n},1fr)`;
+  L.names.length = n; L.res.length = n;   // 늘 인원 수와 같게 맞춘다
+  $('lnum').textContent = n + '명';
+  $('ltop').style.gridTemplateColumns = cols; $('lbot').style.gridTemplateColumns = cols;
+  $('ltop').innerHTML = L.edit
+    ? L.names.map((nm,i)=>`<input class="lnm" data-i="${i}" maxlength="5" value="${esc(nm)}" aria-label="${i+1}번째 이름" style="border-color:${L_COLORS[i]}">`).join('')
+    : L.names.map((nm,i)=>`<button type="button" class="lname" data-i="${i}" style="background:${L_COLORS[i]}">${esc(nm)}</button>`).join('');
+  $('ledit').textContent = L.edit ? '✅ 이름 정했어요' : '✏️ 이름 고치기';
+  $('lhint').textContent = L.edit ? '위 칸에 이름을 적고 “이름 정했어요”를 눌러 주세요.' : '이름을 누르면 그 사람의 길이 내려가요. 아래 칸은 눌러서 고칠 수 있어요(예: 쏘기, 통과, 당번, 커피).';
+  $('lbot').innerHTML = L.res.map((r,i)=>`<input class="lres" data-i="${i}" maxlength="6" value="${esc(r)}" aria-label="${i+1}번째 결과 칸">`).join('');
+  $('lout').innerHTML = ''; L.shown = {};
+  ladderDraw();
+}
+function ladderDraw(highlight){
+  const cv = $('lcv'), dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = w*dpr; cv.height = h*dpr;
+  const c = cv.getContext('2d'); c.scale(dpr,dpr); c.clearRect(0,0,w,h);
+  const n = L.n, cw = w/n, X = x=>cw*(x+0.5), Y = y=>y/L_ROWS*h;
+  const dark = matchMedia('(prefers-color-scheme:dark)').matches;
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = dark ? '#6b5a50' : '#c9b8aa'; c.lineWidth = 3;
+  for(let x=0;x<n;x++){ c.beginPath(); c.moveTo(X(x),0); c.lineTo(X(x),h); c.stroke(); }
+  // 가로줄은 길이 지나간 곳만 보인다
+  const seen = new Set(); Object.values(L.shown).forEach(p=>{ for(let i=1;i<p.pts.length;i++){ const [a,b]=p.pts[i-1],[d,e]=p.pts[i]; if(b===e && b%1) seen.add(Math.floor(b)+','+Math.min(a,d)); } });
+  c.strokeStyle = dark ? '#6b5a50' : '#c9b8aa';
+  seen.forEach(k=>{ const [y,x]=k.split(',').map(Number); c.beginPath(); c.moveTo(X(x),Y(y+0.5)); c.lineTo(X(x+1),Y(y+0.5)); c.stroke(); });
+  // 길 그리기
+  Object.entries(L.shown).forEach(([i,p])=>{
+    const upto = (highlight && highlight.i==i) ? highlight.t : 1;
+    c.strokeStyle = L_COLORS[i]; c.lineWidth = 5; c.beginPath();
+    const total = p.pts.length-1, lim = upto*total;
+    for(let k=0;k<=total && k<=Math.ceil(lim);k++){
+      let [px,py] = p.pts[k]; 
+      if(k>lim){ const [qx,qy] = p.pts[k-1], f = lim-(k-1); px = qx+(px-qx)*f; py = qy+(py-qy)*f; }
+      k===0 ? c.moveTo(X(px),Y(py)) : c.lineTo(X(px),Y(py));
+    }
+    c.stroke();
+  });
+}
+function ladderShow(i, animate){
+  L.shown[i] = lPath(i);
+  const done = ()=>{
+    const e = L.shown[i].end;
+    $('lbot').children[e].classList.add('hit');
+    $('lbot').children[e].style.borderColor = L_COLORS[i];
+    if(!$('lout').querySelector(`[data-i="${i}"]`)) $('lout').insertAdjacentHTML('beforeend', `<li data-i="${i}"><i style="background:${L_COLORS[i]}"></i>${esc(L.names[i])}<b>${esc(L.res[e] || '(빈 칸)')}</b></li>`);
+  };
+  if(!animate || matchMedia('(prefers-reduced-motion:reduce)').matches){ ladderDraw(); done(); return Promise.resolve(); }
+  return new Promise(res=>{
+    const dur = 1400, t0 = performance.now();
+    (function step(t){
+      const f = Math.min(1,(t-t0)/dur); ladderDraw({i, t:f});
+      if(f<1) requestAnimationFrame(step); else { ladderDraw(); done(); res(); }
+    })(t0);
+  });
+}
+$('ltop').addEventListener('click', e=>{
+  const b = e.target.closest('.lname'); if(!b) return;
+  const i = +b.dataset.i; if(L.shown[i] || L.busy) return;
+  if(window.gtag) gtag('event','ladder_play',{n:L.n});
+  L.busy = true; ladderShow(i, true).then(()=>{ L.busy = false; });
 });
+$('lall').addEventListener('click', async ()=>{
+  if(window.gtag) gtag('event','ladder_all',{n:L.n});
+  for(let i=0;i<L.n;i++) if(!L.shown[i]) ladderShow(i,false);
+});
+$('lnew').addEventListener('click',()=>{ L.rungs = lBuildRungs(L.n); ladderRender(); });
+$('lshuffle').addEventListener('click',()=>{
+  for(let i=L.res.length-1;i>0;i--){ const j = lRand(i+1); [L.res[i],L.res[j]] = [L.res[j],L.res[i]]; }
+  lSave(); ladderRender();
+});
+$('lplus').addEventListener('click',()=>{ if(L.n>=8) return; L.n++; L.names.push(L.n+'번'); L.res = lDefaultRes(L.n); L.rungs = lBuildRungs(L.n); lSave(); ladderRender(); });
+$('lminus').addEventListener('click',()=>{ if(L.n<=2) return; L.n--; L.names.pop(); L.res = lDefaultRes(L.n); L.rungs = lBuildRungs(L.n); lSave(); ladderRender(); });
+$('lbot').addEventListener('input',e=>{ const i = e.target.dataset.i; if(i===undefined) return; L.res[+i] = e.target.value; lSave(); });
+// 이름 고치기: 위 칸이 입력칸으로 바뀌고, 다시 누르면 저장하고 새 사다리를 만든다
+$('ledit').addEventListener('click',()=>{
+  if(L.edit){
+    $('ltop').querySelectorAll('.lnm').forEach(inp=>{ L.names[+inp.dataset.i] = inp.value.trim().slice(0,5) || ((+inp.dataset.i+1)+'번'); });
+    L.edit = false; lSave(); L.rungs = lBuildRungs(L.n);
+  } else L.edit = true;
+  ladderRender();
+});
+window.addEventListener('resize',()=>{ if(L && tab==='ladder') ladderDraw(); });
+$('appfoot').addEventListener('click',e=>{ const b = e.target.closest('[data-go]'); if(b) goTab(b.dataset.go, true); });
+window.addEventListener('hashchange',()=>goTab(location.hash.slice(1), false));
+$('hakGo').href = hakDir;
+$('emgSpin').addEventListener('click',()=>{ setPreset('emergency'); goTab('roulette', true); window.scrollTo(0,0); });
+// 메뉴 편집 창
+const sheet = $('editSheet');
+function openEdit(on){ sheet.hidden = !on; document.documentElement.style.overflow = on ? 'hidden' : ''; if(on) chips(); }
+$('editBtn').addEventListener('click',()=>openEdit(true));
+$('editClose').addEventListener('click',()=>openEdit(false));
+sheet.addEventListener('click',e=>{ if(e.target===sheet) openEdit(false); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !sheet.hidden) openEdit(false); });
 $('radius').addEventListener('click',e=>{
   const r = e.target.dataset.r; if(!r) return;
   radius = +r; [...$('radius').children].forEach(b=>b.classList.toggle('on',b===e.target));
@@ -946,6 +1161,7 @@ document.addEventListener('click',e=>{
 });
 cv.addEventListener('click',spin);
 
+goTab(location.hash.slice(1), false);
 applyPreset(); chips(); draw(); loadHak(); if(preset==='near') buildNear();
 loadTicker(); setInterval(loadTicker, 10*60*1000);
 document.fonts && document.fonts.ready.then(draw);

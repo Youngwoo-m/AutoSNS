@@ -14,6 +14,43 @@
       "post_url": "https://na-geoai.tistory.com/20",
       "published_at": "2026-10-09T01:54:52.951429+00:00",
       "completed_at": "2026-10-09T01:55:15.816128+00:00"
+    },
+    "6ad729eb826f02499637853c": {
+      "id": "6ad729eb826f02499637853c",
+      "created_at": "2026-10-20T08:44:27.073Z",
+      "status": "queued",
+      "title": "천문측량",
+      "question": "천문측량에서 경도결정방법중\nSterneck법 설명하시오",
+      "topic": "측지학·좌표계",
+      "reference": "",
+      "nickname": "버엄",
+      "source": "untrusted_netlify_submission"
+    },
+    "6ad729e3bb2c43084c105f72": {
+      "id": "6ad729e3bb2c43084c105f72",
+      "created_at": "2026-10-20T08:44:19.026Z",
+      "status": "queued",
+      "title": "천문측량",
+      "question": "천문측량에서 경도결정방법중\nSterneck법 설명하시오",
+      "topic": "측지학·좌표계",
+      "reference": "",
+      "nickname": "버엄",
+      "source": "untrusted_netlify_submission"
+    },
+    "6ad7241353c2bc3715ae4323": {
+      "id": "6ad7241353c2bc3715ae4323",
+      "created_at": "2026-10-20T08:19:31.577Z",
+      "status": "done",
+      "title": "천문측량 용어",
+      "question": "천문측량 용어설명\nLST,GST,LHA,GHT,LMT,GMT",
+      "topic": "측지학·좌표계",
+      "reference": "",
+      "nickname": "범",
+      "source": "untrusted_netlify_submission",
+      "started_at": "2026-10-20T14:03:50.821507+00:00",
+      "post_url": "https://na-geoai.tistory.com/120",
+      "published_at": "2026-10-20T14:11:39.548954+00:00",
+      "completed_at": "2026-10-20T14:12:05.563589+00:00"
     }
   },
   "ignored": [
