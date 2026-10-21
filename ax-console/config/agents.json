@@ -1,6 +1,7 @@
 {
   "_설명": "AX 에이전트 설정. 콘솔 설정 탭의 '에이전트 설정'에서 고친다.",
   "model": "claude-sonnet-5",
+  "drafter_model": "claude-opus-5-5",
   "fallback_model": "claude-sonnet-5",
   "monthly_token_limit": 10000000,
   "planner": {
