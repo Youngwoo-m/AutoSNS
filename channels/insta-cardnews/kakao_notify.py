@@ -87,8 +87,23 @@ def _refresh(tok):
     return tok
 
 
+GENERIC_LINKS = ("https://blog.naver.com", "https://instagram.com/smu_ds_official",
+                 "https://www.youtube.com/@smu_ds_official")
+
+
+def _with_link(text, link_url):
+    """발행 알림에는 원문 링크가 글에도 보이게 한다(카카오 메모는 200자 안 — 본문을 줄여 링크를 붙인다).
+    홈·프로필 같은 일반 링크와, 이미 글에 들어 있는 링크는 붙이지 않는다."""
+    if not link_url or link_url in text or link_url.rstrip("/") in GENERIC_LINKS:
+        return text
+    room = 200 - len(link_url) - 1
+    body = text if len(text) <= room else text[:max(room - 1, 0)] + "…"
+    return f"{body}\n{link_url}"
+
+
 def _send_once(access_token, text, link_url):
     url = link_url or "https://www.youtube.com/@smu_ds_official"
+    text = _with_link(text, link_url)
     obj = {"object_type": "text", "text": text[:1000],
            "link": {"web_url": url, "mobile_web_url": url}}
     data = urllib.parse.urlencode(

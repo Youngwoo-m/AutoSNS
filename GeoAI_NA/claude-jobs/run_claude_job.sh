@@ -13,7 +13,8 @@ export PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 [ -n "$JOB" ] && [ -f "$HERE/jobs/$JOB.md" ] || { echo "작업 지시문이 없습니다: $JOB" >&2; exit 2; }
 mkdir -p "$HERE/logs" "$HERE/state"
 LOG="$HERE/logs/$JOB.log"
-MODEL=$(/usr/bin/python3 -c "import json,sys;print(next(j.get('model','opus') for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]))" "$JOB")
+# 모델은 작업 기본값(model)이고, 가벼운 회차(확인·후처리 전용)는 jobs.json 의 run_models 로 회차(시)별로 낮춘다
+MODEL=$(/usr/bin/python3 -c "import json,sys;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('run_models',{}).get(sys.argv[2],j.get('model','opus')))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 RUN_NOTE=$(/usr/bin/python3 -c "import json,sys,datetime;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('runs',{}).get(sys.argv[2],''))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 
 # 실행 전 점검(jobs.json 의 precheck): 종료 코드 3 = 할 일 없음 → claude 를 부르지 않고 끝낸다. 그 밖의 실패는 그냥 돌린다.
