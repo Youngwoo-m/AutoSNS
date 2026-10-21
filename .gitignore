@@ -110,3 +110,6 @@ remotion-shorts/out/
 GeoAI_NA/claude-jobs/state/
 GeoAI_NA/claude-jobs/dry/
 GeoAI_NA/claude-jobs/work/
+
+# 티스토리 프로필은 GeoAI_NA 쪽 폴더를 가리키는 바로가기라 끝에 슬래시가 없는 이름도 막아야 한다
+chrome-profile-tistory
