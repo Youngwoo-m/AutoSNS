@@ -370,6 +370,37 @@ def hook_lines(sc):
     return [x for x in (a, b) if x]
 
 
+def hook_png(lines, out, y=1450):
+    """인트로 위에 얹는 훅 박스(투명 1080x1920 PNG). 아바타 얼굴·AI 표시 띠 아래 빈 공간에 둔다."""
+    from shared.fonts import font_path, DISPLAY
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    longest = max(len(x) for x in lines)
+    size = min(104, 880 // max(longest, 1))
+    f = ImageFont.truetype(font_path(DISPLAY), size)
+    tw = max(d.textlength(x, font=f) for x in lines)
+    lh = int(size * 1.25); padx, pady, bar = 46, 34, 14
+    bw, bh = int(tw + padx * 2 + bar), int(lh * len(lines) + pady * 2)
+    x0 = (W - bw) // 2
+    d.rounded_rectangle([x0, y, x0 + bw, y + bh], radius=26, fill=(8, 18, 40, 212))
+    d.rounded_rectangle([x0, y, x0 + bar + 10, y + bh], radius=14, fill=(255, 200, 61, 255))
+    d.rectangle([x0 + bar, y, x0 + bar + 14, y + bh], fill=(8, 18, 40, 212))
+    for i, ln in enumerate(lines):
+        d.text((x0 + bar + padx, y + pady + i * lh), ln, font=f, fill=(255, 227, 163, 255) if i == 0 else (255, 255, 255, 255))
+    img.save(out)
+
+
+def overlay_hook(video, lines, seconds, work, y=1450):
+    """final 영상 맨 앞 seconds 초에 훅 박스를 얹는다(페이드 인·아웃)."""
+    png = os.path.join(work, "hook_overlay.png"); hook_png(lines, png, y)
+    tmp = video + ".hook.mp4"; fo = max(seconds - 0.4, 0.5)
+    ff("-i", video, "-loop", "1", "-t", f"{seconds:.2f}", "-i", png, "-filter_complex",
+       f"[1:v]format=rgba,fade=t=in:st=0:d=0.3:alpha=1,fade=t=out:st={fo:.2f}:d=0.4:alpha=1[h];"
+       f"[0:v][h]overlay=0:0:eof_action=pass:enable='lt(t,{seconds + 0.1:.2f})'[v]",
+       "-map", "[v]", "-map", "0:a", *norm_args(), tmp)
+    os.replace(tmp, video)
+
+
+
 def caption_layout(text, size=62):
     """caption_png 과 같은 규칙으로 줄을 나누고 글자 크기를 고른다 → (lines, size)."""
     d = ImageDraw.Draw(Image.new("RGBA", (10, 10)))
@@ -423,7 +454,7 @@ def remotion_body(ep_dir, sc, style, out):
         scenes.append({"id": n, "clip": put(prep, f"clip{n}.mp4"), "voice": put(voice, f"voice{n}.wav"), "frames": frames,
                        "labels": [clean(x) for x in (s.get("labels_3d") or [])], "captions": caps, "gauge": gauge})
     props = {"tag": f"재난 대응 · {sc['type']}", "credit": CREDIT if sc.get("loop") else None, "disclaimer": "", "scenes": scenes,
-             "hook": hook_lines(sc), "hook_frames": int(round(float(CFG.get("hook_seconds", 2.6)) * FPS))}
+             "hook": ([] if CFG.get("intro_outro", False) else hook_lines(sc)), "hook_frames": int(round(float(CFG.get("hook_seconds", 2.6)) * FPS))}
     pp = os.path.join(work, "remotion_props.json")
     json.dump(props, open(pp, "w", encoding="utf-8"), ensure_ascii=False)
     npx = shutil.which("npx") or "/usr/local/bin/npx"   # launchd 는 PATH 가 짧다
@@ -522,6 +553,8 @@ def assemble(ep):
         files = [intro(), nb, outro(ep_dir, sc.get("next_episode_text", ""))]
     out = os.path.join(ep_dir, "final.mp4")
     sp = concat(files, out, sc.get("max_seconds"))
+    if use_io and hook_lines(sc):          # 인트로 위 훅(2026-10-22 사용자 승인): 첫 프레임부터 보이게
+        overlay_hook(out, hook_lines(sc), float(CFG.get("hook_seconds", 2.6)), os.path.join(ep_dir, "work"), int(CFG.get("hook_y", 1450)))
     intro_end = dur(files[0]) / sp if CFG.get("intro_outro", False) else 0.0
     thumbnail(ep_dir, sc, style, os.path.join(ep_dir, "thumbnail.jpg"))
     json.dump({"speed": round(sp, 4), "intro_end": round(intro_end, 2)},
