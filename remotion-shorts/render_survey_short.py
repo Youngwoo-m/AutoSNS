@@ -10,6 +10,7 @@ props.json (그림·음성은 절대 경로로 적는다 — 이 스크립트가
    "scenes": [{"title": "…", "caption": "…", "image": "/abs/diorama1.png", "kind": "diorama",
                "audio": "/abs/voice-1.wav", "seconds": 4.2}, …]}
   kind 는 diorama | diagram | clip. clip 은 image 칸에 Manim 등으로 만든 mp4(980x900, 30fps, 무음)를 적는다.
+  overlay(선택)는 장면 위에 얹는 투명 webm(HyperFrames 훅 제목 등, 1080x1920, 알파 포함).
   (Manim 샘플: manim/error_propagation.py ErrorPropagationBox — 디오라마 2~3장 규칙에는 세지 않는다)
 
 지키는 것(CLAUDE.md 영상 지침·2026-10-17 숏츠 지침): 디오라마 장면 2~3장, 1080×1920, 전체 20.0초 이하.
@@ -49,7 +50,7 @@ def main():
     if props.get("voice") and not os.path.isfile(props["voice"]):
         problems.append(f"voice 파일이 없습니다: {props['voice']}")
     for i, s in enumerate(scenes, 1):
-        for k in ("image", "audio"):
+        for k in ("image", "audio", "overlay"):
             if s.get(k) and not os.path.isfile(s[k]):
                 problems.append(f"장면 {i} {k} 파일이 없습니다: {s[k]}")
     if problems:
@@ -63,7 +64,7 @@ def main():
             shutil.copy(props["voice"], os.path.join(pub, name))
             props["voice"] = name
         for i, s in enumerate(scenes, 1):
-            for k in ("image", "audio"):
+            for k in ("image", "audio", "overlay"):
                 if s.get(k):
                     name = f"s{i}-{k}{os.path.splitext(s[k])[1]}"
                     shutil.copy(s[k], os.path.join(pub, name))
