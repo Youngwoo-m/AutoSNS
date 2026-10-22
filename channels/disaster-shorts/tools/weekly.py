@@ -1,4 +1,4 @@
-"""매주 한 편을 자동으로 만들어 화요일 19:00 예약 공개로 올린다(launchd: 일·월 20:00).
+"""매주 한 편을 자동으로 만들어 편 날짜 08:00(config.publish.time_kst) 예약 공개로 올린다(launchd: 일·월 20:00).
 
   .venv/bin/python weekly.py            # 다가오는 화요일 편을 만든다(이미 올렸으면 아무것도 안 함)
   .venv/bin/python weekly.py --check    # 무엇을 만들지 보여 주기만
@@ -122,7 +122,7 @@ def main(check=False):
     step("조립", [PY, "assemble.py", ep])
     step("예약 업로드", [PY, "publish.py", ep])
     up = json.load(open(os.path.join(ep_dir, "upload.json")))
-    kakao(f"[재난 대응 숏츠] {e['date']}(화) 19:00 공개 예약 완료\n「{sc['title']}」\n"
+    kakao(f"[재난 대응 숏츠] {e['date']} {CFG['publish']['time_kst']} 공개 예약 완료\n「{sc['title']}」\n"
           f"지금은 비공개예요. 문제가 있으면 공개 전에 YouTube 스튜디오에서 수정·삭제해 주세요.", up["url"])
     log(f"완료: {up['url']}")
 

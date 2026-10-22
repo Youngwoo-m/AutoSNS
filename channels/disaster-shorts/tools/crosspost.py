@@ -1,4 +1,4 @@
-"""유튜브가 공개된 뒤(화 19:00) 인스타 릴스·학과 블로거·네이버 블로그·스레드에 함께 올린다.
+"""유튜브가 공개된 뒤(편 날짜 08:00, config.publish.time_kst) 인스타 릴스·학과 블로거·네이버 블로그·스레드에 함께 올린다.
 
   .venv/bin/python crosspost.py            # 오늘 공개된 편을 찾아 올린다(launchd: 화·금 19:30, 21:00 재시도)
   .venv/bin/python crosspost.py <편> --dry  # 각 채널을 '게시 직전'까지만 점검
@@ -44,7 +44,7 @@ def texts(sc, url):
     hashtags = [t.lstrip("#").replace(" ", "") for t in (h.get("instagram") or [tag, "재난대응", "국민행동요령", "안전수칙", "재난안전학과"])][:5]
     topic = (h.get("threads") or tag).lstrip("#").replace(" ", "")
     caption = (f"{sc['title']}\n\n" + "\n".join("✔ " + l for l in lines) +
-               f"\n\n매주 화요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.\n"
+               f"\n\n매주 아침 8시, 계절에 맞는 재난 대응 방법을 알려 드려요.\n"
                f"출처: 행정안전부 국민안전24 국민행동요령({sc['type']})\n"
                "※ AI 아바타·AI 생성 재현 영상이 포함되어 있습니다.")
     threads = (f"{sc['title']}\n\n" + "\n".join("✔ " + l for l in lines) + f"\n\n▶ {url}\n#{topic}")[:490]   # 스레드는 주제 태그 1개만 연결된다
@@ -104,7 +104,7 @@ def _yt():
 
 
 def ensure_public(video_id, date_str):
-    """공개 시각(편 날짜 19:00)이 지났는데 아직 비공개면 API 로 직접 공개한다.
+    """공개 시각(편 날짜 config.publish.time_kst, 08:00)이 지났는데 아직 비공개면 API 로 직접 공개한다.
 
     유튜브 예약(publishAt)이 거부되거나 풀린 편의 대비책(2026-10-03 산불편: 예약이 거부돼
     비공개·예약 없음 상태가 됨). 상태를 바꿀 때는 빠진 필드가 기본값으로 덮이므로
