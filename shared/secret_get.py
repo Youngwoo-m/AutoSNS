@@ -11,7 +11,7 @@ import os
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VENV_PY = os.path.join(ROOT, "channels", "naver-blog-auto", ".venv", "bin", "python")
 
 

@@ -1,0 +1,84 @@
+=====PAGE 1
+LOAD-MOVEMENT MEASUREMENTS AND FAILURE LOAD DETERMINATION
+Load-Movement Measurements
+A typical setup for an axial compression static load test is presented in Figure 1; and an axial tension static load
+test is illustrated in Figure 2. In a static load test, the load applied to the deep foundation element is measured
+with a load cell and a jack pressure gage. A spherical bearing plate is also incorporated in the loading system
+to minimize eccentric loading.
+Figure 1. Compression Load Test Arrangement on a 48 Inch Diameter, Open End Pipe Pile.
+Copyright GRL Engineers, Inc. 2016 Page 1
+=====PAGE 2
+Figure 2. Tension Load Test Arrangement on a 54 Inch Diameter, Open End Pipe Pile.
+Steel plates of an appropriate size and thickness are also incorporated into the loading system to reduce load
+measurement errors associated with diameter changes in the loading system components. A photograph of a
+high capacity loading system is included in Figure 3. The high capacity loading system consists of two jacks,
+two load cells, two steel spherical bearing plates, and appropriately sized steel plates for load transfer.
+Copyright GRL Engineers, Inc. 2016 Page 2
+=====PAGE 3
+Figure 3. High Capacity Loading System on 48 Inch Diameter, Open End Pipe Pile
+.
+The movement of the deep foundation element during a static load test is measured using electronic dial gages,
+linear variable differential transformers (LVDTs), mechanical dial gages, string potentiometers, or a combination
+of these devices. For each load increment, these devices measure the pile head or shaft top movement at
+multiple locations around the foundation element relative to stationary reference beams.
+Copyright GRL Engineers, Inc. 2016 Page 3
+=====PAGE 4
+A representative setup for measuring movement is presented in Figure 4. The pile movement monitoring
+instrumentation shown in the figure includes diametrically opposite mounted LVDTs (left) as the primary
+movement monitoring system, and diametrically opposite mounted mechanical dial gage for a backup system
+(right).
+Below the movement measuring system, anchor block mounted vibrating wire strain gages can be seen. For
+non-composite section foundations, above grade external strain gages are used to independently check the
+applied load determined from the load cell and jack pressure gage readings. For composite section foundations,
+use of above grade external strain gages aid in determining the foundation’s elastic modulus which is required
+for load-transfer determinations.
+Figure 4. Pile Movement Monitoring Instrumentation Setup on 18 Inch Diameter,
+Closed End Pipe Pile.
+Copyright GRL Engineers, Inc. 2016 Page 4
+=====PAGE 5
+Compression Load Test: Load-Movement Plot and Failure Load Interpretation
+Pile head or shaft top movement is plotted against the applied load. A representative load-movement plot from
+an axial compression load test is presented in Figure 5. A number of methods have been proposed to define
+the “failure load” of a deep foundation element under axial compression loading. For driven piles, the Davisson
+criterion (1972) is often used to define the failure load for piles less than 24 inches in diameter or width. The
+Davisson criterion defines the failure load as the load at which the load-movement curve crosses an offset limit
+line determined by the pile’s elastic deformation and its diameter.
+Figure 5. Typical Load-Movement Plot for an Axial Compression Load Test.
+For driven piles greater than 36 inches in width or diameter, AASHTO (2014) design specifications recommend
+the offset limit line be defined as the elastic deformation plus the pile diameter, in inches, divided by the 30. For
+driven piles between 24 and 36 inches in width or diameter, AASHTO specifications recommend linear
+interpolation between these two criteria. AASHTO specifications state that the failure load for drilled shafts is
+generally defined as the load at which the gross shaft top settlement exceeds 5% of the shaft diameter, unless
+plunging failure occurs.
+Copyright GRL Engineers, Inc. 2016 Page 5
+=====PAGE 6
+Tension Load Test: Load-Movement Plot and Failure Load Interpretation
+A representative load-movement plot from an axial tension load test is presented in Figure 6. For driven piles,
+an offset limit line is typically used to define the failure load in a tension load test. The offset limit line criterion
+defines the tension failure load as the load at which the load-movement curve crosses an offset limit line
+determined by the piles elastic lengthening plus an offset of 0.15 inches. For drilled shafts, the tension failure
+load is often defined as the load at which the gross movement equals 5% of the diameter of the shaft, unless
+pullout failure occurs.
+Figure 6. Typical Load-Movement Plot for an Axial Tension Load Test.
+Copyright GRL Engineers, Inc. 2016 Page 6
+=====PAGE 7
+Lateral Load Test: Load-Movement Plot and Interpretation
+Lateral static load tests can be configured to test two deep foundation elements at the same time (pushing the
+two elements away from each other, or pulling them toward each other), providing “two-for-one” economy of
+results. A representative lateral test load-deflection plot is presented in Figure 7. A failure load is generally not
+determined from a lateral static load test. Instead, load-movement behavior is characterized, from which loads
+that satisfy strength and serviceability limits are established. For lateral tests, GRL can characterize a range of
+load-movement behavior, including head deflection, head rotation, and full-length deflected shape. This
+information can be used to refine lateral soil response, thus improving the modelling of an in-service fixed-head
+group installation from the test results on a free-head single element.
+Figure 7. Typical Load-Movement Plot for a Lateral Load Test.
+Copyright GRL Engineers, Inc. 2016 Page 7
+=====PAGE 8
+References
+American Association of State Highway and Transportation Officials. (2014). AASHTO LRFD Bridge Design
+Specifications, Seventh Edition. American Association of State Highway and Transportation Officials,
+Washington, DC, 1960 p.
+Davisson, M.T. (1972). High Capacity Piles, Proceedings, Soil Mechanics Lecture Series on Innovations in
+Foundation Construction. American Society of Civil Engineers, ASCE, Illinois Section, Chicago, pp 81-
+112.
+Copyright GRL Engineers, Inc. 2016 Page 8

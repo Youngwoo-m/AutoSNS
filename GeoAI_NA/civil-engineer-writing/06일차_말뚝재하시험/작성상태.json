@@ -1,0 +1,62 @@
+{
+  "종목": "토목시공기술사",
+  "일차": 6,
+  "제목": "[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 해석 | 하루 한 문제 6일차",
+  "문제구분": "기출 원문(2022년 제128회 4교시 2번, 논술형)",
+  "과목(학습분류)": "기초·흙막이(말뚝기초)",
+  "주제선정근거": "전체465문항.json에서 '말뚝' 포함 16문항 중 재하시험·지지력 평가 논술형 3건(127-4-3, 128-4-2, 139-3-5)을 원문(127/128/139.txt)과 대조. 128-4-2와 139-3-5는 문구가 거의 같아 반복 출제 유형으로 판단. 지반 분야 키워드 64문항은 중복 허용 분야 지표로만 언급. 기존 1~5일차(다짐·서중콘크리트·흙막이계측·온도균열·SPT)와 중복 없음, published_history 조회 0건.",
+  "관련기출": [
+    "2022 제127회 4교시 3번",
+    "2022 제128회 4교시 2번",
+    "2026 제139회 3교시 5번"
+  ],
+  "작성한유형": [
+    "흙의 다짐",
+    "서중콘크리트",
+    "흙막이 계측관리",
+    "온도균열",
+    "SPT N값 보정",
+    "말뚝 재하시험"
+  ],
+  "model": "claude (claude-opus-5-5) 초안·편집, calc-verifier 검산, source-reviewer 검토",
+  "검산": {
+    "verdict": "ok",
+    "checked": 16,
+    "fixed": 0,
+    "Q_davisson_kN": 2864
+  },
+  "검토": {
+    "verdict": "fix",
+    "fixed": 6,
+    "sources_opened": 11
+  },
+  "출처": [
+    "Caltrans Foundation Manual Ch.8 (2015)",
+    "Fellenius (2015) The Static Loading Test",
+    "GRL Engineers Failure Load Determination",
+    "KCSC/standard.go.kr (조문 미열람)"
+  ],
+  "PDF": {
+    "파일": "06일차_말뚝재하시험_답안예시_따라쓰기.pdf",
+    "쪽수": 3,
+    "sha1": "018669821466b43c93422518f6138b18c67b0173",
+    "렌더검토": "3쪽 전체 렌더 확인, 겹침·깨진 글자 수정 후 재확인"
+  },
+  "티스토리": {
+    "URL": "https://na-geoai.tistory.com/131",
+    "상태": "공개, 제목·상단링크·표·그림·PDF(해시 일치) 확인",
+    "카테고리": "토목시공기술사(1406134)"
+  },
+  "Blogger": {
+    "URL": "https://geoaina.blogspot.com/2026/10/6.html",
+    "상태": "공개, 본문·그림·PDF 링크(netlify materials/day06, image/jpeg·application/pdf) 확인"
+  },
+  "네이버": {
+    "URL": "https://blog.naver.com/safeworking/224449751164",
+    "상태": "공개, 본문 키워드 확인"
+  },
+  "목록": {
+    "civil published.json": "6일차 등록·배포 ready 확인"
+  },
+  "발행시각": "2026-10-22 08:15 Asia/Seoul"
+}

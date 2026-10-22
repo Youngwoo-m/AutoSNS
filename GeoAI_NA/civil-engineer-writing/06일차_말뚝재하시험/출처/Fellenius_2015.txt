@@ -1,0 +1,1733 @@
+=====PAGE 1
+The Static Loading Test
+Performance, Instrumentation, Interpretation
+Bengt H. Fellenius
+First K.R. Massarsch Lecture
+Fellenius, B.H., 2015. The Static Loading Test. Segundo Congreso Internacional de Fundaciones
+Profundas de Bolivia, First K.R. Massarsch Lecture, Santa Cruz May 12-15, 62 p
+=====PAGE 2
+A routine static loading test provides
+the load-movement of the pile head...
+and the pile capacity?
+2
+=====PAGE 3
+The Offset Limit Method
+Davisson (1972)
+Q
+A E
+Q  L
+L
+L
+Tom Davisson determined this definition as the one that fitted
+OFFSET (inches) = 0.15 + b/120
+best to the capacities he intuitively determined from a FWHA
+data base of loading tests on driven piles. The definition does
+OFFSET (mm) = 4 + b/120
+not mean or prove the the pile diameter has anything to do with
+b = pile diameter
+the interpretation of capacity from a load-movement curve.
+3
+=====PAGE 4
+The Decourt Extrapolation
+Decourt (1999)
+Q 2,000,000 500
+)
+s
+p C
+i
+k
+2
+ / h Q  400
+1,500,000
+c u
+C
+n
+C = Slope
+i
+( 1 1
+)
+s
+s C = Y-intercept
+p 300
+/ 2
+Q i
+k
+1,000,000 (
+-
+-
+D
+T Linear Regression Line
+A
+N
+O 200
+M
+L
+V
+M
+500,000
+/
+D
+A 100
+O
+L
+Ult.Res = 474 kips
+0
+0
+0 100 200 300 400 500
+0.0 0.5 1.0 1.5 2.0
+LOAD (kips) R = 470 kips – 230 tons
+u MOVEMENT (inches)
+Q
+4
+=====PAGE 5
+Other methods are:
+The Load at Maximum Curvature
+Mazurkiewicz Extrapolation
+Chin-Kondner Extrapolation
+DeBeer double-log intersection
+Fuller-Hoy Curve Slope
+The Creep Method
+Yield limit in a cyclic test
+Load 10 % of pile head diameter
+5
+For details, see Fellenius (1975, 1980)
+=====PAGE 6
+CHIN and DECOURT 235
+6
+=====PAGE 7
+LOAD = 3,100 kN
+4,000
+Compression for 30 mm toe
+movement
+) Head
+N
+k 3,000
+(
+Shaft
+D
+A
+O 2,000
+L
+OFFSET LIMIT
+LOAD 2,000 kN
+1,000
+Toe
+0
+0 10 20 30 40 50 60 70 80
+MOVEMENT (mm)
+A rational, upper-limit definition to use for “capacity” is the load that
+caused a 30-mm pile toe movement.
+Indeed, bringing the toe movement into the definition is the point. A
+“capacity” deduced from the movement of the pile head in a static loading
+test on a single pile has little relevance to the structure to be supported by
+the pile. The relevance is even less when considering pile group response.
+7
+=====PAGE 8
+What really do we learn from
+unloading/reloading and what
+does unloading/reloading do to
+the gage records?
+8
+=====PAGE 9
+Does unloading/reloading add anything of value to a test?
+Result on a test on a 2.5 m diameter, 80 m long bored pile
+30
+30
+Acceptance Criterion
+Acceptance Criterion
+Repeat test
+25
+25
+20
+20
+)
+N)
+N
+M
+M
+(
+(
+D
+1
+1
+5
+5
+D
+A
+A
+O
+O
+L
+L
+10
+10
+5
+5
+0
+0
+0 25 50 75 100 125 150 175 200
+0 25 50 75 100 125 150 175 200
+MOVEMENT (mm)
+MOVEMENT (mm)
+9
+=====PAGE 10
+Plotting the repeat test in proper sequence
+30
+Repeat test plotted in
+Acceptance Criterion
+sequence of testing
+25
+20
+)
+N
+M
+(
+15
+D
+A
+O
+L
+10
+5
+0
+0 25 50 75 100 125 150 175 200
+MOVEMENT (mm)
+10
+=====PAGE 11
+The Testing Schedule
+300
+A much superior test schedule. It presents a large number of values (≈20 increments), has no
+destructive unloading/reload cycles, and has constant load-hold duration. Such tests can be used
+in analysis for load distribution and settlement and will provide value to a project, as opposed to the
+250
+long-duration, unloading/reloading, variable load-hold duration, which is a next to useless test.
+200
+Plan for 200 %, but make use of
+"
+T the opportunity to go higher if
+N
+E this becomes feasible
+C 150
+R
+E
+P
+" XXXXX
+100
+50
+0
+0 6 12 18 24 30 36 42 48 54 60 66 72
+TIME (hours)
+The schedule in blue is typical for many standards. However, it is costly, time-consuming,
+and, most important, it is diminishes or eliminates reliable analysis of the test results.
+=====PAGE 12
+Pile Interaction
+1,000 2,000
+PASSIVE
+PASSIVE
+800 1,600
+ACTIVE
+ACTIVE
+) )
+N N
+K 600 K 1,200
+( (
+D D
+A A
+400 800
+O O
+L L
+200 400
+0 0
+0 1 2 3 4 5 6 7 0 4 8 12 16 20 24
+MOVEMENT (mm) MOVEMENT (mm)
+CASE 1 CASE 2
+Load-Movement curves from static loading tests on one
+Load-Movement curves from static loading tests on two
+pile (“ACTIVE”). Diameter (b) = 500 mm; Depth = 20.6 m.
+“ACTIVE” piles (one at a time) and one “PASSIVE”.
+“PASSIVE” pile is 3.5 m away (c/c = 7b).
+.
+Diameter, b = 400 mm; Depths = 8.0 m and 8.6 m. The
+“PASSIVE” pile is 1.2 m and 1.6 m away from the
+“ACTIVE” (c/c = 3b and 4b).
+Caputo and Viggiani (1984) with data from Lee and Xiao (2001).
+12
+=====PAGE 13
+Group Effect
+Single Pile
+Comparing tests on single pile, a 4-pile group, and a 9-pile group
+9-pile Group 800
+Average of 4 Piles
+) Single Pile
+N
+K
+600
+(
+E
+L
+Average of 9 Piles
+I
+P
+400
+R
+20 m
+E
+P
+D
+200
+A
+O
+L
+4-pile Group
+0
+0 2 4 6 8 10
+PILE HEAD MOVEMENT (mm)
+O’Neill et al. (1982)
+13
+=====PAGE 14
+Instrumentation
+and
+Interpretation
+14
+=====PAGE 15
+T e l l t a l e s
+• A telltale measures shortening of a pile and must never be arranged to
+measure movement.
+• Let toe movement be the pile head movement minus the pile shortening.
+• For a single telltale, the shortening divided by the distance between
+the pile head and the telltale toe is the average strain over that length.
+• For two telltales, the distance to use is that between the telltale tips.
+• The strain times the cross section area of the pile times the pile material
+E-modulus is the average load in the pile.
+• To plot a load distribution, where should the load value be plotted?
+Midway of the length or above or below?
+15
+=====PAGE 16
+Load distribution for constant unit shaft resistance
+Unit shaft resistance
+(constant with depth)
+16
+=====PAGE 17
+Linearly increasing unit shaft resistance
+and its load distribution
+2 2
+ax ah h
+A1 A2  0.5 x 
+===> ===>
+Linearly increasing unit
+2 2 2
+shaft resistance
+0 ah 0 TELLTALE 0 "0" Shaft Resistance ah2/2
+0 0
+h/2
+x = h/√2 x = h/√2
+H H H
+T T T
+P P P
+E A1 E E
+D D D
+x
+A2
+ah2/2
+h
+ah
+UNIT RESISTANCE SHAFT RESISTANCE Resistance LOAD IN THE PILE
+Telltale Foot
+at TTL Foot
+17
+=====PAGE 18
+Glostrext Retrievable Extensometer (Geokon 1300 & A9)
+Anchors installed
+Anchor arrangement display
+Hanifah, A.A. and Lee S.K. (2006)
+Geokon borehole extensometer
+18
+=====PAGE 19
+Gage for measuring
+displacement, i.e., distance
+change between upper and
+lower extensometers.
+Accuracy is about 0.02mm/5m
+corresponding to about 5 µε.
+19
+=====PAGE 20
+20
+=====PAGE 21
+Rebar Strain Meter — “Sister Bar”
+Three
+bars?!
+InIsntsrutrmumenetn Ct Cabalbelses
+RReienifnofrocricnign gR Rebeabrar
+InIsntsrutrmumenetn Ct Cabalbele oro Sr tSratrnadnd
+RReienifnofrocricnign gR Rebeabrar
+oro Sr tSrtarnadnd
+WWireir eT iTeie
+(2( 2p lpalcaecse)s)
+RRebeabra Sr Stratriani nM Meteetrer
+RRebeabra Sr tSratriani nM Meteetrer
+(3( 3p lpalcaecse,s 1, 2102°0 a° paaprat)rt)
+WWireir eT iTeie
+TTieided t oto R Reieninfoforcricningg R Rebebarar TTieided t oto R Reieninfoforcricningg R Rininggss
+Hayes 2002 21
+=====PAGE 22
+Load-strain of individual gages and of averages
+PILE 1 PILE 2
+A&C B&D
+18
+20 LEVEL 1 D A C B
+16
+18
+14
+16
+12
+)
+14 N
+M
+10
+(
+) N12
+M D
+( A 8
+D 10 O
+A L
+O 6
+8
+L
+4
+6
+Level 1A+1C
+2
+4 Level 1B+1D
+Level 1 avg 0
+2
+0 100 200 300 400 500 600 700
+0
+STRAIN (µε)
+0 50 100 150 200
+STRAIN (µε)
+The curves are well together and Both pair of curves indicate bending; averages are very close;
+no bending is discernible essentially the same for the two pairs
+22
+=====PAGE 23
+If one gage “dies”, the data of surviving single gage should be discarded.
+It must not be combined with the data of another intact pair.
+Data from two surviving single gages must not be combined.
+20
+LEVEL 1
+Means: A&C, B&D, AND A&B&C&D
+18
+A&C+D A&C+B
+A+D D B+C
+16
+14
+12
+)
+N
+M
+(
+10
+D
+A
+O
+L 8
+6
+Error when including
+the single third gage, when
+4
+either Gage B or Gage D data
+2 are discarded due to damage.
+0
+0 100 200 300 400 500 600 700
+STRAIN (µε)
+23
+=====PAGE 24
+We have got the strain.
+How do we get the load?
+• Load is stress times area
+• Stress is Modulus (E) times strain
+  E 
+• The modulus is the key
+24
+=====PAGE 25
+For a concrete pile or a concrete-filled bored pile, the
+modulus to use is the combined modulus of concrete,
+reinforcement, and steel casing
+E A  E A
+E  s s c c
+comb
+A  A
+s c
+E = combined modulus
+comb
+E = modulus for steel
+s
+A = area of steel
+s
+E = modulus for concrete
+c
+A = area of concrete
+c
+25
+=====PAGE 26
+• The modulus of steel is 200 GPa (207 GPa for those weak at heart)
+• The modulus of concrete is. . . . ?
+Hard to answer. There is a sort of relation to the cylinder strength and the
+modulus usually appears as a value around 30 GPa, or perhaps 20 GPa or
+so, perhaps more.
+This is not good enough answer but being vague is not necessary.
+The modulus can be determined from the strain measurements.
+change of strain for a change of load
+Calculate first the and plot the
+values against the strain.
+
+E 
+Values are known
+t
+
+26
+=====PAGE 27
+Example of “Tangent Modulus Plot”
+100
+Level 1
+90
+Level 2
+)
+a 80 Level 3
+P
+G Level 4
+( 70
+S Level 5
+U
+60
+L
+U
+D
+50
+O
+M
+40
+T
+N
+E
+30
+G
+N
+A 20
+T
+Best Fit Line
+10
+0
+0 200 400 600 800
+MICROSTRAIN
+27
+=====PAGE 28
+In the stress range of the static loading test, modulus of concrete is
+not constant, but a more or less linear relation to the strain
+ d
+E     a b
+t
+d
+ 
+Which can be integrated to:
+ a 
+2
+    b
+ 
+But stress is also a function of
+2
+ 
+secant modulus and strain:
+  E 
+s Combined, we get a useful relation:
+E  0.5a b Q = A E ε
+and
+s s
+28
+=====PAGE 29
+Example of “Tangent Modulus Plot”
+100
+Level 1
+90
+Level 2
+)
+a 80 Level 3
+P
+G Level 4
+( 70
+S Level 5
+U
+60
+L
+U
+D
+50
+O
+Intercept is
+M
+”b” 40
+T
+N
+E
+30
+G
+N
+A 20 Slope is “a”
+T
+Best Fit Line
+10
+0
+0 200 400 600 800
+MICROSTRAIN
+29
+=====PAGE 30
+Field Testing and Foundation Report, Interstate H-1, Keehi
+Interchange, Hawaii, Project I-H1-1(85), PBHA 1979.
+Strain-gage instrumented, 16.5-inch octagonal prestressed
+concrete pile driven to 60 m depth through coral clay and
+sand. Modulus relations as obtained from uppermost gage
+(1.5 m below head, i.e., 3.6b).
+5 5
+TANGENT STIFFNESS, ∆Q/∆ε SECANT STIFFNESS, Q/ε
+)
+N
+G )
+( 4 N 4
+G
+ε (
+/Q
+∆
+∆
+y = -0.0014x + 4.082
+ε
+/Q
+, S 3
+,
+S 3
+S
+S
+E
+E
+N
+N
+F
+F
+F
+F I
+I T 2 T 2
+S
+S
+T
+Secant Data
+T
+N Secant from Tangent Data
+N
+A
+E
+G C Trend Line y = -0.0007x + 4.0553
+N 1 E 1
+S
+A
+T
+0 0
+0 500 1,000 1,500 2,000 0 500 1,000 1,500 2,000
+STRAIN (µε) STRAIN (µε)
+The tangent stiffness approach can be applied to all The secant stiffness approach can only be applied to
+gage levels. The differentiation eliminates influence the gage level immediately below the pile head (must
+of past shear forces and residual load. Non-equal load be uninfluenced by shaft resistance), provided the
+increment duration will adversely affect the results. strains are uninfluenced by residual load. 30
+=====PAGE 31
+Unlike steel, the modulus of concrete varies and depends on curing, proportioning,
+mineral, etc. and it is strain dependent. However, the cross sectional area of steel in an
+instrumented steel pile is sometimes not that well known.
+60 60 60 60
+) )
+) EA (GN) = 46.5 from tangent stiffness N ) EA (GN) = 46.5 from tangent stiffness N
+N secant N secant
+55 G 55 55 G 55
+G G
+(
+EA
+secant
+(GN) = 46.8 - 0.001µε from secant stiffness (
+A
+(
+EA
+secant
+(GN) = 46.8 - 0.001µε from secant stiffness (
+A
+A A
+E E
+E E
+,
+50 ,
+S
+50
+,
+50 ,
+S
+50
+S S
+S S
+S S
+E E
+E E
+N N
+N N
+F 45 F 45 F 45 F 45
+F F
+F I y = -0.0013x + 46.791 I T F I y = -0.0013x + 46.791 I T
+T T
+S S
+S S
+40 T 40 40 T 40
+T T
+N y = 0.000x + 46.451 N y = 0.000x + 46.451
+N N
+E E
+A A
+G G
+C C
+N N
+E 35 35 E 35 35
+A A
+S S
+T T
+SECANT STIFFNESS, EA = Q/ε TANGENT STIFFNESS, EA = ∆Q/∆ε SECANT STIFFNESS, EA = Q/ε TANGENT STIFFNESS, EA = ∆Q/∆ε
+30 30 30 30
+0 100 200 300 400 500 600 0 100 200 300 400 500 600 0 100 200 300 400 500 600 0 100 200 300 400 500 600
+STRAIN, με STRAIN, με STRAIN, με STRAIN, με
+Pile stiffness for a 1.83 m diameter steel pile; open-toe pipe pile.
+Strain-gage pair placed 1.8 m below the pile head.
+31
+(Data from Bradshaw et al. 2012)
+=====PAGE 32
+The initial "hyperbolic" trend can here be removed by
+adding a mere 20 µε to the strain data, "correcting the
+zero" reading, it seems.
+50 50
+)
+) N
+N SECANT STIFFNESS, EA = ∆Q/∆ε G TANGENT STIFFNESS, EA = ∆Q/∆ε
+G
+(
+(
+40 A 40
+A
+E
+E
+, S EA secant (GN) = 10.0 - 0.003µε from tangent stiffness
+,
+S S
+S
+30 E 30
+E EA (GN) = 11.2 - 0.005µε from secant stiffness
+N secant N
+F
+F F
+F I
+I T 20 T 20
+S
+S
+T y = -0.0053x + 11.231 T
+N
+N
+A 10 E 10
+G
+C Secant stiffness after adding
+N
+E
+S 20µε to each strain value A y = -0.0055x + 9.995
+T
+0 0
+0 100 200 300 400 500 0 100 200 300 400 500
+Secant stiffness from
+STRAIN (µε) STRAIN (µε)
+tangent stiffness
+Pile stiffness for a 600-mm diameter prestressed pile.
+The gage level was 1.5 m (2.5b) below pile the head.
+32
+Data from CH2M Hill 1995
+=====PAGE 33
+• We often assume – somewhat optimistically or
+naively – that the reading before the start of the test
+represents the “no-load” condition.
+• However, at the time of the start of the loading test,
+loads do exist in the pile and they are often large.
+• For a grouted pipe pile or a concrete cylinder pile,
+these loads are to a part the effect of the temperature
+generated during the curing of the grout.
+• Then, the re-consolidation (set-up) of the soil after the
+driving or construction of the pile will impose additional
+loads on the pile.
+3333
+=====PAGE 34
+Example from Gregersen et al., 1973
+LOADL O (AKDN ) (KN) LOADL O (AKDN ) (KN)
+0 500 51000 110500 125000 220500 235000 300 0 1000 120000 230000 340000 450000 560000 600
+0 0 0 0
+ResidRueaslidual
+2 2 2 2
+True Tmriuneu sm inus
+ResidRueaslidual
+4 4 4 4
+6 6 6 6
+) ) ) ) True True
+m m m m
+(
+H
+8(
+H
+8
+Pile DPAile DA
+(
+H
+8(
+H
+8
+T T T T
+P 10 P 10 P 10 P 10
+E E E E
+D D D D
+12 12 12 12
+14 14 14 14
+16 16 Pile BPCile, BC, 16 16
+TapeTreadpered
+18 18 18 18
+A. Distribution of residual load in DA and BC B. Load and resistance in DA
+before start of the loading test for the maximum test load
+34
+=====PAGE 35
+Zero Readings.
+Does it mean
+STRAIN (µε)
+zero loads?
+-300 -200 -100 0 100 200 300 400
+Immediately 0
+before the test, all
+5
+gages must be
+10
+checked and "Zero
+15
+Readings" must be
+taken. 20
+)
+m 25
+(
+H
+T 30
+P
+E
+Answer to the question D
+35
+in the graph:
+40
+No, there's always 45
+residual load in a
+50
+test pile.
+55
+Shinho Pile
+60
+3355
+=====PAGE 36
+STRAIN (µε)
+Gages were read -300 -200 -100 0 100 200 300 400
+0
+after they had been "Zero"
+condition
+installed in the pile 5 Change
+Before
+(tension)
+( = “zero” condition) 10 grouting
+and then 9 days 9 days later
+15
+after installing
+later (= green line)
+gages (main
+20
+after the pile had hydraution has
+) m 25 developed)
+been concreted and (
+H
+T 30
+most of the P
+E
+D
+hydration effect 35
+had developed.
+40
+45
+50
+55
+60
+3366
+=====PAGE 37
+STRAIN (µε)
+9d
+Strains measured -300 -200 -100 0 100 200 300 400
+0
+during the following 15d
+5
+additional 209-day
+23d
+wait-period. 10
+30d
+15
+20 39d
+25
+)
+m 49d
+(
+H 30
+T
+P
+E 59d
+D
+35
+82d
+40
+45 99d
+50
+122d
+55
+218d
+60 Day of
+At an E- modulus of 30 GPa,
+Test
+this strain change corresponds
+to a load change of 3,200 KN
+3377
+=====PAGE 38
+Concrete hydration temperature measured in a grouted
+concrete cylinder pile
+70
+Temperature at various
+60
+depths in the grout of a 0.4 m
+center hole in a 56 m long,
+50
+0.6 m diameter, cylinder pile.
+)
+C
+°
+(
+E
+40
+R
+U
+T
+A
+R
+E 30
+P
+M
+E
+T
+20
+10
+0
+0 24 48 72 96 120 144 168 192 216 240
+HOURS AFTER GROUTING
+3388
+Pusan Case
+=====PAGE 39
+100
+Change of strain measured in a 74.5 m
+)
+ε
+µ long, 2.6 m diameter bored pile
+( 0
+N
+I
+A
+R
+-100
+T
+S
+F
+O
+-200
+E
+G
+N
+A -300
+H
+C Slight Recovery of Shortening
+Rebar Shortening
+-400
+0 5 10 15 20 25 30 35
+DAY AFTER GROUTING
+Change of strain during the hydration of the grout in the Golden Ears Bridge test pile
+3399
+=====PAGE 40
+Results of static loading tests on a 40 m long, jacked-in,
+instrumented steel pile in a saprolite soil
+LOAD (KN) UNIT SHAFT SHEAR (KPa)
+Good measurements do not guarantee good conclusions!
+0 2,000 4,000 6,000 8,000 10,000 0 50 100 150 200 250
+0 0
+5
+5
+10
+10
+A good deal of good thinking is necessary, too
+15 ?
+15
+) )
+m m
+( 20 (
+H H
+20
+T T
+P 25 P
+E E
+D
+D
+25
+30
+30
+35
+40 35
+45 40
+4400
+=====PAGE 41
+A more thoughtful analysis of the data
+UNIT SHAFT SHEAR (KPa)
+LOAD (KN)
+0 2,000 4,000 6,000 8,000 10,000 0 50 100 150 200 250
+0 0
+5 5
+ß = 0.3 ß = 0.3
+10 10
+15 15
+) m ) m
+(
+H
+20 (
+H
+20
+ß = 0.4
+T T
+P 25 P 25
+E E
+D ß = 0.4 D
+30 30
+35 35
+40 40
+From UniPile fit to load distribution
+45 45
+The butler The differentiation did it
+41
+=====PAGE 42
+A static loading test with a toe Now with instrumentation to HHEEAADD
+telltale to measure toe separate shaft and toe
+movement—typical records resistances
+2,000 300 mm diameter, 30 m long concrete pile
+2,000
+E = 35 GPa; ß = 0.30 at δ= 5 mm;
+Strain-softening: Zhangwithδ= 5 mm and a = 0.0125
+SHORTENING
+)N 1,500 1,500
+k SHORTENING
+(
+D
+TOE HEAD
+HEAD
+A
+E H E 1,000
+)N
+k ( D 1,000 0 5 10 15 20 25 30
+L A
+IP O
+ta L
+D TOE SHAFT
+A
+O 500 500
+L
+300 mm diameter, 30 m long concrete pile
+E = 35 GPa; ß = 0.30; Strain-softening
+0 0
+0 10 20 30 40 50 0 10 20 30 40 50
+PILE HEAD MOVEMENT (mm) MOVEMENT (mm)
+)N 1,000 0 5 10 15 20 25 30
+k
+(
+Shaft resistance load-movement T
+N
+IO
+curve (t-z function) —typical P
+D- 750
+IM
+T lower
+A
+E
+C
+t-z curve (shaft) N 500
+A
+Zhang function T S middle
+withδ= 5 mm and a = 0.0125 IS
+S
+E
+R
+T
+250
+F
+A upper
+H
+S 0 5 10 15 20 25 30
+T
+N
+E 0
+M
+G 0 5 10 15 20 25 30
+E
+S SEGMENT MOVEMENT AT MID-POINT (mm)
+TOE
+TTOOEE
+0 5 10 15 20 25 30
+MOVEMENT
+42
+=====PAGE 43
+400 mm diameter, 38 m long, phictitious concrete pile
+LOAD (kN)
+0 500 1,000 1,500 2,000 2,500 3,000 Shaft Shaft
+Profile
+0
+FILL
+ß = 0.30
+5
+10
+FILL with ß = 0.30 CLAY with ß = 0.20
+SOFT CLAY
+) m 15 ß = 0.20 Ratio function Hansen 80-% function
+( with δ= 5 mm and θ= 0.15 with δ= 5 mm and C = 0.0022
+H 1
+T 20
+P
+E
+D
+25 SILT Shaft Shaft
+ß = 0.25
+30
+35 SAND
+ß = 0.45
+r = 3 MPa SAND with ß = 0.45
+40 t SILT with ß = 0.20
+Ratio function
+Exponentional function
+with δ= 5 mm and θ= 0.20
+with b = 0.40
+Head-down static loading test load-movements
+4,000
+Compression Head
+3,500
+Toe
+3,000
+Shaft
+) N 2,500
+k
+(
+D 2,000
+A
+O SAND with r = 2 MPa
+L t
+1,500 Ratio function
+with at δ= 5 mm and θ= 0.50
+1,000
+Toe
+500
+0
+0 10 20 30 40 50 60 70
+MOVEMENT (mm)
+The simulations are made using UniPile Version 5
+43
+=====PAGE 44
+The bi-directional test
+Arcos Egenharia
+Arcos Egenharia de Solos
+E-cell pile
+Bidirectional test at
+at
+RRioi oN Neeggrroo PPoonnttee
+ManaMusa—naIursa –ndIraunbdau, bBarazil
+Brazil
+44
+=====PAGE 45
+Schematics of the bidirectional test Typical Test Results
+(Meyer and Schade 1995) (Data from Eliso 1983)
+10
+Pile PC-1
+520 mm
+8 June3, 1981
+6 m
+0
+.
+4 1
+) 1
+m
+Telltales
+Pile Head
+m
+2
+Upward
+(
+and
+T m
+0 E
+N
+Downward 0
+Grout Pipe
+E . 2
+M -2
+E
+V
+O -4
+M
+-6
+Test at
+Upward Load -8 Banco Europeu
+Elisio (1983)
+-10
+THE CELL
+0 10 20 30 40 50 60 70 80
+Downward Load LOAD (tonne)
+4455
+=====PAGE 46
+From the upward and downward results, one can produce
+the equivalent head-down load-movement curve that one
+would have obtained in a routine “Head-Down Test”
+4466
+=====PAGE 47
+Example 1 Example 2
+LOAD (kN)
+40
+0 2,000 4,000 6,000 8,000 10,000
+120
+TEST
+100 30
+DATA
+) m FITTED
+) m 80 Sim cu u r l v a e ted m TO TEST
+m
+(
+T
+60
+(
+T
+N
+20
+DATA
+N E
+E 40 M
+M E
+UPWARD 10
+E V
+V 20 O Upward
+O M
+M
+0
+0
+DOWNWARD
+-20
+Weight of Residual
+Downward
+-40 Shaft Load
+Simulated -10
+curve
+-60 0 500 1,000 1,500 2,000
+-80 LOAD (kN)
+Upward and downward curves fitted to measured curves
+UniPile5 analysis using the t-z and q-z curves fitted to the load-movement
+curves at the gage levels in an effective-stress simulation of the test
+47
+=====PAGE 48
+Example 2 Upward curve only
+1,800
+Fitted to the
+1,600 Head-down
+upward curve
+combining upward
+1,400
+and downward
+1,200 curves
+) N Calculated as "true"
+K
+( 1,000 head-down response
+D
+A using the t-z functions
+O 800
+L fitted to the test data
+600
+400
+Measured
+200 upward
+curve
+0
+0 5 10 15 20 25 30 35 40 45
+MOVEMENT (mm)
+The difference shown above between the upward BD cell-plate and the
+head-down load-movement curves is due to the fact that the upward cell
+engages the lower soil first, whereas the head-down test jack engages
+the upper soils first, which are less stiff than the lower soils.
+48
+=====PAGE 49
+A CASE HISTORY Bidirectional tests performed at a site in Brazil on two Omega Piles
+(Drilled Displacement Piles, DDP, also called Full Displacement Piles, FDP) both with
+700 mm diameter and embedment 11.5 m. Pile PCE-02 was provided with a
+bidirectional cell level at 7.3 m depth and Pile PCE-07 at 8.5 m depth.
+25
+15
+20 10
+ß= 0.5 to 2.5 m δ = 5 mm ϴ= 0.30
+Ifunloaded after 10 min
+15 5 ß = 0.7 to 6.0 m δ = 5 mm ϴ= 0.30 7.2
+) m ) m ß = 0.8 to cell δ = 5 mm ϴ= 0.30
+m 10 ß= 0.4 to 2.5 m δ = 5 mm ϴ= 0.24 m 0 E
+( (
+ß = 0.6 to 6.0 m δ = 5 mm ϴ= 0.24 4.3
+T T -5
+N E 5 ß = 0.9 to cell δ = 5 mm ϴ= 0.24 8.5 N E
+M M -10
+E E
+V 0 E V
+O O-15
+M 3.0 M ß = 0.6 to toe δ = 5 mm C = 0.0063
+1
+-5
+r = 100 kPa δ = 30 mm C = 0.0070
+-20 t 1
+-10
+ß = 0.9 to toe δ = 5 mm ϴ= 0.30 -25
+r = 3,000 kPa δ = 30 mm ϴ= 0.90
+t
+-15 -30
+0 100 200 300 400 500 600 700 800 900 1,000 0 100 200 300 400 500 600 700 800 900 1,000
+PCE-02
+LOAD (kN) PCE-07 LOAD (kN)
+Acknowledgment: The bidirectional test are courtesy of
+49
+Arcos Egenharia de Solos Ltda., Belo Horizonte, Brazil.
+=====PAGE 50
+After data reduction and processing
+Equivalent Head-down
+Load-distributions
+Equivalent Head-down
+LOAD (kN)
+Load-movements
+0 400 800 1,200 1,600
+0
+3,000
+Pile PCE-02
+PCE-02
+Compression
+2
+2,500 PCE-07
+Max upward
+movement
+4
+)
+m
+2,000
+Max downward
+Max downward
+(
+H
+) movement
+N movement T
+k P 6
+( PCE-07 E PCE-02
+D 1,500 D
+Max upward
+A
+O movement
+L 8
+PCE-02 and -07
+1,000
+Shaft
+10
+500
+PCE-02, Toe
+A
+PCE-07, Toe 12
+0
+TOE LOAD (kN)
+0 5 10 15 20 25 30
+0 400 800 1,200 1,600
+MOVEMENT (mm) ) m 0
+m
+5
+(
+T 10
+PCE-02
+N
+E 15
+A conventional head-down test would not M
+E 20
+V PCE-07
+have provided the reason for the lower O 25
+B
+M
+30
+“capacity” of Pile PCE-02
+50
+=====PAGE 51
+Bidirectional Tests
+on a 1.4 m diameter
+bored pile in North-
+West Calgary
+constructed in silty
+glacial clay till
+A study of Toe and Shaft Resistance
+Response to Loading and correlation to CPTU
+calculation of capacity
+5511
+=====PAGE 52
+cnt.
+Cone Penetration Test with Location of Test Pile
+0 Cone S 1 t 0 ress, q 2 t 0 (MPa) 30
+Sleeve Friction, f
+s
+(KP
+1
+a
+,0
+)
+0 -10
+Pore Pressure (KPa)
+Friction Ratio, f R (%) PROFILE
+0 0 200 400 600 800 0 0 0 100 200 300 400 500 0 1 2 3 4 5
+The upper 8 m 0 0 0
+will be removed
+GW
+for basement
+5
+5 5 5
+u
+neutral
+10
+10 10 10
+14 m
+)m )m )m )m
+n
+le
+e
+n
+t
+g
+p
+th
+ile (
+H T P E D 15
+(
+H T P E D 15
+(
+H T P E D 15
+(
+H T P E D 15
+20 20 20 20
+25 25 25 25
+30 30 30 30
+5522
+=====PAGE 53
+cnt.
+Pile Profile and Cell Location Cell Load-movement Up and Down
+ELEV.(m)
+80
+70
+60
+) 50
+m
+m
+40
+(
+T
+30
+N
+E
+20
+M
+#5
+E
+V 10
+O
+#4 M 0
+-10
+#3
+-20
+-30
+#2
+0 1,000 2,000 3,000 4,000 5,000 6,000
+#1
+LOAD (kN)
+Pile Toe Elevation
+53
+=====PAGE 54
+cnt.
+Load Distribution
+LLLOOOAAADDD (( MM(MNNN)))
+00 55 1100 1155 2200
+0 5 10 15 20
+000
+555
+) m ) m ) m 111000
+(((
+H H H ß = 0.75
+TTT
+ß = 0.65
+PPP
+EEE
+DDD111555
+Residual
+COe-cll eLllevel
+ß = 0.35
+20
+2200
+25
+2255
+5544
+=====PAGE 55
+Analysis of the results
+of a bidirectional test on
+a 21 m long bored pile
+compact
+SAND
+A bidirectional test was performed on a 500-mm diameter, 21 m
+long, bored pile constructed through compact to dense sand by
+driving a steel-pipe to full depth, cleaning out the pipe, while
+keeping the pipe filled with betonite slurry, withdrawing the pipe,
+and, finally, tremie-replacing the slurry with concrete. The
+bidirectional cell (BDC) was attached to the reinforcing cage
+inserted into the fresh concrete. The BDC was placed at 15 m
+CLAY
+depth below the ground surface.
+compact
+The pile will be one a group of 16 piles (4 rows by 4 columns)
+SAND
+installed at a 4-diameter center-to-center distance. Each pile is
+dense assigned a working load of 1,000 kN.
+SAND
+The sand becomes very
+dense at about 25 m depth
+55
+=====PAGE 56
+The soil profile determined by CPTU and SPT
+CCoonnee SSttrreessss,, qq ((MMPPaa))
+SSlleeeevvee FFrriiccttiioonn,, ff
+ss
+((kkPPaa)) PPoorree PPrreessssuurree ((kkPPaa)) FFrriiccttiioonn RRaattiioo,, ff
+RR
+((%%)) NN ((bblloowwss//00..33mm))
+tt
+00 55 1100 1155 2200 2255 00 2200 4400 6600 8800 110000 00 5500 110000 115500 220000 225500 00..00 00..55 11..00 11..55 22..00
+00 11002200330044005500
+00 00 00 00 00
+55 55 55 55 55
+ccoommppaacctt
+SSAANNDD
+) m) m 1100 ) m) m 1100 ) m) m 1100 ) m) m 1100 ) m) m 1100
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+(
+H
+TT TT TT TT TT
+PP PP PP PP PP
+EE EE EE EE EE
+DD 1155 DD 1155 DD 1155 DD 1155 DD 1155
+CCLLAAYY
+ccoommppaacctt
+SSAANNDD
+2200 2200 2200 2200 2200
+ddeennssee
+SSAANNDD
+2255 2255 2255 2255 2255
+56
+=====PAGE 57
+The results of the bidirectional test
+50
+40
+Pile Head
+UPWARD
+30
+m
+20
+0
+)
+m . 5
+1
+m 10
+(
+T 0
+N
+E
+-10 m
+M
+0
+E
+.
+V -20 6
+O
+M
+-30 BDC DOWNWARD
+-40
+-50
+0 200 400 600 800 1000 1200
+LOAD (kN)
+Acknowledgment: The bidirectional test data are courtesy
+of Arcos Egenharia de Solos Ltda., Belo Horizonte, Brazil. 57
+=====PAGE 58
+To fit a simulation of the test to the results, first input is the effective stress parameter (ß)
+that returns the maximum measured upward load (840 kN), which was measured at the
+maximum upward movement (35 mm). Then, “promising” t-z curves are tried until one is
+obtained that, for a specific coefficient returns a fit to the measured upward curve. Then,
+for the downward fit, t-z and q-z curves have to be tried until a fit of the downward load
+(840 kN) and the downward movement (40 mm) is obtained.
+t-z and q-z Functions
+Usually for large movements,
+as in the example case, the
+CLAY (Typical only, t-z functions show a elastic-
+SAND ABOVE BDC not used in the
+Ratio function simulation) plastic response. However,
+Exponent: θ = 0.55 Exponential function
+δ = 35mm Exponent: b = 0.70 for the example case , no
+ult
+such assumption fitted the
+results. In fact, the best fit
+was obtained with the Ratio
+Function for the entire length
+of the pile shaft.
+SAND BELOW BDC TOE RESPONSE
+Ratio function Ratio function
+Exponent: θ = 0.25 Exponent: θ = 0.40
+δ ult = 40 mm δ ult = 40 mm
+58
+=====PAGE 59
+The final fit of simulated curves to the measured
+50
+40
+Pile Head
+30 UPWARD
+m
+20
+0
+)
+m . 5
+1
+m 10
+(
+T 0
+N
+E
+-10 m
+M
+0
+E
+.
+V -20 6
+O
+BDC
+M
+-30
+DOWNWARD
+-40
+-50
+0 200 400 600 800 1,000 1,200
+LOAD (kN)
+59
+=====PAGE 60
+The test pile was not instrumented. Had it been, the load distribution of the bidirectional
+test as determined from the gage records, would have served to further detail the
+evaluation results. Note the below adjustment of the BDC load for the buoyant weight
+(upward) of the pile and the added water force (downward).
+N (blows/0.3m)
+LOAD (kN) The analysis results appear to
+0 200 400 600 800 1,000 0 1020304050
+0 0 suggest that the pile is affected
+by a filter cake along the shaft
+and probably also a reduced
+5 5 toe resistance due to debris
+UPWARD
+compact
+having collected at the pile toe
+SAND
+between final cleaning and the
+) 10 10
+m placing of the concrete.
+)
+( m
+H (
+T BDC load H
+P T
+E P
+D E
+15 D 15
+Less
+CLAY
+buoyant
+weight With water
+force compact
+SAND
+20 DOWNWARD 20
+dense
+SAND
+25
+25
+60
+=====PAGE 61
+The final fit establishes the soil response and allows the
+equivalent head-down loading- test to be calculated
+When there is no obvious point on the
+2,500
+pile-head load-movement curve, the
+Equivalent
+Head-Down test “capacity” of the pile has to be
+determined by one definition or other—
+2,000
+there are dozens of such around. The
+HEAD
+first author prefers to define it as the
+pile-head load that resulted in a 30-mm
+) 1,500
+N
+pile toe movement. As to what safe
+k
+(
+D Pilehead movement for working load to assign to a test, it often
+A 30 mm pile toe
+O fits quite well to the pile head load that
+movement
+1,000
+L
+resulted in a 5-mm toe movement.
+The most important aspect for a safe
+Pilehead movement for
+5 mm pile toe movement design is not the “capacity” found from
+500
+the test data, but what the settlement of
+TOE the structure supported by the pile(s)
+might be. How to calculate the
+0
+settlement of a piled foundation is
+0 5 10 15 20 25 30 35 40 45 50
+addressed a few slides down.
+MOVEMENT (mm)
+61
+=====PAGE 62
+Thank you for your attention
+62

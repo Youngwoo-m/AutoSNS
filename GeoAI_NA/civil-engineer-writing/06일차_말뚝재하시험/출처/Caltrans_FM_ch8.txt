@@ -1,0 +1,290 @@
+=====PAGE 1
+CHAPTER 8 OCTOBER 2015
+CHAPTER
+8 Static Pile Load Testing and Pile
+Dynamic Analysis
+8-1 Introduction
+Chapter 1, Foundation Investigations, of this Manual explained how Geotechnical
+Services performs a foundation investigation for all new structures, widenings,
+strengthening, or seismic retrofits. Under normal circumstances, the Geoprofessional
+assigned to perform the investigation is able to gather enough information to recommend
+a pile type and tip elevation that is capable of supporting the required loads on the
+recommended pile foundation. However, there are situations where subsurface strata are
+variable, unproven, or of such poor quality that additional information is needed in order
+to make solid pile foundation recommendations. In these situations, Static Pile Load
+Testing and/or Pile Dynamic Analysis (PDA) will be recommended. Information
+obtained from the testing and/or PDA will be used to verify design assumptions or
+modify foundation recommendations.
+Personnel from Geotechnical Services, Foundation Testing Branch, perform Static Load
+Testing and PDA on Caltrans projects. Once the testing is completed, written reports
+summarizing the findings are transmitted to the Engineer. Ideally, these tests would be
+performed in the Design Phase; however, they are often done in the Construction Phase.
+8-2 Reasons for Static Load Testing and Pile Dynamic Analysis
+Static Load Tests measure the response of a pile under an applied load and are the most
+accurate method for determining pile capacities. They can determine the ultimate failure
+load of a foundation pile and determine its capacity to support the load without excessive
+or continuous displacement. The purpose of such tests is to verify that the load capacity
+in the constructed pile is greater than the nominal resistance (Compression, Tension,
+Lateral, etc.) used in the design. The best results occur when pile load tests are performed
+in conjunction with Pile Dynamic Analysis (PDA). The tests give the Geoprofessional
+information needed to allow the use of a more “rational” foundation design.
+Static load tests may be recommended when piles are installed in soils with variable
+geologies or poor quality soils and can be used to validate design assumptions or to
+provide sufficient information to modify the design tip elevations. They are often
+recommended for Cast-In-Drilled-Hole (CIDH) piles installed in unproven ground
+CALTRANS • FOUNDATION MANUAL 8 - 1
+=====PAGE 2
+CHAPTER 8 OCTOBER 2015
+formations as there is no other means to determine capacity. They provide more accurate
+information than can be obtained from pile driving formulas and may demonstrate that
+driven piles can be safely loaded beyond the capacities obtained from these formulas.
+Pile load tests are expensive to perform but provide value to a structure. The FHWA
+Publication No. FHWA-SA-91-042, Static Testing of Deep Foundations, provides the
+following recommendations on when to perform a pile load test. They are as follows:
+• When there is a potential for large cost savings. Typically on large projects with
+similar strata and pile types.
+• When the safe loading condition is in doubt, due to limitations of an Engineer’s
+experience base, or unusual site or project conditions.
+• When soil or rock conditions vary considerably from one portion of a project to
+another.
+• When the design load is significantly higher than typical design loads.
+• When time-related soil capacity changes are anticipated (i.e. soil setup &
+relaxation.)
+• To determine the length of precast friction piles to avoid splices.
+• When new or unproven pile types or installation methods are to be used.
+• When existing piles will be used to support a new structure with heavier loads.
+• To obtain a reliable value for tensile and lateral pile resistance.
+• When, during construction, the load carrying capacity of the pile differs.
+significantly from what was predicted from pile driving formulas and PDA.
+In lieu of doing a static load test, PDA can be used to establish criteria for pile acceptance
+and to verify design assumptions. It can determine soil resistance, hammer
+efficiency/performance, and stresses in the pile during driving. Caltrans practice is to use
+PDA to establish pile acceptance criteria for non-standard driven piles up to 36 inch
+diameter. PDA in combination with static pile load testing is used to establish pile
+acceptance criteria for driven piles larger than 36-inch diameter. Refer to Bridge
+Construction Memo 130-4.0, Pile Driving Acceptance Criteria.
+The information obtained from the PDA can also be used by other programs to determine
+the bearing capacity of the pile. Combining these results with those from the pile load test
+increases the accuracy when determining the bearing capacity.
+8-2.1 Static Pile Load Tests
+The static pile load test gives the most accurate indication of the capacity of the in-place
+pile. It is performed using a reaction method. The test procedure involves applying an
+axial load to the top of the test pile with one or more hydraulic jacks. The reaction force
+is transferred to the anchor piles that go into tension in the case of a static load test in
+compression; or into compression in the case of a static load test in tension. Various
+forms of instrumentation are installed onto the test and anchor piles so that an accurate
+measurement of the test pile displacement can be obtained. Redundant systems are used
+to ensure accuracy of the various measurements.
+CALTRANS • FOUNDATION MANUAL 8 - 2
+=====PAGE 3
+CHAPTER 8 OCTOBER 2015
+A five-pile test group (four anchor piles and one test pile) is used for all static load tests
+in compression and for most tension tests (Figure 8-1). Occasionally, a three-pile test
+group (two anchor piles and one test pile) is used for static load tests in tension (refer to
+Appendix F, Pile Dynamic Analysis, Static Pile Load Testing and Field Acceptance
+Criteria). Loads are applied in increments; typically equal to 5% of the design load. Each
+increment of load is held for a predetermined time interval. The test procedure is
+conducted in according with ASTM 1143, Procedure A: Quick Test. The pile capacity
+acceptance or failure criteria will be determined by the parameters established by the
+structure design and geotechnical engineer.
+Figure 8-1. Static Pile Load Test (Five-Pile Array).
+The Static Pile Load Test causes a failure along the soil/pile interface. This failure
+generally occurs well before the ultimate structural capacity of the pile is reached. Once
+the test is complete, the pile is returned to a no-load condition and can be incorporated
+into the foundation of a structure. The only permanent effect of a pile load test on a
+driven pile is the downward displacement of the test pile. The same effect would be
+achieved if a pile hammer drove the pile the additional distance. The previous statement,
+while true for driven piles, may not be the case for Cast-in-Place piles, and rock sockets
+in particular, as these piles will not behave the same once the bond between the concrete
+and the soil has been broken.
+Once the pile load testing is completed, personnel from the Foundation Testing Branch
+compile and review the load test data. The test data is used to produce a plot of load
+versus pile displacement. The ultimate capacity of the test pile is determined using
+graphical or analytical procedures. A summary report is then forwarded to the Engineer,
+along with any recommended changes or modifications to the design.
+CALTRANS • FOUNDATION MANUAL 8 - 3
+=====PAGE 4
+CHAPTER 8 OCTOBER 2015
+Static Pile Load Testing exceeds the standards stated in ASTM D1143, Procedure A:
+Quick Test, for static load testing in compression, and ASTM D3689 for static load
+testing in tension. Both the compression and tension load tests each take approximately 4
+to 8 hours to complete.
+The Foundation Testing Branch has four static axial pile load test systems of varying
+maximum load capacity:
+• 1,000,000-pound Load Test System
+• 2,000,000-pound Load Test System
+• 4,000,000-pound Load Test System
+• 8,000,000-pound Load Test System
+Requests for Static Load Tests are made to the Foundation Testing Branch on the Pile
+Load Test (PLT) Request Form. A copy of this form is included in Appendix F, Pile
+Dynamic Analysis, Static Pile Load Testing and Field Acceptance Criteria, and is
+available for download.1
+8-2.2 Pile Dynamic Analysis (PDA)
+The dynamic analysis refers to the use of a device called the Pile Driving Analyzer. The
+Pile Driving Analyzer consists of a portable computer that collects and analyzes strains
+and accelerations measured by instrumentation attached to the pile being driven.
+The Pile Driving Analyzer operator inputs parameters related to the physical
+characteristics of the pile before the pile analysis begins. Data to describe the surrounding
+soil and its damping resistance is also entered. The Pile Driving Analyzer is capable of
+analyzing the stress wave produced along the length of the pile by each blow of the
+hammer during the driving operation. By analyzing the shape of the wave trace, the Pile
+Driving Analyzer is able to measure pile stresses generated during driving. During
+installation, damage to a pile can often be detected by the Pile Driving Analyzer. The data
+retrieved during the analysis can be used to determine the location or depth of a crack in a
+concrete pile and to the point of buckling in a steel pile.
+The Pile Driving Analyzer accurately measures the energy delivered to the pile during
+driving. This energy rating can be compared to the manufacturer’s rated value to provide
+an indication of the hammer’s actual performance efficiencies. Low or unusual delivery
+of energy to the pile may indicate issues such as a pre-ignition problem within the
+hammer, inefficient hammer combustion, misalignment of the follower or helmet, or the
+use of an inappropriate pile hammer cushion.
+Pile Dynamic Analysis is believed to be reliable for piles driven in granular soils. For
+finer grained soils, such as silts and clays, this method may be less reliable because these
+1 http://www.dot.ca.gov/hq/esc/geotech/client_requests/pdfs/Static_Pile_Load_Test_(PLT).pdf
+CALTRANS • FOUNDATION MANUAL 8 - 4
+=====PAGE 5
+CHAPTER 8 OCTOBER 2015
+soils offer significantly larger damping resistance to the piles during driving and may be
+difficult to model accurately.
+Information retrieved by the Pile Driving Analyzer is also used to predict a pile’s static
+load capacity. The dynamic analysis is performed on production piles as specified in the
+special provisions and on the test and/or anchor piles used for a Static Load Test if
+applicable. Piles monitored using the Pile Driving Analyzer are usually driven a
+predetermined distance above the specified tip before the analysis begins. At that time,
+the driving stops to allow personnel from the Foundation Testing Branch to attach the
+necessary instrumentation to the pile. The instrumentation is attached 1-1/2 to 2 pile
+diameters from the top of the pile. Once installed, the Contractor resumes driving the
+pile. The first few blows are done slowly to allow the Pile Driving Analyzer operator to
+ensure that the instrumentation is attached correctly and that the data is transmitted to the
+Pile Driving Analyzer computer. Driving then continues until the specified tip elevation
+is reached. In some soils, typically cohesive soils, the piles may increase in capacity or
+set-up over time. When this is anticipated, the tip of the pile is left approximately one
+foot above the specified tip elevation.
+After the set-up period has elapsed, the pile is ready for a re-drive. The timeframe for set-
+up is usually overnight but can be longer. Before the re-drive, Pile Driving Analyzer
+instrumentation is once again attached to the pile, and the last foot of the pile marked in
+increments of one tenth of a foot. The pile is hit for a few blows to make sure that the
+instrumentation is working properly. The pile is then driven for several inches or the
+remainder of the one-foot length. The capacity of the pile is determined from PDA or
+through pile driving equations. The new bearing capacity is compared to the one prior to
+set-up to determine the increase in capacity over that period of time. The concept of pile
+capacities increasing during a set-up period is discussed fully in Chapter 7, Driven Piles.
+Under normal circumstances, dynamic analysis is used in conjunction with static load
+testing to determine the adequacy of foundation piles. As with Static Load Testing,
+personnel from the Foundation Testing Branch are assigned the responsibility for
+performing PDA on Caltrans projects. Requests for PDA are submitted to the Foundation
+Testing Branch on the Pile Dynamic Analysis Test Request Form. A copy of this form is
+included in Appendix F, Pile Dynamic Analysis, Static Pile Load Testing and Field
+Acceptance Criteria, and is available for download.2
+2
+http://www.dot.ca.gov/hq/esc/geotech/client_requests/pdfs/Pile_Dynamic_Analysis_(PDA).pdf
+CALTRANS • FOUNDATION MANUAL 8 - 5
+=====PAGE 6
+CHAPTER 8 OCTOBER 2015
+8-3 Contract Administration of Static Pile Load Testing & Pile
+Dynamic Analysis
+At the beginning of any project requiring Static Pile Load Testing and/or Pile Dynamic
+Analysis, the Engineer should do a thorough of review the contract plans, special
+provisions, Standard Specifications, and Bridge Construction Memo 130-2.0, Pile Load
+Tests, to make themselves aware of the contract requirements.
+It is the Engineer’s responsibility to coordinate the Static Pile Load Testing and Pile
+Dynamic Analysis with the Foundation Testing Branch. Early contact and good
+communication with them is important, as it will ensure that the process flows smoothly.
+The Contractor’s schedule for the installation of the piles should be obtained as early as
+possible. This schedule should then be forwarded to the Foundation Testing Branch.
+Details relating to the logistical needs of the testing work crew should also be discussed
+with the Foundation Testing Branch and the necessary information relayed to the
+Contractor.
+The contract specifications3 state the Contractor needs to perform extra work to assist in
+the set-up and performance of the Static Pile Load Testing. As such, a change order will
+need to be written to compensate for these expenses. This is not the case with dynamic
+analysis as it is paid under the contract item for piling or as indicated in the special
+provisions. The Contractor should be notified as early as possible of the specific
+equipment and personnel assistance required by the Foundation Testing Branch in order
+to complete the Static Pile Load Testing or PDA operations.
+In general, for a Static Pile Load Test, the Contractor will need to provide a crane and
+operator for the lifting and placement of the testing equipment from the Caltrans transport
+trailers on to the pile array, and for returning the equipment to the trailer once the testing
+is complete. The crane will need to be capable of lifting and placing the appropriate load
+test beam atop the pile test groups. Occasionally, a 54,000-pound or larger beam is used
+for load testing. The actual beam size to be used should be confirmed with the
+Foundation Testing Branch. The Foundation Testing Branch will supply all necessary
+rigging. The Contractor will need to provide a welder, welding machine and cutting
+torches to assist in the installation of the testing equipment. Specific logistical needs and
+project-specific issues should be discussed with personnel from the Foundation Testing
+Branch to ensure that efficient coordination of the test set-up is accomplished.
+The contract specifications state no piles represented by a load test pile may be drilled,
+cast, cut to length, driven, nor any reinforcement cages fabricated until the required Static
+Load Testing is completed. In addition, the Engineer needs to ensure that the area of the
+Static Load Testing and/or PDA is dry and free of debris. A safe working area should be
+3 2010 SS, Section 49-1.01D(3), Load Test Piles, or 2006 SS, Section 49-1.04, Load Test Piles.
+CALTRANS • FOUNDATION MANUAL 8 - 6
+=====PAGE 7
+CHAPTER 8 OCTOBER 2015
+established around the test piles, and any of the Contractor’s operations that conflict with
+the work of the testing work crews should be suspended until the testing is complete.
+Static Pile Load Testing on concrete piles cannot begin until the concrete reaches a
+compressive strength of 2,000 Pounds per Square Inch (PSI), except for precast concrete
+piles, which cannot be driven until 14 days after casting. Additional cement or Type III
+(high early) cement may be used at the Contractor’s expense, but only for load test piles
+not incorporated into the work.
+The contract specifications state the Engineer will not require more than 15 days to
+perform each static load test unless otherwise provided in the special provisions. This is
+important since Caltrans will be responsible for any additional costs or delays to the
+schedule should the testing take longer or should it not start on the day requested. As
+such, early and effective communication with the Foundation Testing Branch is essential.
+8-4 Inspection Requirements During Static Load Testing and PDA
+As with production piles, it is very important that the Engineer ensure that all piles to be
+used for Static Pile Load Testing and PDA are driven or constructed in accordance with
+the contract plans and contract specifications. The Engineer should discuss and confirm
+the load test pile array set-up with the Foundation Testing Branch well in advance of the
+work, even if the contract plans do adequately describe the test pile set-up.
+Test piles must be installed plumb and to the specified tip elevation shown on the
+contract plans. All the piles (anchor and test piles) in each test group need to be logged
+for the full length of driving. For drilled piles, a soil classification record should be kept
+for the full length of each. If any of the driven piles have a low bearing value at the
+specified tip elevation (less than 50% of required), then the Engineer should contact the
+Foundation Testing Branch, the Designer and Geoprofessional to see if a revision to the
+specified tip elevation is appropriate. Changes to the specified tip elevation of test and/or
+anchor piles will necessitate a contract change order.
+Additional work on the anchor and test piles is required to facilitate the test apparatus.
+These details are included in the Standard Plans and may also be shown on the contract
+plans. If the details are inappropriate for the piles or are unclear, contact the Designer
+and/or the Foundation Testing Branch. The reactions in the load test are substantial and
+proper bearing is essential. Therefore the top of CIDH test piles must be level and
+troweled smooth to ensure full contact/bearing of the load test reaction beam.
+The contract plans or special provisions may require the anchor piles be constructed to tip
+elevations lower than the test pile, as an added precaution, to ensure that the piles don’t
+pull out during the test. This issue should be discussed with the Foundation Testing
+CALTRANS • FOUNDATION MANUAL 8 - 7
+=====PAGE 8
+CHAPTER 8 OCTOBER 2015
+Branch. Any changes to the lengths of the piles from those shown on the contract plans
+will warrant a contract change order.
+If a construction project includes Pile Dynamic Analysis, the contract specifications4
+state when the piles to be analyzed are to be made available for State personnel so that
+the necessary preparations for these piles can be made before they are driven. A
+technician from the Foundation Testing Branch will need access to the piles to prepare
+them for the attachment of the necessary instrumentation. The Engineer needs to ensure
+that the Contractor provides assistance to the technician as necessary to maneuver the
+piles.
+Once the load testing crew arrives on the jobsite, the Engineer will need to have copies of
+the pile driving logs, soil classification record (for CIDH piles), Log of Test Borings, and
+Foundation Plan available for their use. When the Static Pile Load Testing and/or Pile
+Dynamic Analysis is completed, the Foundation Testing Branch will provide a report that
+states whether the testing confirmed design assumptions or whether changes to the
+production piles will be necessary. These changes are normally made without the need
+for additional load tests. If an additional test is required, the Engineer should be sure to
+document any delays to the Contractor’s operations. If additional testing is required,
+Caltrans will be responsible for additional costs incurred by the Contractor. Substantial
+pile revisions (as a result of poor test results) could have a substantial impact on
+administrative aspects of the contract. Changes could be such that item prices for pile
+work are no longer valid, and an item price adjustment may be necessary.
+Again, it is very important that the Engineer set up a good line of communication with
+the Foundation Testing Branch in the early stages of the project. The goal should always
+be to have a clear understanding of what coordination needs to be done in order to
+properly install the test piles and set up the load testing equipment without significant
+delays to the project. Good coordination is also important as it allows the static load
+testing work crews to perform the tests efficiently and on schedule.
+4 2010 SS, Section 49-1.01D(4), Dynamic Monitoring, or 2006 Special Provisions.
+CALTRANS • FOUNDATION MANUAL 8 - 8

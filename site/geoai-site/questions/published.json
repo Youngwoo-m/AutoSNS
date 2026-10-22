@@ -1,6 +1,38 @@
 {
   "items": [
     {
+      "title": "기복변위(Relief Displacement) (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/140",
+      "kind": "daily",
+      "date": "2026-10-23",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 15
+    },
+    {
+      "title": "Sterneck법 남북 별 쌍 천정거리 위도결정",
+      "url": "https://na-geoai.tistory.com/139",
+      "kind": "request",
+      "date": "2026-10-22",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "매설 관로 탐사 방법과 불탐 구간 처리 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/129",
+      "kind": "daily",
+      "date": "2026-10-22",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 14
+    },
+    {
       "title": "우연오차의 전파 (2026년 제140회 기출)",
       "url": "https://na-geoai.tistory.com/121",
       "kind": "daily",
