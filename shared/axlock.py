@@ -230,6 +230,7 @@ def status():
 # 크롬 프로필 이름 → 폴더(잠금 밖 프로세스 감지용)
 PROFILES = {
     'naver': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile'),
+    'safeworking': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile-safeworking'),   # 개인 네이버 블로그
     'tistory': str(ROOT / 'GeoAI_NA' / 'naver-blog-auto' / 'chrome-profile-tistory'),
     'insta': str(ROOT / 'channels' / 'insta-cardnews' / 'chrome-profile-insta'),
     'tiktok': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-tiktok'),
