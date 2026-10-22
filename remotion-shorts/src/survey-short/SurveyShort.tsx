@@ -1,7 +1,7 @@
 import React from "react";
 import { loadFont } from "@remotion/fonts";
 import {
-  AbsoluteFill, Audio, Easing, Img, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig,
+  AbsoluteFill, Audio, Easing, Img, OffthreadVideo, Sequence, interpolate, staticFile, useCurrentFrame, useVideoConfig,
 } from "remotion";
 
 // 글꼴은 Pretendard Bold 하나 — 굵기 대신 크기와 색으로 위계를 준다(CLAUDE.md, 2026-10-14).
@@ -10,9 +10,10 @@ loadFont({ family: "SurveyPretendard", url: staticFile("Pretendard-Bold.otf"), w
 export type SurveyScene = {
   title: string;      // 장면 위 큰 글자(\n 줄바꿈)
   caption: string;    // 아래 자막 상자 — 이 장면 음성과 같은 내용
-  image: string;      // public 기준 파일 이름. 비우면 그림 없이
-  kind: "diorama" | "diagram"; // 디오라마는 꽉 채워 천천히 확대, 도식은 흰 바탕에 온전히
+  image: string;      // public 기준 파일 이름. 비우면 그림 없이. kind "clip" 이면 mp4(Manim 등)
+  kind: "diorama" | "diagram" | "clip"; // 디오라마는 꽉 채워 천천히 확대, 도식은 흰 바탕에 온전히, clip 은 영상(무음)을 온전히
   audio: string;      // 이 장면 음성 파일(public 기준). 비우면 무음
+  overlay?: string;   // 장면 맨 위에 얹는 투명 영상(public 기준 webm, 예: HyperFrames 로 만든 훅 제목). 비우면 없음
   seconds: number;    // 장면 길이(음성 길이 + 여유)
 };
 
@@ -55,10 +56,13 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
         <div
           style={{
             position: "absolute", left: 50, right: 50, top: 560, height: 900, borderRadius: 28, overflow: "hidden",
-            background: scene.kind === "diagram" ? "#ffffff" : "#000000",
+            background: scene.kind === "diagram" ? "#ffffff" : scene.kind === "clip" ? "#0b1220" : "#000000",
             opacity: interpolate(frame, [0, 0.3 * fps], [0, 1], { extrapolateRight: "clamp" }),
           }}
         >
+          {scene.kind === "clip" ? (
+            <OffthreadVideo src={staticFile(scene.image)} muted style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          ) : (
           <Img
             src={staticFile(scene.image)}
             style={{
@@ -69,6 +73,7 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
               }),
             }}
           />
+          )}
         </div>
       ) : null}
       <div
@@ -80,6 +85,10 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
         {scene.caption}
       </div>
       <div style={{ position: "absolute", left: 80, right: 80, top: 1760, fontSize: 32, color: C.accent }}>{props.footer}</div>
+      {scene.overlay ? (
+        <OffthreadVideo src={staticFile(scene.overlay)} transparent muted
+          style={{ position: "absolute", left: 0, top: 0, width: "100%", height: "100%" }} />
+      ) : null}
       <div style={{ position: "absolute", left: 80, right: 80, top: 1818, fontSize: 26, color: C.sub }}>{props.disclosure}</div>
     </AbsoluteFill>
   );
