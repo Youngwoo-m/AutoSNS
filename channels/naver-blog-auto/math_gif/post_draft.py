@@ -71,7 +71,6 @@ def main():
         + "<p>습윤단위중량 γt와 함수비 w를 알 때 건조단위중량은 다음과 같습니다.</p>"
         + figure(png_url, a.alt_png, "건조단위중량 γd = γt / (1 + w/100)")
     )
-    g = geoai_blogger.gcfg(cfg)
     svc = geoai_blogger.service()
     r = svc.posts().insert(blogId=geoai_blogger.blog_id(cfg), isDraft=True, body={
         "kind": "blogger#post", "title": a.title, "content": body, "labels": ["시험"]}).execute()
