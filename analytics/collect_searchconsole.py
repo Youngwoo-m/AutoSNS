@@ -61,6 +61,14 @@ def _query(svc, site, start, end, dimension, limit):
     return r.get("rows", [])
 
 
+def _total(svc, site, start, end):
+    """속성 전체 클릭·노출. 노출이 적은 검색어는 익명 처리돼 질의 행에 안 나오므로
+    질의 행을 더하면 실제보다 적거나 0 이 된다 — 차원 없이 따로 합계를 받는다."""
+    r = svc.searchanalytics().query(siteUrl=site, body={
+        "startDate": start, "endDate": end, "type": "web"}).execute().get("rows", [])
+    return (r[0]["clicks"], r[0]["impressions"]) if r else (0, 0)
+
+
 def _sites(svc):
     """계정에 등록된 속성 목록. 읽기 권한이 없는 것은 건너뛴다."""
     got = svc.sites().list().execute().get("siteEntry", [])
@@ -95,6 +103,7 @@ def collect(sites=None, days=DAYS):
         try:
             q = _query(svc, site, str(start), str(end), "query", TOP_N)
             p = _query(svc, site, str(start), str(end), "page", 10)
+            tc, ti = _total(svc, site, str(start), str(end))
         except Exception as e:
             log(f"  {site}: 조회 실패({type(e).__name__}) — 건너뜀")
             continue
@@ -104,10 +113,8 @@ def collect(sites=None, days=DAYS):
         pages += [{"site": site, "page": r["keys"][0], "clicks": r["clicks"],
                    "impressions": r["impressions"]} for r in p]
         per_site.append({"site": site, "queries": len(q),
-                         "clicks": sum(r["clicks"] for r in q),
-                         "impressions": sum(r["impressions"] for r in q)})
-        log(f"  {site}: 질의 {len(q)}건, 클릭 {sum(r['clicks'] for r in q):.0f}, "
-            f"노출 {sum(r['impressions'] for r in q):.0f}")
+                         "clicks": tc, "impressions": ti})
+        log(f"  {site}: 질의 {len(q)}건, 클릭 {tc:.0f}, 노출 {ti:.0f}")
 
     items.sort(key=lambda x: (-x["impressions"], -x["clicks"]))
     pages.sort(key=lambda x: (-x["impressions"], -x["clicks"]))
