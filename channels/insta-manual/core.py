@@ -122,6 +122,30 @@ def merge_tags(tags, cfg=None):
     return list(dict.fromkeys(rest[:max(0, maxn - len(always))] + always))[:maxn]
 
 
+CAPTION_MAX = 2200     # 인스타 캡션 글자 상한
+COMMENT_MAX = 2200     # 댓글 글자 상한
+IMAGES_MAX = 10        # 캐러셀 최대 장수
+
+
+def check_post(caption, comment, tags_in, tags_out, n_images=None, max_tags=30):
+    """발행 직전 점검. (errors, warnings) 를 돌려준다. errors 가 있으면 인스타가 거부한다."""
+    errors, warnings = [], []
+    if len(caption) > CAPTION_MAX:
+        errors.append(f"캡션이 {len(caption)}자입니다. 인스타 상한은 {CAPTION_MAX}자 — "
+                      f"{len(caption) - CAPTION_MAX}자를 줄여 주세요.")
+    elif len(caption) > CAPTION_MAX - 150:
+        warnings.append(f"캡션이 {len(caption)}자로 상한({CAPTION_MAX}자)에 가깝습니다.")
+    if len(comment) > COMMENT_MAX:
+        errors.append(f"첫 댓글이 {len(comment)}자입니다. 상한은 {COMMENT_MAX}자입니다.")
+    dropped = len(dict.fromkeys(t.lstrip("#") for t in tags_in if t)) - len(tags_out)
+    if dropped > 0:
+        warnings.append(f"해시태그가 상한({max_tags}개)을 넘어 {dropped}개는 빠집니다. "
+                        f"올라가는 태그는 {len(tags_out)}개입니다.")
+    if n_images is not None and n_images > IMAGES_MAX:
+        warnings.append(f"카드가 {n_images}장입니다. 앞의 {IMAGES_MAX}장만 올라갑니다.")
+    return errors, warnings
+
+
 def shot_path(name):
     return os.path.join(LOGS_DIR, f"{datetime.now():%Y%m%d_%H%M%S}_{name}.png")
 

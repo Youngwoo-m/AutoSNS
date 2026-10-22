@@ -1,0 +1,38 @@
+{
+  "root": "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts",
+  "voicebox": {
+    "url": "http://localhost:17493",
+    "profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+    "profile_name": "내 목소리 04강(1샘플)",
+    "model_size": "0.6B",
+    "seeds": [
+      2,
+      7,
+      11,
+      23
+    ],
+    "max_cer": 0.06,
+    "timeout_sec": 360
+  },
+  "heygen": {
+    "talking_photo_id": "b7a0513bc3644e2f9858982961cefcd9",
+    "avatar_name": "Youngwoo in the light blue shirt",
+    "theme": "dept"
+  },
+  "intro_text": "안녕하세요. 세명대학교 재난안전학과 나영우 교수입니다.",
+  "outro_text": "이상 재난유형별 피해 양상과 대응방안을 말씀 드렸습니다.",
+  "publish": {
+    "weekday": "TUE",
+    "time_kst": "08:00",
+    "channel_token": "",
+    "category_id": "27"
+  },
+  "voice_backend": "edge",
+  "edge": {
+    "voice": "ko-KR-InJoonNeural",
+    "rate": "+10%"
+  },
+  "intro_outro": true,
+  "captions_from_script": true,
+  "hook_seconds": 2.6
+}

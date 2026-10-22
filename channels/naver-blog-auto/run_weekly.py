@@ -16,6 +16,28 @@ from common import log
 from generate_content import NoNewsError
 
 
+def _naver_post_url(title, blog_id="studs23"):
+    """방금 올린 네이버 글 주소를 RSS 에서 제목으로 찾는다(발행기가 주소를 돌려주지 않는다). 못 찾으면 빈 문자열."""
+    import re
+    import time
+    import urllib.request
+    key = re.sub(r"\s+", "", title or "")[:25]
+    if not key:
+        return ""
+    for _ in range(3):                          # 발행 직후엔 RSS 에 아직 없을 수 있어 잠깐 기다린다
+        try:
+            xml = urllib.request.urlopen(f"https://rss.blog.naver.com/{blog_id}.xml", timeout=20).read().decode("utf-8", "ignore")
+            for it in re.findall(r"<item>(.*?)</item>", xml, re.S):
+                t = re.search(r"<title><!\[CDATA\[(.*?)\]\]></title>", it, re.S)
+                u = re.search(r"<link><!\[CDATA\[(.*?)\]\]></link>", it, re.S)
+                if t and u and key in re.sub(r"\s+", "", t.group(1)):
+                    return u.group(1).split("?")[0]
+        except Exception:                       # noqa: BLE001
+            pass
+        time.sleep(20)
+    return ""
+
+
 # 월=0 … 일=6. None = 기본(재난안전판).
 # 지역(제천·충북) 글이 전 채널에서 가장 반응이 좋다(유튜브 1위가 '제천 오소리',
 # 블로그도 지역 기사 위주 글이 잘 읽힌다). 그래서 지역판을 주 3회로 둔다.
@@ -74,10 +96,11 @@ def _run_one(edition):
     log(f"----- [{label}] 종료: {result.get('status')} -----")
     try:                        # 카카오톡 발행 알림(실패 무시)
         from kakao_notify import notify
+        naver_url = _naver_post_url(data.get("title", ""))
         notify(f"[SMUDS 발행완료] 네이버 블로그 [{label}]\n{data.get('title','')}\n"
                f"상태: {result.get('status')}"
                + (f"\n+ Blogger: {blogger_url}" if blogger_url else ""),
-               "https://blog.naver.com")
+               naver_url or blogger_url or "https://blog.naver.com")
     except Exception as e:
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
 

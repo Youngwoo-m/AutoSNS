@@ -5,10 +5,11 @@
 직접 돌리면 항상 dry_run 이라 실수로 게시되지 않는다. (네이버 프로젝트의 실수 발행
 사고를 교훈 삼은 안전장치)
 """
+import json
 import os
 from datetime import datetime
 
-from common import load_config, log
+from common import BASE_DIR, load_config, log
 
 # 토요일(weekday()==5)엔 AI 뉴스판(수요일은 기본 재난안전판).
 if datetime.now().weekday() == 5:
@@ -35,8 +36,49 @@ def _make_cards(data):
     return make_cards(data)
 
 
+# 오늘 이미 게시했는지 기록(같은 날 재실행·kickstart 로 같은 글이 두 번 올라가는 것을 막는다).
+RUN_STATE = os.path.join(BASE_DIR, "run_weekly_state.json")
+DONE_STATUSES = ("published", "shared_unconfirmed")  # 미확인도 올라갔을 수 있어 재게시하지 않는다
+
+
+def _today():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _already_posted_today():
+    try:
+        with open(RUN_STATE, "r", encoding="utf-8") as f:
+            st = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return st if st.get("date") == _today() and st.get("status") in DONE_STATUSES else None
+
+
+def _record_run(status, title=""):
+    try:
+        with open(RUN_STATE, "w", encoding="utf-8") as f:
+            json.dump({"date": _today(), "status": status, "title": title,
+                       "at": datetime.now().isoformat(timespec="seconds")},
+                      f, ensure_ascii=False, indent=1)
+    except OSError as e:
+        log(f"실행 기록 저장 실패: {e}")
+
+
+def _notify(text):
+    """카카오톡 알림. 실패해도 발행 흐름에는 영향 없다."""
+    try:
+        from kakao_notify import notify
+        notify(text, "https://instagram.com/smu_ds_official")
+    except Exception as e:
+        log(f"카톡 알림 건너뜀: {type(e).__name__}")
+
+
 def main():
     log("===== 주간 인스타 카드뉴스 시작 =====")
+    done = _already_posted_today()
+    if done:
+        log(f"===== 건너뜀: 오늘({done['date']}) 이미 게시됨({done['status']}, {done.get('title','')}) =====")
+        return
     try:
         cfg = load_config()
         data = generate()           # 1) 뉴스 → 카드 문구
@@ -50,15 +92,14 @@ def main():
         else:
             result = post_carousel(data, dry_run=False)  # 캐러셀 게시
         log(f"===== 종료: {result.get('status')} (카드 {result.get('images')}장) =====")
-        try:                    # 카카오톡 발행 알림(실패 무시)
-            from kakao_notify import notify
-            fmt = "릴" if cfg.get("reel", {}).get("enabled") else "카드뉴스"
-            notify(f"[SMUDS 발행완료] 인스타 {fmt}\n{data.get('title','재난안전 카드뉴스')}\n"
-                   f"상태: {result.get('status')}", "https://instagram.com/smu_ds_official")
-        except Exception as e:
-            log(f"카톡 알림 건너뜀: {type(e).__name__}")
+        _record_run(result.get("status"), data.get("title", ""))
+        fmt = "릴" if cfg.get("reel", {}).get("enabled") else "카드뉴스"
+        _notify(f"[SMUDS 발행완료] 인스타 {fmt}\n{data.get('title','재난안전 카드뉴스')}\n"
+                f"상태: {result.get('status')}")
     except Exception as e:
         log(f"===== 실패: {e} =====")
+        _notify(f"[SMUDS 발행실패] 인스타 주간 카드뉴스\n{type(e).__name__}: {str(e)[:150]}\n"
+                "logs/ 를 확인하세요.")
         raise
 
 
