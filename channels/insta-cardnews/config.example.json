@@ -65,7 +65,17 @@
     "enabled": true,
     "audio_file": "assets/bgm.mp3",
     "seconds_per_card": 3.5,
-    "bg_color": "0x0f2038"
+    "bg_color": "0x0f2038",
+    "engine": "remotion",
+    "diorama": {
+      "generate": true,
+      "paths": [],
+      "scenes": [
+        "emergency shelter volunteers setting up cots and handing out blankets in a school gymnasium",
+        "firefighters and residents calmly rehearsing an evacuation drill on a small hillside village street",
+        "disaster safety team checking a flood barrier and a weather station beside a riverside town"
+      ]
+    }
   },
   "threads": {
     "_주석": "Meta 개발자 포털에서 Threads API 앱 생성 후 채우세요. redirect_uri 는 포털의 Redirect Callback URL 과 정확히 같아야 합니다.",
