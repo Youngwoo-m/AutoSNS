@@ -19,7 +19,7 @@ def run(folder):
               f"채널별 변환본은 같은 폴더의 변환본_*.md 이다. 원문의 출처·사실을 중심으로 검토하고, 보고 형식의 JSON 하나만 답하라.")
     env = {k: v for k, v in os.environ.items() if k != 'ANTHROPIC_API_KEY'}   # 구독 로그인으로만
     env['PATH'] = '/usr/local/bin:/opt/homebrew/bin:' + env.get('PATH', '/usr/bin:/bin')
-    cmd = ['claude', '-p', '--agent', 'source-reviewer', '--output-format', 'json', '--no-session-persistence',
+    cmd = ['claude', '-p', '--model', 'opus', '--agent', 'source-reviewer', '--output-format', 'json', '--no-session-persistence',
            '--permission-mode', 'dontAsk', '--allowedTools', 'Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch']
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=str(ROOT), env=env, timeout=900)

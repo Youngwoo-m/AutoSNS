@@ -16,6 +16,9 @@ sys.path.insert(0, os.path.join(ROOT, 'channels', 'youtube-shorts-auto'))
 from common import load_config  # noqa: E402
 from shared.llm import client  # noqa: E402
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from agent_core import load_settings  # noqa: E402
+
 FORMATS = {
     'blogger': '블로그 글(마크다운). 제목 1개, 소제목 3~5개, 1500자 안팎, 끝에 요약 3줄',
     'naver_blog': '네이버 블로그 글(마크다운). 친근한 말투, 소제목 3~4개, 1200자 안팎',
@@ -53,7 +56,7 @@ JSON 하나만 출력한다(코드 블록 없이):
   "sources": ["…"], "variants": {{{', '.join(f'"{c}": "…"' for c in chans)}}}}}
 variants 의 각 형식:
 {spec}"""
-    r = client(load_config()).messages.create(model='claude-sonnet-4-6', max_tokens=8000,
+    r = client(load_config()).messages.create(model=load_settings().get('drafter_model') or 'claude-sonnet-4-6', max_tokens=8000,
                                               messages=[{'role': 'user', 'content': prompt}])
     text = r.content[0].text.strip()
     m = re.search(r'\{.*\}', text, re.S)
