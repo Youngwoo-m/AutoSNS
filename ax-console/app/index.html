@@ -587,13 +587,17 @@ function drawAg(v){const c=v.config,pa=(c.planner||{}).accounts||{},lim=c.monthl
     <td><select id="pa_${a}_h">${[...Array(24).keys()].map(h=>`<option value="${h}" ${h==(x.hour??20)?'selected':''}>${h}시</option>`).join('')}</select></td></tr>`}).join('')}</table>
    <h3 style="font-size:14px;margin:14px 0 4px">실패 대응 에이전트</h3>
    <label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" class="sw" id="inc_auto" ${(c.incident||{}).enabled?'checked':''}> 새 오류 사건을 자동으로 원인 분석 (꺼져 있으면 장애 탭의 버튼으로만)</label>
+   <h3 style="font-size:14px;margin:14px 0 4px">글쓰기 모델</h3>
+   <label>초안 쓰기·근거 대조에 쓸 모델 (비우면 공통 모델 ${esc(c.model||'')})</label>
+   <input id="ag_dm" list="ag_dm_l" value="${esc(c.drafter_model||'')}" placeholder="claude-opus-5-5" style="width:260px">
+   <datalist id="ag_dm_l"><option value="claude-opus-5-5">Opus 5.5</option><option value="claude-sonnet-5-5">Sonnet 5.5</option></datalist>
    <h3 style="font-size:14px;margin:14px 0 4px">실행 한 번의 예산</h3>
    <table><tr><th>에이전트</th><th>토큰</th><th>도구 호출</th><th>턴</th></tr>${bud('planner','기획·초안')}${bud('incident','실패 대응')}</table>
    <h3 style="font-size:14px;margin:14px 0 4px">이번 달 사용량</h3>
    <p class="mut">${v.month_total.toLocaleString()} / ${lim.toLocaleString()} 토큰 (${pct}%) ${Object.entries(v.usage).map(([k,u])=>`· ${esc(k)} ${u.runs}회 ${(u.input+u.output).toLocaleString()}`).join(' ')}</p>
    <label>월 토큰 한도</label><input id="ag_lim" value="${lim}" style="width:160px">
    <div class="btns"><button class="pri" onclick="saveAg()">에이전트 설정 저장</button><span class="msg" id="agmsg"></span></div>`}
-async function saveAg(){const b={monthly_token_limit:$('ag_lim').value,planner_accounts:{},budgets:{},incident_enabled:$('inc_auto').checked};
+async function saveAg(){const b={monthly_token_limit:$('ag_lim').value,drafter_model:$('ag_dm').value,planner_accounts:{},budgets:{},incident_enabled:$('inc_auto').checked};
   ['dept','personal'].forEach(a=>b.planner_accounts[a]={enabled:$(`pa_${a}_e`).checked,count:$(`pa_${a}_n`).value,weekday:$(`pa_${a}_w`).value,hour:$(`pa_${a}_h`).value});
   ['planner','incident'].forEach(ag=>b.budgets[ag]={max_tokens:$(`b_${ag}_t`).value,max_tool_calls:$(`b_${ag}_c`).value,max_turns:$(`b_${ag}_r`).value});
   try{drawAg(await api('/api/agents',b));$('agmsg').style.color='var(--ok)';$('agmsg').textContent='저장했습니다.'}catch(e){$('agmsg').style.color='var(--warn)';$('agmsg').textContent=e.message}}

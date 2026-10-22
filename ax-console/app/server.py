@@ -5,7 +5,7 @@
 - 예약 시각이 되면 채널에 등록된 실행 작업(기존 run_*.sh)을 돌리고 기록을 남긴다.
 - 실행할 수 있는 명령은 아래 ACTIONS 목록뿐이다. 화면에서 임의 명령은 받지 않는다.
 """
-import datetime, json, os, subprocess, threading, time, urllib.parse, uuid
+import datetime, json, os, re, subprocess, threading, time, urllib.parse, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -1458,6 +1458,11 @@ def agents_save(b):
         return v
     if 'monthly_token_limit' in b:
         cfg['monthly_token_limit'] = num(b['monthly_token_limit'], 10000, 100000000, '월 토큰 한도')
+    if 'drafter_model' in b:
+        m = str(b['drafter_model'] or '').strip()
+        if m and not re.fullmatch(r'claude-[a-z0-9.\-]{2,40}', m):
+            raise ValueError('글쓰기 모델: claude-opus-5-5 같은 모델 이름을 넣으세요')
+        cfg['drafter_model'] = m
     for acc, a in (b.get('planner_accounts') or {}).items():
         if acc not in ('dept', 'personal'):
             continue
