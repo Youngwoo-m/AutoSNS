@@ -1,0 +1,172 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "type": "산불",
+  "intro": "../common/intro.mp4",
+  "outro": "../common/outro.mp4",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Photorealistic cinematic aerial footage of real Korean terrain and buildings at true scale, shot on a high-end drone camera, natural light and realistic materials, documentary realism. Subtle thin glowing blue engineering wireframe lines outline ONLY the buildings like an architectural technical visualization; there are no lines at all on the terrain, trees, water, roads, sky or people, and people look completely natural. Not a miniature, not a toy model, not cartoon, single continuous shot, no text, no letters, no numbers, no logos, every sign, signboard, banner, screen and license plate is completely blank with no writing."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "hashtags": {
+    "youtube": [
+      "산불",
+      "산불예방",
+      "산불대피"
+    ],
+    "instagram": [
+      "산불예방",
+      "산불조심",
+      "산불대피",
+      "가을산행",
+      "단풍철"
+    ],
+    "threads": "산불예방",
+    "naver": [
+      "산불",
+      "산불예방",
+      "산불조심",
+      "산불대피",
+      "산불행동요령",
+      "가을산행",
+      "등산안전",
+      "국민행동요령",
+      "재난안전",
+      "세명대학교"
+    ]
+  },
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산불) / 인트로·아웃트로는 AI 아바타, 배경 영상은 AI로 생성한 3D 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산불",
+      "산불예방",
+      "재난대응",
+      "국민행동요령",
+      "가을산행",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "sources": [
+    "국민안전24 국민행동요령 — 산불 (source.md)"
+  ],
+  "date": "2026-10-09",
+  "title": "가을 산불, 예방부터 대피까지 | 재난 대응 #1 산불",
+  "ep_no": 1,
+  "next_episode_text": "다음 주 화요일: 산불 2편",
+  "format": "long50",
+  "max_seconds": 52,
+  "clip_seconds": 8,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "scenes": [
+    {
+      "id": 1,
+      "narration": "가을 산은 낙엽이 바싹 말라 있습니다. 건조하고 바람 부는 날에는 작은 불씨도 큰 산불로 번질 수 있습니다.",
+      "tts_text": "가을 산은 낙엽이 바싹 말라 있습니다. 건조하고 바람 부는 날에는 작은 불씨도 큰 산불로 번질 수 있습니다.",
+      "subtitle": [
+        "가을 산 = 바싹 마른 낙엽 🍂",
+        "건조·강풍 → 작은 불씨도 큰 산불"
+      ],
+      "labels_3d": [
+        "바싹 마른 낙엽",
+        "바람 → 불씨 확산"
+      ],
+      "media": "video",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "(재사용 영상)"
+      }
+    },
+    {
+      "id": 2,
+      "narration": "산 가까이에서는 쓰레기를 태우지 않습니다. 취사와 야영은 허용된 곳에서만 하고, 불이 꺼졌는지 꼭 확인합니다.",
+      "tts_text": "산 가까이에서는 쓰레기를 태우지 않습니다. 취사와 야영은 허용된 곳에서만 하고, 불이 꺼졌는지 꼭 확인합니다.",
+      "subtitle": [
+        "산 근처 쓰레기 태우기 ❌",
+        "취사·야영은 허용된 곳에서만"
+      ],
+      "labels_3d": [
+        "불씨 끄기 확인"
+      ],
+      "media": "image",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A person pouring water over a small campfire at a designated campsite in an autumn Korean forest until it is completely out, checking the ashes, eye-level, calm late afternoon light."
+      }
+    },
+    {
+      "id": 3,
+      "narration": "연기나 불꽃을 보면 바로 119나 112에 신고합니다. 스마트산림재난 앱으로도 신고할 수 있습니다.",
+      "tts_text": "연기나 불꽃을 보면 바로 일일구나 일일이에 신고합니다. 스마트산림재난 앱으로도 신고할 수 있습니다.",
+      "subtitle": [
+        "연기를 보면 바로 📞 119·112",
+        "스마트산림재난 앱으로도 신고"
+      ],
+      "labels_3d": [
+        "연기 발견!",
+        "신고"
+      ],
+      "media": "video",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "(재사용 영상)"
+      }
+    },
+    {
+      "id": 4,
+      "narration": "산에서 불을 만나면 계곡을 피해 활엽수가 있는 길로 빨리 내려옵니다. 피하지 못했다면 낙엽을 치우고 바람을 등진 채 엎드립니다.",
+      "tts_text": "산에서 불을 만나면 계곡을 피해 활엽수가 있는 길로 빨리 내려옵니다. 피하지 못했다면 낙엽을 치우고 바람을 등진 채 엎드립니다.",
+      "subtitle": [
+        "계곡 ❌ → 활엽수 길로 하산",
+        "못 피했다면: 낙엽 치우고 엎드리기"
+      ],
+      "labels_3d": [
+        "활엽수 길"
+      ],
+      "media": "image",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A hiker hurrying down a forest trail lined with broadleaf trees in autumn, moving away from a distant column of smoke behind them on the ridge, eye-level, the hiker fills a large part of the frame."
+      }
+    },
+    {
+      "id": 5,
+      "narration": "마을에 대피 안내가 나오면 산에서 멀리 떨어진 학교나 마을회관으로 바로 대피합니다.",
+      "tts_text": "마을에 대피 안내가 나오면 산에서 멀리 떨어진 학교나 마을회관으로 바로 대피합니다.",
+      "subtitle": [
+        "대피 안내 → 바로 대피",
+        "산에서 먼 학교·마을회관 ⭕"
+      ],
+      "labels_3d": [
+        "대피소"
+      ],
+      "media": "video",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "(재사용 영상)"
+      }
+    },
+    {
+      "id": 6,
+      "narration": "정리합니다. 불씨는 조심하고, 연기를 보면 신고하고, 불이 나면 산에서 먼 곳으로 대피합니다.",
+      "tts_text": "정리합니다. 불씨는 조심하고, 연기를 보면 신고하고, 불이 나면 산에서 먼 곳으로 대피합니다.",
+      "subtitle": [],
+      "labels_3d": [],
+      "media": "card",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "(재사용 영상)"
+      },
+      "card": {
+        "title": "오늘의 핵심",
+        "items": [
+          "불씨 조심: 산 근처에서 태우지 않기",
+          "연기를 보면 바로 119·112 신고",
+          "산에서 먼 학교·마을회관으로 대피"
+        ]
+      }
+    }
+  ]
+}

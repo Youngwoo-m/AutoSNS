@@ -1,0 +1,144 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-16",
+  "type": "산사태",
+  "angle": "가을 태풍·집중호우 뒤 산사태 전조와 대피",
+  "title": "산사태 전조 신호와 대피 방법 | 재난 대응 #1 산사태",
+  "intro": null,
+  "outro": null,
+  "next_episode_text": "다음 주 화요일: 산사태 2편",
+  "body_target_seconds": 20,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Photorealistic cinematic aerial footage of real Korean terrain and buildings at true scale, shot on a high-end drone camera, natural light and realistic materials, documentary realism. Subtle thin glowing blue engineering wireframe lines outline ONLY the buildings like an architectural technical visualization; there are no lines at all on the terrain, trees, water, roads, sky or people, and people look completely natural. Not a miniature, not a toy model, not cartoon, single continuous shot, no text, no letters, no numbers, no logos, every sign, signboard, banner, screen and license plate is completely blank with no writing."
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "땅이 울리고 흙탕물이 솟구치면 산사태 신호입니다. 바람이 없는데 나무가 흔들려도 위험합니다.",
+      "tts_text": "땅이 울리고 흙탕물이 솟구치면 산사태 신호입니다. 바람이 없는데 나무가 흔들려도 위험합니다.",
+      "subtitle": [
+        "산사태 전조 신호",
+        "흙탕물·나무 흔들림"
+      ],
+      "labels_3d": [
+        "전조 현상"
+      ],
+      "source_quote": [
+        "땅이 울리며 산비탈에서 갑자기 많은 양의 물이 샘솟을 때",
+        "바람이 불지 않는 데도 나무가 흔들리거나 넘어질 때"
+      ],
+      "video_prompt": {
+        "3d_real": "A realistic forested Korean mountainside after heavy rain seen from across the valley, muddy water suddenly gushes out of the middle of the slope and a few trees shake with no wind, only the slope, trees and rocks are in view with no buildings or roads, a thin red outline around the moving part of the slope only."
+      },
+      "cutaway": true,
+      "media": "diorama",
+      "diorama_prompt": "A handcrafted tabletop scale-model diorama of a steep forested Korean hillside after heavy rain, its front side cut away as a clean vertical cross-section showing real topsoil, weathered rock and bedrock layers; muddy brown water suddenly gushes out of a crack in the middle of the slope while the small model trees on the slope tremble and a tiny flag on a pole beside it hangs completely still.",
+      "gauge": "진동계: 바늘이 처음엔 조금, 곧 크게 떨린다(땅 울림)"
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 - 야외활동 시",
+      "narration": "산행 중이었다면 바로 멈춥니다. 산지와 거리가 먼 안전한 곳으로 즉시 이동합니다.",
+      "tts_text": "산행 중이었다면 바로 멈춥니다. 산지와 거리가 먼 안전한 곳으로 즉시 이동합니다.",
+      "subtitle": [
+        "산행 즉시 중단",
+        "안전한 곳 이동"
+      ],
+      "labels_3d": [
+        "하산"
+      ],
+      "source_quote": [
+        "산행을 멈추고, 산지와 거리가 먼 안전한 곳으로 즉시 대피합니다."
+      ],
+      "video_prompt": {
+        "3d_real": "A realistic Korean hiker in a rain jacket walks down a muddy mountain trail toward the camera during heavy rain, leaving the steep wet slope behind, heading down to the village at the foot of the mountain."
+      },
+      "cutaway": false
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 - 대피 및 신고",
+      "narration": "대피 방송이 나오면 가스와 전기를 차단한 뒤 안내 장소로 이동합니다. 그래서 전조 현상을 꼭 기억해야 합니다.",
+      "tts_text": "대피 방송이 나오면 가스와 전기를 차단한 뒤 안내 장소로 이동합니다. 그래서 전조 현상을 꼭 기억해야 합니다.",
+      "subtitle": [
+        "가스·전기 차단",
+        "안내 장소로 대피"
+      ],
+      "labels_3d": [
+        "대피소"
+      ],
+      "source_quote": [
+        "대피 방송이 안내된 경우 화재 등 2차 피해 예방을 위해 대피 전에 가스·전기를 차단한 후 안내 장소로 이동합니다."
+      ],
+      "video_prompt": {
+        "3d_real": "(두 컷: shots 참고)"
+      },
+      "cutaway": false,
+      "shots": [
+        {
+          "seconds": 4,
+          "prompt": "In a Korean village at the foot of a steep wooded hillside during heavy rain, mud and rocks start sliding down the slope right behind the houses; a family carrying an emergency bag and older neighbors hurry quickly along the wet village road away from the hillside. No cars and no signs in view."
+        },
+        {
+          "seconds": 4,
+          "prompt": "Front view of a single-story village hall used as an evacuation shelter on flat open ground far from the mountains, light rain; residents carrying bags hurry up to the open front door and go inside while a staff member in a raincoat guides them in. No cars and no signs in view, the building has no name sign."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 산사태 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산사태) / 배경 영상은 AI로 생성한 3D 재현 영상과 축소 모형(디오라마) 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산사태",
+      "재난안전",
+      "대피요령",
+      "집중호우",
+      "태풍대비",
+      "세명대학교",
+      "재난안전학과",
+      "국민행동요령",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "ep_no": 1,
+  "clip_seconds": 8,
+  "hashtags": {
+    "youtube": [
+      "산사태",
+      "산사태전조",
+      "산사태대피"
+    ],
+    "instagram": [
+      "산사태",
+      "산사태대피",
+      "산사태전조",
+      "가을태풍",
+      "집중호우"
+    ],
+    "threads": "산사태대피",
+    "naver": [
+      "산사태",
+      "산사태전조",
+      "산사태대피",
+      "산사태행동요령",
+      "집중호우",
+      "가을태풍",
+      "산사태예보",
+      "국민행동요령",
+      "재난안전",
+      "세명대학교"
+    ]
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "loop_bridge": "그래서 전조 현상을 꼭 기억해야 합니다. → 땅이 울리고 흙탕물이 솟구치면 산사태 신호입니다.",
+  "loop": true
+}

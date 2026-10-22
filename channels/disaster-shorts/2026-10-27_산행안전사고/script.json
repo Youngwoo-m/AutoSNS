@@ -1,0 +1,162 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-27",
+  "type": "산행안전사고",
+  "angle": "길을 잃었을 때·조난 신고하는 법",
+  "ep_no": 2,
+  "visual_mode": "video",
+  "title": "산에서 길을 잃으면 계곡 대신 능선으로 | 재난 대응 #2 산행안전사고",
+  "intro": null,
+  "outro": null,
+  "loop": true,
+  "loop_bridge": "산에 가기 전 꼭 기억할 일이 있습니다. → 산에서 길을 잘못 들었다면 당황하지 말고 아는 위치까지 되돌아갑니다.",
+  "next_episode_text": "이번 주 금요일: 다중운집사고",
+  "body_target_seconds": 20,
+  "clip_seconds": 8,
+  "format": "short30",
+  "max_seconds": 29.5,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, realistic materials and textures, natural-looking Korean people of mixed ages moving at real-time speed. Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "camera_text": {
+    "aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; the people and their actions fill a large part of the frame."
+  },
+  "camera_text_image": {
+    "aerial": " Camera: wide establishing shot from a high drone, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens; the people and their actions fill a large part of the frame."
+  },
+  "prompt_order": "scene_first",
+  "hashtags": {
+    "youtube": [
+      "산행안전사고",
+      "등산조난대처법",
+      "길잃었을때대처법",
+      "119신고요령"
+    ],
+    "instagram": [
+      "산행안전",
+      "등산조난",
+      "가을산행",
+      "조난신고",
+      "등산안전수칙"
+    ],
+    "threads": "산행안전사고",
+    "naver": [
+      "산행안전사고",
+      "등산조난대처법",
+      "산에서길잃었을때",
+      "119신고방법",
+      "조난신고요령",
+      "등산안전수칙",
+      "능선으로이동",
+      "계곡피하기",
+      "가을산행안전",
+      "세명대학교재난안전학과"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "산에서 길을 잘못 들었다면 당황하지 말고 아는 위치까지 되돌아갑니다.",
+      "tts_text": "산에서 길을 잘못 들었다면 당황하지 말고 아는 위치까지 되돌아갑니다.",
+      "subtitle": [
+        "산에서 길을 잘못 들었다면 당황하지 말고 아는 위치까지 되돌아갑니다."
+      ],
+      "labels_3d": [
+        "현재 위치",
+        "방향 혼란"
+      ],
+      "source_quote": [
+        "길을 잘못 들었을 때는 당황하지 말고, 아는 위치까지 되돌아가서 다시 확인한다."
+      ],
+      "media": "diorama",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A detailed miniature mechanical model of a compass and topographic map with a needle wobbling unsteadily between directions, small gears turning beneath the dial, on a wooden workbench with soft indoor lighting."
+      },
+      "diorama_prompt": "A handcrafted tabletop terrain diorama of two forested model mountains with a deep shadowed valley between them and a marked ridge trail; a tiny hiker figurine walks off the marked trail and heads down into the dark valley.",
+      "gauge": ""
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 1",
+      "narration": "길을 잃었을 때는 계곡을 피하고 능선으로 올라갑니다.",
+      "tts_text": "길을 잃었을 때는 계곡을 피하고 능선으로 올라갑니다.",
+      "subtitle": [
+        "길을 잃었을 때는 계곡을 피하고 능선으로 올라갑니다."
+      ],
+      "labels_3d": [
+        "능선",
+        "계곡(위험)"
+      ],
+      "source_quote": [
+        "등반로 외의 산행을 삼가고, 길을 잃었을 때에는 계곡을 피하여 능선으로 올라간다.",
+        "산행 중 조난 또는 길을 잃었을 경우에는 계곡을 피하고 능선을 따라 이동합니다."
+      ],
+      "media": "video",
+      "camera": "aerial",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A middle-aged Korean hiker in autumn hiking gear climbs steadily along a ridge trail away from a valley below, moving upward on a rocky mountain path in Korea during a clear autumn afternoon with warm sunlight."
+      }
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 2 + 다리 문장",
+      "narration": "구조는 119에 장소와 부상 정도를 알립니다. 산에 가기 전 꼭 기억할 일이 있습니다.",
+      "tts_text": "구조는 일일구에 장소와 부상 정도를 알립니다. 산에 가기 전 꼭 기억할 일이 있습니다.",
+      "subtitle": [
+        "구조는 119에 장소와 부상 정도를 알립니다.",
+        "산에 가기 전 꼭 기억할 일이 있습니다."
+      ],
+      "labels_3d": [
+        "신고 위치",
+        "부상 정도"
+      ],
+      "source_quote": [
+        "응급 상황이 발생한 정확한 장소",
+        "무슨 일이 일어났는지",
+        "부상자의 상태 정도",
+        "전화 거는 사람의 이름, 연락처",
+        "얼마나 많은 사람이 다쳤는지",
+        "응급처치는 어떻게 하고 있는지"
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean hiker in his 30s wearing a backpack and hiking clothes sits on a rock and speaks into a smartphone held to his ear, on a mountain trail in Korea during a bright autumn morning with sunlight filtering through trees."
+      }
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 산행안전사고 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산행안전사고) / 배경 영상은 AI로 생성한 3D 재현 영상과 축소 모형(디오라마) 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산행안전사고",
+      "등산조난",
+      "산에서길잃었을때",
+      "119신고방법",
+      "조난신고",
+      "등산안전수칙",
+      "재난안전학과",
+      "세명대학교",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "hook_text": [
+    "길을 잃었다면,",
+    "당황하지 마세요"
+  ]
+}

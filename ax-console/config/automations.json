@@ -106,7 +106,7 @@
       "account": "dept",
       "name": "재난 숏츠 제작·예약 업로드",
       "what": "다가오는 화요일 편을 만들어 화 19:00 예약 공개로 유튜브에 올림. 이미 올렸으면 아무것도 안 함(일·월 재시도). 틱톡 대기열 등록",
-      "entry": "/Volumes/USB256/shorts-disaster/tools/weekly.py",
+      "entry": "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/weekly.py",
       "channels": [
         [
           "dept",
@@ -124,7 +124,7 @@
       "account": "dept",
       "name": "재난 숏츠 교차 게시",
       "what": "화요일 공개된 재난 숏츠를 인스타 릴·학과 블로거·네이버 블로그·스레드에 함께 올림. 이미 올린 채널은 건너뜀",
-      "entry": "/Volumes/USB256/shorts-disaster/tools/crosspost.py",
+      "entry": "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/crosspost.py",
       "channels": [
         [
           "dept",
@@ -453,7 +453,7 @@
       "account": "common",
       "name": "재난 숏츠 음성 정리",
       "what": "공개 7일이 지난 편의 나레이션 음성 파일과 Voicebox 기록을 지움",
-      "entry": "/Volumes/USB256/shorts-disaster/tools/cleanup.py",
+      "entry": "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/cleanup.py",
       "channels": [
         [
           "common",
