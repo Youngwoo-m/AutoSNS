@@ -9,6 +9,8 @@ props.json (그림·음성은 절대 경로로 적는다 — 이 스크립트가
    "voice": "/abs/voice.wav (선택: 영상 전체 음성 한 개. 장면별로 나눴으면 scenes[].audio)",
    "scenes": [{"title": "…", "caption": "…", "image": "/abs/diorama1.png", "kind": "diorama",
                "audio": "/abs/voice-1.wav", "seconds": 4.2}, …]}
+  kind 는 diorama | diagram | clip. clip 은 image 칸에 Manim 등으로 만든 mp4(980x900, 30fps, 무음)를 적는다.
+  (Manim 샘플: manim/error_propagation.py ErrorPropagationBox — 디오라마 2~3장 규칙에는 세지 않는다)
 
 지키는 것(CLAUDE.md 영상 지침·2026-10-17 숏츠 지침): 디오라마 장면 2~3장, 1080×1920, 전체 20.0초 이하.
 결과는 마지막 줄 JSON: {"status": "ok"|"error", "video", "seconds", "size", "frames": [장면별 확인용 jpg], "message"}
