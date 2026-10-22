@@ -18,19 +18,21 @@ AutoSNS `CLAUDE.md` 의 영상 제작 지침(Remotion 편집, 디오라마 2~3�
 ## 만드는 순서
 
 1. **대본** — 한 영상에 질문 하나, 핵심 하나. 0~2초 질문, 2~16초 핵심 답·차이·공식, 끝에 암기어·블로그 안내. 목표 15~19초
-   (한국어로 읽어 70~90자 안팎). 긴 인사·전체 답안·복잡한 표는 넣지 않는다. 수식·기호는 음성이 읽기 쉽게 한글로 풀어 쓴다
+   (음성 엔진 edge-tts +10% 기준 공백 제외 80~88자 ≈ 17~19초, 공백 포함 약 105~115자). 긴 인사·전체 답안·복잡한 표는 넣지 않는다. 수식·기호는 음성이 읽기 쉽게 한글로 풀어 쓴다
    ('R·L=A²' → '알 곱하기 엘은 에이 제곱'). 대본은 `대본.txt` 로 저장.
 2. **디오라마 그림 2~3장** — `cd /Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto && ./.venv/bin/python diorama_image.py --scene "영어 장면 설명" --out 출력폴더/d1.png`
    - 주제 장면을 아이소메트릭 미니어처·틸트시프트 질감으로, **글자 없이**, 대비·작업·대응 장면으로(사고 순간·부상자·불길 한가운데는 피한다).
    - 결과 JSON 의 `text_found` 가 비어 있지 않으면 장면 설명을 바꿔 다시(최대 3번). 한 장에 게이트웨이 크레딧 약 39 — 쓸데없이 다시 그리지 않는다.
    - 부른 쪽이 "이 그림을 써라"라고 한 시험이면 새로 그리지 말고 그 파일을 쓴다.
    - 공식·비교는 큰 글자 도식(Pillow, `FONTS/Pretendard-Bold.otf`)으로 만들 수 있다. 블로그 도식을 그대로 넣어 글자가 작아지면 쓰지 않는다.
-3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --check --job <작업이름>`
-   (channels/youtube-shorts-auto 폴더에서). Voicebox 켜고 끄기를 이 도구가 알아서 한다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
-   빠르게 읽히게 하거나 음성을 자르지 않는다. `check.heard` 와 대본을 비교해 낱말이 달리 들리면 표기·`--seed` 를 바꿔 최대 3번 다시.
-   인식기가 원래 약한 낱말('곱하기', '제곱')은 계속 틀려도 화면 자막·도식이 정확하면 그대로 두고 보고에 적는다.
+3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --job <작업이름>`
+   (channels/youtube-shorts-auto 폴더에서). **기본 음성은 edge-tts `ko-KR-InJoonNeural`(+10%)이다(2026-10-22 사용자 지정: 내 목소리 Voicebox 가
+   맥을 과부하시킴).** 몇 초 만에 끝나고 맥 부하가 없다. 컴퓨터 사양이 좋아지면 `shorts_voice.py` 의 `DEFAULT_BACKEND` 한 줄을 "voicebox" 로 되돌리거나
+   `--backend voicebox [--seed N --check]`(Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다)로 쓴다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
+   빠르게 읽히게 하거나 음성을 자르지 않는다(edge 는 같은 대본이 Voicebox 보다 길다: 공백 제외 108자 = 23초). edge 는 받아 적기 검사가 없으므로 숫자·낱말은
+   대본 표기(한글 풀어쓰기: '칠십오 퍼센트', '열둘')와 화면 자막을 직접 확인한다. 결과의 `voice_label` 을 4번 고지에 그대로 쓴다.
 4. **렌더** — `props.json` 을 쓰고(형식은 `remotion-shorts/render_survey_short.py` 첫머리) `cd /Volumes/USB256/devAPP/AutoSNS/remotion-shorts && python3 render_survey_short.py 출력폴더/props.json 출력폴더/short.mp4`.
-   `exam` 칸에 시험 이름을 넣어 측량·토목 모두 쓴다. 화면과 설명에 'AI 생성 그림 · AI 합성 음성(본인 목소리 복제)' 고지를 넣는다(`disclosure`).
+   `exam` 칸에 시험 이름을 넣어 측량·토목 모두 쓴다. 화면과 설명에 'AI 생성 그림 · <음성 결과의 voice_label>'(edge: 'AI 합성 음성(TTS)', Voicebox: 'AI 합성 음성(본인 목소리 복제)') 고지를 넣는다(`disclosure`).
    스크립트가 디오라마 2~3장·20.0초 이하·1080×1920 이 아니면 error 를 준다 — 고쳐 다시 한다.
    - **공식·계산 과정 장면은 Manim 클립으로 넣을 수 있다(2026-10-22).** 장면 하나를 `remotion-shorts/manim/` 에 Manim 장면 클래스로 쓰고
      (예: `error_propagation.py` 의 `ErrorPropagationBox` — 980×900, 제목·자막은 Remotion 이 얹으므로 도식만, LaTeX 없이 `Text` 로,
