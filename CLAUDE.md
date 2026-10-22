@@ -37,6 +37,14 @@ Max 구독(`claude -p`)으로 보내고, 안 되면 Anthropic 키로 간다. 그
 claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<tool_call>` 흉내).
 게이트웨이로 글을 쓰려면 `llm_gateway.text_enabled` 를 일부러 켜야 한다.
 
+## 글에 수식이 나올 때 (2026-10-23 사용자 지정)
+
+블로거·티스토리·네이버 글에 수식이 있으면 ① 수식은 LaTeX(Manim MathTex)로 써서 이미지로, ② 핵심 식은 Manim 도식 GIF
+(글당 1~2개)로 넣는다. 수식이 없는 글에는 만들지 않는다. 지시문·렌더 스크립트·샘플은
+`channels/naver-blog-auto/MATH_GIF_PROMPT.md`, `channels/naver-blog-auto/math_gif/` 를 따른다.
+GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄이지 않고 올린다(`math_gif/post_draft.py`).
+시험 글은 공개하지 말고 Blogger 초안으로 먼저 확인한다. 숫자 계산은 calc-verifier, 출처는 source-reviewer 로 검토한다.
+
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.

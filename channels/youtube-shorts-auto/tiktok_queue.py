@@ -3,7 +3,7 @@
 담기: 학과 유튜브 채널에 숏츠가 올라갈 때 add() 가 대기열에 넣는다. 게시 시각 = 유튜브 공개 + 30분.
   - youtube_upload.upload (수·토 뉴스, 속보, 수동 업로드) — 학과 채널·공개일 때만
   - publish_career.py (화 퀴즈·진로)
-  - /Volumes/USB256/shorts-disaster/tools/publish.py (재난 숏츠 — 예약 공개 시각 + 30분, AI 아바타 표시)
+  - /Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/publish.py (재난 숏츠 — 예약 공개 시각 + 30분, AI 아바타 표시)
   개인 GeoAI 채널 숏츠도 담는다(2026-10-12 사용자 요청). 제휴(쿠팡) 고지가 있는 영상은 빼고 담는다.
 
 올리기(main): 게시 시각이 지난 것 중 가장 오래된 1편. 틱톡끼리는 3시간 이상 띄운다(같은 날

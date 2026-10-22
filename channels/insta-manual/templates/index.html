@@ -151,6 +151,7 @@
     <button id="btnPreview">미리보기 새로고침</button>
     <div id="previewWrap" class="hide" style="margin-top:12px">
       <label>게시글 캡션</label>
+      <div id="pvIssues"></div>
       <pre class="preview" id="pvCaption"></pre>
       <div id="pvCommentWrap" class="hide">
         <label>첫 댓글</label>
@@ -238,6 +239,7 @@
     <div><span>캡션</span><b id="cfCap">-</b></div>
     <div><span>해시태그</span><b id="cfTags">-</b></div>
   </div>
+  <div id="cfWarn"></div>
   <div class="bar"><div class="spacer"></div>
     <button id="cfCancel">취소</button>
     <button id="cfOk" class="danger">발행</button></div>
@@ -349,7 +351,8 @@ function renderGrid(){
 
 /* ---------------- 캡션 ---------------- */
 const capBox = $('#caption');
-capBox.oninput = () => $('#capCount').textContent = capBox.value.length;
+capBox.oninput = () => { const n = capBox.value.length, el = $('#capCount');
+  el.textContent = n; el.style.color = n > 2200 ? 'var(--red)' : ''; };
 const tagList = () => $('#tags').value.split(/[\s,#]+/).map(t=>t.trim()).filter(Boolean);
 
 $('#btnAi').onclick = async () => {
@@ -372,12 +375,16 @@ $('#btnPreview').onclick = preview;
 async function preview(){
   const r = await fetch('/api/preview', {method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({caption: capBox.value, hashtags: tagList(),
+    body: JSON.stringify({names: images.map(i=>i.name), caption: capBox.value, hashtags: tagList(),
                           first_comment: $('#firstComment').checked})});
   const d = await r.json();
   if (!r.ok){ alert(d.error || '미리보기 실패'); return; }
   $('#previewWrap').classList.remove('hide');
   $('#pvCaption').textContent = d.caption || '(비어 있음)';
+  $('#pvIssues').innerHTML =
+    (d.errors||[]).map(w => `<div class="err">${esc(w)}</div>`).join('') +
+    (d.warnings||[]).map(w => `<div class="warn">${esc(w)}</div>`).join('');
+  return d;
   $('#pvCommentWrap').classList.toggle('hide', !d.comment);
   $('#pvComment').textContent = d.comment || '';
 }
@@ -397,13 +404,17 @@ $('#btnLogin').onclick = () => startJob('/api/login', {});
 $('#btnCheck').onclick = () => startJob('/api/check-login', {});
 $('#btnDry').onclick = () => { if (needAccount() && needImages()) startJob('/api/publish', payload(true)); };
 
-$('#btnPublish').onclick = () => {
+$('#btnPublish').onclick = async () => {
   if (!needAccount() || !needImages()) return;
   if (!capBox.value.trim() && !confirm('캡션이 비어 있습니다. 그대로 진행할까요?')) return;
+  const d = await preview();
+  if (!d) return;
+  if ((d.errors||[]).length){ alert('발행할 수 없습니다.\n\n' + d.errors.join('\n')); return; }
   const cap = capBox.value.trim();
   $('#cfCards').textContent = images.length + '장';
   $('#cfCap').textContent = cap ? cap.slice(0,22) + (cap.length>22?'…':'') : '(없음)';
   $('#cfTags').textContent = tagList().length + '개';
+  $('#cfWarn').innerHTML = (d.warnings||[]).map(w => `<div class="warn">${esc(w)}</div>`).join('');
   $('#confirmDlg').showModal();
 };
 $('#cfCancel').onclick = () => $('#confirmDlg').close();

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent_core import CONSOLE, ROOT, Agent, Budget, Tool, load_settings, submit_tool  # noqa: E402
 import watcher  # noqa: E402
 
-ALLOWED = [ROOT, Path('/Volumes/USB256/shorts-disaster')]
+ALLOWED = [ROOT, Path('/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts')]
 SECRET_KEY = re.compile(r'key|secret|token|password|passwd|pw$|cookie|session', re.I)
 SKIP_DIRS = ('.venv', 'chrome-profile', 'node_modules', '__pycache__', '/posts/', '_profile_backup', '/.git/')
 

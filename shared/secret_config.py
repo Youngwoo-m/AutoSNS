@@ -10,7 +10,8 @@ apply(cfg) 를 부르면 아래 MAP 의 칸이 저장소 값으로 채워진다.
 import os
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from shared.paths import ROOT_DIR as ROOT
+
 FILE = os.path.join(ROOT, "secrets.env.enc")
 
 MAP = {

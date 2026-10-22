@@ -1,0 +1,217 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-11-03",
+  "type": "다중운집사고",
+  "angle": "인파 속에서 넘어졌을 때 몸을 지키는 자세와 이동 요령",
+  "ep_no": 2,
+  "visual_mode": "video",
+  "title": "넘어지면 몸을 공처럼 말아야 합니다 | 재난 대응 #2 다중운집사고",
+  "intro": null,
+  "outro": null,
+  "loop": true,
+  "loop_bridge": "그래서 인파 속에서 몸을 지키는 자세를 꼭 기억해야 합니다. → 축제장 인파 속에서는 넘어지면 바로 일어나기 어렵습니다.",
+  "next_episode_text": "이번 주 금요일: 화재",
+  "body_target_seconds": 43,
+  "clip_seconds": 8,
+  "format": "long50",
+  "max_seconds": 52,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, realistic materials and textures, natural-looking Korean people of mixed ages moving at real-time speed. Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "camera_text": {
+    "aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; the people and their actions fill a large part of the frame."
+  },
+  "camera_text_image": {
+    "aerial": " Camera: wide establishing shot from a high drone, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens; the people and their actions fill a large part of the frame."
+  },
+  "prompt_order": "scene_first",
+  "hashtags": {
+    "youtube": [
+      "다중운집사고",
+      "압사사고예방",
+      "인파사고대응",
+      "군중안전수칙"
+    ],
+    "instagram": [
+      "다중운집사고",
+      "인파안전",
+      "압사예방",
+      "축제안전",
+      "가을축제"
+    ],
+    "threads": "다중운집사고",
+    "naver": [
+      "다중운집사고",
+      "압사사고예방법",
+      "인파사고대처법",
+      "축제인파안전",
+      "군중사고행동요령",
+      "넘어졌을때자세",
+      "인파속안전수칙",
+      "압사예방행동요령",
+      "재난안전학과",
+      "세명대학교재난안전"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "축제장 인파 속에서는 넘어지면 바로 일어나기 어렵습니다. 떠밀리는 힘에 몸이 눌릴 수 있습니다.",
+      "tts_text": "축제장 인파 속에서는 넘어지면 바로 일어나기 어렵습니다. 떠밀리는 힘에 몸이 눌릴 수 있습니다.",
+      "subtitle": [
+        "넘어지면 일어나기 어려움",
+        "인파 속 압박 위험"
+      ],
+      "labels_3d": [
+        "다중운집사고"
+      ],
+      "source_quote": [
+        "많은 사람이 모인 곳의 좁은 길, 비탈길에서는 사고발생 위험이 높으니, 주의가 필요해요."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A crowd of Korean people in autumn clothing walk closely together through a narrow festival street, shoulders brushing, in the evening with string lights overhead."
+      }
+    },
+    {
+      "id": 2,
+      "role": "피해 특징·위험한 이유",
+      "narration": "좁은 길과 비탈길은 특히 위험합니다. 보행 속도가 느려지거나 몸이 닿으면 위험 신호입니다.",
+      "tts_text": "좁은 길과 비탈길은 특히 위험합니다. 보행 속도가 느려지거나 몸이 닿으면 위험 신호입니다.",
+      "subtitle": [
+        "좁은 길·비탈길 위험",
+        "몸 닿으면 위험 신호"
+      ],
+      "labels_3d": [
+        "좁은 길",
+        "비탈길"
+      ],
+      "source_quote": [
+        "보행속도가 느려지거나, 다른 사람과 신체가 닿으면 즉시 그 자리를 벗어나세요."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A young Korean woman in a jacket stands close among a packed crowd on a narrow sloped street, looking concerned as people press in from the sides, during a festival evening with warm lighting."
+      }
+    },
+    {
+      "id": 3,
+      "role": "미리 지킬 일·예방",
+      "narration": "방문 전에 혼잡 상황과 이동로를 확인해야 합니다. 걸을 때는 오른쪽으로 통행해야 합니다.",
+      "tts_text": "방문 전에 혼잡 상황과 이동로를 확인해야 합니다. 걸을 때는 오른쪽으로 통행해야 합니다.",
+      "subtitle": [
+        "혼잡·이동로 미리 확인",
+        "오른쪽 통행"
+      ],
+      "labels_3d": [
+        "사전 확인"
+      ],
+      "source_quote": [
+        "축제장, 공연장 등 방문장소의 혼잡상황과 주변 이동로를 확인하세요",
+        "사람과 부딪치지 않고 원활한 보행 흐름을 위해 오른쪽(양방향 통행시)으로 통행해요."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean man in casual autumn clothes checks his phone while standing at the edge of a festival entrance, calmly observing the crowd flow ahead, in daylight."
+      }
+    },
+    {
+      "id": 4,
+      "role": "일이 났을 때 행동",
+      "narration": "떠밀릴 때는 저항하지 말고 밀리는 방향으로 몸을 맡겨야 합니다. 두 손을 가슴 앞에 모아 숨 쉴 공간을 확보해야 합니다.",
+      "tts_text": "떠밀릴 때는 저항하지 말고 밀리는 방향으로 몸을 맡겨야 합니다. 두 손을 가슴 앞에 모아 숨 쉴 공간을 확보해야 합니다.",
+      "subtitle": [
+        "밀리는 방향에 몸 맡기기",
+        "두 손으로 가슴 보호"
+      ],
+      "labels_3d": [
+        "가슴 보호"
+      ],
+      "source_quote": [
+        "군중의 힘에 저항하지 말고 일단 밀리는 방향으로 몸을 맡기세요.",
+        "두 손을 가슴 앞으로 모으거나, 한쪽 손으로 반대쪽 팔뚝을 잡아 가슴을 보호하고 숨 쉴 공간을 확보해요."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean teenager in a hoodie crosses both arms over the chest, gripping the opposite forearm, standing firmly amid a pressing crowd at a festival at night."
+      }
+    },
+    {
+      "id": 5,
+      "role": "가장 중요한 행동(대피 없음)",
+      "narration": "넘어졌다면 두 팔로 머리를 감싸고 다리를 몸쪽으로 당겨 공처럼 몸을 말아야 합니다.",
+      "tts_text": "넘어졌다면 두 팔로 머리를 감싸고 다리를 몸쪽으로 당겨 공처럼 몸을 말아야 합니다.",
+      "subtitle": [
+        "머리 감싸고 몸 웅크리기"
+      ],
+      "labels_3d": [
+        "웅크린 자세"
+      ],
+      "source_quote": [
+        "넘어져서 일어날 수 없다면 머리는 두팔로 감싸고, 다리는 최대한 몸쪽으로 당겨 몸을 공처럼 동그랗게 말아 몸을 보호하세요."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean adult in street clothes lies curled on the ground, arms wrapped tightly over the head, knees pulled close to the chest, on a festival street at dusk with people's legs around."
+      }
+    },
+    {
+      "id": 6,
+      "media": "card",
+      "narration": "정리합니다. 사람이 닿거나 느려지면 즉시 벗어나고, 떠밀리면 가슴을 보호하고, 넘어지면 몸을 공처럼 말아야 합니다. 그래서 인파 속에서 몸을 지키는 자세를 꼭 기억해야 합니다.",
+      "tts_text": "정리합니다. 사람이 닿거나 느려지면 즉시 벗어나고, 떠밀리면 가슴을 보호하고, 넘어지면 몸을 공처럼 말아야 합니다. 그래서 인파 속에서 몸을 지키는 자세를 꼭 기억해야 합니다.",
+      "subtitle": [],
+      "labels_3d": [],
+      "source_quote": [],
+      "video_prompt": {
+        "3d_real": "(정리 카드)"
+      },
+      "card": {
+        "title": "오늘의 핵심",
+        "items": [
+          "신체 닿으면 즉시 벗어나기",
+          "떠밀리면 가슴 보호하기",
+          "넘어지면 몸 공처럼 말기"
+        ]
+      },
+      "cutaway": false,
+      "camera": "eye"
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 다중운집사고 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(다중운집사고) / 인트로·아웃트로는 AI 아바타, 배경 영상은 AI로 생성한 3D 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "다중운집사고",
+      "압사사고예방",
+      "인파안전",
+      "재난안전학과",
+      "세명대학교",
+      "안전행동요령",
+      "군중사고대응",
+      "축제안전",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  }
+}

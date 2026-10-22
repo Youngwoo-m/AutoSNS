@@ -28,7 +28,8 @@ from selenium.webdriver.common.by import By
 from common import BASE_DIR, load_config, log
 from publish_naver import build_driver
 
-BLOG_ID = "studs23"          # 블로그 주소(계정 ID 인 config.naver_id 와 다르다)
+# 블로그 주소(계정 ID 인 config.naver_id 와 다르다). 개인 계정(safeworking)은 AX_NAVER_BLOG_ID 로 바꾼다
+BLOG_ID = os.environ.get("AX_NAVER_BLOG_ID") or "studs23"
 UPLOAD_ORIGIN = "https://upload.blog.naver.com"
 MAX_INTRO = 200              # 한글 기준 200자
 
