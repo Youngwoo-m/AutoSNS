@@ -5,7 +5,7 @@
 props.json (그림·음성은 절대 경로로 적는다 — 이 스크립트가 임시 public 폴더로 모아 렌더한다):
   {"exam": "측량및지형공간정보기술사", "field": "측지학·좌표계 (학습용 분류) · 11일차",
    "source": "2023년 제131회 1교시 1번 기출", "footer": "자세한 답안·따라쓰기 PDF → 재난안전과 GeoAI 블로그",
-   "disclosure": "학습용 예시 · AI 생성 그림 · AI 합성 음성(본인 목소리 복제)",
+   "disclosure": "학습용 예시 · AI 생성 그림 · AI 합성 음성(TTS)",
    "voice": "/abs/voice.wav (선택: 영상 전체 음성 한 개. 장면별로 나눴으면 scenes[].audio)",
    "scenes": [{"title": "…", "caption": "…", "image": "/abs/diorama1.png", "kind": "diorama",
                "audio": "/abs/voice-1.wav", "seconds": 4.2}, …]}
