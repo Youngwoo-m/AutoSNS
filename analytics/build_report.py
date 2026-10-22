@@ -197,7 +197,7 @@ def build(rows, channel, profile, warn, today, since="2026-03-01"):
 
     # 구글 검색 유입 — 어떤 검색어로 발견되는지(서치콘솔). Blogger 만 대상이다.
     gsc = load_part("searchconsole") or {}
-    if gsc.get("items"):
+    if gsc.get("items") or gsc.get("pages"):
         per = gsc.get("period", {})
         H.append('<h2 style="font-size:15px;margin:22px 0 0">구글 검색 유입 '
                  f'<span style="font-weight:400;color:#666">({per.get("start","")}~{per.get("end","")}, '
@@ -205,6 +205,10 @@ def build(rows, channel, profile, warn, today, since="2026-03-01"):
         t = gsc.get("totals", {})
         H.append(f'<p style="margin:6px 0">클릭 {t.get("clicks",0):.0f} · '
                  f'노출 {t.get("impressions",0):.0f}</p>')
+        if not gsc.get("items"):
+            H.append('<p style="margin:6px 0;font-size:13px;color:#666">노출이 적어 검색어는 '
+                     '구글이 공개하지 않았습니다.</p>')
+    if gsc.get("items"):
         H.append('<table style="border-collapse:collapse;font-size:13px">'
                  '<tr style="background:#f4f4f4"><th style="padding:4px 8px;text-align:left">검색어</th>'
                  '<th style="padding:4px 8px">클릭</th><th style="padding:4px 8px">노출</th>'
