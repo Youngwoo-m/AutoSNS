@@ -23,7 +23,8 @@ import sys
 
 from cryptography.fernet import Fernet
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from shared.paths import ROOT_DIR as ROOT
+
 FILE = os.path.join(ROOT, "secrets.env.enc")
 SERVICE, ACCOUNT = "autosns-secrets", "autosns"
 

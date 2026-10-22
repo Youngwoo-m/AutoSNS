@@ -14,6 +14,7 @@ python3 shared/axlock.py run --job <작업이름> --res profile:<프로필> -- <
 | 프로필 이름 | 폴더 |
 |---|---|
 | `profile:naver` | channels/naver-blog-auto/chrome-profile |
+| `profile:safeworking` | channels/naver-blog-auto/chrome-profile-safeworking (개인 네이버 블로그) |
 | `profile:tistory` | GeoAI_NA/naver-blog-auto/chrome-profile-tistory |
 | `profile:insta` | channels/insta-cardnews/chrome-profile-insta (인스타·스레드) |
 | `profile:tiktok` | channels/youtube-shorts-auto/chrome-profile-tiktok |

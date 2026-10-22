@@ -17,6 +17,7 @@ from flask import Flask, abort, jsonify, render_template, request, send_file
 from PIL import Image
 
 import caption_ai
+import core
 import instagram
 from core import (UPLOADS_DIR, config_exists, is_ready, load_config, log,
                   merge_tags, save_config, set_sink)
@@ -191,6 +192,12 @@ def api_caption():
         return jsonify(error=str(e)), 500
 
 
+def _check(b, cfg, caption, comment, n_images=None):
+    tags_in = [t for t in (b.get("hashtags") or [])]
+    return core.check_post(caption, comment, tags_in, merge_tags(tags_in, cfg),
+                           n_images=n_images, max_tags=int(cfg.get("max_hashtags", 30)))
+
+
 @app.route("/api/preview", methods=["POST"])
 def api_preview():
     """게시될 최종 문구를 보여준다(게시 때와 같은 조립 로직을 쓴다)."""
@@ -200,7 +207,9 @@ def api_preview():
         b.get("caption", ""), merge_tags(b.get("hashtags"), cfg),
         cta=cfg.get("instagram", {}).get("follow_cta", ""),
         first_comment=bool(b.get("first_comment")))
-    return jsonify(caption=caption, comment=comment)
+    errors, warnings = _check(b, cfg, caption, comment, n_images=len(b.get("names") or []) or None)
+    return jsonify(caption=caption, comment=comment, errors=errors, warnings=warnings,
+                   caption_len=len(caption))
 
 
 # ---------------------------------------------------------------- 작업 실행
@@ -245,6 +254,9 @@ def api_publish():
         caption, comment = instagram.build_caption(
             b.get("caption", ""), merge_tags(b.get("hashtags"), cfg),
             cta=ig.get("follow_cta", ""), first_comment=bool(b.get("first_comment")))
+        errors, _ = _check(b, cfg, caption, comment, n_images=len(paths))
+        if errors:
+            return jsonify(error=" ".join(errors)), 400
         # ★ 안전장치: dry_run 이 기본값. 실제 게시는 화면에서 명시적으로 눌러야 한다.
         dry_run = b.get("dry_run", True) is not False
 
