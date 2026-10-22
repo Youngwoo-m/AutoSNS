@@ -1,0 +1,134 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-13",
+  "type": "산불",
+  "angle": "집 주변 1.5m 정리·비상용품·가족 대피 계획 미리 정하기",
+  "ep_no": 2,
+  "title": "집 주변 1.5m, 산불 대비 방법 | 재난 대응 #2 산불",
+  "intro": "../common/intro.mp4",
+  "outro": "../common/outro.mp4",
+  "next_episode_text": "이번 주 금요일: 산사태",
+  "body_target_seconds": 20,
+  "clip_seconds": 8,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Photorealistic cinematic aerial footage of real Korean terrain and buildings at true scale, shot on a high-end drone camera, natural light and realistic materials, documentary realism. Subtle thin glowing blue engineering wireframe lines outline ONLY the buildings like an architectural technical visualization; there are no lines at all on the terrain, trees, water, roads, sky or people, and people look completely natural. Not a miniature, not a toy model, not cartoon, single continuous shot, no text, no letters, no numbers, no logos, every sign, signboard, banner, screen and license plate is completely blank with no writing."
+  },
+  "hashtags": {
+    "youtube": [
+      "산불",
+      "산불예방",
+      "산불대피",
+      "비상용품준비"
+    ],
+    "instagram": [
+      "산불예방",
+      "산불대피",
+      "비상용품",
+      "가을산행",
+      "재난대비"
+    ],
+    "threads": "산불대피",
+    "naver": [
+      "산불행동요령",
+      "산불대피방법",
+      "산불예방수칙",
+      "비상용품준비물",
+      "가족대피계획세우기",
+      "산불집주변관리",
+      "산불119신고",
+      "입산통제구역",
+      "산불대피장소",
+      "산불대비체크리스트"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "건조하고 바람 부는 날에는 산불이 집 근처까지 번질 수 있습니다. 작은 불씨도 조심해야 합니다.",
+      "tts_text": "건조하고 바람 부는 날에는 산불이 집 근처까지 번질 수 있습니다. 작은 불씨도 조심해야 합니다.",
+      "subtitle": [
+        "건조한 날, 산불 위험 최고!",
+        "작은 불씨도 조심"
+      ],
+      "labels_3d": [
+        "산불 확산",
+        "위험 신호"
+      ],
+      "source_quote": [
+        "특히, 날씨가 건조하며 바람이 많이 부는 날은 매우 위험합니다."
+      ],
+      "video_prompt": {
+        "3d_real": "A realistic Korean village of houses at the foot of a mountain on a dry windy day, trees bending in the wind, smoke from a distant wildfire rising behind the far ridge, a thin red outline only around the distant fire."
+      },
+      "cutaway": false
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 - 집 주변 정리",
+      "narration": "집에서 1.5m 안쪽은 돌과 흙으로 정리하고, 낙엽과 가연물은 치워 둡니다.",
+      "tts_text": "집에서 1.5m 안쪽은 돌과 흙으로 정리하고, 낙엽과 가연물은 치워 둡니다.",
+      "subtitle": [
+        "집 주변 1.5m 정리",
+        "낙엽·가연물 치우기"
+      ],
+      "labels_3d": [
+        "불연성 재료",
+        "안전 구역"
+      ],
+      "source_quote": [
+        "집에서 1.5m 이내의 지면에는 되도록 돌, 모래, 흙 등과 같은 불연성 재료를 사용합니다.",
+        "집주변의 쓰레기, 건초, 건축자재 등의 가연물은 되도록 1.5m 이상 떨어진 곳에 보관합니다."
+      ],
+      "video_prompt": {
+        "3d_real": "A realistic Korean family in casual clothes rakes dry leaves and moves wood piles away from the walls of their house, laying gravel and stones on the ground right next to the house, calm sunny afternoon."
+      },
+      "cutaway": false
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 - 비상용품·대피 계획",
+      "narration": "비상용품을 챙기고, 산에서 떨어진 마을회관이나 학교로 가는 길을 가족과 미리 정해 둡니다.",
+      "tts_text": "비상용품을 챙기고, 산에서 떨어진 마을회관이나 학교로 가는 길을 가족과 미리 정해 둡니다.",
+      "subtitle": [
+        "비상가방 미리 준비!",
+        "대피 장소 가족과 정하기"
+      ],
+      "labels_3d": [
+        "비상용품",
+        "대피 경로"
+      ],
+      "source_quote": [
+        "산불에 대비하여 비상용품을 준비해 두고 보관장소와 사용법을 알아둡니다.",
+        "대피(피난)장소는 산에서 멀리 떨어진 마을회관, 학교, 공터 등"
+      ],
+      "video_prompt": {
+        "3d_real": "A realistic Korean family packs an emergency bag with water bottles and a flashlight together at their living room table, calm and focused, warm indoor light."
+      },
+      "cutaway": false
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 산불 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산불) / 인트로·아웃트로는 AI 아바타, 배경 영상은 AI로 생성한 3D 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산불행동요령",
+      "산불대피",
+      "산불예방",
+      "재난대응",
+      "비상용품준비",
+      "가족대피계획",
+      "세명대학교재난안전학과",
+      "산불대비",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface."
+}

@@ -12,9 +12,8 @@ import json
 import os
 import urllib.error
 import urllib.request
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+from shared.paths import ROOT
 CFG = ROOT / 'ax-console' / 'config' / 'browser_service.json'
 KEYFILE = ROOT / 'ax-console' / 'data' / 'auth' / 'internal.key'
 CONSOLE = 'http://127.0.0.1:8700'

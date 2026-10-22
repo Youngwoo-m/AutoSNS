@@ -1,0 +1,59 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "episode": 1,
+  "type": "집중호우·침수",
+  "title": "지하주차장에 물이 차면, 차 빼러 가지 마세요 | 재난 대응 #1 침수",
+  "intro": "../common/intro.mp4",
+  "outro": "../common/outro.mp4",
+  "next_episode_text": "다음 편: 태풍 🌀",
+  "body_target_seconds": 20,
+  "style": "3d",
+  "style_prefix": {
+    "real": "Realistic documentary footage at night during a heavy monsoon downpour in a Korean apartment complex, cold blue light, steady camera, single continuous shot, clean lens with no raindrops on the lens, no text, no subtitles, no logos.",
+    "3d": "Photorealistic 3D architectural cutaway render like a detailed scale model, cross-section view, glowing blue holographic wireframe outlines and thin white measurement lines over the structure, cinematic lighting, slow orbiting camera, single continuous shot, no text, no letters, no numbers, no logos."
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "지하주차장에 물이 차도, 차 빼러 내려가지 마세요. 바깥 물이 무릎만 넘어도 혼자서는 문을 못 엽니다.",
+      "subtitle": ["차 빼러 내려가면 ❌", "물이 무릎 높이면 혼자서는 문 못 연다"],
+      "labels_3d": ["지하 주차장", "수심 50cm ↑"],
+      "video_prompt": {
+        "real": "Inside a dim underground apartment parking garage with concrete pillars and fluorescent ceiling lights, muddy rainwater gushes down the entrance ramp and spreads across the floor between parked cars, the water level rising steadily, camera fixed at eye level.",
+        "3d": "Cross-section of a Korean high-rise apartment building and its two-level underground parking garage, heavy rain outside, muddy floodwater pours down the entrance ramp and fills the basement level by level, water rising around tiny parked cars."
+      }
+    },
+    {
+      "id": 2,
+      "role": "대응 ①②",
+      "narration": "물이 차기 시작하면 차는 두고 바로 지상으로. 문이 막히면 전기를 끄고, 여럿이 함께 미세요.",
+      "subtitle": ["① 차는 두고 즉시 지상으로", "② 전기 차단 → 여럿이 함께"],
+      "labels_3d": ["대피 경로", "지상 출구"],
+      "video_prompt": {
+        "real": "Residents in sneakers hurry up a concrete emergency stairwell from a flooding basement toward the street-level exit door, ankle-deep water on the lowest steps, a green emergency exit light glowing above the door.",
+        "3d": "Cross-section of a flooding basement and its emergency stairwell, tiny residents climb the stairs up to the street-level exit while muddy water fills the lower floor, a glowing blue holographic arrow traces the escape route upward."
+      }
+    },
+    {
+      "id": 3,
+      "role": "대응 ③",
+      "narration": "차에 갇혔다면, 목 받침 철심으로 옆 유리창을 깨고 탈출하세요.",
+      "subtitle": ["③ 목 받침 철심으로 옆 유리창"],
+      "labels_3d": ["수압", "목 받침 철심"],
+      "video_prompt": {
+        "real": "Interior view from the back seat of a car stalled in muddy floodwater at night, the water level halfway up the side windows, the driver pulls the headrest out of the seat and strikes the corner of the side window with its metal posts until the glass cracks.",
+        "3d": "Cutaway of a sedan half-submerged on a flooded road, the car body rendered semi-transparent to show the driver inside, blue holographic arrows show water pressure pushing on the doors, the driver pulls out the headrest and its two metal posts glow as they strike the side window."
+      }
+    }
+  ],
+  "sources": [
+    "행정안전부 지하공간 침수 대비 국민행동요령 (무릎 이상 수심 시 혼자 문 열기 어려움, 전원 차단 후 여럿이 대피, 목 받침 철재봉으로 유리창 파손)",
+    "국민재난안전포털 자연재난 행동요령 - 침수"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부·국민재난안전포털 국민행동요령 / 인트로·아웃트로는 AI 아바타, 배경 영상은 AI로 생성한 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": ["재난대응", "침수", "집중호우", "지하주차장", "세명대학교", "재난안전학과", "쇼츠"]
+  }
+}

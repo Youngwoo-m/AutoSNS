@@ -61,7 +61,7 @@ run_weekly.py         위 단계를 묶은 주간 엔트리 (스케줄러가 호
 ```
 bash setup_schedule.sh
 ```
-기본 매주 **수요일 08:30**(네이버 08:00 과 분리). 즉시 테스트:
+기본 매주 **수·토 19:30**(2026-10-21 저녁 시간대로 조정; 이전 08:30). 즉시 테스트:
 `launchctl kickstart -p gui/$UID/com.smuds.instacards.weekly`
 
 ## ⚠️ 안전장치 (중요)

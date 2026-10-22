@@ -1,0 +1,144 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-20",
+  "type": "산사태",
+  "angle": "산사태 예보 확인 방법과 대피 장소 미리 알아 두기",
+  "ep_no": 2,
+  "title": "산사태 예보 확인법과 대피 장소 미리 알아 두기 | 재난 대응 #2 산사태",
+  "intro": null,
+  "outro": null,
+  "next_episode_text": "이번 주 금요일: 산행안전사고",
+  "body_target_seconds": 20,
+  "clip_seconds": 8,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Photorealistic cinematic aerial footage of real Korean terrain and buildings at true scale, shot on a high-end drone camera, natural light and realistic materials, documentary realism. Subtle thin glowing blue engineering wireframe lines outline ONLY the buildings like an architectural technical visualization; there are no lines at all on the terrain, trees, water, roads, sky or people, and people look completely natural. Not a miniature, not a toy model, not cartoon, single continuous shot, no text, no letters, no numbers, no logos, every sign, signboard, banner, screen and license plate is completely blank with no writing."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "hashtags": {
+    "youtube": [
+      "산사태",
+      "산사태예보",
+      "산사태대피소",
+      "스마트산림재난앱"
+    ],
+    "instagram": [
+      "산사태",
+      "산사태예보",
+      "산사태대피",
+      "가을장마",
+      "재난안전교육"
+    ],
+    "threads": "산사태",
+    "naver": [
+      "산사태예보",
+      "산사태대피소",
+      "산사태전조현상",
+      "스마트산림재난앱",
+      "산사태행동요령",
+      "산사태대피방법",
+      "산사태안전",
+      "산사태신고",
+      "산림재난상황실",
+      "산사태대피장소"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "산비탈 틈에서 갑자기 물이 솟으면 위험 신호입니다. 땅이 울리면 산사태 전조 현상입니다.",
+      "tts_text": "산비탈 틈에서 갑자기 물이 솟으면 위험 신호입니다. 땅이 울리면 산사태 전조 현상입니다.",
+      "subtitle": [
+        "산사태 전조 현상",
+        "갑자기 솟는 물"
+      ],
+      "labels_3d": [
+        "전조 현상"
+      ],
+      "source_quote": [
+        "땅이 울리며 산비탈에서 갑자기 많은 양의 물이 샘솟을 때"
+      ],
+      "cutaway": true,
+      "video_prompt": {
+        "3d_real": "A realistic Korean mountain slope during heavy rain, water suddenly gushing out from cracks in the hillside, cracked soil visible in a ground cutaway, no people, ominous gray sky, red outline only on the cracking soil area."
+      },
+      "media": "diorama",
+      "diorama_prompt": "A handcrafted tabletop scale-model diorama of a rain-soaked forested hillside above a tiny village, its front side cut away as a vertical cross-section showing wet soil and rock layers; muddy water starts seeping and then spurting out of cracks in the slope surface while the soil of the slope trembles slightly.",
+      "gauge": "진동계: 처음엔 잔잔하다가 4초쯤부터 크게 떨린다"
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 1",
+      "narration": "스마트산림재난 앱으로 산사태 예보를 실시간으로 확인합니다. 기상정보도 계속 확인합니다.",
+      "tts_text": "스마트산림재난 앱으로 산사태 예보를 실시간으로 확인합니다. 기상정보도 계속 확인합니다.",
+      "subtitle": [
+        "산사태 예보 확인",
+        "기상정보 확인"
+      ],
+      "labels_3d": [
+        "앱 확인"
+      ],
+      "source_quote": [
+        "산사태정보시스템(PC) 또는 스마트폰 ‘스마트산림재난’ 앱, 또는 방송을 통해 산사태 예보발령 정보를 실시간으로 확인합니다."
+      ],
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A realistic Korean person sitting at home near a window, checking a smartphone screen, rainy mountain scenery visible outside the window, calm indoor setting."
+      }
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 2",
+      "narration": "대피 장소와 경로를 미리 알아 둡니다. 대피 명령이 내려지면 마을회관으로 대피합니다. 그래서 전조 현상과 대피 장소를 미리 알아 두어야 합니다.",
+      "tts_text": "대피 장소와 경로를 미리 알아 둡니다. 대피 명령이 내려지면 마을회관으로 대피합니다. 그래서 전조 현상과 대피 장소를 미리 알아 두어야 합니다.",
+      "subtitle": [
+        "대피 장소 확인",
+        "마을회관 대피"
+      ],
+      "labels_3d": [
+        "대피 장소"
+      ],
+      "source_quote": [
+        "지역 주민은 현 상태를 유지하다가 대피 명령이 발령되면 마을회관, 학교 등 사전에 지정된 장소로 대피합니다."
+      ],
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "(두 컷: shots 참고)"
+      },
+      "shots": [
+        {
+          "seconds": 4,
+          "prompt": "Rainy Korean village road with a steep wooded hillside behind the houses in the background; after an evacuation announcement, residents carrying emergency bags hurry quickly down the road toward the camera, away from the hillside behind them. No cars and no signs in view."
+        },
+        {
+          "seconds": 4,
+          "prompt": "Front view of a single-story village hall used as an evacuation shelter on flat open ground far from the mountains, light rain; residents with bags hurry up to the open front door and go inside while a staff member in a raincoat guides them in. No cars and no signs in view, the building has no name sign."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 산사태 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산사태) / 배경 영상은 AI로 생성한 3D 재현 영상과 축소 모형(디오라마) 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산사태",
+      "산사태예보",
+      "산사태대피",
+      "재난안전",
+      "스마트산림재난",
+      "산사태전조현상",
+      "세명대학교재난안전학과",
+      "여름철재난",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "loop_bridge": "그래서 전조 현상과 대피 장소를 미리 알아 두어야 합니다. → 산비탈 틈에서 갑자기 물이 솟으면 위험 신호입니다.",
+  "loop": true
+}
