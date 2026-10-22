@@ -1,0 +1,62 @@
+{
+  "verified_at": "2026-10-18T14:26:08.757394+09:00",
+  "automations": [
+    {
+      "id": "automation",
+      "name": "측량및지형공간정보기술사 답안 PDF·티스토리·카톡",
+      "status": "ACTIVE",
+      "rrule": "RRULE:FREQ=DAILY;BYHOUR=6,8;BYMINUTE=0;BYSECOND=0",
+      "target_thread_id": "01a14a44-0685-7f22-9f38-c18f103e69e8"
+    },
+    {
+      "id": "automation-2",
+      "name": "친구 요청 기술사 문제 접수·별도 발행",
+      "status": "ACTIVE",
+      "rrule": "RRULE:FREQ=DAILY;BYHOUR=23;BYMINUTE=0;BYSECOND=0",
+      "target_thread_id": "01a14a44-0685-7f22-9f38-c18f103e69e8"
+    },
+    {
+      "id": "7",
+      "name": "측량및지형공간정보기술사 기출 핵심 숏츠 · 저녁 7시 공개",
+      "status": "ACTIVE",
+      "rrule": "RRULE:FREQ=DAILY;BYHOUR=17,19;BYMINUTE=0;BYSECOND=0",
+      "target_thread_id": "01a14a44-0685-7f22-9f38-c18f103e69e8"
+    },
+    {
+      "id": "8",
+      "name": "토목시공기술사 빈출문제 · 매일 오전 8시 원고",
+      "status": "ACTIVE",
+      "rrule": "RRULE:FREQ=DAILY;BYHOUR=8;BYMINUTE=0;BYSECOND=0",
+      "target_thread_id": "01a14a44-0685-7f22-9f38-c18f103e69e8"
+    },
+    {
+      "id": "11",
+      "name": "토목시공기술사 친구 요청 · 매일 밤 11시 발행",
+      "status": "ACTIVE",
+      "rrule": "RRULE:FREQ=DAILY;BYHOUR=23;BYMINUTE=0;BYSECOND=0",
+      "target_thread_id": "01a14a44-0685-7f22-9f38-c18f103e69e8"
+    }
+  ],
+  "survey": {
+    "url": "https://na-geoai.tistory.com/106",
+    "day": 10,
+    "pdf_download_verified": true,
+    "kakao_sent": true,
+    "list_verified": true
+  },
+  "civil": {
+    "url": "https://na-geoai.tistory.com/107",
+    "day": 2,
+    "pdf_download_verified": true,
+    "blogger": {
+      "id": "3325542364369244445",
+      "url": "https://geoaina.blogspot.com/2026/10/2.html",
+      "published": true,
+      "duplicate_reused": false,
+      "verified": true,
+      "public_image_verified": true,
+      "public_pdf_sha256_verified": true
+    },
+    "list_verified": true
+  }
+}

@@ -1,0 +1,3 @@
+[2026-10-20 20:42:51] GeoAI Blogger 토큰 자동 갱신됨.
+[2026-10-20 20:42:56] GeoAI 발행 완료: https://geoaina.blogspot.com/2026/10/4.html
+{"status": "published", "url": "https://geoaina.blogspot.com/2026/10/4.html", "message": ""}

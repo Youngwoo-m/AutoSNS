@@ -1,6 +1,62 @@
 {
   "items": [
     {
+      "title": "우연오차의 전파 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/121",
+      "kind": "daily",
+      "date": "2026-10-21",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 13
+    },
+    {
+      "title": "천문측량 시각 용어 LST·GST·LHA·GHA·LMT·GMT",
+      "url": "https://na-geoai.tistory.com/120",
+      "kind": "request",
+      "date": "2026-10-20",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "Network-RTK VRS·FKP 비교와 현장 측량 과정 (2023년 제129회 기출)",
+      "url": "https://na-geoai.tistory.com/114",
+      "kind": "daily",
+      "date": "2026-10-20",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 12
+    },
+    {
+      "title": "통합기준점 (2023년 제131회 기출)",
+      "url": "https://na-geoai.tistory.com/108",
+      "kind": "daily",
+      "date": "2026-10-19",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 11
+    },
+    {
+      "title": "공공측량 성과 품질검수와 성과심사",
+      "url": "https://na-geoai.tistory.com/106",
+      "kind": "daily",
+      "date": "2026-10-18",
+      "tags": [
+        "관련 제도·실무",
+        "공공측량",
+        "성과심사"
+      ],
+      "tracingPdf": true,
+      "day": 10
+    },
+    {
       "title": "GIS 위상관계와 위상 오류 검증",
       "url": "https://na-geoai.tistory.com/85",
       "kind": "daily",

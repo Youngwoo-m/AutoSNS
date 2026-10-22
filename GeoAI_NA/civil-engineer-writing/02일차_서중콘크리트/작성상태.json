@@ -1,0 +1,146 @@
+{
+  "작성일": "2026-10-18",
+  "일차": 2,
+  "제목": "[토목시공기술사] 서중콘크리트 품질관리와 초기균열 저감 | 하루 한 문제 2일차",
+  "카테고리": {
+    "이름": "토목시공기술사",
+    "ID": 1406134
+  },
+  "유형": "논술형·기출 변형 학습문제",
+  "선정근거": {
+    "기간": "2022~2026 제126~140회",
+    "전체문항": 465,
+    "직접관련5문항": [
+      {
+        "id": "127-4-5",
+        "year": 2022,
+        "round": 127,
+        "period": 4,
+        "number": 5,
+        "kind": "논술형",
+        "question": "하절기 콘크리트 포장 시 예상되는 문제점과 시공관리 방안에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210073&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "130-4-1",
+        "year": 2023,
+        "round": 130,
+        "period": 4,
+        "number": 1,
+        "kind": "논술형",
+        "question": "서중 환경이 콘크리트에 미치는 영향과 서중콘크리트 관리 및 대책에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211903&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "137-1-1",
+        "year": 2025,
+        "round": 137,
+        "period": 1,
+        "number": 1,
+        "kind": "단답형",
+        "question": "서중콘크리트의 품질관리",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242759&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "139-4-5",
+        "year": 2026,
+        "round": 139,
+        "period": 4,
+        "number": 5,
+        "kind": "논술형",
+        "question": "하절기 콘크리트 타설 시 문제점 및 관리대책에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263570&brdId=Q006&gSite=Q"
+      },
+      {
+        "id": "140-3-4",
+        "year": 2026,
+        "round": 140,
+        "period": 3,
+        "number": 4,
+        "kind": "논술형",
+        "question": "콘크리트 시공 시 고온 환경이 콘크리트 품질에 미치는 영향과 시공 단계별 중점 관리사항에 대하여 설명하시오.",
+        "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274160&brdId=Q006&gSite=Q"
+      }
+    ],
+    "한계": "포장·단답형 포함 학습용 묶음. 동일 문제 반복횟수·공식 비중 아님. 그룹키워드82건과 구분."
+  },
+  "출처": [
+    [
+      "국토교통부 고시 제2025-794호(2025.12.24), KCS 14 20 41 개정",
+      "https://www.molit.go.kr/USR/I0204/m_45/dtl.jsp?idx=18722&lcmspage=1&psize=10"
+    ],
+    [
+      "건설기술정보시스템 CODIL, KCS 14 20 41:2025 개정전문",
+      "https://www.codil.or.kr/filebank/moct2014/202605/MOCT3537_0.PDF?nserialno=3537"
+    ],
+    [
+      "건설기술정보시스템 CODIL, KCS 14 20 41:2025 신구조문대비표(1.1·1.3)",
+      "https://www.codil.or.kr/filebank/moct2014/202605/MOCT3537_1.PDF?nserialno=3537"
+    ],
+    [
+      "FHWA-HRT-05-038(2006), Chapter 2: 증발·블리딩과 초기양생 원리",
+      "https://www.fhwa.dot.gov/publications/research/infrastructure/pavements/pccp/05038/002.cfm"
+    ],
+    [
+      "FHWA-RD-02-099(2005), Chapter 1: 소성수축·온도·건조수축 균열",
+      "https://www.fhwa.dot.gov/publications/research/infrastructure/pavements/pccp/02099/chapt1.cfm"
+    ],
+    [
+      "FHWA-HIF-18-015(2019), Curing Concrete Paving Mixtures",
+      "https://www.fhwa.dot.gov/pavement/concrete/pubs/hif18015.pdf"
+    ]
+  ],
+  "검증": {
+    "기출": "저장된 Q-net 공식 문제지 PDF 및 layout 텍스트에서 회차·교시·번호·문구 대조",
+    "기준": "국토부 고시2025-794 개정일 및 CODIL 공식 개정전문·신구대비표 검색색인 확인. 상세PDF 다운로드는503, KCSC동적뷰어는 빈 응답. 적용범위25/30℃만 확인값으로 인용. 미검증35℃·90분 수치는 단정하지 않음.",
+    "수치": "25℃ 초과 또는 완료후24시간 내 최고30℃ 초과 예상. 평균기온≠콘크리트타설온도.",
+    "PDF": "3쪽 전 페이지 1400px PNG 렌더 시각검토 완료. 한글·표·도식 잘림/겹침 없음. 원본 검정 서식 보존, 작성요소 #B8B8B8. 원본 인쇄 1쪽은 수정하지 않고 각 연습1/3·2/3·3/3으로 구분.",
+    "본문": "관련5건 원문·분류, 제목·category·태그·요청링크·23시안내·표·JPG·PDF placeholder 확인. 공개 본문 로컬파일 경로 없음."
+  },
+  "모델": {
+    "실행모델": "현재 런타임 모델 ID/추론수준 검증 수단 없어 미기록",
+    "Astra검토": "실시하지 않음. 사용했다고 주장하지 않음"
+  },
+  "공개발행": "티스토리·개인 Blogger 공개 및 PDF 다운로드·목록 검증 완료",
+  "공개치환": {
+    "{{FIGURE_URL}}": "배포 검증한 JPG 공개 https URL",
+    "{{PDF_URL}}": "배포 검증한 PDF 공개 https URL"
+  },
+  "파일": {
+    "서중콘크리트_양생관리_개념도.jpg": {
+      "bytes": 254075,
+      "sha256": "880b65f0ca00ca93570493d9222d1f2b3a533c91bd39d2e6eaf09cbc240e0cab"
+    },
+    "브라우저게시본문.html": {
+      "bytes": 13217,
+      "sha256": "c7fad73fdd63d0ea4251fe21e70028abbfcb68d911541f9f2a8af3040a6e1c05"
+    },
+    "게시본문.html": {
+      "bytes": 13217,
+      "sha256": "c7fad73fdd63d0ea4251fe21e70028abbfcb68d911541f9f2a8af3040a6e1c05"
+    },
+    "블로그미리보기.html": {
+      "bytes": 13923,
+      "sha256": "fda74aec73cf740ac0346442a98fd8fb496f0aa84cf1f19a0273dbc25fd11cdc"
+    },
+    "02일차_서중콘크리트_답안예시_따라쓰기.pdf": {
+      "bytes": 212156,
+      "sha256": "13264827a524a6c3e625354565ac2096e336811455d774e8dbee2eb99786381c"
+    }
+  },
+  "공개URL": "https://na-geoai.tistory.com/107",
+  "공개시각": "2026-10-18T14:26:08.757394+09:00",
+  "PDF다운로드검증": true,
+  "공개그림검증": true,
+  "목록검증": true,
+  "Blogger": {
+    "id": "3325542364369244445",
+    "url": "https://geoaina.blogspot.com/2026/10/2.html",
+    "published": true,
+    "duplicate_reused": false,
+    "verified": true,
+    "public_image_verified": true,
+    "public_pdf_sha256_verified": true
+  },
+  "다음일차": 3
+}

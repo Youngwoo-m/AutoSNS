@@ -1,0 +1,63 @@
+{
+  "items": [
+    {
+      "title": "[토목시공기술사] 표준관입시험(SPT) N값 보정 | 하루 한 문제 5일차",
+      "url": "https://na-geoai.tistory.com/123",
+      "kind": "daily",
+      "date": "2026-10-21",
+      "tags": [
+        "토질·기초"
+      ],
+      "tracingPdf": true,
+      "day": 5
+    },
+    {
+      "title": "[토목시공기술사] 콘크리트 구조물의 온도균열 원인과 제어 | 하루 한 문제 4일차",
+      "url": "https://na-geoai.tistory.com/119",
+      "kind": "daily",
+      "date": "2026-10-20",
+      "tags": [
+        "콘크리트공"
+      ],
+      "tracingPdf": true,
+      "day": 4
+    },
+    {
+      "title": "[토목시공기술사] 흙막이 공사의 계측관리 | 하루 한 문제 3일차",
+      "url": "https://na-geoai.tistory.com/110",
+      "kind": "daily",
+      "date": "2026-10-19",
+      "tags": [
+        "기초·흙막이"
+      ],
+      "tracingPdf": true,
+      "day": 3
+    },
+    {
+      "title": "서중콘크리트 품질관리와 초기균열 저감",
+      "url": "https://na-geoai.tistory.com/107",
+      "kind": "daily",
+      "date": "2026-10-18",
+      "tags": [
+        "콘크리트공",
+        "서중콘크리트",
+        "양생"
+      ],
+      "tracingPdf": true,
+      "day": 2
+    },
+    {
+      "title": "[토목시공기술사] 흙의 다짐·최적함수비·다짐도 | 하루 한 문제 1일차",
+      "url": "https://na-geoai.tistory.com/99",
+      "kind": "daily",
+      "date": "2026-10-17",
+      "tags": [
+        "토공·다짐",
+        "최적함수비",
+        "다짐도"
+      ],
+      "tracingPdf": true,
+      "day": 1
+    }
+  ]
+}
