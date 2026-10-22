@@ -13,7 +13,8 @@ export PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 [ -n "$JOB" ] && [ -f "$HERE/jobs/$JOB.md" ] || { echo "작업 지시문이 없습니다: $JOB" >&2; exit 2; }
 mkdir -p "$HERE/logs" "$HERE/state"
 LOG="$HERE/logs/$JOB.log"
-MODEL=$(/usr/bin/python3 -c "import json,sys;print(next(j.get('model','opus') for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]))" "$JOB")
+# 모델은 작업 기본값(model)이고, 가벼운 회차(확인·후처리 전용)는 jobs.json 의 run_models 로 회차(시)별로 낮춘다
+MODEL=$(/usr/bin/python3 -c "import json,sys;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('run_models',{}).get(sys.argv[2],j.get('model','opus')))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 RUN_NOTE=$(/usr/bin/python3 -c "import json,sys,datetime;j=next(j for j in json.load(open('$HERE/jobs.json'))['jobs'] if j['key']==sys.argv[1]);print(j.get('runs',{}).get(sys.argv[2],''))" "$JOB" "${AX_HOUR:-$(date +%-H)}")
 
 # 실행 전 점검(jobs.json 의 precheck): 종료 코드 3 = 할 일 없음 → claude 를 부르지 않고 끝낸다. 그 밖의 실패는 그냥 돌린다.
@@ -47,6 +48,9 @@ PROMPT=$(mktemp -t claudejob)
 
 echo "===== [$(date '+%F %T')] $JOB 시작 (모델 $MODEL${AX_DRY:+, 시험 실행}) =====" >> "$LOG"
 cd "$ROOT" || exit 1
+# 서브에이전트(숏츠 제작 등)가 길어져도 마지막 응답 뒤 10분 만에 끊기지 않게 기다리는 한도를 2시간으로 늘린다
+# (2026-10-21 survey-shorts 17:00: 제작 에이전트가 백그라운드로 돌다 10분 뒤 끊겨 영상이 안 만들어졌다)
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=7200000
 # 3시간이 지나도 안 끝나면 끊는다(멈춘 채로 다음 회차·잠금을 막지 않게)
 claude -p --model "$MODEL" --permission-mode bypassPermissions --no-chrome \
     --add-dir /Volumes/USB256/기술사 --add-dir /Volumes/USB256/devAPP/safekorea --add-dir "$HOME/.codex/skills" \

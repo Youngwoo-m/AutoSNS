@@ -1,0 +1,138 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-23",
+  "type": "산행안전사고",
+  "angle": "단풍철 산행 — 일몰·저체온·조난 시 행동",
+  "ep_no": 1,
+  "visual_mode": "image",
+  "title": "단풍철 산행, 해지면 위험해집니다 | 재난 대응 #1 산행안전사고",
+  "intro": null,
+  "outro": null,
+  "next_episode_text": "다음 주 화요일: 산행안전사고 2편",
+  "body_target_seconds": 20,
+  "clip_seconds": 8,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Photorealistic cinematic aerial footage of real Korean terrain and buildings at true scale, shot on a high-end drone camera, natural light and realistic materials, documentary realism. Subtle thin glowing blue engineering wireframe lines outline ONLY the buildings like an architectural technical visualization; there are no lines at all on the terrain, trees, water, roads, sky or people, and people look completely natural. Not a miniature, not a toy model, not cartoon, single continuous shot, no text, no letters, no numbers, no logos, every sign, signboard, banner, screen and license plate is completely blank with no writing."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "hashtags": {
+    "youtube": [
+      "산행안전사고",
+      "저체온증대처법",
+      "등산조난대처",
+      "가을산행안전"
+    ],
+    "instagram": [
+      "산행안전사고",
+      "저체온증",
+      "등산조난",
+      "단풍산행",
+      "가을산행"
+    ],
+    "threads": "산행안전사고",
+    "naver": [
+      "산행안전사고",
+      "단풍철산행",
+      "저체온증증상",
+      "등산조난대처법",
+      "산길잃었을때",
+      "능선따라이동",
+      "등산안전수칙",
+      "가을산행준비물",
+      "119신고방법",
+      "등산해지기전하산"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "단풍철 산행, 해가 지면 저체온증 위험이 커집니다.",
+      "tts_text": "단풍철 산행, 해가 지면 저체온증 위험이 커집니다.",
+      "subtitle": [
+        "단풍철 산행, 해가 지면 저체온증 위험이 커집니다."
+      ],
+      "labels_3d": [
+        "저체온 위험"
+      ],
+      "source_quote": [
+        "저체온증은 열 발생이 많거나, 저온환경에 지속적으로 노출되어 심부 체온이 저하된 경우이고, 보통 체온이 35℃ 이하로 내려간 상태를 말한다."
+      ],
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A realistic Korean mountain trail at dusk in autumn, orange and red maple leaves, a hiker in a thin jacket shivering as sunlight fades behind the ridge, cold mist settling over the valley."
+      },
+      "media": "diorama",
+      "diorama_prompt": "A handcrafted tabletop scale-model diorama of an autumn Korean mountain ridge covered with tiny red and orange maple trees and a small hiking trail with a tiny hiker figurine; a small warm lamp acting as the evening sun slowly sinks behind the ridge and the whole scene fades into cool blue dusk.",
+      "gauge": "온도계: 기둥이 천천히 내려가고, 옆 체온 위험 바늘이 위험 구역으로"
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 - 산행 시간과 저체온 대처",
+      "narration": "해지기 한두 시간 전에 마치고, 젖은 옷은 벗기고 마른 옷으로 감쌉니다.",
+      "tts_text": "해지기 한두 시간 전에 마치고, 젖은 옷은 벗기고 마른 옷으로 감쌉니다.",
+      "subtitle": [
+        "해지기 한두 시간 전에 마치고, 젖은 옷은 벗기고 마른 옷으로 감쌉니다."
+      ],
+      "labels_3d": [
+        "조기 하산"
+      ],
+      "source_quote": [
+        "산행은 아침 일찍 시작하여 해지기 한두 시간 전에 마친다.",
+        "만약 체온이 저하되었다면 젖은 의복 제거 및 마른 옷가지로 환자를 감싸고 저온환경에서 환자를 이동시켜 저온 노출로부터 환자를 보호한다."
+      ],
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A realistic Korean mountain trail in late afternoon autumn light, a hiker wrapping a dry jacket around themselves and checking the darkening sky, preparing to descend quickly."
+      }
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 - 조난 시 행동",
+      "narration": "길을 잃으면 계곡을 피해 능선으로 이동합니다. 그래서 해지기 전 꼭 알아야 합니다.",
+      "tts_text": "길을 잃으면 계곡을 피해 능선으로 이동합니다. 그래서 해지기 전 꼭 알아야 합니다.",
+      "subtitle": [
+        "길을 잃으면 계곡을 피해 능선으로 이동합니다.",
+        "그래서 해지기 전 꼭 알아야 합니다."
+      ],
+      "labels_3d": [
+        "능선 이동"
+      ],
+      "source_quote": [
+        "산행 중 조난 또는 길을 잃었을 경우에는 계곡을 피하고 능선을 따라 이동합니다."
+      ],
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A realistic Korean mountain ridge at dusk with autumn foliage, a hiker calmly checking a map and turning back along the ridge trail away from a misty valley below."
+      }
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 산행안전사고 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(산행안전사고) / 배경 영상은 AI로 생성한 3D 재현 영상과 축소 모형(디오라마) 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "산행안전사고",
+      "단풍철등산",
+      "저체온증",
+      "조난대처",
+      "등산안전수칙",
+      "가을산행",
+      "119신고",
+      "산악사고",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "loop_bridge": "그래서 해지기 전 꼭 알아야 합니다. → 단풍철 산행, 해가 지면 저체온증 위험이 커집니다.",
+  "loop": true,
+  "hook_text": [
+    "단풍철 산행,",
+    "해지면 위험해집니다"
+  ]
+}

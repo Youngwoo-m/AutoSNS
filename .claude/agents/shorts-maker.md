@@ -20,18 +20,30 @@ AutoSNS `CLAUDE.md` 의 영상 제작 지침(Remotion 편집, 디오라마 2~3�
 1. **대본** — 한 영상에 질문 하나, 핵심 하나. 0~2초 질문, 2~16초 핵심 답·차이·공식, 끝에 암기어·블로그 안내. 목표 15~19초
    (한국어로 읽어 70~90자 안팎). 긴 인사·전체 답안·복잡한 표는 넣지 않는다. 수식·기호는 음성이 읽기 쉽게 한글로 풀어 쓴다
    ('R·L=A²' → '알 곱하기 엘은 에이 제곱'). 대본은 `대본.txt` 로 저장.
-2. **디오라마 그림 2~3장** — `cd /Volumes/USB256/devAPP/AutoSNS/youtube-shorts-auto && ./.venv/bin/python diorama_image.py --scene "영어 장면 설명" --out 출력폴더/d1.png`
+2. **디오라마 그림 2~3장** — `cd /Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto && ./.venv/bin/python diorama_image.py --scene "영어 장면 설명" --out 출력폴더/d1.png`
    - 주제 장면을 아이소메트릭 미니어처·틸트시프트 질감으로, **글자 없이**, 대비·작업·대응 장면으로(사고 순간·부상자·불길 한가운데는 피한다).
    - 결과 JSON 의 `text_found` 가 비어 있지 않으면 장면 설명을 바꿔 다시(최대 3번). 한 장에 게이트웨이 크레딧 약 39 — 쓸데없이 다시 그리지 않는다.
    - 부른 쪽이 "이 그림을 써라"라고 한 시험이면 새로 그리지 말고 그 파일을 쓴다.
    - 공식·비교는 큰 글자 도식(Pillow, `FONTS/Pretendard-Bold.otf`)으로 만들 수 있다. 블로그 도식을 그대로 넣어 글자가 작아지면 쓰지 않는다.
 3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --check --job <작업이름>`
-   (youtube-shorts-auto 폴더에서). Voicebox 켜고 끄기를 이 도구가 알아서 한다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
+   (channels/youtube-shorts-auto 폴더에서). Voicebox 켜고 끄기를 이 도구가 알아서 한다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
    빠르게 읽히게 하거나 음성을 자르지 않는다. `check.heard` 와 대본을 비교해 낱말이 달리 들리면 표기·`--seed` 를 바꿔 최대 3번 다시.
    인식기가 원래 약한 낱말('곱하기', '제곱')은 계속 틀려도 화면 자막·도식이 정확하면 그대로 두고 보고에 적는다.
 4. **렌더** — `props.json` 을 쓰고(형식은 `remotion-shorts/render_survey_short.py` 첫머리) `cd /Volumes/USB256/devAPP/AutoSNS/remotion-shorts && python3 render_survey_short.py 출력폴더/props.json 출력폴더/short.mp4`.
    `exam` 칸에 시험 이름을 넣어 측량·토목 모두 쓴다. 화면과 설명에 'AI 생성 그림 · AI 합성 음성(본인 목소리 복제)' 고지를 넣는다(`disclosure`).
    스크립트가 디오라마 2~3장·20.0초 이하·1080×1920 이 아니면 error 를 준다 — 고쳐 다시 한다.
+   - **공식·계산 과정 장면은 Manim 클립으로 넣을 수 있다(2026-10-22).** 장면 하나를 `remotion-shorts/manim/` 에 Manim 장면 클래스로 쓰고
+     (예: `error_propagation.py` 의 `ErrorPropagationBox` — 980×900, 제목·자막은 Remotion 이 얹으므로 도식만, LaTeX 없이 `Text` 로,
+     글꼴 Pretendard Bold) `~/.venvs/manim/bin/manim -ql --fps 30 --disable_caching --media_dir 출력폴더 파일.py 장면이름` 으로 렌더한다.
+     해상도는 장면 클래스 `__init__` 안에서 정한다(파일 맨 위에 두면 렌더 옵션이 덮어쓴다). 결과 mp4 는 props 의 장면 하나로
+     `"kind": "clip"`, `"image": "<절대경로>.mp4"` 로 넣는다(무음). 디오라마 2~3장 규칙에는 세지 않고, 디오라마를 대신하지 않는다.
+     클립 길이 = 그 장면 `seconds`(전체 20.0초 이하). 클립 속 숫자·공식은 대본·계산 검산 결과와 같아야 하며, 확인 단계에서 그 장면 프레임을 본다.
+   - **첫 2초 훅 제목은 HyperFrames(motion-graphics)로 만든 투명 오버레이를 얹을 수 있다(2026-10-22, 선택).** 1080×1920·2.5초 안팎
+     투명 webm(`npx hyperframes@0.8.185 render --format webm`, 글꼴 Pretendard Bold 를 프로젝트 폴더에 복사해 `@font-face` 로)을 만들어
+     props 의 첫 장면 `"overlay": "<절대경로>.webm"` 에 넣는다. 글자는 **제목 자리(화면 위쪽, y≈280~560)** 에 두고 그림 칸 위에는 얹지 않는다
+     (밝은 디오라마 위에서는 글자가 안 보인다). 오버레이를 쓰는 장면은 `title` 을 비워 제목이 겹치지 않게 한다. HyperFrames 프로젝트는 출력 폴더
+     밖(임시 폴더)에서 만들고 저장소에 넣지 않으며, `check` 를 통과시킨다(오버레이의 "첫 프레임 비었음" 경고는 무시해도 된다).
+   - Blender MCP·3D 영상은 숏츠에 쓰지 않는다(이 맥에서 EEVEE 렌더가 Blender 를 종료시켜 Cycles CPU 로 5분 이상 걸린다).
 5. **확인** — 결과의 장면별 `frames` 이미지를 Read 로 직접 보고 글자 겹침·잘림·그림 속 글자·고지 표시를 확인한다.
    `ffprobe` 로 길이(≤20.0초)·해상도·오디오 스트림을 확인한다. 문제가 있으면 고쳐 다시 렌더한다.
 6. **제목·설명·태그** — 제목은 질문형 + `#Shorts`, 전체 시험 이름과 분야·기출 표기를 읽기 쉽게. 설명 첫 줄은 블로그 글 주소(있을 때만 — 없으면 추정하지

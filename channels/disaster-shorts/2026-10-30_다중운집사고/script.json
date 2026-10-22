@@ -1,0 +1,158 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-10-30",
+  "type": "다중운집사고",
+  "angle": "가을 축제·핼러윈 인파 밀집 시 행동(사고 사례 언급은 신중히)",
+  "ep_no": 1,
+  "visual_mode": "video",
+  "title": "축제 인파 속 몇 초의 신호, 놓치면 위험합니다 | 재난 대응 #1 다중운집사고",
+  "intro": null,
+  "outro": null,
+  "loop": true,
+  "loop_bridge": "그래서 이 신호를 기억해야 합니다. → 인파 속에서 몸이 닿으면 위험 신호입니다.",
+  "next_episode_text": "다음 주 화요일: 다중운집사고 2편",
+  "body_target_seconds": 20,
+  "clip_seconds": 8,
+  "format": "short30",
+  "max_seconds": 29.5,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, realistic materials and textures, natural-looking Korean people of mixed ages moving at real-time speed. Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "camera_text": {
+    "aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; the people and their actions fill a large part of the frame."
+  },
+  "camera_text_image": {
+    "aerial": " Camera: wide establishing shot from a high drone, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens; the people and their actions fill a large part of the frame."
+  },
+  "prompt_order": "scene_first",
+  "hashtags": {
+    "youtube": [
+      "다중운집사고",
+      "핼러윈안전수칙",
+      "축제인파대처",
+      "압사사고예방"
+    ],
+    "instagram": [
+      "다중운집사고",
+      "핼러윈안전",
+      "축제안전수칙",
+      "인파밀집",
+      "가을축제"
+    ],
+    "threads": "다중운집사고",
+    "naver": [
+      "다중운집사고",
+      "핼러윈안전수칙",
+      "축제인파대처법",
+      "압사사고예방",
+      "군중밀집대응",
+      "인파사고행동요령",
+      "축제안전수칙",
+      "가을축제안전",
+      "핼러윈인파",
+      "국민행동요령"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "인파 속에서 몸이 닿으면 위험 신호입니다.",
+      "tts_text": "인파 속에서 몸이 닿으면 위험 신호입니다.",
+      "subtitle": [
+        "인파 속에서 몸이 닿으면 위험 신호입니다."
+      ],
+      "labels_3d": [
+        "밀집 압력",
+        "위험 구간"
+      ],
+      "source_quote": [
+        "많은 사람이 모인 곳의 좁은 길, 비탈길에서는 사고발생 위험이 높으니, 주의가 필요해요.",
+        "보행속도가 느려지거나, 다른 사람과 신체가 닿으면 즉시 그 자리를 벗어나세요."
+      ],
+      "media": "diorama",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A precise mechanical model of a narrow corridor where small marbles funnel through a bottleneck, a dial gauge needle rising as the marbles compress together, in a clean workshop setting with bright overhead light."
+      },
+      "diorama_prompt": "A handcrafted tabletop scale-model diorama of a narrow sloping alley between small model buildings with blank walls, packed with many tiny painted figurines; more figurines keep squeezing in from the wide end until they stand shoulder to shoulder in the narrow part.",
+      "gauge": ""
+    },
+    {
+      "id": 2,
+      "role": "대응 방법 1",
+      "narration": "즉시 벗어나 오른쪽으로 걷고, 위험하면 112나 119에 신고합니다.",
+      "tts_text": "즉시 벗어나 오른쪽으로 걷고, 위험하면 일일이나 일일구에 신고합니다.",
+      "subtitle": [
+        "즉시 벗어나 오른쪽으로 걷고, 위험하면 112나 119에 신고합니다."
+      ],
+      "labels_3d": [
+        "오른쪽 통행",
+        "112 / 119"
+      ],
+      "source_quote": [
+        "사람과 부딪치지 않고 원활한 보행 흐름을 위해 오른쪽(양방향 통행시)으로 통행해요.",
+        "위험이 느껴지면 신속하게 112 또는 119에 신고해요."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A young Korean woman in an autumn jacket walks along the right side of a crowded festival street, glancing around calmly while taking out her phone, during an autumn evening festival with string lights glowing overhead."
+      }
+    },
+    {
+      "id": 3,
+      "role": "대응 방법 2 + 다리 문장",
+      "narration": "떠밀리면 저항하지 말고 두 손으로 가슴을 보호합니다. 그래서 이 신호를 기억해야 합니다.",
+      "tts_text": "떠밀리면 저항하지 말고 두 손으로 가슴을 보호합니다. 그래서 이 신호를 기억해야 합니다.",
+      "subtitle": [
+        "떠밀리면 저항하지 말고 두 손으로 가슴을 보호합니다.",
+        "그래서 이 신호를 기억해야 합니다."
+      ],
+      "labels_3d": [
+        "가슴 보호 자세"
+      ],
+      "source_quote": [
+        "보행이 멈춰서고 본인의 의지와 상관없이 떠밀리게 될 때는 군중의 힘에 저항하지 말고 일단 밀리는 방향으로 몸을 맡기세요.",
+        "이때, 두 손을 가슴 앞으로 모으거나, 한쪽 손으로 반대쪽 팔뚝을 잡아 가슴을 보호하고 숨 쉴 공간을 확보해요."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean man in casual autumn clothing stands amid a dense festival crowd, crossing both arms over his chest to protect himself while being gently pushed along by the crowd's movement, during a nighttime Halloween street festival with warm string lights."
+      }
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 다중운집사고 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(다중운집사고) / 배경 영상은 AI로 생성한 3D 재현 영상과 축소 모형(디오라마) 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "다중운집사고",
+      "압사사고예방",
+      "핼러윈안전",
+      "축제안전수칙",
+      "인파밀집대처",
+      "군중사고대응",
+      "세명대재난안전학과",
+      "국민행동요령",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  },
+  "hook_text": [
+    "몸이 닿으면",
+    "위험 신호입니다"
+  ]
+}

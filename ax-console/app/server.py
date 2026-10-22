@@ -1859,7 +1859,7 @@ class H(BaseHTTPRequestHandler):
         if self.path in ('/', '/index.html'):
             return self.send(200, body=(CONSOLE / 'app' / 'index.html').read_bytes(), ctype='text/html; charset=utf-8')
         if self.path.startswith('/fonts/'):
-            f = ROOT / 'FONTS' / 'Pretendard-Bold.otf'
+            f = ROOT / 'assets' / 'FONTS' / 'Pretendard-Bold.otf'
             return self.send(200, body=f.read_bytes(), ctype='font/otf')
         if self.path == '/api/meta':
             return self.send(200, meta())
