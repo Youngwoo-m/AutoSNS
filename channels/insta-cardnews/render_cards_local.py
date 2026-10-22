@@ -231,25 +231,38 @@ def _closing(idx, total, block, logo):
     </div>"""
 
 
+def _cub(inner, cls="", style=""):
+    """입체 블록: 앞면(내용) + 오른쪽면 + 윗면. 두께는 --d(em). 3D 장면(.scene3d) 안에서만 입체로 보인다."""
+    return (f'<div class="cub {cls}" style="{style}"><div class="cf">{inner}</div>'
+            f'<i class="cr"></i><i class="ct"></i></div>')
+
+
 def _info(idx, total, block, spec, logo):
-    """인포그래픽 카드(infographic.plan 이 설계). 소제목은 카드 원문 그대로 쓴다."""
+    """인포그래픽 카드(infographic.plan 이 설계). 소제목은 카드 원문 그대로 쓴다.
+
+    2026-10-23: 평면 상자 → 입체 블록(CSS 3D). 숫자 크기로 높이를 정하지 않는다 — 단위가
+    다른 값이라 높이가 곧 비교로 읽히면 안 된다. 입체감은 장식이고, 글자는 앞면에 그대로."""
     emoji, title, _ = _split(block)
     t = spec.get("type")
     if t == "stat":
         its = spec.get("items")[:3]
         body = '<div class="stats n%d">' % len(its) + "".join(
-            f'<div class="stat"><div class="sval">{_e(i["value"])}</div>'
-            f'<div class="slab">{_e(i["label"])}</div></div>' for i in its) + "</div>"
+            _cub(f'<div class="sval">{_e(i["value"])}</div><div class="slab">{_e(i["label"])}</div>',
+                 "stat", f"--z:{k * 28}px") for k, i in enumerate(its)) + "</div>"
     elif t == "flow":
         st = spec.get("steps")[:5]
-        body = f'<div class="flow n{len(st)}">' + '<span class="arrow">→</span>'.join(
-            f'<div class="step"><span class="snum">{k + 1}</span><span class="stxt">{_e(x)}</span></div>'
+        n = len(st)
+        body = f'<div class="flow n{n}">' + '<span class="arrow">&#9656;</span>'.join(
+            _cub(f'<span class="snum">{k + 1}</span><span class="stxt">{_e(x)}</span>', "step",
+                 f"--lift:{k * (1.1 if n <= 4 else 0.9)}em;--d:{0.7 + 0.15 * k}em")
             for k, x in enumerate(st)) + "</div>"
     else:
         l, r = spec.get("left"), spec.get("right")
-        col = lambda c, cls: (f'<div class="side {cls}"><div class="stitle">{_e(c["title"])}</div>'
-                              + "".join(f'<p>{_e(x)}</p>' for x in (c.get("points") or [])[:3]) + "</div>")
-        body = f'<div class="compare">{col(l, "left")}<span class="vs">VS</span>{col(r, "right")}</div>'
+        col = lambda c, cls, sty: _cub(
+            f'<div class="stitle">{_e(c["title"])}</div>'
+            + "".join(f'<p>{_e(x)}</p>' for x in (c.get("points") or [])[:3]), f"side {cls}", sty)
+        body = (f'<div class="compare">{col(l, "left", "--d:.12em")}<span class="vs">VS</span>'
+                f'{col(r, "right", "--d:.75em;--z:46px")}</div>')
     note = f'<div class="note">{_e(spec.get("note", ""))}</div>' if spec.get("note") else ""
     return f"""
     <div class="card info" id="card{idx}">
@@ -257,7 +270,7 @@ def _info(idx, total, block, spec, logo):
       <div class="body fit">
         <div class="head">{f'<span class="emo">{emoji}</span>' if emoji else ''}
           <span class="htitle">{_e(title)}</span></div>
-        {body}{note}
+        <div class="stage3d"><div class="scene3d">{body}</div><div class="ground"></div></div>{note}
       </div>
       {_footer(logo)}
     </div>"""
@@ -379,6 +392,45 @@ body { background:#fff; font-family:'KoPub','Apple Color Emoji',sans-serif; }
           word-break:keep-all; padding-left:.8em; text-indent:-.8em; }
 .side p::before { content:"· "; }
 .vs { align-self:center; font-weight:700; color:#2F6FE4; font-size:.8em; }
+
+/* 인포그래픽 입체(2026-10-23): 앞면(.cf)·오른쪽면(.cr)·윗면(.ct)으로 블록을 쌓고 장면을 비스듬히 돌린다 */
+.stage3d { position:relative; height:9.4em; perspective:1500px; perspective-origin:50% 40%; }
+.scene3d { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+           transform-style:preserve-3d; transform:rotateX(-18deg) rotateY(-14deg) scale(.93); }
+.ground { position:absolute; left:6%; right:2%; bottom:-.25em; height:1.1em; border-radius:50%;
+          background:radial-gradient(closest-side, rgba(30,79,175,.28), rgba(30,79,175,0));
+          filter:blur(6px); }
+.cub { --d:.8em; --z:0px; --lift:0em; position:relative; transform-style:preserve-3d;
+       transform:translateZ(var(--z)) translateY(calc(var(--lift) * -1)); }
+.cub { display:flex; min-width:0; align-self:center; }
+.cub.stat { background:none; border:0; box-shadow:none; padding:0; }
+.cub .cf { flex:1; min-width:0; position:relative; background:linear-gradient(160deg,#FFFFFF,#EEF4FF); border:1px solid #C9DAF7;
+           border-radius:.3em; }
+.cub .cr, .cub .ct { position:absolute; display:block; backface-visibility:hidden; }
+.cub .cr { top:0; left:100%; width:var(--d); height:100%; transform-origin:left center;
+           transform:rotateY(90deg); background:linear-gradient(180deg,#3B73D6,#1E4FAF); border-radius:0 .2em .2em 0; }
+.cub .ct { left:0; bottom:100%; width:100%; height:var(--d); transform-origin:center bottom;
+           transform:rotateX(90deg); background:linear-gradient(90deg,#9FC0F5,#C7DBFA); border-radius:.2em .2em 0 0; }
+.stats { gap:.9em; transform-style:preserve-3d; }
+.stat .cf { padding:.7em .6em; text-align:center; flex:1; }
+.stats .cub { flex:1 1 0; }
+.stat .sval { font-size:1.5em; } .stats.n1 .sval { font-size:2.6em; } .stats.n3 .sval { font-size:1.25em; }
+.flow { gap:.3em; align-items:flex-end; transform-style:preserve-3d; }
+.flow .cub { flex:1 1 0; align-self:flex-end; }
+.step .cf { display:flex; flex-direction:column; align-items:center; gap:.35em; padding:.6em .3em; min-height:5.2em;
+            justify-content:center; box-shadow:none; border-radius:.3em; }
+.flow .cub.step { padding:0 !important; }
+.cub.step { flex-direction:row; align-items:stretch; gap:0; background:none; border:0; box-shadow:none; min-height:0; padding:0; }
+.arrow { transform:translateZ(20px); color:#2F6FE4; font-size:.7em; margin-bottom:2.2em; }
+.compare { gap:.9em; align-items:center; transform-style:preserve-3d; }
+.compare .cub { flex:1 1 0; }
+.side .stitle { word-break:keep-all; }
+.side { background:none; border:0; box-shadow:none; padding:0; }
+.side .cf { padding:.65em .7em; }
+.side.left .cf { background:#F1F4F9; border-color:#DCE3EE; }
+.side.left .cr { background:linear-gradient(180deg,#A9B5C8,#8593AA); }
+.side.left .ct { background:linear-gradient(90deg,#D3DAE6,#E4E9F1); }
+.side.right .cf { border:2px solid #2F6FE4; }
 .note { margin-top:.8em; font-weight:500; font-size:.82em; line-height:1.5; color:#46597A; text-align:center;
         word-break:keep-all; }
 """

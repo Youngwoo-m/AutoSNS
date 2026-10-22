@@ -47,6 +47,19 @@ def make_reel(data, audio_path=None):
     work = os.path.join(POSTS_DIR, f"reel_{stamp}")
     os.makedirs(work, exist_ok=True)
 
+    # 기본 편집 엔진은 Remotion(2026-10-23). 실패하면 아래 ffmpeg 합성으로 돌아간다.
+    if rcfg.get("engine", "remotion") == "remotion":
+        remo_out = os.path.join(POSTS_DIR, f"{stamp}_reel.mp4")
+        try:
+            from remotion_reel import render_reel
+            log(f"릴 Remotion 렌더 중... (카드 {len(images)}장)")
+            render_reel(data, images, audio, remo_out, rcfg)
+            log(f"릴 영상 생성(Remotion): {remo_out} ({os.path.getsize(remo_out)//1024}KB)")
+            data["reel"] = remo_out
+            return remo_out
+        except Exception as e:  # noqa: BLE001
+            log(f"Remotion 릴 실패 → ffmpeg 로 합성: {type(e).__name__}: {str(e)[:200]}")
+
     # concat demuxer 용 리스트(각 이미지 duration 지정, 마지막 프레임 1회 반복)
     list_path = os.path.join(work, "list.txt")
     with open(list_path, "w", encoding="utf-8") as f:
