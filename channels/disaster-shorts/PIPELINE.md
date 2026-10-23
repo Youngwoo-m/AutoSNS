@@ -4,7 +4,7 @@
 > 2026-10-22 사용자 지정 변경: ① 나레이션·인트로·아웃트로 목소리는 edge-tts **인준**(`ko-KR-InJoonNeural`, `config.json` 의 `voice_backend`/`edge`; 사양이 좋아지면 `"voicebox"` 로 되돌림)
 > ② 영상 첫 2.6초에 큰 글자 **훅**(`hook_text`, `hook_seconds`, 인트로·아웃트로를 붙일 때는 인트로 화면 아래 빈 공간 `hook_y` 에 겹침, 안 붙일 때는 본문 첫 장면에 Remotion 으로) ③ 화면 자막은 **대본(나레이션) 문장 그대로**(`captions_from_script`) ④ 인트로·아웃트로는 인준 목소리 새 HeyGen 아바타 영상을 다시 붙임(`intro_outro: true`)
 > ⑤ 대본은 더 짧게(한글 75~85자, 50초판 190~225자). 실행 설정 `tools/config.json` 은 비밀값이 있어 git 에 올리지 않는다 — `tools/config.example.json` 참고.
-> Remotion 글꼴은 git 에 없다: `assets/FONTS/` 의 `KoPubBold.otf`·`Pretendard-Bold.otf` 를 `remotion/public/fonts/` 에 복사한다.
+> Remotion 글꼴은 git 에 없다: `assets/FONTS/` 의 `Pretendard-Bold.otf`(자막·훅·모션 글자 전부) 를 `remotion/public/fonts/` 에 복사한다.
 
 ## 영상 구성 (30초 이내)
 | 구간 | 길이 | 소스 | 비고 |

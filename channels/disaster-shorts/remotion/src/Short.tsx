@@ -5,8 +5,8 @@ import { Audio, Video } from "@remotion/media";
 import React from "react";
 import { AbsoluteFill, interpolate, Sequence, Series, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 
-const FONT = "KoPub";
-loadFont({ family: FONT, url: staticFile("fonts/KoPubBold.otf"), weight: "700" });
+const FONT = "Pretendard";   // 자막·보조 글자도 Pretendard Bold(영상 지침, 2026-10-24)
+loadFont({ family: FONT, url: staticFile("fonts/Pretendard-Bold.otf"), weight: "700" });
 loadFont({ family: "HookPretendard", url: staticFile("fonts/Pretendard-Bold.otf"), weight: "700" });   // 훅 제목은 Pretendard Bold(영상 지침)
 
 export type Caption = { lines: string[]; size: number; from: number; to: number };
