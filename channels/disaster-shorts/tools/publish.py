@@ -45,7 +45,7 @@ def meta(sc):
     if sc.get("loop") and sc.get("next_episode_text"):
         lines += ["", "▶ 다음 편 — " + sc["next_episode_text"]]
     lines += ["", sc["upload"]["description_notes"], DISCLOSURE_LOOP if sc.get("loop") else DISCLOSURE, "",
-              "매주 화요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.",
+              "매주 화·금요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.",
               "세명대학교 재난안전학과 https://www.semyung.ac.kr/smds.do", "",
               " ".join("#" + t for t in yt_tags(sc)) + " #Shorts"]
     tags = list(dict.fromkeys(yt_tags(sc) + sc["upload"].get("tags", []) + ["재난 유형별 대응", "국민행동요령", "세명대 재난안전학과"]))

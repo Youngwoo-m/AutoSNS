@@ -44,7 +44,7 @@ def texts(sc, url):
     hashtags = [t.lstrip("#").replace(" ", "") for t in (h.get("instagram") or [tag, "재난대응", "국민행동요령", "안전수칙", "재난안전학과"])][:5]
     topic = (h.get("threads") or tag).lstrip("#").replace(" ", "")
     caption = (f"{sc['title']}\n\n" + "\n".join("✔ " + l for l in lines) +
-               f"\n\n매주 화요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.\n"
+               f"\n\n매주 화·금요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.\n"
                f"출처: 행정안전부 국민안전24 국민행동요령({sc['type']})\n"
                "※ AI 아바타·AI 생성 재현 영상이 포함되어 있습니다.")
     threads = (f"{sc['title']}\n\n" + "\n".join("✔ " + l for l in lines) + f"\n\n▶ {url}\n#{topic}")[:490]   # 스레드는 주제 태그 1개만 연결된다
