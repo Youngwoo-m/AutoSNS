@@ -1,10 +1,10 @@
 import React from 'react';
 import {loadFont} from '@remotion/fonts';
 import {AbsoluteFill, Audio, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
-loadFont({family:'CivilKoPub',url:staticFile('civil-day01/KoPubBold.otf'),weight:'700'});
+loadFont({family:'CivilPretendard',url:staticFile('civil-day01/Pretendard-Bold.otf'),weight:'700'});
 export const CivilFrame:React.FC<{title:string;caption:string;image:string;audio:string;step:string}>=({title,caption,image,audio,step})=>{
  const frame=useCurrentFrame();const {fps}=useVideoConfig();
- return <AbsoluteFill style={{background:'#071e32',fontFamily:'CivilKoPub',fontWeight:700,color:'#fff'}}>
+ return <AbsoluteFill style={{background:'#071e32',fontFamily:'CivilPretendard',fontWeight:700,color:'#fff'}}>
   <Audio src={staticFile(`civil-day01/${audio}`)} />
   <div style={{position:'absolute',left:90,top:118,fontSize:42,color:'#91d9ce'}}>토목시공기술사 · 1일차</div>
   <div style={{position:'absolute',left:90,top:196,fontSize:30,letterSpacing:3,color:'#86a9b6'}}>{step}</div>
