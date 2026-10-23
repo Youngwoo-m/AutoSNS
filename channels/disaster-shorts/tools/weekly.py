@@ -1,4 +1,4 @@
-"""매주 한 편을 자동으로 만들어 편 날짜 08:00(config.publish.time_kst) 예약 공개로 올린다(launchd: 일·월 20:00).
+"""매주 한 편을 자동으로 만들어 편 날짜 19:00(config.publish.time_kst) 예약 공개로 올린다(launchd: 일·월 20:00).
 
   .venv/bin/python weekly.py            # 다가오는 화요일 편을 만든다(이미 올렸으면 아무것도 안 함)
   .venv/bin/python weekly.py --check    # 무엇을 만들지 보여 주기만

@@ -2,7 +2,7 @@
 
   .venv/bin/python publish.py 2026-10-06_산불            # 실제 업로드(예약)
   .venv/bin/python publish.py 2026-10-06_산불 --dry-run  # 메타데이터만 확인
-예약 시각: 편의 날짜 08:00 KST(config.publish.time_kst, 2026-10-22 사용자 지정 — 이전 19:00). 이미 올렸으면(<편>/upload.json) 다시 올리지 않는다.
+예약 시각: 편의 날짜 19:00 KST(config.publish.time_kst, 2026-10-23 사용자 지정으로 다시 19:00 — 08:00 은 하루 시험). 이미 올렸으면(<편>/upload.json) 다시 올리지 않는다.
 """
 import argparse, datetime as dt, json, os, sys
 
@@ -45,7 +45,7 @@ def meta(sc):
     if sc.get("loop") and sc.get("next_episode_text"):
         lines += ["", "▶ 다음 편 — " + sc["next_episode_text"]]
     lines += ["", sc["upload"]["description_notes"], DISCLOSURE_LOOP if sc.get("loop") else DISCLOSURE, "",
-              "매주 아침 8시, 계절에 맞는 재난 대응 방법을 알려 드려요.",
+              "매주 화요일 저녁 7시, 계절에 맞는 재난 대응 방법을 알려 드려요.",
               "세명대학교 재난안전학과 https://www.semyung.ac.kr/smds.do", "",
               " ".join("#" + t for t in yt_tags(sc)) + " #Shorts"]
     tags = list(dict.fromkeys(yt_tags(sc) + sc["upload"].get("tags", []) + ["재난 유형별 대응", "국민행동요령", "세명대 재난안전학과"]))
