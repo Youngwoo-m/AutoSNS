@@ -10,13 +10,13 @@
 | 구간 | 길이 | 소스 | 비고 |
 |---|---|---|---|
 | 인트로 | ≈4.5초 | HeyGen 토킹포토 `b7a0513bc3644e2f9858982961cefcd9` ("Youngwoo in the light blue shirt") | "안녕하세요. 세명대학교 재난안전학과 나영우 교수입니다." — 1회 제작, 전 편 재사용 |
-| 본문 | ≈20초 | Veo 3.1 Lite 8초 클립 3개 (세명대 게이트웨이) + Voicebox 내 목소리 나레이션 + 자막 | 편마다 새로 제작 |
+| 본문 | ≈20초 | Veo 3.1 Lite 8초 클립 3개 (세명대 게이트웨이) + edge-tts 인준 나레이션 + 자막(대본 문장 그대로) | 편마다 새로 제작 |
 | 아웃트로 | ≈4.5초 | HeyGen 같은 아바타 | "이상 재난유형별 피해 양상과 대응방안을 말씀 드렸습니다." + 화면 하단 "다음 편: ○○" 자막(편마다 바뀜) |
 
 ## 단계
-0. 공통 자산(1회): Voicebox로 인트로·아웃트로 음성 생성 → HeyGen에 오디오 업로드 → 토킹포토 립싱크 영상 2개 → `common/intro.mp4`, `common/outro.mp4`
+0. 공통 자산(1회): edge-tts 인준으로 인트로·아웃트로 음성 생성(옛 내 목소리 버전은 `common/old_voicebox_20261022/`) → HeyGen에 오디오 업로드 → 토킹포토 립싱크 영상 2개 → `common/intro.mp4`, `common/outro.mp4`
 1. 대본(Claude): `NN_type/script.json` — 장면 3개(나레이션·자막·영문 영상 프롬프트), 행안부 국민행동요령으로 사실 확인
-2. 나레이션(Voicebox, 내 목소리 프로필, Qwen TTS 0.6B, ko): 장면별 wav → 무음 정리·-14 LUFS
+2. 나레이션(edge-tts `ko-KR-InJoonNeural`, `config.json` 의 `voice_backend`; Voicebox 는 선택으로 보존): 장면별 wav → 무음 정리·-14 LUFS
 3. 영상(게이트웨이 Veo): 장면별 8초 9:16 클립, 요청 번호를 `_jobs.json`에 기록해 재실행 시 이어받기
 4. 조립(ffmpeg): 장면 클립을 나레이션 길이에 맞춰 자르기 → 자막(Whisper 타이밍) → 인트로 + 본문 + 아웃트로 → 1080x1920 30fps, -14 LUFS
 5. 업로드(youtube_upload.py 재사용): 합성 콘텐츠 표시, 설명란에 출처·AI 아바타 고지
@@ -30,7 +30,7 @@
 ## 비용 (편당)
 - Veo: 3클립 × 400 = 1,200 크레딧 (월 12,000 → 최대 약 9편, 대본 몫 제외)
 - HeyGen: 인트로·아웃트로 1회만 (API 잔여 781)
-- Voicebox: 무료(로컬 CPU, 느림)
+- 음성: edge-tts 무료(Voicebox 는 로컬 CPU 부하가 커 기본에서 뺌)
 
 ## 재사용 코드 (AutoSNS/youtube-shorts-auto)
 - `heygen_anchor.py` — upload_audio(), generate(audio_asset_id=…), await_video()  ※ HeyGen v2 API는 2026-10-31 종료 예정 → 인트로·아웃트로는 그 전에 생성하거나 v3로 이전
