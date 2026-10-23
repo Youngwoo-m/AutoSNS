@@ -252,7 +252,7 @@ def _build_html(scenes, footer, logo, font_dir, source_images, header, bg_images
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
     {_font_face(font_dir)}
     * {{ margin:0; padding:0; box-sizing:border-box; }}
-    body {{ background:transparent; font-family:'KoPub','Segoe UI Emoji','Apple Color Emoji',sans-serif;
+    body {{ background:transparent; font-family:'Body','KoPub','Segoe UI Emoji','Apple Color Emoji',sans-serif;
             word-break:keep-all; text-wrap:pretty; -webkit-font-smoothing:antialiased;
             text-align:center; }}
     .frame {{ width:{W}px; height:{H}px; position:relative; overflow:hidden; background:#fff; }}

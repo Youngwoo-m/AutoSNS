@@ -20,7 +20,7 @@ import urllib.request
 from common import BASE_DIR, POSTS_DIR, load_config, log
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import DOTUM_BOLD, default_font_dir, require_fonts  # noqa: E402
+from shared.fonts import BODY_BOLD, default_font_dir, require_fonts  # noqa: E402
 
 API = "https://api.heygen.com"
 W, H = 1080, 1920   # 9:16 세로(인스타 릴스·쇼츠 권장 해상도)
@@ -211,10 +211,10 @@ def add_title(video_in, title, out):
 
 def _font():
     import shutil
-    f = os.path.join(POSTS_DIR, "_kopub_bold.otf")
+    f = os.path.join(POSTS_DIR, "_pretendard_bold.otf")
     if not os.path.exists(f):
-        d = require_fonts(default_font_dir(BASE_DIR), (DOTUM_BOLD,))
-        shutil.copy(os.path.join(d, DOTUM_BOLD), f)
+        d = require_fonts(default_font_dir(BASE_DIR), (BODY_BOLD,))
+        shutil.copy(os.path.join(d, BODY_BOLD), f)
     return f
 
 

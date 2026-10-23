@@ -1,10 +1,10 @@
 # coding: utf-8
-"""이미 올린 geoai 숏츠에 질문형 썸네일(1080x1920)을 만든다. 글자는 KoPubWorld 돋움 Bold.
+"""이미 올린 geoai 숏츠에 질문형 썸네일(1080x1920)을 만든다. 글자는 Pretendard Bold.
 python make_geoai_hook_thumbs.py [영상ID ...]  — 생략하면 HOOKS 전체."""
 import os,sys
 from PIL import Image,ImageDraw,ImageFont
 BASE=os.path.dirname(os.path.abspath(__file__))
-FONT=os.path.join(os.path.dirname(os.path.dirname(BASE)),'assets','FONTS','KoPubWorld Dotum_Pro Bold.otf')
+FONT=os.path.join(os.path.dirname(os.path.dirname(BASE)),'assets','FONTS','Pretendard-Bold.otf')
 OUT=os.path.join(BASE,'assets','geoai_hook_thumbs')
 def f(n): return ImageFont.truetype(FONT,n)
 def wrap(d,t,font,w):

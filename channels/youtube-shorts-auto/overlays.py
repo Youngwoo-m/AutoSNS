@@ -7,7 +7,7 @@
     "cta_text": "구독과 좋아요는 큰 힘이 됩니다!",
     "cta_sub": "세명대학교 재난안전학과 · 채널 구독하고 안전정보 받기"
   }
-주의: KoPub 폰트에 이모지 글리프가 없어 이모지는 쓰지 않는다(두부문자 방지).
+주의: Pretendard 폰트에 이모지 글리프가 없어 이모지는 쓰지 않는다(두부문자 방지).
 """
 import os
 import sys
@@ -18,7 +18,7 @@ import imageio_ffmpeg
 from common import BASE_DIR, POSTS_DIR, load_config, log
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import DOTUM_BOLD, default_font_dir, require_fonts  # noqa: E402
+from shared.fonts import BODY_BOLD, default_font_dir, require_fonts  # noqa: E402
 
 DEFAULTS = {
     "hook": True,
@@ -35,10 +35,10 @@ DEFAULTS = {
 
 def _font():
     import shutil
-    f = os.path.join(POSTS_DIR, "_kopub_bold.otf")
+    f = os.path.join(POSTS_DIR, "_pretendard_bold.otf")
     if not os.path.exists(f):
-        d = require_fonts(default_font_dir(BASE_DIR), (DOTUM_BOLD,))
-        shutil.copy(os.path.join(d, DOTUM_BOLD), f)
+        d = require_fonts(default_font_dir(BASE_DIR), (BODY_BOLD,))
+        shutil.copy(os.path.join(d, BODY_BOLD), f)
     return f
 
 
