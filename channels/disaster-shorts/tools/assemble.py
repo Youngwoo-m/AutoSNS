@@ -11,8 +11,8 @@ CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
 AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS)
 FONT_DIR = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS"
-BOLD = os.path.join(FONT_DIR, "KoPubWorld Dotum_Pro Bold.otf")
-MED = os.path.join(FONT_DIR, "KoPubWorld Dotum_Pro Medium.otf")
+BOLD = os.path.join(FONT_DIR, "Pretendard-Bold.otf")
+MED = os.path.join(FONT_DIR, "Pretendard-Bold.otf")
 COMMON = os.path.join(CFG["root"], "common")
 W, H, FPS = 1080, 1920, 30
 SERIES = "재난 유형별 피해 양상과 대응 방안"
@@ -219,7 +219,7 @@ def outro(ep_dir, next_text):
 
 
 def card_png(sc, s, out):
-    """핵심 정리 카드(무료) — 남색 바탕에 KoPub Bold 로 제목·수칙 3줄·출처."""
+    """핵심 정리 카드(무료) — 남색 바탕에 Pretendard Bold 로 제목·수칙 3줄·출처."""
     img = Image.new("RGBA", (W, H), (12, 26, 54, 255)); d = ImageDraw.Draw(img)
     for y in range(H):                                          # 위아래로 살짝 밝아지는 바탕
         d.line([(0, y), (W, y)], fill=(12 + int(10 * y / H), 26 + int(18 * y / H), 54 + int(30 * y / H), 255))
