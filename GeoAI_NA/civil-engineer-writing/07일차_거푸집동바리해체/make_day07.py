@@ -1,0 +1,288 @@
+"""7일차 콘크리트 거푸집 및 동바리 해체 시기 — 개념도·따라쓰기 PDF·티스토리/Blogger 본문을 만든다."""
+from pathlib import Path
+from io import BytesIO
+from copy import deepcopy
+import json
+from PIL import Image, ImageDraw, ImageFont
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from pypdf import PdfReader, PdfWriter
+
+OUT = Path(__file__).parent
+TEMPLATE = Path('/Volumes/USB256/기술사/2026기술사 답안지-1교시(안내용)_Qnet원본.pdf')
+TITLE = '[토목시공기술사] 콘크리트 거푸집 및 동바리 해체 시기 | 하루 한 문제 7일차'
+PDF_NAME = '07일차_거푸집동바리해체_답안예시_따라쓰기.pdf'
+FIG_NAME = '거푸집해체_기준과순서_개념도.jpg'
+F1_NAME, F2_NAME, GIF_NAME = '수식1_슬래브밑면_해체강도.png', '수식2_계산예.png', '도식_강도발현과_해체시점.gif'
+CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day07/'
+PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+
+# ── 계산 예(가상 예시) ───────────────────────────────────────────────
+FCK = 27.0                                   # MPa, 설계기준압축강도
+REQ = max(2 / 3 * FCK, 14.0)                 # 단층 슬래브·보 밑면
+FCK2 = 18.0
+REQ2 = max(2 / 3 * FCK2, 14.0)
+TESTS = [(1, 3.2), (3, 9.5), (5, 14.4), (7, 18.6)]   # 재령(일), 현장양생 공시체 강도(MPa) — 가상
+side_ok = next(d for d, s in TESTS if s >= 5.0)
+slab_ok = next(d for d, s in TESTS if s >= REQ)
+CALC = {'req_fck27_MPa': round(REQ, 1), 'req_fck18_MPa': round(REQ2, 1), 'two_thirds_fck18': round(2 / 3 * FCK2, 1),
+        'side_ok_day': side_ok, 'slab_ok_day': slab_ok, 'multi_req_MPa': FCK, 'no_test_side_OPC_15C_days': 6}
+
+# ── 개념도 (부재별 기준과 해체 순서) ───────────────────────────────────
+def figure():
+    im = Image.new('RGB', (1600, 1000), 'white'); dr = ImageDraw.Draw(im)
+    f = lambda z: ImageFont.truetype(PRET, z)
+    INK, TEAL, RED, GRAYC, SOFT = '#263746', '#176977', '#B6462F', '#7A8790', '#EAF2F3'
+    dr.text((60, 40), '거푸집널 해체 기준(KCS 14 20 12 표 3.3-1)과 일반적인 해체 순서', font=f(40), fill=INK)
+    # 왼쪽: 해체 순서
+    steps = [('① 기둥·벽', '수직부재 — 해체로 생기는 응력이 작다', '5 MPa 이상'),
+             ('② 보의 측면', '연직하중을 받지 않는 면', '5 MPa 이상'),
+             ('③ 보의 밑면', '자중·상부하중으로 휨응력', '단층 2/3 fck·14 MPa 이상\n다층 fck 이상'),
+             ('④ 슬래브', '동바리 해체·재설치 계획과 함께', '단층 2/3 fck·14 MPa 이상\n다층 fck 이상')]
+    x, y, w, h = 70, 140, 900, 150
+    for i, (a, b, c) in enumerate(steps):
+        yy = y + i * (h + 40)
+        dr.rounded_rectangle([x, yy, x + w, yy + h], 18, fill=SOFT, outline=TEAL, width=4)
+        dr.text((x + 30, yy + 22), a, font=f(40), fill=TEAL)
+        dr.text((x + 30, yy + 88), b, font=f(28), fill=INK)
+        dr.multiline_text((x + 540, yy + 30), c, font=f(28), fill=RED if i >= 2 else INK, spacing=14)
+        if i < 3:
+            cx = x + 120
+            dr.polygon([(cx - 18, yy + h + 6), (cx + 18, yy + h + 6), (cx, yy + h + 34)], fill=TEAL)
+    # 오른쪽: 시험 안 할 때(측면) 재령표
+    rx = 1030
+    dr.text((rx, 140), '시험하지 않을 때(측면 거푸집널)', font=f(32), fill=INK)
+    dr.text((rx, 186), '존치 중 평균기온 10 ℃ 이상일 때', font=f(26), fill=GRAYC)
+    rows = [('평균기온', '조강', '보통 등', '혼합 2종'), ('20 ℃ 이상', '2일', '4일', '5일'), ('10~20 ℃', '3일', '6일', '8일')]
+    cw = [170, 100, 120, 130]
+    for r, row in enumerate(rows):
+        cx = rx
+        for c, s in enumerate(row):
+            dr.rectangle([cx, 240 + r * 70, cx + cw[c], 310 + r * 70], outline=INK, width=2, fill=SOFT if r == 0 else 'white')
+            dr.text((cx + 12, 258 + r * 70), s, font=f(26), fill=INK)
+            cx += cw[c]
+    dr.text((rx, 470), '보통 등 = 보통포틀랜드, 고로슬래그·', font=f(24), fill=GRAYC)
+    dr.text((rx, 504), '포틀랜드포졸란·플라이애시 시멘트 1종', font=f(24), fill=GRAYC)
+    dr.text((rx, 538), '20 ℃ 미만 10 ℃ 이상을 10~20 ℃로 줄여 씀', font=f(24), fill=GRAYC)
+    dr.text((rx, 620), '해체 전 공통 확인', font=f(32), fill=INK)
+    for i, s in enumerate(['현장양생 공시체 압축강도', '책임기술자·감리 승인', '다층: 최소 3개 층 동바리 존치', '탈형 후 직사광·강풍·건조 보호']):
+        dr.text((rx, 672 + i * 46), '· ' + s, font=f(27), fill=INK)
+    dr.text((60, 930), '직접 작성한 개념도 / 기준값은 국토교통부 「거푸집 및 동바리 해체 가이드라인」 부록에 실린 KCS 14 20 12 조문 기준', font=f(24), fill=GRAYC)
+    im.save(OUT / FIG_NAME, quality=92)
+
+# ── 따라쓰기 PDF ─────────────────────────────────────────────────────
+pdfmetrics.registerFont(TTFont('KR', '/System/Library/Fonts/Supplemental/AppleGothic.ttf'))
+tp = PdfReader(TEMPLATE).pages[4]
+W, H = float(tp.mediabox.width), float(tp.mediabox.height)
+GRAY = 184 / 255
+
+def text(c, x, y, s, size=12.5, gray=True):
+    c.setFillColorRGB(*((GRAY,) * 3 if gray else (.12,) * 3)); c.setFont('KR', size); c.drawString(x, y, s)
+
+def line(c, row, s, size=12.5):
+    assert pdfmetrics.stringWidth(s, 'KR', size) < 405, s
+    text(c, 202, 764 - row * 32.35, s, size)
+
+def rule_table(c, xs, ys, cells, sizes=(11, 10.5)):
+    c.setStrokeColorRGB(GRAY, GRAY, GRAY); c.setLineWidth(.9)
+    for x in xs: c.line(x, ys[-1], x, ys[0])
+    for y in ys: c.line(xs[0], y, xs[-1], y)
+    for i, row in enumerate(cells):
+        for j, s in enumerate(row):
+            z = sizes[0] if j == 0 else sizes[1]
+            assert pdfmetrics.stringWidth(s, 'KR', z) < xs[j + 1] - xs[j] - 8, s
+            text(c, xs[j] + 5, ys[i] - 21, s, z)
+
+def make_pdf():
+    buf = BytesIO(); c = canvas.Canvas(buf, pagesize=(W, H))
+    p1 = {
+        0: ('콘크리트의 거푸집 및 동바리 해체 시기', 13),
+        1: ('1. 개요', 14),
+        2: ('거푸집·동바리는 콘크리트가 자중과 시공 중 하중을', 12.5),
+        3: ('지지할 강도를 가질 때까지 해체할 수 없다. 시기·', 12.5),
+        4: ('순서는 시멘트·배합·부재·하중·온도를 고려해 정하고', 12.5),
+        5: ('책임기술자 승인을 받는다(KCS 14 20 12 3.3.1).', 12.5),
+        6: ('2. 압축강도를 시험할 경우(표 3.3-1)', 14),
+        12: ('※ 강도는 현장양생 공시체(가장 불리한 조건)로 확인', 11.5),
+        13: ('3. 시험하지 않을 경우(측면, 평균기온 10℃ 이상)', 13),
+        19: ('※ 10~20℃ = 20℃ 미만 10℃ 이상, 재령은 타설 완료 기준', 11),
+        20: ('', 12),
+    }
+    for r, (s, z) in p1.items():
+        if s: line(c, r, s, z)
+    text(c, 132, 731, '5', 14)
+    ys = [764 - 6.45 * 32.35 - i * 30 for i in range(5)]
+    rule_table(c, [202, 300, 605], ys, [
+        ('부재', '콘크리트 압축강도'),
+        ('측면', '기초·보·기둥·벽: 5MPa 이상(내구성 중요 10)'),
+        ('밑면 단층', '슬래브·보 밑면, 아치 내면: 2/3fck, 14MPa 이상'),
+        ('밑면 다층', 'fck 이상(필러 동바리는 구조계산, 14MPa 이상)'),
+    ])
+    ys2 = [764 - 13.45 * 32.35 - i * 30 for i in range(4)]
+    rule_table(c, [202, 300, 370, 470, 605], ys2, [
+        ('평균기온', '조강', '보통·혼합1종', '혼합 2종'),
+        ('20℃ 이상', '2일', '4일', '5일'),
+        ('10~20℃', '3일', '6일', '8일'),
+    ], sizes=(11, 11))
+    c.showPage()
+    p2 = {
+        0: ('4. 동바리 해체와 재하', 14),
+        1: ('① 보·슬래브 밑 거푸집널은 원칙적으로 동바리 해체 후', 12),
+        2: ('   (안전한 동바리 유지 시 10℃ 이상 4일 양생 + 승인)', 11.5),
+        3: ('② 해체 후 하중이 설계하중 초과: 구조계산 확인·승인', 12),
+        4: ('③ 다층 연속 시공: 타설층 포함 최소 3개 층 동바리', 12),
+        5: ('④ 탈형 후 직사광선·강풍 차단, 급격한 건조 방지', 12),
+        6: ('5. 해체 순서와 유의사항', 14),
+        7: ('기둥·벽 → 보 측면 → 보 밑면 → 슬래브(설치 역순)', 12.5),
+        8: ('· 하중을 덜 받는 수직부재부터, 수평부재는 나중에', 12),
+        9: ('· 감리 승인 없이 임의 해체 금지, 출입 통제', 12),
+        10: ('· 콘크리트 손상 없게, 핀 빠지는 반대편에서 작업', 12),
+        11: ('6. 계산 예(가상 예시, fck = 27MPa, 보통 시멘트)', 13),
+        12: ('단층 슬래브 밑면: max(2/3×27, 14) = 18.0 MPa', 12.5),
+        13: ('현장양생 공시체 3일 9.5, 5일 14.4, 7일 18.6 MPa', 12.5),
+        14: ('→ 측면 3일(≥5), 슬래브 밑면 7일(≥18.0) 해체 가능', 12.5),
+        15: ('fck=18이면 2/3×18 = 12.0, 14 미만 → 14 MPa가 기준', 12),
+        16: ('시험 없이 측면(15℃, 보통): 6일 경과 후 해체', 12.5),
+        17: ('7. 결론', 14),
+        18: ('해체 시기는 날짜가 아니라 확인된 강도와 승인으로', 12.5),
+        19: ('정한다. 다층은 동바리 존치·재설치 계획을 함께 쓴다.', 12),
+        20: ('학습용 답안 예시 / 공식 정답·채점기준 아님', 11),
+    }
+    for r, (s, z) in p2.items(): line(c, r, s, z)
+    text(c, 132, 731, '5', 14)
+    c.save(); buf.seek(0)
+    ov = PdfReader(buf); w = PdfWriter()
+    for i in range(2):
+        p = deepcopy(PdfReader(TEMPLATE).pages[4]); p.merge_page(ov.pages[i])
+        if i:
+            b = BytesIO(); cc = canvas.Canvas(b, pagesize=(W, H)); cc.setFillColorRGB(1, 1, 1)
+            cc.rect(574, 791, 45, 45, stroke=0, fill=1); text(cc, 587, 803, f'{i+1}쪽', 13, False)
+            cc.save(); b.seek(0); p.merge_page(PdfReader(b).pages[0])
+        w.add_page(p)
+    w.add_metadata({'/Title': TITLE + ' - 따라쓰기', '/Subject': '기출 원문(2024 제132회 1교시 5번) 학습용 답안 예시. 공식 채점기준 아님. 작성 글씨 RGB 184/184/184.'})
+    with (OUT / PDF_NAME).open('wb') as f: w.write(f)
+
+# ── 본문 ─────────────────────────────────────────────────────────────
+Q132 = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212868&brdId=Q006&gSite=Q'
+Q135 = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226372&brdId=Q006&gSite=Q'
+Q140 = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274160&brdId=Q006&gSite=Q'
+Q137 = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242759&brdId=Q006&gSite=Q'
+GUIDE = 'https://files-scs.pstatic.net/2024/12/09/PM1mvDhXQy/%EA%B1%B0%ED%91%B8%EC%A7%91%20%EB%B0%8F%20%EB%8F%99%EB%B0%94%EB%A6%AC%20%ED%95%B4%EC%B2%B4%20%EA%B0%80%EC%9D%B4%EB%93%9C%EB%9D%BC%EC%9D%B8.pdf'
+SOURCES = [
+    ('국토교통부·국가건설기준센터 「거푸집 및 동바리 해체 가이드라인」(작성 한국콘크리트학회, 판권면 2022년 8월, 표지 2023.1) — 2.1 존치기간 산출, 3.2 해체 작업순서, 부록 표 부록-1(KCS 14 20 12 3.3 조문 수록). 링크는 공개 게시된 열람본이며 국토교통부 원 게시 주소는 확인하지 못했다', GUIDE),
+    ('국가건설기준센터 — KCS 14 20 12 거푸집 및 동바리, KCS 21 50 05 거푸집 및 동바리공사 일반사항 현행판 확인', 'https://www.kcsc.re.kr'),
+]
+
+def body(img_html, f1_html, f2_html, gif_html, pdf_html):
+    src = ''.join(f'<li><a href="{u}">{t}</a></li>' for t, u in SOURCES)
+    return f'''<p>거푸집 해체 시기 문제는 날짜보다 강도 기준이 중심인 문제다. KCS 14 20 12는 해체 시기를 콘크리트 압축강도로 정하고, 강도시험 없이 재령만으로 해체하는 기준은 측면 거푸집에만 쓰도록 한다. 답안의 중심은 부재별 강도 기준표 하나와, 그 기준을 현장양생 공시체로 확인하고 책임기술자 승인을 받는 절차다.</p>
+<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
+<h2 data-ke-size="size26">오늘의 문제</h2>
+<p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 콘크리트공(거푸집·동바리) / 유형: 단답형 / 관련 기출: 2024년 제132회 1교시 5번</strong></p>
+<blockquote>콘크리트의 거푸집 및 동바리 해체 시기(KCS 14 20 12)</blockquote>
+<p>위 문제는 2024년 제132회 1교시 5번 기출 원문이다. 답안예시는 학습용으로 작성한 것이며 공식 정답이나 채점기준이 아니다. 권장 연습은 목차 1분, 작성 8분, 답안지 1~2쪽이다. 학습 분류와 시간·분량은 연습을 위한 안내이며 공식 시험 과목명이 아니다.</p>
+<h3 data-ke-size="size23">출제 흐름과 이번 주제</h3>
+<p>2022~2026년 제126~140회 465문항 가운데 거푸집·동바리의 해체를 직접 묻는 문항은 다음 3건이다.</p>
+<ul><li>2024년 제132회 1교시 5번(단답형): <a href="{Q132}">콘크리트의 거푸집 및 동바리 해체 시기(KCS 14 20 12)</a></li>
+<li>2025년 제135회 2교시 6번(논술형): <a href="{Q135}">콘크리트 타설 후 거푸집 및 동바리 해체 시 주의사항에 대하여 설명하시오.</a></li>
+<li>2026년 제140회 1교시 12번(단답형): <a href="{Q140}">콘크리트 거푸집 해체 순서 및 해체 시 유의사항</a></li></ul>
+<p>세 문제는 해체 시기·순서·주의사항으로 묻는 각도가 다르지만 같은 기준(KCS 14 20 12 3.3)을 바탕으로 답한다. 2025년 제137회 2교시 3번 <a href="{Q137}">터널 콘크리트 라이닝 거푸집의 탈형시기 결정방법</a>도 해체 시기를 묻지만 터널 라이닝이라는 다른 조건이라 이번 글에서는 다루지 않는다. '콘크리트·거푸집·양생(혼화·철근·프리캐스트 포함)' 키워드 묶음(중복 허용 82문항)은 분야를 가늠하는 지표일 뿐 이번 유형의 출제 횟수나 공식 출제 비중이 아니다. 이번 답안은 단답형 원문에 맞춰 해체 시기를 중심에 두고, 제140회의 순서·유의사항을 짧게 덧붙인다.</p>
+<h2 data-ke-size="size26">답안 목차</h2>
+<p>1. 개요(해체 원칙) → 2. 압축강도를 시험할 경우(표 3.3-1) → 3. 시험하지 않을 경우(표 3.3-2) → 4. 동바리 해체와 재하 → 5. 해체 순서와 유의사항 → 6. 계산 예 → 7. 결론</p>
+<h2 data-ke-size="size26">답안예시</h2>
+<h3 data-ke-size="size23">1. 개요</h3>
+<p>KCS 14 20 12 3.3.1은 거푸집과 동바리를 콘크리트가 자중과 시공 중 하중을 지지할 강도를 가질 때까지 해체할 수 없다고 정한다. 해체 시기와 순서는 시멘트의 성질, 콘크리트 배합, 구조물의 종류와 중요도, 부재의 종류와 크기, 부재가 받는 하중, 콘크리트 내부와 표면의 온도 차이를 고려해 정하고 책임기술자의 승인을 받는다. 공사시방서에 존치기간이나 해체 가능 강도가 따로 정해져 있으면 그 값을 먼저 따른다.</p>
+<h3 data-ke-size="size23">2. 압축강도를 시험할 경우 — 표 3.3-1</h3>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft">
+<tr><th>부재</th><th>콘크리트 압축강도</th></tr>
+<tr><td>기초, 보, 기둥, 벽 등의 측면</td><td>5 MPa 이상 (내구성이 중요한 구조물은 10 MPa 이상)</td></tr>
+<tr><td>슬래브 및 보의 밑면, 아치 내면 — 단층구조</td><td>설계기준압축강도(f<sub>ck</sub>)의 2/3배 이상, 또한 최소 14 MPa 이상</td></tr>
+<tr><td>슬래브 및 보의 밑면, 아치 내면 — 다층구조</td><td>설계기준압축강도 이상 (필러 동바리 구조는 구조계산으로 기간 단축 가능, 이 경우에도 최소 14 MPa 이상)</td></tr>
+</table>
+<p>측면 거푸집은 콘크리트 형상만 유지하므로 낮은 강도에서 뗄 수 있고, 밑면 거푸집은 자중과 상부 하중을 받치고 있어 훨씬 높은 강도를 요구한다. 단층구조의 밑면 기준을 식으로 쓰면 다음과 같다.</p>
+{f1_html}
+<p>가이드라인 해설은 이 강도를 현장의 가장 불리한 조건과 같은 상태로 양생한 현장양생 공시체의 압축강도로 확인하고, 공시체 양생방법은 한국콘크리트학회 규격 KCI-CT118:2022를 따르도록 한다. '내구성이 중요한 구조물'은 동결융해, 탄산화, 황산염·염화물 열화를 고려해야 하는 구조물로, KCS 14 20 10의 노출범주·등급을 보고 발주처와 협의해 정한다고 같은 해설에 적혀 있다.</p>
+<h3 data-ke-size="size23">3. 시험하지 않을 경우 — 표 3.3-2 (기초·보·기둥·벽의 측면)</h3>
+<p>거푸집널 존치기간 중 평균기온이 10 ℃ 이상이면 아래 재령이 지난 뒤 압축강도시험 없이 측면 거푸집을 해체할 수 있다. 재령은 콘크리트 타설 완료 시점부터 센다.</p>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft">
+<tr><th>평균기온</th><th>조강포틀랜드 시멘트</th><th>보통포틀랜드, 고로슬래그(1종), 포틀랜드포졸란(1종), 플라이애시(1종) 시멘트</th><th>고로슬래그(2종), 포틀랜드포졸란(2종), 플라이애시(2종) 시멘트</th></tr>
+<tr><td>20 ℃ 이상</td><td>2일</td><td>4일</td><td>5일</td></tr>
+<tr><td>20 ℃ 미만 10 ℃ 이상</td><td>3일</td><td>6일</td><td>8일</td></tr>
+</table>
+<p>이 표는 측면에만 적용한다. 슬래브와 보의 밑면은 날짜만으로 해체할 수 없고 표 3.3-1의 강도를 시험으로 확인해야 한다. 평균기온이 10 ℃ 미만이면 표를 쓸 수 없으므로 강도시험으로 정한다. 이 두 조건(측면에만 적용, 평균기온 10 ℃ 이상)은 표를 옮길 때 빠뜨리기 쉬운 조건이다.</p>
+{img_html}
+<h3 data-ke-size="size23">4. 동바리 해체와 해체 직후의 재하</h3>
+<ul><li>보, 슬래브, 아치 하부의 거푸집널은 원칙적으로 동바리를 해체한 뒤에 해체한다. 구조계산으로 안전성이 확보된 양의 동바리를 그대로 유지하도록 설계·시공했다면 10 ℃ 이상에서 4일 이상 양생한 뒤 사전에 책임기술자 승인을 받아 해체할 수 있다.</li>
+<li>동바리 해체 뒤 그 부재에 가해지는 전체 하중이 설계하중을 넘으면, 존치기간과 관계없이 유해한 균열 없이 안전하다는 것을 구조계산으로 확인하고 승인을 받아 해체한다.</li>
+<li>해체 당시 재령의 강도를 넘는 하중이 실릴 경우 사전 구조검토로 동바리 존치·재설치를 정하고, 연속 시공하는 다층 구조는 타설층을 포함해 최소 3개 층에 동바리를 존치하거나 재설치한다(3.3.2).</li>
+<li>탈형 뒤에는 시트 등으로 직사광선과 강풍을 막고 급격한 수분 증발을 방지한다.</li></ul>
+<h3 data-ke-size="size23">5. 해체 순서와 유의사항</h3>
+<p>가이드라인은 해체 작업순서를 일반적으로 기둥, 벽, 보의 측면, 보의 밑면, 슬래브 순으로 작성하되 현장 특수성에 따라 바꿀 수 있다고 하고, 특별한 경우가 아니면 설치의 역순으로 해체하는 것을 원칙으로 둔다. 부록 해설은 그 이유를 수직부재는 해체로 생기는 응력이 작지만 슬래브·보 같은 수평부재는 자중과 상부 하중으로 큰 휨응력이 생길 수 있기 때문이라고 설명한다. 작업 측면에서는 감리·감독의 승인 없이 시공자가 임의로 해체하지 않을 것, 양생 중인 콘크리트를 손상시키지 않을 것, 해머로 핀과 쐐기를 뺄 때 핀이 빠져나오는 반대편에서 작업할 것, 해체 구역 출입을 제한할 것을 든다.</p>
+<h3 data-ke-size="size23">6. 계산 예 (가상 예시)</h3>
+<p>아래 조건과 공시체 강도는 설명을 위해 만든 가상 예시이며 실측값이나 공식 기준값이 아니다. 단층구조 슬래브, f<sub>ck</sub> = 27 MPa, 보통포틀랜드 시멘트, 존치기간 평균기온 15 ℃로 가정한다.</p>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft">
+<tr><th>항목</th><th>계산·판정</th><th>결과</th></tr>
+<tr><td>밑면 해체 강도</td><td>max(2/3 × 27, 14) = max(18.0, 14)</td><td>18.0 MPa</td></tr>
+<tr><td>현장양생 공시체(가상)</td><td>1일 3.2, 3일 9.5, 5일 14.4, 7일 18.6 MPa</td><td>—</td></tr>
+<tr><td>측면</td><td>3일 9.5 MPa ≥ 5 MPa</td><td>3일에 해체 가능</td></tr>
+<tr><td>슬래브 밑면</td><td>5일 14.4 &lt; 18.0, 7일 18.6 ≥ 18.0</td><td>7일에 해체 가능</td></tr>
+<tr><td>측면, 시험 안 함</td><td>표 3.3-2, 20 ℃ 미만 10 ℃ 이상, 보통 시멘트</td><td>6일 경과 후</td></tr>
+<tr><td>f<sub>ck</sub> = 18 MPa라면</td><td>2/3 × 18 = 12.0 &lt; 14</td><td>14 MPa가 기준</td></tr>
+<tr><td>다층구조라면</td><td>f<sub>ck</sub> 이상</td><td>27 MPa</td></tr>
+</table>
+{f2_html}
+<p>5일 차 공시체 14.4 MPa는 최소 강도 14 MPa는 넘었지만 2/3 f<sub>ck</sub>인 18.0 MPa에 못 미쳐 해체할 수 없다. 두 조건 가운데 큰 값을 기준으로 삼는다는 점이 계산 예의 요점이다. 아래 도식은 같은 가상 강도 곡선이 각 기준선을 넘는 시점을 보여 준다.</p>
+{gif_html}
+<h3 data-ke-size="size23">7. 결론</h3>
+<p>거푸집 해체 시기는 달력이 아니라 확인된 강도와 승인으로 정한다. 측면은 5 MPa, 밑면은 단층 2/3 f<sub>ck</sub>·14 MPa 이상, 다층 f<sub>ck</sub> 이상이라는 표를 먼저 쓰고, 강도시험을 생략하고 재령표(표 3.3-2)로 해체하는 방식은 측면에만 쓰며, 다층 건물은 최소 3개 층 동바리 존치 계획까지 함께 적는 것이 답안의 골격이다.</p>
+<h2 data-ke-size="size26">핵심 암기어</h2>
+<p>측면 5 MPa(내구성 10) · 단층 밑면 2/3 f<sub>ck</sub>·14 MPa · 다층 f<sub>ck</sub> · 측면 재령 2/4/5일·3/6/8일 · 최소 3개 층 동바리</p>
+<h2 data-ke-size="size26">답안 자가점검</h2>
+<ul><li>해체 원칙(자중·시공하중 지지 강도, 책임기술자 승인)을 먼저 썼는가?</li>
+<li>표 3.3-1의 측면·단층 밑면·다층 밑면 기준을 구분했는가?</li>
+<li>재령 기준(표 3.3-2)이 측면, 평균기온 10 ℃ 이상에만 쓰인다고 밝혔는가?</li>
+<li>현장양생 공시체로 강도를 확인한다고 썼는가?</li>
+<li>동바리 해체 후 재하, 다층 3개 층 존치를 언급했는가?</li>
+<li>2/3 f<sub>ck</sub>와 14 MPa 중 큰 값을 쓰는 계산을 보였는가?</li></ul>
+<h2 data-ke-size="size26">기호·단위 정리</h2>
+<table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft">
+<tr><th>기호</th><th>뜻</th><th>단위</th><th>출처</th></tr>
+<tr><td>f<sub>ck</sub></td><td>설계기준압축강도</td><td>MPa</td><td>KCS 14 20 12 표 3.3-1(가이드라인 부록 수록)</td></tr>
+<tr><td>f<sub>c,field</sub></td><td>현장양생 공시체 압축강도(해체 판정용)</td><td>MPa</td><td>가이드라인 2.1 해설 / 기호는 이 글에서 붙임</td></tr>
+<tr><td>2/3 f<sub>ck</sub>, 14</td><td>단층구조 밑면 해체 강도 하한</td><td>MPa</td><td>KCS 14 20 12 표 3.3-1</td></tr>
+</table>
+<h2 data-ke-size="size26">따라쓰기 PDF</h2>
+{pdf_html}
+<p>Q-net 답안지 형식의 2쪽 따라쓰기 PDF이다. 답안과 기준표가 옅은 회색 글씨로 들어 있어 출력해 그대로 따라 쓸 수 있다.</p>
+<h2 data-ke-size="size26">공식 참고자료</h2>
+<ul>{src}</ul>
+<p>관련 기출 링크는 Q-net의 회차별 문제지 게시글이다. 자료 확인일은 2026년 10월 23일이다. 표 3.3-1·3.3-2와 3.3.1·3.3.2의 기준값은 가이드라인 부록에 실린 KCS 14 20 12 조문을 옮긴 것이다. 가이드라인 작성(2022년 8월) 뒤 KCS 14 20 12가 개정되었는지는 국가건설기준센터에서 확인하지 못했으므로, 실제 적용 전에는 현행판과 공사시방서를 대조한다. 해체 순서와 작업 유의사항은 가이드라인 3.2와 부록 해설을 근거로 했다.</p>
+<p>#토목시공기술사 #거푸집해체 #동바리 #KCS142012 #콘크리트공 #기술사답안 #하루한문제</p>'''
+
+if __name__ == '__main__':
+    figure(); make_pdf()
+    cap_img = '직접 작성한 개념도. 기준값은 가이드라인 부록에 실린 KCS 14 20 12 조문 기준이다.'
+    alt_img = '거푸집널 부재별 해체 강도 기준과 기둥·벽, 보 측면, 보 밑면, 슬래브 순의 해체 순서 개념도'
+    alt_f1 = 'f_c,field ≥ max(2/3 f_ck, 14 MPa) — 단층구조 슬래브·보 밑면'
+    alt_f2 = 'max(2/3×27, 14) = 18.0 MPa, 7일 18.6 ≥ 18.0 이므로 해체 가능'
+    alt_gif = '가상 공시체 시험값으로 측면 5 MPa 기준은 3일 시험에서, 밑면 18.0 MPa 기준은 7일 시험에서 충족이 확인되는 도식'
+    cap_f1 = '수식 1. 단층구조 슬래브·보 밑면 거푸집널 해체 강도(KCS 14 20 12 표 3.3-1)'
+    cap_f2 = '수식 2. 계산 예(가상 예시, f<sub>ck</sub> = 27 MPa)'
+    cap_gif = '도식. 가상 공시체 시험값(점)과 해체 기준선 — 곡선은 점을 이은 것이며 학습용 가정값'
+    def t_fig(name, cap): return f'<p data-ax-attach="{name}"></p><p>{cap}</p>'
+    def b_fig(url, alt, cap): return f'<figure><img src="{url}" alt="{alt}" style="max-width:100%;height:auto"><figcaption>{cap}</figcaption></figure>'
+    t_parts = dict(img_html=t_fig(FIG_NAME, cap_img), f1_html=t_fig(F1_NAME, cap_f1), f2_html=t_fig(F2_NAME, cap_f2),
+                   gif_html=b_fig(CDN + 'strength-gain.gif', alt_gif, cap_gif), pdf_html=f'<p data-ax-attach="{PDF_NAME}"></p>')
+    b_parts = dict(img_html=b_fig(CDN + 'formwork-removal.jpg', alt_img, cap_img), f1_html=b_fig(CDN + 'formula1.png', alt_f1, cap_f1),
+                   f2_html=b_fig(CDN + 'formula2.png', alt_f2, cap_f2), gif_html=b_fig(CDN + 'strength-gain.gif', alt_gif, cap_gif),
+                   pdf_html=f'<p><a href="{CDN}answer-tracing.pdf">{PDF_NAME} 내려받기 (2쪽)</a></p>')
+    (OUT / '티스토리게시본문.html').write_text(body(**t_parts))
+    (OUT / 'Blogger게시본문.html').write_text(body(**b_parts))
+    p_parts = dict(img_html=b_fig(FIG_NAME, alt_img, cap_img), f1_html=b_fig(F1_NAME, alt_f1, cap_f1), f2_html=b_fig(F2_NAME, alt_f2, cap_f2),
+                   gif_html=b_fig(GIF_NAME, alt_gif, cap_gif), pdf_html=f'<p><a href="{PDF_NAME}">{PDF_NAME}</a></p>')
+    prev = f'<!doctype html><html lang="ko"><meta charset="utf-8"><title>{TITLE}</title><style>body{{max-width:860px;margin:40px auto;padding:0 20px;font:17px/1.85 sans-serif}}td,th{{padding:8px}}img{{max-width:100%}}</style><h1>{TITLE}</h1>' + body(**p_parts) + '</html>'
+    (OUT / '블로그미리보기.html').write_text(prev)
+    (OUT / '제목.txt').write_text(TITLE + '\n')
+    print(json.dumps(CALC, ensure_ascii=False))
