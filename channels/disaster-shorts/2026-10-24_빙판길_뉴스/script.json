@@ -1,0 +1,128 @@
+{
+ "series": "재난 유형별 피해 양상과 대응 방안",
+ "date": "2026-10-24",
+ "type": "빙판길",
+ "angle": "겨울철 빙판길 미끄러짐 예방 — 신발·보폭·그늘·난간",
+ "ep_no": 1,
+ "visual_mode": "video",
+ "title": "빙판길 낙상, 이렇게 막습니다 | 재난 대응 빙판길",
+ "hook_text": [
+  "빙판길 낙상,",
+  "이렇게 막습니다"
+ ],
+ "intro": null,
+ "outro": null,
+ "next_episode_text": "다음 편: 산행안전사고 2편",
+ "body_target_seconds": 18,
+ "clip_seconds": 6,
+ "tone": "쉬운 낱말 + 합쇼체",
+ "style": "3d_real",
+ "prompt_order": "scene_first",
+ "style_prefix": {
+  "3d_real": "Miniature diorama, no text, no letters."
+ },
+ "disclaimer": "※ 배경은 AI로 생성한 영상 · 음성은 AI 합성(TTS)입니다",
+ "hashtags": {
+  "youtube": [
+   "빙판길",
+   "낙상예방",
+   "겨울안전",
+   "국민행동요령"
+  ]
+ },
+ "scenes": [
+  {
+   "id": 1,
+   "role": "신발",
+   "media": "diorama",
+   "narration": "겨울 아침 빙판길, 미끄럼 방지 신발부터 신으세요.",
+   "tts_text": "겨울 아침 빙판길, 미끄럼 방지 신발부터 신으세요.",
+   "diorama_prompt": "A handcrafted scale-model diorama, outdoors under an open sky with the horizon visible, a frosty Korean residential sidewalk on a cold winter morning with a glossy icy patch. A single tiny figurine of a person stands upright and perfectly still on the sidewalk, seen from the front at hip height, a warm padded coat, both legs straight, both feet wearing thick winter boots with deep grippy tread soles, planted flat on the ground side by side. Both boot toes point straight toward the camera. The person does not walk, does not lift any foot and does not move at all; the boots never leave the ground and the soles are never shown. Only the camera moves: a very slow gentle push-in toward the standing person. Pale low sunlight comes in at a slant with soft long shadows, cold blue morning tone. Forbidden: boots without a person, boots flipped over, turned outward, upside down, extra or missing feet, extra hands or fingers, table lamp, desk lamp, studio light, indoor lighting.",
+   "labels_3d": [],
+   "motions": [
+    {
+     "kind": "step",
+     "num": "①",
+     "text": "미끄럼 방지 신발",
+     "sub": "굽 낮은 신발",
+     "from_s": 0.5,
+     "to_s": -0.6,
+     "enter": "left",
+     "tone": "safe",
+     "y": 340
+    }
+   ],
+   "video_prompt": {
+    "3d_real": "A handcrafted scale-model diorama, outdoors under an open sky with the horizon visible, a frosty Korean residential sidewalk on a cold winter morning with a glossy icy patch. A single tiny figurine of a person stands upright and perfectly still on the sidewalk, seen from the front at hip height, a warm padded coat, both legs straight, both feet wearing thick winter boots with deep grippy tread soles, planted flat on the ground side by side. Both boot toes point straight toward the camera. The person does not walk, does not lift any foot and does not move at all; the boots never leave the ground and the soles are never shown. Only the camera moves: a very slow gentle push-in toward the standing person. Pale low sunlight comes in at a slant with soft long shadows, cold blue morning tone. Forbidden: boots without a person, boots flipped over, turned outward, upside down, extra or missing feet, extra hands or fingers, table lamp, desk lamp, studio light, indoor lighting."
+   }
+  },
+  {
+   "id": 2,
+   "role": "보폭·손",
+   "media": "diorama",
+   "narration": "주머니에서 손을 빼고, 보폭은 10~20% 줄여 천천히 걸으세요.",
+   "tts_text": "주머니에서 손을 빼고, 보폭은 십에서 이십 퍼센트 줄여 천천히 걸으세요.",
+   "diorama_prompt": "A handcrafted tabletop scale-model diorama, a tiny figurine in a warm coat walking slowly with small careful steps along a sidewalk that a tiny worker figurine has just sprinkled with grit, both hands relaxed out of the pockets, side tracking camera, soft winter daylight.",
+   "labels_3d": [],
+   "motions": [
+    {
+     "kind": "step",
+     "num": "②",
+     "text": "보폭 10~20% 줄이기",
+     "sub": "천천히 걷기",
+     "from_s": 0.4,
+     "to_s": -0.5,
+     "enter": "scale",
+     "tone": "safe",
+     "y": 340
+    },
+    {
+     "kind": "ban",
+     "text": "주머니에 손 넣고 걷기 금지",
+     "from_s": 2.2,
+     "to_s": -0.5,
+     "enter": "fade",
+     "tone": "danger",
+     "y": 470
+    }
+   ],
+   "video_prompt": {
+    "3d_real": "A handcrafted tabletop scale-model diorama, a tiny figurine in a warm coat walking slowly with small careful steps along a sidewalk that a tiny worker figurine has just sprinkled with grit, both hands relaxed out of the pockets, side tracking camera, soft winter daylight."
+   }
+  },
+  {
+   "id": 3,
+   "role": "그늘·난간",
+   "media": "diorama",
+   "narration": "그늘진 곳은 피하고, 계단에서는 난간을 잡으세요.",
+   "tts_text": "그늘진 곳은 피하고, 계단에서는 난간을 잡으세요.",
+   "diorama_prompt": "A handcrafted tabletop scale-model diorama, a shaded corner of a small street where a tiny orange traffic cone marks a glossy icy patch in the shadow, a tiny figurine chooses the sunny dry side, then climbs a short outdoor staircase calmly holding the metal handrail, gentle camera pan, soft winter light.",
+   "labels_3d": [],
+   "motions": [
+    {
+     "kind": "step",
+     "num": "③",
+     "text": "그늘 피하기 · 난간 잡기",
+     "sub": "계단은 천천히",
+     "from_s": 0.4,
+     "to_s": -1.4,
+     "enter": "left",
+     "tone": "safe",
+     "y": 340
+    },
+    {
+     "kind": "source",
+     "text": "출처: 행정안전부·정책브리핑",
+     "from_s": -1.6,
+     "to_s": 0,
+     "enter": "fade",
+     "tone": "info",
+     "y": 1180
+    }
+   ],
+   "video_prompt": {
+    "3d_real": "A handcrafted tabletop scale-model diorama, a shaded corner of a small street where a tiny orange traffic cone marks a glossy icy patch in the shadow, a tiny figurine chooses the sunny dry side, then climbs a short outdoor staircase calmly holding the metal handrail, gentle camera pan, soft winter light."
+   }
+  }
+ ]
+}

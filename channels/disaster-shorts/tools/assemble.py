@@ -452,8 +452,10 @@ def remotion_body(ep_dir, sc, style, out):
             lines, size = caption_layout(line)
             caps.append({"lines": lines, "size": size, "from": int(a0), "to": int(b0)})
         scenes.append({"id": n, "clip": put(prep, f"clip{n}.mp4"), "voice": put(voice, f"voice{n}.wav"), "frames": frames,
-                       "labels": [clean(x) for x in (s.get("labels_3d") or [])], "captions": caps, "gauge": gauge})
-    props = {"tag": f"재난 대응 · {sc['type']}", "credit": CREDIT if sc.get("loop") else None, "disclaimer": "", "scenes": scenes,
+                       "labels": [clean(x) for x in (s.get("labels_3d") or [])], "captions": caps, "gauge": gauge,
+                       "motions": [dict(kind=m["kind"], num=m.get("num"), text=clean(m["text"]), sub=clean(m.get("sub", "")) or None, enter=m.get("enter", "fade"), tone=m.get("tone", "safe"), y=m.get("y", 340),
+                                       **{"from": int(round(m["from_s"] * FPS)), "to": frames + int(round(m["to_s"] * FPS)) if m["to_s"] <= 0 else int(round(m["to_s"] * FPS))}) for m in (s.get("motions") or [])]})
+    props = {"tag": f"재난 대응 · {sc['type']}", "credit": CREDIT if sc.get("loop") else None, "disclaimer": sc.get("disclaimer", ""), "scenes": scenes,
              "hook": ([] if CFG.get("intro_outro", False) else hook_lines(sc)), "hook_frames": int(round(float(CFG.get("hook_seconds", 2.6)) * FPS))}
     pp = os.path.join(work, "remotion_props.json")
     json.dump(props, open(pp, "w", encoding="utf-8"), ensure_ascii=False)

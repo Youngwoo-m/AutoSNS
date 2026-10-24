@@ -10,12 +10,13 @@ loadFont({ family: FONT, url: staticFile("fonts/Pretendard-Bold.otf"), weight: "
 loadFont({ family: "HookPretendard", url: staticFile("fonts/Pretendard-Bold.otf"), weight: "700" });   // 훅 제목은 Pretendard Bold(영상 지침)
 
 export type Caption = { lines: string[]; size: number; from: number; to: number };
-export type Scene = { id: number; clip: string; voice: string; frames: number; labels: string[]; captions: Caption[]; gauge?: string | null };
+export type Motion = { kind: "step" | "ban" | "source"; num?: string; text: string; sub?: string; from: number; to: number; enter: "left" | "scale" | "fade"; tone: "safe" | "danger" | "info"; y: number };
+export type Scene = { id: number; clip: string; voice: string; frames: number; labels: string[]; captions: Caption[]; gauge?: string | null; motions?: Motion[] };
 export type ShortProps = { tag: string; credit: string | null; disclaimer: string; scenes: Scene[]; hook?: string[]; hook_frames?: number };
 
 const font: React.CSSProperties = { fontFamily: `${FONT}, "Apple Color Emoji", sans-serif`, fontWeight: 700, whiteSpace: "pre" };
 
-const Chrome: React.FC<{ tag: string; credit: string | null; labels: string[] }> = ({ tag, credit, labels }) => {
+const Chrome: React.FC<{ tag: string; credit: string | null; labels: string[]; disclaimer?: string }> = ({ tag, credit, labels, disclaimer }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   return (
@@ -38,7 +39,7 @@ const Chrome: React.FC<{ tag: string; credit: string | null; labels: string[] }>
         );
       })}
       <div style={{ position: "absolute", top: 1540, width: "100%", textAlign: "center" }}>
-        <span style={{ ...font, fontSize: 28, color: "rgba(255,255,255,0.75)" }}>※ 배경은 AI로 생성한 재현 영상입니다</span>
+        <span style={{ ...font, fontSize: 28, color: "rgba(255,255,255,0.75)" }}>{disclaimer || "※ 배경은 AI로 생성한 재현 영상입니다"}</span>
       </div>
     </AbsoluteFill>
   );
@@ -92,7 +93,42 @@ const Gauge: React.FC<{ src: string }> = ({ src }) => {
   );
 };
 
-export const Short: React.FC<ShortProps> = ({ tag, credit, scenes, hook, hook_frames }) => {
+// 모션그래픽(2026-10-24 지침): 핵심 행동요령 카드·금지 표시·출처. 0.4초 등장·퇴장, 반투명 어두운 판, 아이콘 + 글자(색만으로 뜻을 전하지 않음).
+const TONE = { safe: "#46d39a", danger: "#ff6b6b", info: "#8fc7ff" } as const;
+const MotionItem: React.FC<{ m: Motion; total: number }> = ({ m, total }) => {
+  const frame = useCurrentFrame();
+  const FADE = 12;
+  const from = m.from, to = Math.min(m.to, total);
+  if (frame < from || frame >= to) return null;
+  const k = interpolate(frame - from, [0, FADE], [0, 1], { extrapolateRight: "clamp", easing: (t) => 1 - Math.pow(1 - t, 3) });
+  const o = Math.min(k, interpolate(frame, [to - FADE, to], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const tx = m.enter === "left" ? (1 - k) * -80 : 0;
+  const sc = m.enter === "scale" ? 0.88 + 0.12 * k : 1;
+  const c = TONE[m.tone];
+  const icon = m.kind === "ban" ? (
+    <svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="22" fill="none" stroke={c} strokeWidth="6" /><line x1="12" y1="42" x2="42" y2="12" stroke={c} strokeWidth="6" strokeLinecap="round" /></svg>
+  ) : null;
+  if (m.kind === "source") {
+    return (
+      <div style={{ position: "absolute", left: 60, top: m.y, opacity: o, background: "rgba(8,18,40,0.78)", borderRadius: 14, padding: "10px 26px", borderLeft: `8px solid ${c}` }}>
+        <span style={{ ...font, fontSize: 34, color: "#e6f1ff" }}>{m.text}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: "absolute", left: 60, top: m.y, opacity: o, transform: `translateX(${tx}px) scale(${sc})`, transformOrigin: "left center", display: "flex", alignItems: "center", gap: 22, background: "rgba(8,18,40,0.82)", borderRadius: 22, padding: "16px 34px 16px 22px", borderLeft: `14px solid ${c}`, maxWidth: 960, boxSizing: "border-box" }}>
+      {m.kind === "step" ? (
+        <div style={{ ...font, width: 76, height: 76, borderRadius: 38, background: c, color: "#0b1a33", fontSize: 50, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>{m.num}</div>
+      ) : icon}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <span style={{ ...font, fontSize: m.kind === "ban" ? 46 : 56, lineHeight: 1.2, color: m.kind === "ban" ? "#ffd0d0" : "#ffffff" }}>{m.text}</span>
+        {m.sub ? <span style={{ ...font, fontSize: 36, lineHeight: 1.3, color: c }}>{m.sub}</span> : null}
+      </div>
+    </div>
+  );
+};
+
+export const Short: React.FC<ShortProps> = ({ tag, credit, scenes, hook, hook_frames, disclaimer }) => {
   const { fps } = useVideoConfig();
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
@@ -103,7 +139,8 @@ export const Short: React.FC<ShortProps> = ({ tag, credit, scenes, hook, hook_fr
               <Video src={staticFile(s.clip)} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </AbsoluteFill>
             {s.gauge ? <Gauge src={s.gauge} /> : null}
-            <Chrome tag={tag} credit={credit} labels={s.labels} />
+            <Chrome tag={tag} credit={credit} labels={s.labels} disclaimer={disclaimer} />
+            {(s.motions ?? []).map((m, i) => <MotionItem key={i} m={m} total={s.frames} />)}
             <Captions captions={s.captions} />
             {idx === 0 && hook && hook.length ? <Sequence durationInFrames={Math.min(hook_frames ?? 78, s.frames)}><Hook lines={hook} frames={Math.min(hook_frames ?? 78, s.frames)} /></Sequence> : null}
             <Sequence durationInFrames={s.frames}>
