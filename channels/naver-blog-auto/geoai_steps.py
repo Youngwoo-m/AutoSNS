@@ -17,26 +17,26 @@ from selenium.webdriver.common.by import By
 
 from common import POSTS_DIR, load_config, log, start_chrome
 
-import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+import sys as _sys  # Pretendard 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import kopub_bold_css  # noqa: E402
+from shared.fonts import display_css  # noqa: E402
 
 W = 1200                    # 폭 고정, 높이는 단계 수에 따라 늘어난다
 CARD_H = 104                # 카드 한 장 높이(대략) — 창 크기 계산에만 쓴다
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + display_css(doubled=True) + """
   body {{ margin:0; background:#fff; }}
   #steps {{
     width:{w}px; box-sizing:border-box; padding:34px 38px 26px;
     background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 70%,#0e5a6b 100%);
-    color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    color:#fff; font-family:'Body','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
   }}
   #head {{ font-size:15px; letter-spacing:2px; opacity:.72; margin-bottom:4px; }}
-  #title {{ font-size:30px; font-weight:800; margin-bottom:22px; line-height:1.3; }}
+  #title {{ font-size:30px; font-weight:700; margin-bottom:22px; line-height:1.3; }}
   .row {{ display:flex; align-items:stretch; gap:14px; margin-bottom:12px; }}
   .no {{
     flex:0 0 52px; display:flex; align-items:center; justify-content:center;
-    font-size:24px; font-weight:800; color:#0b1c3a;
+    font-size:24px; font-weight:700; color:#0b1c3a;
     background:#7fd3e0; border-radius:12px;
   }}
   .card {{

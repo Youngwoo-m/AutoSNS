@@ -18,19 +18,19 @@ from selenium.webdriver.common.by import By
 
 from common import BASE_DIR, log, start_chrome
 
-import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+import sys as _sys  # Pretendard 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import kopub_bold_css  # noqa: E402
+from shared.fonts import display_css  # noqa: E402
 
 OUT_DIR = os.path.join(BASE_DIR, "assets", "admission")
 W = 1200
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + display_css(doubled=True) + """
   body { margin:0; background:#fff; }
   #card {
     width:%(w)dpx; box-sizing:border-box; padding:44px 48px 34px;
     background:linear-gradient(160deg,#272C3C 0%%,#334A8E 100%%);
-    color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    color:#fff; font-family:'Body','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
   }
   .eyebrow { font-size:16px; letter-spacing:3px; color:#FFA500; font-weight:700; }
   h1 { margin:6px 0 30px; font-size:42px; line-height:1.25; }
@@ -42,7 +42,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
   .ico { display:block; }
   .step { display:inline-block; margin-top:14px; font-size:14px; font-weight:700;
           color:#272C3C; background:#FFA500; border-radius:20px; padding:4px 12px; }
-  .name { font-size:30px; font-weight:800; margin:12px 0 8px; }
+  .name { font-size:30px; font-weight:700; margin:12px 0 8px; }
   .desc { font-size:19px; line-height:1.6; opacity:.88; }
   .arrow { display:flex; align-items:center; font-size:40px; color:#FFA500; }
   .sub { margin:34px 0 14px; font-size:17px; opacity:.75; letter-spacing:1px; }

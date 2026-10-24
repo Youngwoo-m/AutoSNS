@@ -19,9 +19,9 @@ from selenium.webdriver.common.by import By
 
 from common import POSTS_DIR
 
-import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
+import sys as _sys  # Pretendard 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import kopub_bold_css  # noqa: E402
+from shared.fonts import display_css  # noqa: E402
 
 S = 640
 NAVY, GOLD, SLATE = "#334A8E", "#FFA500", "#272C3C"
@@ -57,26 +57,26 @@ CARDS = {
 </div>""",
 }
 
-CSS = kopub_bold_css() + f"""
- body{{margin:0;background:#eee;font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic',sans-serif}}
+CSS = display_css() + f"""
+ body{{margin:0;background:#eee;font-family:'Body','Apple SD Gothic Neo','Malgun Gothic',sans-serif}}
  .card{{width:{S}px;height:{S}px;position:relative;overflow:hidden;color:#fff;
    display:flex;align-items:center;justify-content:center;margin:20px}}
  .inner{{position:relative;text-align:center;z-index:2}}
  .shield{{position:absolute;width:92%;height:92%;left:4%;top:4%;opacity:.55}}
  .en{{font-size:24px;letter-spacing:7px;color:{GOLD};font-weight:700}}
- .ko{{font-size:104px;font-weight:800;letter-spacing:-4px;line-height:1.05;margin-top:6px}}
+ .ko{{font-size:104px;font-weight:700;letter-spacing:-4px;line-height:1.05;margin-top:6px}}
  .bar{{width:96px;height:7px;background:{GOLD};margin:18px auto 16px;border-radius:4px}}
- .dept{{font-size:27px;color:#d6e0f5;font-weight:600}}
+ .dept{{font-size:27px;color:#d6e0f5;font-weight:700}}
  .tape{{position:absolute;left:0;top:0;width:100%;height:30px;
    background:repeating-linear-gradient(45deg,{GOLD} 0 34px,{SLATE} 34px 68px)}}
  .tape.b{{top:auto;bottom:0}}
  .tri{{font-size:96px;color:{GOLD};line-height:1}}
- .ko2{{font-size:86px;font-weight:800;letter-spacing:-4px;margin-top:10px}}
+ .ko2{{font-size:86px;font-weight:700;letter-spacing:-4px;margin-top:10px}}
  .dept2{{font-size:27px;color:{GOLD};font-weight:700;margin-top:18px;letter-spacing:1px}}
  .emblem{{width:330px;height:330px;border-radius:50%;background:{NAVY};
    border:12px solid {GOLD};display:flex;align-items:center;justify-content:center;margin:0 auto}}
- .emblem-ko{{font-size:96px;font-weight:800;line-height:1.02;letter-spacing:-4px;color:#fff}}
- .dept3{{font-size:38px;font-weight:800;color:{NAVY};margin-top:30px;letter-spacing:-1px}}
+ .emblem-ko{{font-size:96px;font-weight:700;line-height:1.02;letter-spacing:-4px;color:#fff}}
+ .dept3{{font-size:38px;font-weight:700;color:{NAVY};margin-top:30px;letter-spacing:-1px}}
  .sub3{{font-size:26px;color:#6b7280;margin-top:10px}}
 """
 
