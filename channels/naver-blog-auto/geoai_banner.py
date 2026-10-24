@@ -90,7 +90,7 @@ def _short_title(title):
     return out
 
 
-def make_banner(data, cfg=None, size=None):
+def make_banner(data, cfg=None, size=None, bg=None):
     """글 데이터 → 배너 PNG 경로. 실패하면 예외(호출부에서 이미지 없이 진행).
 
     size 로 비율을 바꿀 수 있다 — 유튜브 게시물은 2:5~5:2 만 받아 3:1 배너가 거부된다."""
@@ -104,6 +104,8 @@ def make_banner(data, cfg=None, size=None):
                        kicker=b.get("kicker", kicker),
                        brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")
+    from make_banner import apply_bg
+    html = apply_bg(html, bg)
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
     html_path = os.path.join(POSTS_DIR, f"_geoai_banner_{stamp}.html")
     with open(html_path, "w", encoding="utf-8") as f:
@@ -113,6 +115,7 @@ def make_banner(data, cfg=None, size=None):
     o.add_argument(f"--window-size={w + 100},{h + 160}")
     o.add_argument("--force-device-scale-factor=2")     # 2배로 찍어 선명하게
     o.add_argument("--hide-scrollbars")
+    o.add_argument("--allow-file-access-from-files")
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     o.add_argument("--disable-features=MacAppCodeSignClone")
     d = webdriver.Chrome(options=o)

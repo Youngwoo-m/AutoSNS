@@ -126,7 +126,19 @@ def _title_size(title):
     return 60 if n <= 26 else 52
 
 
-def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):
+def apply_bg(html, bg):
+    """배경 그림(글자 없는 이미지)을 깔고 위에 어두운 막을 씌운다. 글자는 HTML 그대로라 깨지지 않는다.
+    bg 가 없으면 html 을 그대로 돌려준다(기존 디자인)."""
+    if not bg:
+        return html
+    url = "file://" + os.path.abspath(bg).replace("\\", "/")
+    css = ('#banner{background:linear-gradient(rgba(8,12,26,.50),rgba(8,12,26,.72)),'
+           'url("%s") center/cover no-repeat !important}'
+           '.grid,.glow,.icon{display:none !important}' % url)
+    return html.replace("</style>", css + "</style>", 1)
+
+
+def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None, bg=None):
     # 너무 긴 제목은 배너용으로 줄임 (부제만 남김). '|'(부제|브랜드) 를 먼저 확인.
     short = title
     for sep in ("|", "–", "—", ":", "-"):
@@ -144,6 +156,7 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):
         html = HTML.format(title=short, date=date_str, dept=dept, badge=badge,
                            size=_title_size(short))
         window = "1100,560"
+    html = apply_bg(html, bg)
     html_path = os.path.join(POSTS_DIR, "_banner.html")
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html)
@@ -153,6 +166,7 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):
     o.add_argument(f"--window-size={window}")
     o.add_argument("--force-device-scale-factor=2")  # 선명하게
     o.add_argument("--hide-scrollbars")
+    o.add_argument("--allow-file-access-from-files")
     d = start_chrome(o)
     try:
         d.get("file:///" + html_path.replace("\\", "/"))
