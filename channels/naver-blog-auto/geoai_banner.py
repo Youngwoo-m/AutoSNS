@@ -26,14 +26,14 @@ W, H = 1200, 600          # 2:1 — 정사각으로 잘려도 제목이 남는 �
 
 import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import display_css, kopub_bold_css  # noqa: E402
+from shared.fonts import display_css  # noqa: E402
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + display_css(doubled=True) + """
   body {{ margin:0; background:#fff; }}
   #banner {{
-    width:{w}px; height:{h}px; box-sizing:border-box; padding:44px 52px;
+    width:{w}px; height:{h}px; box-sizing:border-box; padding:40px 52px;
     background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 60%,#0e5a6b 100%);
-    color:#fff; font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    color:#fff; font-family:'Body','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
     justify-content:space-between; align-items:center; text-align:center;
   }}
@@ -50,7 +50,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
   }}
   .kicker {{ font-family:'Body';
     position:relative; border:2px solid #38bdf8; color:#7dd3fc;
-    font-weight:800; padding:6px 16px; font-size:18px; letter-spacing:2px; border-radius:4px;
+    font-weight:700; padding:8px 20px; font-size:25px; letter-spacing:2px; border-radius:4px;
   }}
   /* 가운데 정사각(가로의 50%)에 들어오도록 폭을 묶는다 — 잘려도 제목이 살아남는다. */
   .title {{
@@ -58,7 +58,7 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
     max-width:{tw}px; letter-spacing:-.5px; word-break:keep-all;
     display:flex; align-items:center; flex:1;
   }}
-  .foot {{ font-family:'Body'; position:relative; font-size:20px; color:#9fb3c8; }}
+  .foot {{ font-family:'Body'; position:relative; font-size:26px; color:#9fb3c8; }}
   .brand {{ color:#7dd3fc; font-weight:700; }}
 </style></head><body>
   <div id="banner">
@@ -74,10 +74,10 @@ def _title_size(t):
     """폭이 절반으로 좁아졌으므로 글자도 그만큼 줄여 3줄 안에 들어오게 한다."""
     n = len(t)
     if n <= 14:
-        return 50
+        return 68
     if n <= 22:
-        return 44
-    return 38 if n <= 32 else 33
+        return 60
+    return 52 if n <= 32 else 44
 
 
 def _short_title(title):
@@ -100,7 +100,7 @@ def make_banner(data, cfg=None, size=None):
     title = _short_title(data.get("title", ""))
     kicker = data.get("family") or ("GeoAI 브리핑" if data.get("news_blocks") else "GeoAI 기초")
     html = HTML.format(w=w, h=h, title=title, size=_title_size(title),
-                       tw=int(w * 0.46),          # 가운데 정사각(50%) 안쪽
+                       tw=int(w * 0.48),          # 가운데 정사각(50%) 안쪽
                        kicker=b.get("kicker", kicker),
                        brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")

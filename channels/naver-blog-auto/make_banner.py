@@ -22,17 +22,17 @@ from common import POSTS_DIR, load_config, log, start_chrome
 
 import sys as _sys  # KoPub 글꼴(공용 shared/fonts)
 _sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from shared.fonts import display_css, kopub_bold_css  # noqa: E402
+from shared.fonts import display_css  # noqa: E402
 
 DEFAULT_DEPT = "세명대학교 재난안전학과"
 DEFAULT_SHAPE = "square"
 
-HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
+HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + display_css(doubled=True) + """
   body {{ margin:0; padding:0; background:#fff; }}
   #banner {{
-    width:1000px; height:420px; box-sizing:border-box; padding:60px 64px 56px;
+    width:1000px; height:420px; box-sizing:border-box; padding:52px 56px 48px;
     background:#111827; color:#fff;
-    font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    font-family:'Body','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
   }}
   /* 위·아래 안전 테이프(노랑/검정 사선) */
@@ -43,14 +43,14 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
   .tape.b {{ top:auto; bottom:0; }}
   .badge {{ font-family:'Body';
     display:inline-block; align-self:flex-start; border:3px solid #facc15; color:#facc15;
-    font-weight:800; padding:8px 20px; font-size:23px; letter-spacing:3px;
+    font-weight:700; padding:8px 22px; font-size:27px; letter-spacing:3px;
   }}
   .mid {{ flex:1; display:flex; align-items:center; }}
   .title {{
-    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.26; max-width:660px;
+    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.26; max-width:720px;
     letter-spacing:-.5px; word-break:keep-all;   /* 한글이 단어 중간에서 끊기지 않게 */
   }}
-  .foot {{ font-family:'Body'; font-size:24px; color:#9ca3af; }}
+  .foot {{ font-family:'Body'; font-size:27px; color:#9ca3af; }}
   .dept {{ color:#facc15; font-weight:700; }}
   .icon {{
     position:absolute; right:52px; top:50%; transform:translateY(-50%);
@@ -68,12 +68,12 @@ HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bo
 </body></html>"""
 
 
-SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + kopub_bold_css(doubled=True) + display_css(doubled=True) + """
+SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + display_css(doubled=True) + """
   body {{ margin:0; padding:0; background:#fff; }}
   #banner {{
-    width:540px; height:540px; box-sizing:border-box; padding:54px 48px 46px;
+    width:540px; height:540px; box-sizing:border-box; padding:46px 40px 40px;
     background:#111827; color:#fff;
-    font-family:'KoPub','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
+    font-family:'Body','Apple SD Gothic Neo','Malgun Gothic','맑은 고딕',sans-serif;
     position:relative; overflow:hidden; display:flex; flex-direction:column;
   }}
   .tape {{
@@ -83,19 +83,16 @@ SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + k
   .tape.b {{ top:auto; bottom:0; }}
   .badge {{ font-family:'Body';
     display:inline-block; align-self:flex-start; border:2px solid #facc15; color:#facc15;
-    font-weight:800; padding:5px 13px; font-size:15px; letter-spacing:2px;
+    font-weight:700; padding:6px 14px; font-size:19px; letter-spacing:2px;
   }}
   /* 제목은 가운데에 크게. 어디서 잘려도 읽히도록 좌우 여백을 넉넉히 둔다. */
   .mid {{ flex:1; display:flex; align-items:center; }}
   .title {{
-    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.3; max-width:430px;
+    font-family:'Display'; font-size:{size}px; font-weight:400; line-height:1.3; max-width:470px;
     letter-spacing:-.5px; word-break:keep-all;
   }}
-  .foot {{ font-family:'Body'; font-size:16px; color:#9ca3af; }}
+  .foot {{ font-family:'Body'; font-size:20px; color:#9ca3af; }}
   .dept {{ color:#facc15; font-weight:700; }}
-  .icon {{
-    position:absolute; right:-34px; bottom:18px; font-size:170px; opacity:.09;
-  }}
 </style></head><body>
   <div id="banner">
     <div class="tape"></div>
@@ -103,7 +100,6 @@ SQUARE_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>""" + k
     <div class="badge">{badge}</div>
     <div class="mid"><div class="title">{title}</div></div>
     <div class="foot"><span class="dept">{dept}</span> · {date}</div>
-    <div class="icon">⚠️</div>
   </div>
 </body></html>"""
 
@@ -114,20 +110,20 @@ def _square_size(title):
     제목 글꼴(Pretendard Black)은 KoPub 과 크기가 비슷해 원래 값으로 돌렸다(2026-10-14)."""
     n = len(title)
     if n <= 14:
-        return 48
+        return 64
     if n <= 22:
-        return 42
+        return 55
     if n <= 30:
-        return 36
-    return 31
+        return 47
+    return 41
 
 
 def _title_size(title):
     """제목이 길면 글자를 줄여 두 줄 안에 들어오게 한다."""
     n = len(title)
     if n <= 20:
-        return 56
-    return 50 if n <= 26 else 44
+        return 68
+    return 60 if n <= 26 else 52
 
 
 def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None):
