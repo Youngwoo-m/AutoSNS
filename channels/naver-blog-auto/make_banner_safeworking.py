@@ -13,6 +13,7 @@ from selenium.webdriver.chrome.options import Options
 from make_profile_safeworking import DEEP, GREEN, OUT_DIR, SAND, _font
 
 W, H = 966, 260
+PHOTO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "banner_bg", "survey.png")  # 디오라마 배경(글자 없음)
 
 
 def _contours():
@@ -29,8 +30,11 @@ CSS = f"""
  body{{margin:0;font-family:'PB','Apple SD Gothic Neo',sans-serif}}
  #b{{width:{W}px;height:{H}px;position:relative;overflow:hidden;color:{SAND};
    background:linear-gradient(110deg,{GREEN} 0%,{DEEP} 100%)}}
+ .photo{{position:absolute;right:0;top:0;width:62%;height:100%;
+   background:url('file://{PHOTO}') center 30%/cover;
+   -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 55%)}}
  .bg{{position:absolute;inset:0;width:100%;height:100%}}
- .mark{{position:absolute;right:70px;top:36px;width:190px;height:190px;opacity:.9}}
+ .mark{{display:none}}
  .txt{{position:absolute;left:64px;top:0;height:100%;display:flex;flex-direction:column;justify-content:center}}
  .ko{{font-size:92px;letter-spacing:-4px;line-height:1.05}}
  .bar{{width:84px;height:7px;background:{SAND};border-radius:4px;margin:16px 0 14px}}
@@ -38,7 +42,7 @@ CSS = f"""
 """
 
 HTML = f"""<!doctype html><html><head><meta charset='utf-8'><style>{CSS}</style></head><body>
-<div id="b">{_contours()}
+<div id="b"><div class="photo"></div>{_contours()}
   <svg viewBox="0 0 100 100" class="mark"><path d="M50 12 L88 82 H12 Z" fill="none" stroke="{SAND}" stroke-width="3.5"/>
     <circle cx="50" cy="32" r="3" fill="{SAND}"/></svg>
   <div class="txt"><div class="ko">토목·측량</div><div class="bar"></div>

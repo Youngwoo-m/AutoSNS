@@ -24,10 +24,11 @@ sys.path.insert(0, BASE_DIR)
 
 MODEL, COST, RESERVE = "gemini-2.5-flash-image", 39, 150
 OCR = "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/ocr"
-STYLE = ("Isometric miniature diorama on a small square base, handcrafted model look with tiny painted figures, "
+STYLE_T = ("Isometric miniature diorama on a small square base, handcrafted model look with tiny painted figures, "
          "soft studio lighting, strong tilt-shift shallow depth of field, clay and wood textures, "
-         "clearly a toy-like scale model and not a real photograph, calm and orderly mood, vertical 9:16 composition. "
+         "clearly a toy-like scale model and not a real photograph, calm and orderly mood, {ASPECT} composition. "
          "No text, no letters, no numbers, no logos anywhere. Scene: ")
+STYLE = STYLE_T.replace("{ASPECT}", "vertical 9:16")
 NO_TEXT = (" Absolutely no writing anywhere: every sign, screen, label, banner and instrument display is completely blank.")
 
 
@@ -36,7 +37,7 @@ def out(status, **kw):
     return 0 if status == "ok" else 1
 
 
-def gen(prompt):
+def gen(prompt, aspect="9:16"):
     import veo_clips as V
     from common import load_config
     g = load_config()["llm_gateway"]
@@ -45,7 +46,7 @@ def gen(prompt):
             continue
         req = urllib.request.Request(
             V.BASE + "/images/generate/", method="POST",
-            data=json.dumps({"model": MODEL, "prompt": prompt, "aspect_ratio": "9:16", "number_of_images": 1}).encode(),
+            data=json.dumps({"model": MODEL, "prompt": prompt, "aspect_ratio": aspect, "number_of_images": 1}).encode(),
             headers={"Authorization": f"Bearer {k}", "x-api-key": k, "Content-Type": "application/json",
                      "User-Agent": "smuds-autosns/1.0"})
         try:
@@ -72,14 +73,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scene", required=True, help="장면 설명(영어)")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--aspect", default="9:16", help="9:16(기본)·1:1·16:9 등 — 배너 배경은 1:1/16:9")
     a = ap.parse_args()
     try:
-        img, cr = gen(STYLE + a.scene)
+        style = STYLE_T.replace("{ASPECT}", a.aspect + " (centered subject, calm empty space around)" if a.aspect != "9:16" else "vertical 9:16")
+        img, cr = gen(style + a.scene, a.aspect)
         open(a.out, "wb").write(img)
         found = text_in(a.out)
         if found:
             alt = a.out + ".retry.png"
-            img2, cr2 = gen(STYLE + a.scene + NO_TEXT)
+            img2, cr2 = gen(style + a.scene + NO_TEXT, a.aspect)
             cr += cr2
             open(alt, "wb").write(img2)
             left = text_in(alt)

@@ -126,15 +126,39 @@ def _title_size(title):
     return 60 if n <= 26 else 52
 
 
+BG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "banner_bg")
+# 제목 키워드 → 배경 그림(assets/banner_bg/<이름>.png). 위에서부터 먼저 맞는 것을 쓴다.
+BG_RULES = [
+    ("survey", ("측량", "토목", "기술사", "GNSS", "기준점", "건설")),
+    ("geoai", ("GeoAI", "위성", "드론", "GIS", "지리", "AI")),
+    ("winter", ("겨울", "한중", "동절기", "한파", "결빙", "동결", "제설", "눈")),
+    ("wildfire", ("산불", "화재", "소방", "불")),
+    ("flood", ("침수", "홍수", "호우", "태풍", "풍수해", "하천", "장마")),
+    ("quake", ("지진", "붕괴", "내진", "교량", "산사태")),
+    ("shelter", ("대피", "민방위", "훈련", "이재민", "구호")),
+    ("safety", ("안전", "산재", "중대", "추락", "비계", "작업")),
+]
+
+
+def pick_bg(title):
+    """제목에서 주제를 찾아 디오라마 배경 경로를 돌려준다. 맞는 주제가 없으면 None(기존 디자인)."""
+    for name, words in BG_RULES:
+        if any(w in title for w in words):
+            path = os.path.join(BG_DIR, name + ".png")
+            if os.path.exists(path):
+                return path
+    return None
+
+
 def apply_bg(html, bg):
     """배경 그림(글자 없는 이미지)을 깔고 위에 어두운 막을 씌운다. 글자는 HTML 그대로라 깨지지 않는다.
     bg 가 없으면 html 을 그대로 돌려준다(기존 디자인)."""
     if not bg:
         return html
     url = "file://" + os.path.abspath(bg).replace("\\", "/")
-    css = ('#banner{background:linear-gradient(rgba(8,12,26,.50),rgba(8,12,26,.72)),'
+    css = ('#banner{background:linear-gradient(rgba(8,12,26,.38),rgba(8,12,26,.66)),'
            'url("%s") center/cover no-repeat !important}'
-           '.grid,.glow,.icon{display:none !important}' % url)
+           '.grid,.glow,.icon{display:none !important}.title,.foot,.badge{text-shadow:0 2px 14px rgba(0,0,0,.65)}' % url)
     return html.replace("</style>", css + "</style>", 1)
 
 
@@ -156,7 +180,7 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None, bg=None)
         html = HTML.format(title=short, date=date_str, dept=dept, badge=badge,
                            size=_title_size(short))
         window = "1100,560"
-    html = apply_bg(html, bg)
+    html = apply_bg(html, pick_bg(short) if bg is None else bg)   # bg=False 면 배경 그림 없이
     html_path = os.path.join(POSTS_DIR, "_banner.html")
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(html)
@@ -180,9 +204,19 @@ def make_banner(title, date_str, badge="DISASTER BRIEFING", shape=None, bg=None)
 
 
 if __name__ == "__main__":
+    import argparse
+    import shutil
     from datetime import datetime
-    import sys
-    shape = sys.argv[1] if len(sys.argv) > 1 else None
-    p = make_banner("거창군 AI 재난안전 실증단지, 왜 주목받나",
-                    f"{datetime.now():%Y년 %m월 %d일}", shape=shape)
+    ap = argparse.ArgumentParser(description="배너 PNG 한 장 만들기(티스토리·블로거 글 맨 위 그림용)")
+    ap.add_argument("--title", default="거창군 AI 재난안전 실증단지, 왜 주목받나")
+    ap.add_argument("--shape", choices=("square", "wide"))
+    ap.add_argument("--bg", help="배경 그림 경로(없으면 제목 키워드로 자동, --no-bg 면 끔)")
+    ap.add_argument("--no-bg", action="store_true")
+    ap.add_argument("--out", help="결과를 복사할 경로")
+    a = ap.parse_args()
+    p = make_banner(a.title, f"{datetime.now():%Y년 %m월 %d일}", shape=a.shape,
+                    bg=False if a.no_bg else a.bg)
+    if a.out:
+        shutil.copyfile(p, a.out)
+        p = a.out
     print(p)

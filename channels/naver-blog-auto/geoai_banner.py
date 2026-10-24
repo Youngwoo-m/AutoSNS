@@ -104,8 +104,8 @@ def make_banner(data, cfg=None, size=None, bg=None):
                        kicker=b.get("kicker", kicker),
                        brand=b.get("brand", "재난안전과 GeoAI"),
                        date=f"{datetime.now():%Y년 %m월 %d일}")
-    from make_banner import apply_bg
-    html = apply_bg(html, bg)
+    from make_banner import apply_bg, pick_bg
+    html = apply_bg(html, pick_bg(title) if bg is None else bg)
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
     html_path = os.path.join(POSTS_DIR, f"_geoai_banner_{stamp}.html")
     with open(html_path, "w", encoding="utf-8") as f:
