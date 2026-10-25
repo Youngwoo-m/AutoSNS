@@ -477,11 +477,27 @@
       "quiet": true
     },
     {
+      "job": "digest.daily",
+      "account": "common",
+      "name": "자동 작업 아침 요약(카카오톡)",
+      "what": "어제 자동 작업 실행·실패·건너뜀 수와 열린 장애 수를 카카오톡 '나에게'로 보냄",
+      "entry": "tools/daily_digest.py",
+      "channels": [
+        [
+          "common",
+          "kakao"
+        ]
+      ],
+      "logs": [
+        "ax-console/data/logs/digest.log"
+      ]
+    },
+    {
       "job": "claude.survey-daily",
       "account": "personal",
       "name": "측량 하루 한 문제 (답안 PDF·티스토리·카톡·숏츠)",
       "what": "클로드(claude -p, opus)가 지시문 jobs/survey-daily.md 대로 작성·발행 (Codex 'automation' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/survey-daily.md",
+      "entry": "personal/claude-jobs/jobs/survey-daily.md",
       "channels": [
         [
           "personal",
@@ -502,7 +518,7 @@
       "account": "personal",
       "name": "측량 기출 핵심 숏츠 (17시 준비 · 19시 공개)",
       "what": "클로드(claude -p, sonnet)가 지시문 jobs/survey-shorts.md 대로 작성·발행 (Codex '7' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/survey-shorts.md",
+      "entry": "personal/claude-jobs/jobs/survey-shorts.md",
       "channels": [
         [
           "personal",
@@ -515,7 +531,7 @@
       "account": "personal",
       "name": "토목시공 하루 한 문제 (티스토리+개인 블로거)",
       "what": "클로드(claude -p, opus)가 지시문 jobs/civil-daily.md 대로 작성·발행 (Codex '8' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/civil-daily.md",
+      "entry": "personal/claude-jobs/jobs/civil-daily.md",
       "channels": [
         [
           "personal",
@@ -532,7 +548,7 @@
       "account": "personal",
       "name": "측량 친구 요청 답안 (티스토리·카톡)",
       "what": "클로드(claude -p, opus)가 지시문 jobs/survey-friend.md 대로 작성·발행 (Codex 'automation-2' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/survey-friend.md",
+      "entry": "personal/claude-jobs/jobs/survey-friend.md",
       "channels": [
         [
           "personal",
@@ -549,7 +565,7 @@
       "account": "personal",
       "name": "토목시공 친구 요청 답안 (티스토리+개인 블로거)",
       "what": "클로드(claude -p, opus)가 지시문 jobs/civil-friend.md 대로 작성·발행 (Codex '11' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/civil-friend.md",
+      "entry": "personal/claude-jobs/jobs/civil-friend.md",
       "channels": [
         [
           "personal",
@@ -564,9 +580,9 @@
     {
       "job": "claude.safekorea",
       "account": "personal",
-      "name": "안전한국훈련 글 (하루 두 번)",
+      "name": "안전한국훈련 글 (하루 한 번, 12시 영상 소개)",
       "what": "클로드(claude -p, sonnet)가 지시문 jobs/safekorea.md 대로 작성·발행 (Codex 'geoai' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/safekorea.md",
+      "entry": "personal/claude-jobs/jobs/safekorea.md",
       "channels": [
         [
           "personal",
@@ -579,28 +595,12 @@
       "account": "personal",
       "name": "노르딕워킹 아침 글",
       "what": "클로드(claude -p, sonnet)가 지시문 jobs/nordic.md 대로 작성·발행 (Codex 'automation-3' 에서 옮김)",
-      "entry": "GeoAI_NA/claude-jobs/jobs/nordic.md",
+      "entry": "personal/claude-jobs/jobs/nordic.md",
       "channels": [
         [
           "personal",
           "tistory"
         ]
-      ]
-    },
-    {
-      "job": "digest.daily",
-      "account": "common",
-      "name": "자동 작업 아침 요약(카카오톡)",
-      "what": "어제 자동 작업 실행·실패·건너뜀 수와 열린 장애 수를 카카오톡 '나에게'로 보냄",
-      "entry": "tools/daily_digest.py",
-      "channels": [
-        [
-          "common",
-          "kakao"
-        ]
-      ],
-      "logs": [
-        "ax-console/data/logs/digest.log"
       ]
     }
   ]
