@@ -24,7 +24,7 @@ def _token_path():
         return env
     here = os.path.dirname(os.path.abspath(__file__))
     for p in (os.path.join(here, "kakao_token.json"),
-              os.path.join(here, "..", "youtube-shorts-auto", "kakao_token.json")):
+              os.path.join(here, "..", "..", "channels", "youtube-shorts-auto", "kakao_token.json")):
         if os.path.exists(p):
             return os.path.abspath(p)
     return os.path.join(here, "kakao_token.json")

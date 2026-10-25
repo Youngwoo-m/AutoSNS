@@ -26,7 +26,7 @@ CUT_SEC = 7.0          # 이 간격으로 배경 클립을 바꾼다(카드 2장
 
 # 실사를 못 구하면 유튜브 쪽이 만든 일러스트 B롤(make_broll.py)로 채운다(2026-09-29 결정 —
 # AI 영상 생성 대신). 사실적인 가짜 재난 장면이 아니라 오해 위험이 없어 '자료 화면' 표기도 뺀다.
-ILLUST_DIR = os.path.join(os.path.dirname(BASE_DIR), "youtube-shorts-auto", "posts", "broll")
+ILLUST_DIR = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "channels", "youtube-shorts-auto", "posts", "broll")
 ILLUST_FOR = {"heavy rain street": "flood", "forest fire smoke": "wildfire",
               "city buildings aerial": "quake", "snow winter street": "snow",
               "hot summer sun city": "heat", "drone flying sky": "satellite",

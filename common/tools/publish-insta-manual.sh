@@ -1,7 +1,7 @@
 #!/bin/bash
 # insta-manual 폴더만 떼어내 공개 GitHub 저장소로 올린다.
 #
-# 작업은 계속 AutoSNS/channels/insta-manual 에서 하고, 공개할 때만 이걸 돌린다.
+# 작업은 계속 AutoSNS/dept/insta-manual 에서 하고, 공개할 때만 이걸 돌린다.
 # subtree split 이 그 폴더의 커밋만 뽑아 별도 이력을 만들어 준다.
 #
 #   사용법:  ./tools/publish-insta-manual.sh
@@ -21,15 +21,15 @@ if [ -z "$REPO" ]; then
 fi
 
 # 커밋 안 된 변경이 있으면 먼저 알려준다(그건 올라가지 않는다)
-if ! git diff --quiet -- channels/insta-manual || ! git diff --cached --quiet -- channels/insta-manual; then
+if ! git diff --quiet -- dept/insta-manual || ! git diff --cached --quiet -- dept/insta-manual; then
   echo "⚠️  insta-manual 에 커밋되지 않은 변경이 있습니다. 먼저 커밋하세요."
-  git status --short channels/insta-manual
+  git status --short dept/insta-manual
   exit 1
 fi
 
 echo "insta-manual 이력 분리 중..."
 git branch -D insta-manual-public 2>/dev/null || true
-git subtree split --prefix=channels/insta-manual -b insta-manual-public >/dev/null
+git subtree split --prefix=dept/insta-manual -b insta-manual-public >/dev/null
 
 echo "올라갈 파일:"
 git ls-tree -r --name-only insta-manual-public | sed 's/^/  /'

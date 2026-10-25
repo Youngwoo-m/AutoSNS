@@ -28,7 +28,7 @@ def _dioramas(rcfg, work):
     paths = [p for p in paths if os.path.isfile(p)]
     if paths or not (d.get("generate") and d.get("scenes")):
         return paths[:3]
-    gen = os.path.join(os.path.dirname(BASE_DIR), "youtube-shorts-auto", "diorama_image.py")
+    gen = os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "channels", "youtube-shorts-auto", "diorama_image.py")
     made = []
     for i, scene in enumerate(d["scenes"][:3], 1):
         o = os.path.join(work, f"diorama{i}.png")

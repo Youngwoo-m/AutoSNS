@@ -23,7 +23,7 @@ from datetime import datetime
 
 from common import POSTS_DIR, log
 
-NAVER_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "naver-blog-auto")
+NAVER_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "channels", "naver-blog-auto")
 STATE = os.path.join(POSTS_DIR, "jobs_insta_posted.json")
 BLOG_ID, CATEGORY_NO = "studs23", 9            # 네이버 '채용정보' 카테고리
 NO_FIRE = re.compile(r"소방")

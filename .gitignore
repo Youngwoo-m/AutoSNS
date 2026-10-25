@@ -114,26 +114,26 @@ GeoAI_NA/claude-jobs/work/
 # 티스토리 프로필은 GeoAI_NA 쪽 폴더를 가리키는 바로가기라 끝에 슬래시가 없는 이름도 막아야 한다
 chrome-profile-tistory
 
-# 재난 유형별 숏츠(channels/disaster-shorts, 2026-10-22 이 저장소로 옮김) — 코드·설정 예시·대본은 올리고 영상·음성·로그·비밀값은 올리지 않는다
-channels/disaster-shorts/tools/config.json
-channels/disaster-shorts/tools/*.bak*
-channels/disaster-shorts/tools/plist_backup_*/
-channels/disaster-shorts/tools/__pycache__/
-channels/disaster-shorts/tools/*.wav
-channels/disaster-shorts/tools/ocr
-channels/disaster-shorts/logs/
-channels/disaster-shorts/common/
-channels/disaster-shorts/remotion/node_modules/
-channels/disaster-shorts/remotion/out/
-channels/disaster-shorts/remotion/public/job/
-channels/disaster-shorts/remotion/public/fonts/
-channels/disaster-shorts/anatomy/**/*.mp4
-channels/disaster-shorts/anatomy/models/
-channels/disaster-shorts/figures/**/*.otf
-channels/disaster-shorts/20*/*
-!channels/disaster-shorts/20*/script.json
-!channels/disaster-shorts/20*/source.md
-channels/disaster-shorts/sample_*/*
-!channels/disaster-shorts/sample_*/script.json
-!channels/disaster-shorts/sample_*/source.md
-channels/disaster-shorts/remotion/src/*.bak*
+# 재난 유형별 숏츠(dept/disaster-shorts, 2026-10-22 이 저장소로 옮김) — 코드·설정 예시·대본은 올리고 영상·음성·로그·비밀값은 올리지 않는다
+dept/disaster-shorts/tools/config.json
+dept/disaster-shorts/tools/*.bak*
+dept/disaster-shorts/tools/plist_backup_*/
+dept/disaster-shorts/tools/__pycache__/
+dept/disaster-shorts/tools/*.wav
+dept/disaster-shorts/tools/ocr
+dept/disaster-shorts/logs/
+dept/disaster-shorts/common/
+dept/disaster-shorts/remotion/node_modules/
+dept/disaster-shorts/remotion/out/
+dept/disaster-shorts/remotion/public/job/
+dept/disaster-shorts/remotion/public/fonts/
+dept/disaster-shorts/anatomy/**/*.mp4
+dept/disaster-shorts/anatomy/models/
+dept/disaster-shorts/figures/**/*.otf
+dept/disaster-shorts/20*/*
+!dept/disaster-shorts/20*/script.json
+!dept/disaster-shorts/20*/source.md
+dept/disaster-shorts/sample_*/*
+!dept/disaster-shorts/sample_*/script.json
+!dept/disaster-shorts/sample_*/source.md
+dept/disaster-shorts/remotion/src/*.bak*
