@@ -52,3 +52,10 @@ GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄�
 ## 브랜치
 
 브랜치 이름·병합 순서·커밋 메시지 규칙은 `docs/브랜치규칙.md` 를 따른다.
+
+## 폴더 구조 (2026-10-25 개편 진행 중)
+
+앱 계정(학과·개인·공통)에 맞춰 `common/`(shared·analytics·maintenance·tools·assets·remotion-shorts),
+`dept/`, `personal/` 로 나눈다. 1단계로 `common/` 을 옮겼고, 옛 경로(`shared/`, `tools/` 등)는
+`common/…` 를 가리키는 심볼릭 링크로 남겼다(launchd·자동화는 옛 경로 그대로 동작). 새 코드는 `common/…` 를 쓴다.
+스크립트의 ROOT 계산은 `realpath` 기준 3단계 위다. 되돌릴 기준점: 태그 `backup/pre-restructure-20261025`.
