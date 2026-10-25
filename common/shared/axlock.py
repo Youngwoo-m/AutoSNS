@@ -164,7 +164,7 @@ def _profile_busy_outside(res):
     path = PROFILES.get(res[len('profile:'):])
     if not path:
         return False
-    for cand in {path, path.replace('/GeoAI_NA/naver-blog-auto/', '/naver-blog-auto/')}:  # 링크 경로로 띄운 경우도
+    for cand in {path, path.replace('/personal/naver-blog-auto/', '/naver-blog-auto/'), path.replace('/personal/', '/GeoAI_NA/')}:  # 링크 경로로 띄운 경우도
         r = subprocess.run(['pgrep', '-f', f'user-data-dir={re.escape(cand)}( |$)'], capture_output=True)
         if r.returncode == 0:
             return True
@@ -244,7 +244,7 @@ def status():
 PROFILES = {
     'naver': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile'),
     'safeworking': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile-safeworking'),   # 개인 네이버 블로그
-    'tistory': str(ROOT / 'GeoAI_NA' / 'naver-blog-auto' / 'chrome-profile-tistory'),
+    'tistory': str(ROOT / 'personal' / 'naver-blog-auto' / 'chrome-profile-tistory'),
     'insta': str(ROOT / 'channels' / 'insta-cardnews' / 'chrome-profile-insta'),
     'tiktok': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-tiktok'),
     'youtube-personal': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-youtube'),
