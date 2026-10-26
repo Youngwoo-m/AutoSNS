@@ -135,6 +135,18 @@ class Conv(HTMLParser):
             self.mode = None
 
 
+# 작업 이름 접두 → safeworking 카테고리 (2026-10-26 분리)
+JOB_CATEGORY = (("survey", "측량·GIS 기술사"), ("civil", "토목 기술사"), ("nordic", "노르딕워킹·건강"), ("safekorea", "안전한국훈련·재난"))
+
+
+def category_for(job):
+    j = (job or "").split(":")[-1].replace("claude.", "")
+    for prefix, name in JOB_CATEGORY:
+        if j.startswith(prefix):
+            return name
+    return "게시판"
+
+
 def build_data(url, assets_dir, category, tags_arg):
     page = get(url)
     m = re.search(r'<meta property="og:title" content="([^"]+)"', page)
@@ -195,7 +207,7 @@ def main():
     if os.environ.get("AX_DRY") == "1" and args.go:
         args.go, args.dry = False, True
     try:
-        data = build_data(args.tistory_url, os.path.abspath(args.assets_dir), args.category, args.tags)
+        data = build_data(args.tistory_url, os.path.abspath(args.assets_dir), args.category or category_for(args.job), args.tags)
     except Exception as e:
         return out("error", message=f"{type(e).__name__}: {e}")
     print(f"제목: {data['title']} | 소제목 {len(data['news_blocks'])}개 | 그림 {sum(1 for b in data['news_blocks'] if b.get('image'))}장 | 태그 {data['tags']}", file=sys.stderr)
