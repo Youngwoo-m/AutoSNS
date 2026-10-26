@@ -1,4 +1,22 @@
 User-agent: *
 Allow: /
 
+# AI 검색·답변 크롤러 허용
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+
 Sitemap: https://geoai-na.netlify.app/sitemap.xml

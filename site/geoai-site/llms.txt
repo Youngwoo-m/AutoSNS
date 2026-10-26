@@ -1,0 +1,14 @@
+# 재난안전과 GeoAI
+
+> 공간정보(GIS·측량)와 인공지능을 재난안전 업무에 쓰는 방법을 쉽게 정리하는 한국어 학습 사이트. 측량및지형공간정보기술사·토목시공기술사 문제 해설, 안전한국훈련·재난 대응 글, 노르딕워킹·건강 글을 다룬다.
+
+## 주요 페이지
+- [홈](https://geoai-na.netlify.app/): 사이트 소개와 문제 요청
+- [링크 모음](https://geoai-na.netlify.app/links/): 티스토리·Blogger·유튜브·네이버 블로그 바로가기
+- [측량및지형공간정보기술사 문제 요청](https://geoai-na.netlify.app/questions/): 모범답안·따라쓰기 PDF 요청
+- [토목시공기술사 문제 요청](https://geoai-na.netlify.app/civil-questions/): 모범답안·따라쓰기 PDF 요청
+
+## 글이 올라오는 곳
+- [티스토리](https://na-geoai.tistory.com/)
+- [Blogger](https://geoaina.blogspot.com/)
+- [유튜브 @geoai-safety](https://www.youtube.com/@geoai-safety)
