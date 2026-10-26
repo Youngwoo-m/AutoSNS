@@ -137,3 +137,10 @@ dept/disaster-shorts/sample_*/*
 !dept/disaster-shorts/sample_*/script.json
 !dept/disaster-shorts/sample_*/source.md
 dept/disaster-shorts/remotion/src/*.bak*
+
+# geoai-na 사이트가 쓰는 아이콘·공유 미리보기(손으로 만든 자산, 배포에 실려야 한다)
+!site/geoai-site/og.jpg
+!site/geoai-site/geopanda.png
+!site/geoai-site/favicon-32.png
+!site/geoai-site/apple-touch-icon.png
+!site/geoai-site/icon-192.png
