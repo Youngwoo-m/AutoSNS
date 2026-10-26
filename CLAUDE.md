@@ -23,7 +23,7 @@
 
 기존 자동 발행 파이프라인(make_video.py 등 ffmpeg 기반)은 아직 이 지침으로 바꾸지 않았다.
 바꿀 때는 사용자와 범위를 정한 뒤 옮긴다.
-(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `channels/youtube-shorts-auto/diorama_image.py`.)
+(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `dept/youtube-shorts-auto/diorama_image.py`.)
 
 ## 자동 작업 잠금·비상 정지 (2026-10-18)
 
@@ -41,7 +41,7 @@ claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<too
 
 블로거·티스토리·네이버 글에 수식이 있으면 ① 수식은 LaTeX(Manim MathTex)로 써서 이미지로, ② 핵심 식은 Manim 도식 GIF
 (글당 1~2개)로 넣는다. 수식이 없는 글에는 만들지 않는다. 지시문·렌더 스크립트·샘플은
-`channels/naver-blog-auto/MATH_GIF_PROMPT.md`, `channels/naver-blog-auto/math_gif/` 를 따른다.
+`dept/naver-blog-auto/MATH_GIF_PROMPT.md`, `dept/naver-blog-auto/math_gif/` 를 따른다.
 GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄이지 않고 올린다(`math_gif/post_draft.py`).
 시험 글은 공개하지 말고 Blogger 초안으로 먼저 확인한다. 숫자 계산은 calc-verifier, 출처는 source-reviewer 로 검토한다.
 
