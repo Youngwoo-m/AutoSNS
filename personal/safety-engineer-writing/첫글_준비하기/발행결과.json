@@ -7,5 +7,7 @@
   "command": "tistory_post.py --category 건설안전기술사 --go --job safety-intro",
   "verified_public": true,
   "tables": 6,
-  "source_links": 17
+  "source_links": 17,
+  "edited_at": "2026-10-28 00:48",
+  "edit_note": "humanizer-kr 2번 다듬은 수정본으로 본문 교체(제목 그대로)"
 }
