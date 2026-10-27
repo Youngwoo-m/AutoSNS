@@ -1,0 +1,4652 @@
+[
+  {
+    "id": "126-1-1",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건설공사의 직접시공계획서",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-2",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "OSC(Off-Site Construction)공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-3",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "착공 시 시공계획의 사전조사 준비사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-4",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "건설공사의 클레임(Claim)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-5",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "석공사의 오픈조인트(Open Joint)공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-6",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "타일공사의 오픈 타임(Open Time) 관리방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-7",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "지하수에 의한 부력(浮力) 대처 방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-8",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "콘크리트공사의 콜드 조인트(Cold Joint) 방지대책",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-9",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "거푸집의 존치기간",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-10",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "콘크리트 침하균열(Settlement Crack)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-11",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "용접 결함의 종류 및 결함원인, 검사방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-12",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철골구조물 공사에서 방청도장을 하지 않는 부분",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-1-13",
+    "year": 2022,
+    "round": 126,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "철골보 부재에 설치하는 전단 연결재(Shear Connector)의 역할 및 시공, 시험방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-1",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "공사계약 일반조건에서 규정하는 설계변경 사유와 설계변경 단가의 조정방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-2",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건설현장 작업허가제의 대상과 절차 및 화재예방을 위한 화기작업 프로세스를 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-3",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "조적조 벽체의 균열 원인 및 방지대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-4",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "부위별 거푸집(동바리 포함)에 작용하는 하중과 하중에 대응하기 위한 거푸집 설치 방법(동바리 설치방법 포함) 및 콘크리트 타설방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-5",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "탄소섬유 시트 보강공법의 특징 및 적용분야, 시공순서, 부위별 보강방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-2-6",
+    "year": 2022,
+    "round": 126,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "초고층 건축물 기둥부등축소현상(Differential Column Shortening)의 원인과 대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-1",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "개산견적의 정의에 대해서 설명하고, 다음의 개산견적기법을 설명하시오. ① 비용지수법 ② 비용용량법 ③ 계수견적법 ④ 변수견적법 ⑤ 기본단가법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-2",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건설현장에 설치되는 가설통로의 경사도에 따른 종류와 설치기준, 조립·해체시 주의 사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-3",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "지붕재의 요구성능과 지붕누수 방지대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-4",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "갱폼(Gang Form) 시공 시 재해예방대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-5",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "한중콘크리트의 타설시 주의사항 및 양생시 초기양생, 보온양생과 현장 품질관리에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-3-6",
+    "year": 2022,
+    "round": 126,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "철골 세우기 장비 선정 및 순서와 공정별 유의 사항, 세우기 정밀도를 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-1",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "초고층 건축공사의 공정마찰과 이에 대한 개선 대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-2",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "중대재해처벌법(중대재해 처벌 등에 관한 법률)에 대해 ‘안전보건관리체계의 구축 및 이행조치’ 사항을 포함하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-3",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "흙막이벽의 붕괴원인과 어스앵커(Earth anchor) 시공시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-4",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "용접철망의 사용목적과 시공 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-5",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "경량 골재 콘크리트의 정의 및 종류, 배합, 시공에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "126-4-6",
+    "year": 2022,
+    "round": 126,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "철골조에서 내화피복의 목적 및 공법의 종류, 시공시 주의사항, 검사 및 보수방법, 현장 뒷정리에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-1",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "일식도급(General Contract)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-2",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "DFS(Design for Safety)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-3",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "건설기술진흥법상 안전관리비",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-4",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "경량충격음과 중량충격음",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-5",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "품질관리 7가지 도구",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-6",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "슬러리월(Slurry Wall)공사 중 가이드월(Guide Wall)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-7",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "서브머지드 아크 용접(Submerged Arc Welding)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-8",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "PEB 시스템(Pre-Engineered Building System)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-9",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "철골부재 스캘럽(Scallop)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-10",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "저탄소 콘크리트(Low Carbon Concrete)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-11",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "GFRC(Glass Fiber Reinforced Concrete)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-12",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "공동주택의 비난방 부위 결로방지 방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-1-13",
+    "year": 2022,
+    "round": 127,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "콘크리트 공사 표준 습윤양생 기간",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-1",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건설사업관리(CM) 계약의 유형과 주요업무에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-2",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "연약지반을 관통하는 말뚝 항타 시 지지력감소 원인과 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-3",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 내구성 저하 요인에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-4",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "초고층 공동주택에서 콘크리트 타설 시 고려사항과 콘크리트 압송장비 (CPB: Concrete Placing Boom) 운용방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-5",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "밀폐공간에서 도막방수 시공 시, 작업 전(前) 과정의 안전관리 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-2-6",
+    "year": 2022,
+    "round": 127,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "신재생에너지의 정의 및 특징, 종류, 장단점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-1",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축물 에너지효율등급 인증제도의 인증기준과 등급에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-2",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "설계의 경제성 검토(설계VE ; Value Engineering)에 대하여 실시대상공사, 실시시기 및 횟수, 업무절차를 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-3",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "도심지 건축공사 시공계획 수립 시 Tower Crane 기종선정, 대수산정, 설치 시 검토 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-4",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "최근 데크플레이트 적용 슬래브의 붕괴 사고가 자주 발생하고 있다. 데크플레이트의 붕괴 원인과 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-5",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골공사의 내화페인트의 특성, 시공순서별 품질관리 주요사항, 내화페인트 선정 시 고려사항, 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-3-6",
+    "year": 2022,
+    "round": 127,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "외벽의 이중외피 시스템(Double Skin System)의 구성과 친환경 성능에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-1",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축공사 표준시방서 상 건축공사의 현장관리 항목에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-2",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "비산먼지 발생을 억제하기 위한 시설의 설치 및 필요한 조치에 관한 기준에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-3",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 구조물에 발생하는 균열의 유형별 종류, 원인, 보수·보강 대책에 대하여 설명 하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-4",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "초고층 건축시공 시 서중콘크리트 시공관리의 문제점 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-5",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "SRC구조의 강재기둥과 철근콘크리트 보의 접합 방법과 각각의 장단점에 대하여 설명 하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "127-4-6",
+    "year": 2022,
+    "round": 127,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축공사의 단열재 시공 시 주의사항과 시공부위에 따른 단열공법의 특징에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-1",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건축물관리법 상 해체계획서",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-2",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "TS볼트(Torque Shear Bolt)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-3",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "건설산업의 ESG(Environmental, Social, and Governance) 경영",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-4",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "어스앵커(Earth Anchor)의 홀(Hole) 방수",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-5",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "실링방수의 백업재 및 본드 브레이커",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-6",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "슬러리월 시공시 안정액의 기능",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-7",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "콘크리트용 혼화제(混和劑)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-8",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "콘크리트의 최소 피복두께",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-9",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "콘크리트의 스케일링(Scaling) 동해(凍害)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-10",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "철골공사에서 철골부재 현장 반입시 검사항목",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-11",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "데크플레이트(Deck Plate) 슬래브공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-12",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "장애물 없는 생활환경 인증(Barrier Free)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-1-13",
+    "year": 2022,
+    "round": 128,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "소방관 진입창",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-1",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "지반조사의 목적과 조사단계별 내용 및 방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-2",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "콘크리트공사의 거푸집 존치기간, 거푸집 해체 시 준수사항과 동바리 재설치 시 준수사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-3",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물의 철근콘크리트공사 중 익스펜션 죠인트(Expansion Joint)를 시공해야 할 주요 부위와 설치위치, 형태에 관하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-4",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "고장력 볼트 접합공법의 종류와 특성, 조임검사 방법 및 시공시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-5",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "중대재해처벌에 관한 법률에 따른 중대산업재해의 정의와 사업주, 경영책임자 등의 안전보건확보의무 및 처벌사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-2-6",
+    "year": 2022,
+    "round": 128,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "방수공사에서 부위별 하자 발생원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-1",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축물의 말뚝기초공사에서 발생하는 말뚝 파손원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-2",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "콘크리트 탄산화 과정과 탄산화 측정방법 및 탄산화 저감대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-3",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "지하구조물에 미치는 부력의 영향 및 부상방지 공법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-4",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "공동주택의 외기에 면한 창호주위, 발코니, 화장실 누수의 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-5",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골공사에서 내화구조 성능기준과 내화피복의 종류 및 검사방법, 시공시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-3-6",
+    "year": 2022,
+    "round": 128,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "스마트 건설기술의 종류와 건설단계별 적용방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-1",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "지하굴착공사에 사용되는 계측기의 종류와 용도, 위치선정에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-2",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "굳지 않은 콘크리트의 블리딩에 의해 발생하는 문제점과 저감대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-3",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철골공사 현장용접시 고려사항과 검사방법(용접 전, 중, 후)에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-4",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "PC(Precast Concrete)공법의 종류와 접합부 요구성능 및 접합부 시공시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-5",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골공사에서 앵커볼트 매입방법의 종류와 주각부 시공시 고려사항에 대하여 설명 하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "128-4-6",
+    "year": 2022,
+    "round": 128,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "물가변동으로 인한 계약금액 조정방법(품목조정률, 지수조정률)을 비교하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-1",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건설소송에서 기성고 비율",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-2",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "건설프로젝트의 SCM(Supply Chain Management)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-3",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "굳지 않은 콘크리트의 단위수량 시험방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-4",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "양방향 재하시험",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-5",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "부력방지용 인장파일(Micro Pile)공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-6",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "언더피닝(Underpinning)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-7",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "건축공사 중 금속의 부식",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-8",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "저방사 유리(Low Emissive Glass)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-9",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "팽창콘크리트",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-10",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "갱폼 인양용 안전고리",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-11",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "초고층공사의 매립철물(Embedded Plate) 시공",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-12",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철골세우기 자립도 및 검토대상 건축물",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-1-13",
+    "year": 2023,
+    "round": 129,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "철강 제품의 품질확인서(Mill Sheet)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-1",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "한중콘크리트 타설 시 주의사항과 양생방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-2",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "지하주차장 슬래브(Slab) 균열 발생원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-3",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철골공사의 철골제작도(Shop Drawing) 작성 시 시공과 안전을 위하여 반영되어야 할 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-4",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "ESG경영의 3가지 주요 구성별로 건설관리 측면에서의 적용방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-5",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "재건축정비사업과 재개발정비사업의 특성을 비교하고, 건설사업관리 측면에서의 문제점 및 대응방향에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-2-6",
+    "year": 2023,
+    "round": 129,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "장수명 주택 인증의 세부 평가항목 및 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-1",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "콘크리트 타설 시 거푸집에 대한 고려하중과 측압 특성 및 측압 증가 요인에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-2",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "공사현장 철골 정밀도 검사기준(관리허용차) 및 수직도 관리방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-3",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물 지하 터파기 시 지하수에 대한 검토사항과 차수공법 및 배수공법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-4",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "건설현장의 안전시설(추락방망, 안전난간, 안전대 부착설비, 낙하물 방지망, 낙하물 방호선반, 수직보호망 등)의 기준 및 설치 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-5",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "국토교통부 가이드라인에 의한 적정 공사기간 산정방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-3-6",
+    "year": 2023,
+    "round": 129,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "시공책임형 건설사업관리(CM at Risk)의 정의, 한계점 및 개선방안, 적용확대방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-1",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "초고층 철근콘크리트 건축공사에서 Column Shortening 발생 시 문제점과 그 해결 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-2",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "용접결함의 원인과 대책, 비파괴 검사 방법, 용접결함 부위 보완방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-3",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "실링(Sealing)방수에서 실링재의 종류, 백업(Back Up)재, 본드 브레이커(Bond Breaker), 마스킹 테이프(Masking Tape)의 역할과 시공순서별 주의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-4",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "탄소중립·녹색성장기본법에 대비한 건설업 온실가스 저감방안을 ①자재생산 및 운송단계, ②현장시공단계, ③건물 운영단계 및 철거단계로 나누어 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-5",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "가설공사에 대한 내용 중 공통가설공사 시설의 종류와 설치기준에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "129-4-6",
+    "year": 2023,
+    "round": 129,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "커튼월 조인트의 유형과 누수원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-1",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "시스템 비계 설치 기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-2",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "BIM(Building Information Modeling)의 활성화 방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-3",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "말뚝공사의 부마찰력",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-4",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "석면해체 사전허가제도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-5",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "액상화 현상",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-6",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "강우 시 콘크리트 타설",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-7",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "잔골재율이 콘크리트에 미치는 영향",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-8",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "철골공사의 엔드탭(End tab)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-9",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "설계 경제성 평가(VE)의 원칙과 수행시기 및 효과",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-10",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "국내 기술형 입찰제도의 종류와 특징",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-11",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "굳지 않은 콘크리트의 재료분리 현상",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-12",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철골공사의 내화피복공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-1-13",
+    "year": 2023,
+    "round": 130,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "철골공사 주각부 시공 시 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-1",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "안전관리 계획수립의 기준 및 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-2",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "데크 플레이트 상부의 콘크리트 균열발생 원인과 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-3",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "공동주택 바닥충격음 차단성능의 등급기준과 층간소음저감을 위한 완충재 설치 전·후 확인사항, 경량기포콘크리트 및 방바닥 미장 타설 전·후 확인사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-4",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "건축물 벽체에 발생하는 결로의 종류, 발생원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-5",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "항타기· 항발기의 조립 및 해체 시 점검사항과 무너짐방지 준수사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-2-6",
+    "year": 2023,
+    "round": 130,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "거푸집 및 동바리의 안전성 검토에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-1",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "콘크리트 타설 시 압송관 막힘에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-2",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "콘크리트 균열 보수공법의 적용 및 시공방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-3",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "갱폼 작업 시 안전사고 예방대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-4",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "철골공사 방청도장 시공 시 유의사항 및 방청도장 제외부분에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-5",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "흙막이 공사에서 H-Pile + 토류판 흙막이공법의 시공순서 및 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-3-6",
+    "year": 2023,
+    "round": 130,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "공동주택 욕실 벽체에 시공한 도기질 타일의 하자발생 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-1",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "고층 건축물 거푸집공사에 사용되는 대형 시스템 거푸집(System Form) 공법을 분류하고, 특징 및 문제점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-2",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "도장공사의 하자 유형(들뜸, 백화, 균열, 부풀어오름)에 대한 원인 및 방지대책을 쓰고, 도장작업 전·중·후 확인사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-3",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 이음의 종류 및 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-4",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트 재료 중 하나인 골재의 부족현상에 대한 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-5",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골도장면 표면처리 검사에 포함되어야 할 검사사항과 부위별 검사기준 및 조치사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "130-4-6",
+    "year": 2023,
+    "round": 130,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "순수 내역 입찰제의 대상 및 계약절차와 장·단점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-1",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "흙의 압밀현상(consolidation)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-2",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "LCC(life cycle cost)에서 현재가치화법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-3",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "『기후위기 대응을 위한 탄소중립ㆍ녹색성장 기본법』상의 탄소중립도시와 녹색 건축물의 정의",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-4",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "지하층 마감공사에서 결로수 처리를 위한 지하 이중벽 구조",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-5",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "커튼월 공사 시 시공단계의 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-6",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "철근의 부동태 피막 파괴 시 영향",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-7",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "PC(precast concrete) 접합부의 요구 성능과 현장 접합시공 시 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-8",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "철골공사에서 내화피복공사의 공법별 검사",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-9",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "가설공사비의 구성",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-10",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "PEB(pre-engineered building system)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-11",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "『중대재해 처벌 등에 관한 법률』상의 중대산업재해와 중대시민재해",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-12",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "골재의 함수상태(4가지)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-1-13",
+    "year": 2023,
+    "round": 131,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "철근콘크리트보의 유효높이(effective depth) 확보의 중요성",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-1",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "철골제작 검사계획(Inspect Test Plan)의 검사 및 시험에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-2",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건설현장에서 로봇의 공종별 활용방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-3",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "무량판 구조에서 취약부위인 기둥 접합부 전단철근(전단보강근)의 배근을 누락시공 시 발생하는 문제점과 제도적 방지대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-4",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "흙막이 굴착 시 주변지반의 침하원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-5",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "클레임의 정의와 처리절차[①협의②조정③중재④소송]에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-2-6",
+    "year": 2023,
+    "round": 131,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "어스앵커 시공의 기준 및 주의사항을 천공→앵커의 삽입→그라우트혼입과 주입→ 긴장과 정착의 4단계로 구분하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-1",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "우기철 부력을 받는 구조물의 부상 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-2",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "철골구조 건축물 시공 시 철골 세우기 정밀도(한계허용치)와 세우기 장비 선정 시 고려 사항 및 세우기 작업 시 유의사항에 대해서 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-3",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철근이음과 관련된 다음 사항에 대하여 설명하시오. (1)철근 이음위치 결정 시 유의사항 (2)철근 이음방식 중 기계식 이음 방법의 종류 (3)기둥과 보에서 철근이음 시 적정한 위치와 부적정한 위치",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-4",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "굳지 않은 콘크리트의 재료분리 현상 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-5",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "장스팬 철근콘크리트 슬래브 처짐의 원인과 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-3-6",
+    "year": 2023,
+    "round": 131,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건설공사와 관련하여 발생하는 공해의 종류와 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-1",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "철골공사 접합부에 대하여 다음을 설명하시오. (1) 용접결함 및 보수방법 (2) 고력볼트의 조임검사",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-2",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "도막 방수공법 시공 및 품질관리 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-3",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 공사 후 시간경과에 따라 나타나는 균열을 경화 전, 경화 후 및 내구성 균열로 구분하여 균열의 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-4",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "알루미늄 창호의 부식원인과 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-5",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "최근 건설현장이 고층화, 대형화됨에 따라 거푸집의 안정성 검토가 중요시 되고 있다. 거푸집 설치 시 안정성 검토절차, 거푸집의 붕괴 원인 및 방지대책에 대해서 설명 하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "131-4-6",
+    "year": 2023,
+    "round": 131,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축물의 지하 공사 중에 흙막이와 주변지반, 인접 건물 등에 대한 계측 관리에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-1",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건축물 축조 시 건축기준의 허용오차",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-2",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "건설 신기술 선정 시 차수별 심사기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-3",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "연돌효과(Stack Effect)의 원인과 개선방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-4",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "건설 사업장의 위험성 평가 절차",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-5",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "가설 공사의 잭서포트(Jack Support)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-6",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "용접부 비파괴 검사 중 침투탐상 검사 시 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-7",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "지진에 대응하는 면진구조 계획 시 고려사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-8",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "건설공사에서 전과정평가(Life Cycle Assessment)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-9",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "데크 플레이트(Deck Plate) 걸침길이와 시공 시 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-10",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "유리공사의 요구성능 및 저방사(Low-e)유리의 특성",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-11",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "지하 안전 영향 평가 분류 및 평가 항목",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-12",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "현장 배합 시 잔골재의 표면수율",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-1-13",
+    "year": 2024,
+    "round": 132,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "보 철근 조립 시 피복두께 및 이음위치",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-1",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "철근콘크리트 공사의 거푸집 중 유로폼의 개요, 장단점, 구성품, 설치방법 및 시공 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-2",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건설현장에서의 임시소방시설 설치기준에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-3",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "VE(Value Engineering)의 정의 및 수행 시점별 효과와 추진절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-4",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "건축공사 설계변경 사유와 계약금액 조정의 처리 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-5",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "타일공사의 오픈타임(Open Time) 및 하자 원인과 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-2-6",
+    "year": 2024,
+    "round": 132,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건설공사 유해위험방지 계획서 제출 절차 및 작성내용과 제출 대상에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-1",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "한중콘크리트 타설 전 현장 점검사항과 초기 동해 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-2",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "현장타설 콘크리트 말뚝공법별 특징 및 중점 품질관리 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-3",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "복합방수공법의 특성 및 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-4",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "운반 시간이 초과된 콘크리트의 문제점과 현장관리 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-5",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "조적조의 백화 현상 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-3-6",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "BIM을 활용한 3D, 4D, 5D 중 4D 모델 활용의 장점과 고려사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-1",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "고강도 콘크리트의 폭렬 현상 중 폭렬에 미치는 영향인자와 폭렬 현상의 발생원인과 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-2",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건설공사의 안전관리비와 산업안전보건관리비를 비교 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-3",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "초고층 공사 시 코어 선행공법의 장점과 공종별(거푸집 설치, 거푸집 탈형, 클라이밍) 점검사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-4",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "지붕층 방수공사 시공 계획 시 고려사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-5",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "타워크레인의 설치, 운전, 해체 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "132-4-6",
+    "year": 2024,
+    "round": 132,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "철근콘크리트 건축물의 균열 원인과 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-1",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "철골부재 중 윈드컬럼(Wind Column)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-2",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "BIM 협업",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-3",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "EVM(Earned Value Management)에서 SPI(Schedule Performance Index)와 CPI(Cost Performance Index)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-4",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "유리의 구성요소 중 단열 간봉",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-5",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "타일공사에서 오픈타임(Open Time)과 가사시간",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-6",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "타워크레인 인상(Telescoping) 시 안전점검 사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-7",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "초평탄 콘크리트",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-8",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "콘크리트 자기수축(Autogeneous Shrinkage)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-9",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "수중 콘크리트",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-10",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "민간 투자사업의 추진 방식 중 수익형과 임대형",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-11",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "건설공사비 지수",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-12",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철골 세우기 중 기둥 수직도의 허용오차 범위",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-1-13",
+    "year": 2024,
+    "round": 133,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "신기술 활용평가 항목",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-1",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "BF(Barrier Free) 인증제도의 인증 대상 및 등급, 인증 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-2",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "스마트 안전장비 지원사업과 건설현장 스마트 안전관리 주요 요소기술 및 단계별 적용방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-3",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건설엔지니어링 종합심사낙찰제의 입찰 평가 방식과 평가 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-4",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "벽돌공사에서 수직 및 수평 신축줄눈 구성 방법과 균열 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-5",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "콘크리트공사에서 다음 항목에 대하여 설명하시오. ① 적용 부위 및 구성 재료에 따른 거푸집의 종류 ② 동바리의 종류 ③ 거푸집과 동바리의 해체 시기 및 검토 사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-2-6",
+    "year": 2024,
+    "round": 133,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "고내구성 콘크리트의 적용대상과 피복두께 및 시공 시 고려해야 할 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-1",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "주택 건설공사에서 감리자의 업무 착수 준비사항 및 현지여건 조사에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-2",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "건축물의 해체 공사계획 수립에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-3",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "커튼월 발음 현상과 이종 금속 부식 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-4",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "흙막이 배면의 차수 공법 중 주입 압력(저압, 고압)에 대한 약액 주입공법의 종류와 효과에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-5",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "콘크리트의 균열 조사, 보수·보강 방법 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-3-6",
+    "year": 2024,
+    "round": 133,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "철골공사 주각부 시공 시 앵커 매입방법과 고름질(Padding)에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-1",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "커튼월공사에서 시공 과정 검사 항목 및 검사방법, 커튼월 유리 설치 시 주의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-2",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "지하구조물의 부상 방지를 위한 공법을 설명하고, 부위별 계측 대상 및 측정방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-3",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "모듈러공법의 종류 및 장점, 단점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-4",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "PC공사의 PC부재 시공계획, 생산, 현장조립 시 유의점, 접합공법의 요구성능 및 종류별 특징에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-5",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "「건설기술진흥법」상 건설사업관리를 시행하여야 하는 건설공사의 종류와 건설사업 관리의 주요업무 내용에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "133-4-6",
+    "year": 2024,
+    "round": 133,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "「중대재해 처벌 등에 관한 법률」과 「산업안전보건법」에서 각각 정의하는 법 이행의 의무 주체, 의무 내용 및 재해에 대하여 비교 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-1",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "콘크리트 펌프 압송 시 막힘현상",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-2",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "「산업안전보건법」에 따른 건설업 사업장 휴게시설 설치·관리기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-3",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "공공 건설공사의 공사기간 산정기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-4",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "건설산업지식정보망(KISCON)의 건설공사대장",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-5",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "시스템비계",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-6",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "수지미장",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-7",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "조적조 백화현상",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-8",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "철근의 기계적 이음",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-9",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "철골공사의 고력볼트 시공기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-10",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "철골공사의 가우징(Gouging)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-11",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "철골공사의 스터드볼트(Stud Bolt)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-12",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "공동주택 바닥충격음",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-1-13",
+    "year": 2024,
+    "round": 134,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "물가변동으로 인한 계약금액의 조정요건 및 예외규정",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-1",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "석면해체·제거 작업 전 준비사항, 작업절차, 작업 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-2",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "Top Down 공법 시공 시 사용되는 Slab거푸집 공법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-3",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물 부상방지를 위한 공법별 특징과 중점관리대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-4",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "서중콘크리트 시공 시 문제점과 품질관리방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-5",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "커튼월(Curtain wall) 패스너(Fastener)의 기능 및 조립 시 유의사항에 대하여 설명 하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-2-6",
+    "year": 2024,
+    "round": 134,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "거푸집 및 동바리공사의 시공계획서 포함사항, 구조적 안전성 확인 대상, 해체 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-1",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "기성콘크리트 말뚝 시공 시 말뚝파손의 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-2",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "준공된 철근콘크리트 구조물의 균열 발생 원인, 보수·보강 공법, 보수·보강 후 품질 검사 방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-3",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물 강구조공사 시 공장제작과 현장시공의 정밀도 관리기준 중 아래의 내용에 대하여 설명하시오. 1) 관리허용차와 한계허용차 2) 제품 관련 정밀도 3) 공사현장 설치공사 정밀도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-4",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "지붕층 방수공사 시 고려사항 및 시공하자 발생원인과 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-5",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "건축물 해체의 신고·허가대상 및 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-3-6",
+    "year": 2024,
+    "round": 134,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "물질안전보건자료(MSDS : Material Safety Data Sheet)의 개요, 작성 시 포함내용, 교육의 시기 및 내용, 작업공정별 관리요령에 포함되어야 할 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-1",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "콘크리트 타설 중 국지성 집중호우 시 조치사항 및 현장 안전대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-2",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "타워크레인의 종류, 기종선정 시 주의사항, 조립·해체 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-3",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "지하수위가 높은 지하공사 시 지하수위 저하공법과 지수 및 차수공법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-4",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트 타설 시 고려해야 할 거푸집 측압의 특성, 증가요인, 측정방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-5",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "공동주택 결로 발생의 원인, 방지대책 및 시공상 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "134-4-6",
+    "year": 2024,
+    "round": 134,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "해양콘크리트의 염해 대책과 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-1",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "제로에너지건축물(Zero Energy Building) 인증제도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-2",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "산업안전보건관리비의 공사 진척(공정률)에 따른 사용기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-3",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "낙하물방지망 설치기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-4",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "건축물 기초공사 버림(밑창)콘크리트",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-5",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "철근 가스압접",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-6",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "고강도 콘크리트 폭렬현상",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-7",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "확대머리(Headed Bar) 이형철근",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-8",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "철근부식방지를 위한 품질관리방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-9",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "철골공사 주각부 앵커볼트(Anchor Bolt) 시공방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-10",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "충전형합성기둥 및 매입형합성기둥",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-11",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "타일의 접착력 검사방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-12",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "석재 앵커긴결공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-1-13",
+    "year": 2025,
+    "round": 135,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "건설사업관리(Construction Management)와 종합사업관리(Program Management)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-1",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "스마트 안전관리 시스템 개념과 스마트 안전장비 종류 및 현장 적용 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-2",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "도심지 흙막이공법이 적용되는 지하층 외벽구조체 공사에서 설계적인 측면과 시공적인 측면에서 검토할 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-3",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철골철근콘크리트공사에서 데크플레이트 시공 시 사고발생 원인과 예방대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-4",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "창호공사 시공 중에 발생 가능한 하자의 유형 및 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-5",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "커튼월 설치에 따른 요구성능과 누수원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-2-6",
+    "year": 2025,
+    "round": 135,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축물 해체공사 시 사전조사 사항 및 공해 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-1",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축물의 준공 전(前) 이행하여야 할 업무에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-2",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "PHC파일 공사 시 말뚝재하시험 종류와 특징, 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-3",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "환경친화형 콘크리트(Eco-Concrete) 중에 환경부하 저감형 콘크리트 및 생물대응형 콘크리트의 특징에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-4",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "철골세우기 공사의 세우기 과정과 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-5",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "건축공사 설계변경의 원인과 유의사항, 설계변경으로 인한 계약금액 조정에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-3-6",
+    "year": 2025,
+    "round": 135,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축물 에너지관리시스템(BEMS: Building Energy Management System)의 개념, 주요 기능 및 활용 저변 확대를 위한 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-1",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축공사에서 공통가설공사의 주요 항목 및 계획 시 유의사항, 문제점 및 합리화 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-2",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "한중콘크리트의 적용범위, 양생 시 품질관리, 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-3",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "내화피복 뿜칠공법의 종류와 시공 시 주의사항 및 품질관리 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-4",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "공동주택 단열공사 시 단열이음공법의 종류와 시공방법 및 결로 취약 부위별 시공 시 중점관리사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-5",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "초고층 건축물 양중계획 수립절차, 검토사항, 양중기계 배치계획에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "135-4-6",
+    "year": 2025,
+    "round": 135,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "BIM(Building Information Modeling)을 활용한 프리컨스트럭션(Pre-Construction) 적용에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-1",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건설사업관리정보시스템(PMIS: Project Management Information System)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-2",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "공통가설공사와 직접가설공사의 정의 및 주요항목",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-3",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "지질주상도(시추주상도)를 통해 확인할 수 있는 사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-4",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "하도급대금 연동제",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-5",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "프리캐스트 콘크리트 공사에서의 충전 콘크리트(Infilled Concrete)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-6",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "철근 프리패브(Pre-fab)공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-7",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "건축물의 제진장치",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-8",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "철골공사의 전단연결재(Shear Connector)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-9",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "철골공사 Splice Plate",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-10",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "옥상녹화 방수공사",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-11",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "배력철근과 온도철근",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-12",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "SSG(Structural Sealant Glazing)공법의 구조용 실란트(Structural Sealant) 줄눈 시공 시 검토항목",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-1-13",
+    "year": 2025,
+    "round": 136,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "철골용접 전 예열",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-1",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "커튼월 공사에서 Mock-up Test 효과, 성능시험 항목 및 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-2",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "철골공사에서 용접결함 원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-3",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철근이음 방법 중 기계적 이음과 관련하여, 다음을 설명하시오. (1) 기계적 이음의 종류별 개념(이음방법), 적용부위, 장점 및 단점 (2) 기계적 이음의 품질관리 시험기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-4",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "철근콘크리트조 지하주차장에서 균열과 누수가 발생하는 원인과 방지대책 및 보수 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-5",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "가설공사 중 강관비계 및 시스템 비계의 구조와 조립작업 시 준수사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-2-6",
+    "year": 2025,
+    "round": 136,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축물 해체공사 시 발생 가능한 사고유형과 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-1",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "커튼월의 결로발생 원인과 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-2",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "PC공법의 종류를 나열하고, PC부재의 운반 및 반입관리, 부재조립과 접합관리 방안을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-3",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철근콘크리트 구조의 수직부재와 수평부재의 콘크리트 설계기준강도가 서로 상이한 경우 분리 타설하는 방법과 시공 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-4",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "공동주택 층간소음 사후 확인제도(바닥충격음 성능검사)에 대하여 설명하고, 성능기준 미달 시 보완시공 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-5",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "공동도급의 유형을 설명하고, 주계약자 관리방식의 장단점과 활성화 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-3-6",
+    "year": 2025,
+    "round": 136,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "콘크리트 공사 중 현장양생공시체를 제작하는 목적과 양생방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-1",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "타일공법의 종류별 특징과 타일공사의 하자발생 원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-2",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "공동주택의 갱폼(Gang Form) 제작 시 세부 검토사항과 설치 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-3",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트공사 표준시방서 중 일반콘크리트와 한중콘크리트의 품질확보방안을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-4",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "도심지 지하 흙막이 공사시 고려해야 하는 계측기의 종류 및 계측항목, 설치위치에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-5",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "설계VE(Value Engineering)의 검토업무 절차 및 VEP(Value Engineering Proposal)와 VECP(Value Engineering Change Proposal)의 차이점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "136-4-6",
+    "year": 2025,
+    "round": 136,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "안전관리계획서를 수립해야 하는 건설공사의 종류 및 수립기준과 승인절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-1",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "시공능력평가제도에서 시공능력 평가방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-2",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "건설현장의 폭염 기준과 관리 대책",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-3",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "계수치(Attribute Data) 품질관리도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-4",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "공사계약 종합심사낙찰제의 균형가격",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-5",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "건설현장 사전(현황)조사",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-6",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "초평탄 콘크리트 바닥 평탄도 검수기준 및 품질확보 방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-7",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "MHS(Modularized Hybrid System) 공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-8",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "미장공사에서 수축균열 방지대책",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-9",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "목재의 내화처리 방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-10",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "프리캐스트콘크리트의 건식접합(dry joint)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-11",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "슈퍼콘크리트(Super Concrete)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-12",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철골의 수직도관리 방법 및 기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-1-13",
+    "year": 2025,
+    "round": 137,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "강구조공사 내화피복 공사의 공법별 검사항목 및 방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-1",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건설폐기물의 종류와 발생저감 대책 및 재활용 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-2",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "가설공사의 특성 및 계획수립 시 유의사항과 향후 가설재의 개발방향에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-3",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "기초하부에 폐기물매립이나 오염토양이 예상되는 지역에서 실시하는 지반조사 방법 및 처리방안을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-4",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "프리캐스트콘크리트의 현장 조립 시 접합부 품질확보를 위한 충전 모르타르 및 접합부 콘크리트의 시공 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-5",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "지하주차장 결로발생 메커니즘(Mechanism)과 시공단계별 결로예방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-2-6",
+    "year": 2025,
+    "round": 137,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "강구조공사 녹막이 도장 작업 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-1",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "에너지 절감 방안과 관련하여 단열재 종류별 성능과 열교 부위별 측면에서 설치기준을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-2",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "벽돌벽의 균열 발생원인 및 대책과 시공 시 주의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-3",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "지진에 대응하는 내진, 면진, 제진기술에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-4",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트 작업 시 다음에 대하여 설명하시오. (1) 콘크리트면의 균열 발생 시 건설기술진흥법 시행령상 “건설공사 등의 벌점관리기준”에 대하여 설명하시오. (2) (1)항의 대책을 설계, 재료, 시공, 양생 단계로 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-5",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "거푸집 공사에서 안전사고 예방을 위하여 거푸집 조립 시, 점검 및 해체 단계별로 주요 확인 사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-3-6",
+    "year": 2025,
+    "round": 137,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "우기 콘크리트 타설 시 다음에 대하여 설명하시오. (1) 관리자의 역할 (2) 주요 점검사항 (3) 구조물에 미치는 영향",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-1",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "시설물의 성능평가의 종류, 계획수립 항목, 현장조사시험에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-2",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "공동주택 층간소음의 발생원인과 저감대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-3",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 표준시방서 [KCS 14 20 40 : 2024]에 따른 한중콘크리트에서 타설과 현장 양생공시체에 대한 개정사항 및 시공 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-4",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트 내구성 확보를 위한 환경조건의 노출범주를 5단계로 분류하고 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-5",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골철근콘크리트 구조의 건축물에 화재 발생 시 구조물의 피해조사방법과 복구방법을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "137-4-6",
+    "year": 2025,
+    "round": 137,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "중대재해 처벌 등에 관한 법률에서 중대산업재해의 정의와 적용 범위에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-1",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건설현장 방음시설",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-2",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "철골구조의 추락방호망 설치 기준 및 관리",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-3",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "탈현장공법(Off-Site Construction)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-4",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "철골공사 공작도에 포함시켜야 할 안전시설",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-5",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "전자적대금지급시스템",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-6",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "건설기술인 역량지수(Index of Construction Engineer’s Competency)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-7",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "텔레스코핑(Telescoping) 작업 시 유의 사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-8",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "규산질계 분말형 도포방수",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-9",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "철근의 응력-변형률 선도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-10",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "무량판 구조의 시공관리 방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-11",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "한중 콘크리트 생산 시 관리사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-12",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "저탄소(Low-carbon) 콘크리트",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-1-13",
+    "year": 2026,
+    "round": 138,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "DPG(Dot Point Glazing)공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-1",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "한중콘크리트 시공 시 적산온도를 활용한 거푸집 해체 시기 판정과 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-2",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "수직증축 리모델링 공사 중 콘크리트 구조물의 균열 보수·보강 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-3",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물 해체 공법의 종류와 해체계획서 포함 내용에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-4",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "갱폼(Gang Form) 시공 시 현장관리 사항과 재해예방 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-5",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골공사 고장력 볼트의 보관, 시공 및 검사 방법에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-2-6",
+    "year": 2026,
+    "round": 138,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "위험성평가의 시기별 종류, 절차, 위험성 감소대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-1",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "프리캐스트 콘크리트 공사의 부재 제작계획, 운반계획, 조립 및 품질관리계획에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-2",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "철골공사 용접부 검사방법과 용접결함의 종류, 라멜라 티어링(Lamellar Tearing) 현상의 원인 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-3",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "시멘트 모르타르 바름 공법의 시공절차, 균열의 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-4",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "건설기술인력 고령화에 따른 문제점과 개선방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-5",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "「건설기술진흥법」상 건설사업관리의 적용대상, 단계별 업무내용에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-3-6",
+    "year": 2026,
+    "round": 138,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건설 산업의 생산성 향상과 안전사고 예방을 위한 “AX(AI Transformation) 기반 스마트 건설기술”의 적용 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-1",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "지하연속벽에서의 어스앵커(Earth anchor) 시공시 다음에 대하여 설명하시오. (1) 누수 경로별 방수처리 (2) 인장시험의 종류 (3) 확인시험시 유의사항",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-2",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "매스 콘크리트(Mass Concrete)의 타설전 준비사항, 발생 균열의 종류와 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-3",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "현장타설말뚝공사에서 다음 항목에 대하여 설명하시오. (1) 현장타설말뚝의 결함유형별 발생 원인 및 대책 (2) 말뚝의 건전도 시험(Sonic integrity Test) 방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-4",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "석재공사 시 석재의 오염 발생 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-5",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골공사에서 공장제작의 품질관리 사항과 현장 반입절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "138-4-6",
+    "year": 2026,
+    "round": 138,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "천장공사 시 경량철골천장틀 부재구성, 시공순서 및 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-1",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "건강친화형 주택건설기준의 플러시아웃(Flush out)과 베이크아웃(Bake out)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-2",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "흙의 연경도(Consistency)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-3",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "락볼트(Rock Bolt) 공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-4",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "프리캐스트 콘크리트 하이브리드 접합(Hybrid Connection in Precast Concrete)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-5",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "콘크리트의 레이턴스(Laitance)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-6",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "필러 서포트(Filler Support)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-7",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "시스템 서포트(System Support)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-8",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "건축 구조용 내화 강재(Fire Resistance Steels for Building Structure)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-9",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "임팩트볼(Impact Ball)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-10",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "국가를 당사자로 하는 계약에 관한 법률에서의 물가변동으로 인한 계약금액 조정방법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-11",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "IPD(Integrated Project Delivery) 프로젝트 발주방식",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-12",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "콘크리트 표준시방서에서의 거푸집 해체기준",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-1-13",
+    "year": 2026,
+    "round": 139,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "건물일체형 태양광(BIPV : Building-Integrated PhotoVoltaics)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-1",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "연약지반에서 기성재 콘크리트 말뚝 항타 시 지지력 감소 원인 및 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-2",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "고도제한이 있는 건축공사 현장에서 타워크레인 배치 계획 시 고려사항, 텔레스코핑 작업 순서 및 작업 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-3",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건설현장에서 화재위험작업의 종류와 화재감시자 배치 기준 및 업무, 화재위험작업 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-4",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트공사(타설, 양생)에서 발생 가능한 재해 형태와 위험요인, 그리고 이를 예방하기 위한 스마트 안전장비에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-5",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "다음은 건설 현장 위험 기계·장비의 작업계획서 작성 단계이다. 작업계획서의 정의 및 단계별 작업계획서 내용에 대하여 설명하시오. (1) 작업계획 수립 단계 (2) 사전조사 및 확인점검 단계 (3) 작업방법 및 운행경로 등의 결정 단계 (4) 위험요인 결정 및 안전대책 수립 단계 (5) 작업계획서의 작성 및 수정 단계",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-2-6",
+    "year": 2026,
+    "round": 139,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "가구공사 중 혹파리(초파리 유사 소형 파리류) 발생원인과 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-1",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건설현장에서 중대재해 예방을 위한 고위험 공정 안전관리 체계에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-2",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "지하연속벽(Slurry wall) 시공 시 안정액의 기능과 요구성능, 안정액의 Slime 처리 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-3",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "건축물에서 도장공사의 용도별로 사용하는 도료의 종류와 하자유형 및 방지대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-4",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "전이플레이트 구조에서 하중의 전달 특성과 수평 끊어치기 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-5",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "거푸집 설계시 고려해야 하는 하중요소와 콘크리트 측압에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-3-6",
+    "year": 2026,
+    "round": 139,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "건축물의 피난·방화 구조 등의 기준에 관한 규칙의 건축물 방화구획의 설치 기준과 다음의 부위별 방화구획 방법에 대하여 설명하시오. (1) 커튼월과 슬래브 틈새 (2) 세대간경계벽 및 내벽체 적용 내화인정 경량벽체 (3) 설비배관덕트 및 케이블 관통부 (4) 방화문 및 자동방화셔터 설치",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-1",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건설업에서 납품대금 연동제(대·중소기업 상생협력 촉진에 관한 법률) 적용대상 및 약정체결 시 주요 기재사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-2",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "거푸집 내 이물질이 구조물에 미치는 영향과 시공 단계별 이물질 제거 방안 및 관리 대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-3",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "철근콘크리트공사에서 철근의 간격 유지가 구조물 품질에 미치는 영향과 부위별(슬래브, 기둥, 벽) 시공 시 관리대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-4",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "유효 층고 확보가 중요한 건축물에서 포스트텐션(Post-Tension) 공법을 적용할 경우의 구조적 특성 및 효과를 설명하고, 시공계획 수립 및 시공 단계에서의 검토사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-5",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "CFT(Concrete Filled Steel Tube, 콘크리트 충전 강관구조) 기둥의 구조적 특성을 설명하고, CFT 기둥 시공 시 기둥의 이음 방법, 콘크리트 충전 방법과 품질관리에 대하여 설명하시오. (1) CFT 기둥의 구조적 특성 (2) CFT 기둥의 이음 방법 (3) 콘크리트 충전 방법과 품질관리",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "139-4-6",
+    "year": 2026,
+    "round": 139,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "시설물의 안전 및 유지관리에 관한 특별법에 의한 안전점검 종류 및 시설물의 중대한 결함에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-1",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 1,
+    "kind": "단답형",
+    "question": "CLT(Cross-Laminated Timber)와 GLT(Glued Laminated Timber)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-2",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 2,
+    "kind": "단답형",
+    "question": "품목조정률과 지수조정률",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-3",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 3,
+    "kind": "단답형",
+    "question": "OSC(Off-Site Construction)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-4",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 4,
+    "kind": "단답형",
+    "question": "LW(Labiles Wasser-Glass) 공법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-5",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 5,
+    "kind": "단답형",
+    "question": "본드빔(Bond Beam)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-6",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 6,
+    "kind": "단답형",
+    "question": "점군데이터(Point Cloud Data)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-7",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 7,
+    "kind": "단답형",
+    "question": "커튼월공사의 층간변위 추종성",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-8",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 8,
+    "kind": "단답형",
+    "question": "인슐레이션 파스너(Insulation Fastener)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-9",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 9,
+    "kind": "단답형",
+    "question": "다발철근(Bundle Rebars)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-10",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 10,
+    "kind": "단답형",
+    "question": "콘크리트 탄산화",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-11",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 11,
+    "kind": "단답형",
+    "question": "콘크리트 기온보정강도",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-12",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 12,
+    "kind": "단답형",
+    "question": "철근의 기계적 이음",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-1-13",
+    "year": 2026,
+    "round": 140,
+    "period": 1,
+    "number": 13,
+    "kind": "단답형",
+    "question": "모살용접(Fillet Welding)",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-1",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 1,
+    "kind": "논술형",
+    "question": "건축물의 LCC(Life Cycle Cost)에 관하여 다음 항목에 대하여 기술하시오. (1) 개념 (2) 목적 (3) 구성 (4) 분석법",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-2",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 2,
+    "kind": "논술형",
+    "question": "ZEB(Zero Energy Building, 제로에너지건축물) 구현을 위한 에너지 절감기술 및 시공관리 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-3",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 3,
+    "kind": "논술형",
+    "question": "지하 6층 굴착현장이 기존 건축물과 지하철 구조물에 인접해 있으며, 굴착 중 지하수위가 빠르게 저하되고 흙막이벽 변위와 인접건물 침하가 설계예상값을 넘어 관리기준에 접근하고 있다. 다음 사항에 대하여 설명하시오. (1) 현장에서의 계측관리 기준 (2) 계측계획·자료분석·원인판단·공사중지 및 보강·재개 절차",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-4",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 4,
+    "kind": "논술형",
+    "question": "시스템 거푸집의 종류와 특징, 시공 시 고려 사항에 대하여 기술하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-5",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철근콘크리트 구조물의 기둥 축소(Column Shortening) 원인과 문제점 및 설계·시공단계 시 대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-2-6",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 6,
+    "kind": "논술형",
+    "question": "철골공사의 방청도장(녹막이칠) 공법의 종류와 시공 시 품질관리 방안에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-1",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "시스템비계의 설치기준 및 시공 전, 중, 후 검토사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-2",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 2,
+    "kind": "논술형",
+    "question": "커튼월 공사의 재료별, 공법별 특성 및 하자원인과 방지대책을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-3",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 3,
+    "kind": "논술형",
+    "question": "공장 제작 철골부재의 품질검사 내용과 절차에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-4",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 4,
+    "kind": "논술형",
+    "question": "「중대재해 처벌 등에 관한 법률」상 ‘중대산업재해’와 ‘중대시민재해’에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-5",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 5,
+    "kind": "논술형",
+    "question": "현장타설 콘크리트 말뚝공법 선정 시 고려사항과 공법별 특징, 시공순서 및 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-3-6",
+    "year": 2026,
+    "round": 140,
+    "period": 3,
+    "number": 6,
+    "kind": "논술형",
+    "question": "스마트안전기술의 개요 및 안전관리비 적용 대상, 분류체계에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-1",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 1,
+    "kind": "논술형",
+    "question": "물류창고의 화재 발생 유형, 특징, 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-2",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 2,
+    "kind": "논술형",
+    "question": "초고층 건축물 공사에서 건설용 리프트(Lift) 설치 시 다음 사항에 관하여 설명하시오. (1) 설치기준 (2) 안전대책 (3) 장비선정시 유의사항 (4) 운영관리방안",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-3",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 3,
+    "kind": "논술형",
+    "question": "콘크리트 구조물의 이음(Joint)의 종류와 종류별 특징, 주요 하자 발생 이유 및 시공 시 유의할 점에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-4",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 4,
+    "kind": "논술형",
+    "question": "콘크리트 타설시 기둥 및 벽체의 거푸집 측압을 각각 계산식과 함께 설명하고, 거푸집 설치 및 타설 시 주요 고려사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-5",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 5,
+    "kind": "논술형",
+    "question": "철골 기둥이음에 적용하는 메탈터치(Metal Touch)의 설계개념(응력전달 기준), 이음면의 가공(정밀도) 기준, 그리고 시공·검측 시 유의사항에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  },
+  {
+    "id": "140-4-6",
+    "year": 2026,
+    "round": 140,
+    "period": 4,
+    "number": 6,
+    "kind": "논술형",
+    "question": "모듈러(Modular) 공법의 장·단점과 종류별 특징에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+  }
+]
