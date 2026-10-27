@@ -1,6 +1,6 @@
 """친구 요청 작업의 실행 전 점검 — 접수가 없으면 AI(claude)를 아예 부르지 않는다.
 
-    python3 precheck_friend.py survey|civil
+    python3 precheck_friend.py survey|civil|building
 
 engineer-question-worker/queue.py sync 로 Netlify 접수를 받아 오고(원래 작업의 첫 단계와 같다), 처리할 요청
 (queued·processing·published)이 있는지 본다. 종료 코드: 0 = 할 일 있음(작업을 돌린다), 3 = 접수 없음(건너뛴다),
@@ -17,8 +17,8 @@ Q = Path(__file__).resolve().parents[1] / "engineer-question-worker" / "queue.py
 
 def main():
     exam = sys.argv[1] if len(sys.argv) > 1 else ""
-    if exam not in ("survey", "civil"):
-        print(json.dumps({"status": "error", "message": "사용법: precheck_friend.py survey|civil"}, ensure_ascii=False))
+    if exam not in ("survey", "civil", "building"):
+        print(json.dumps({"status": "error", "message": "사용법: precheck_friend.py survey|civil|building"}, ensure_ascii=False))
         return 2
     p = subprocess.run([sys.executable, str(Q), "--exam", exam, "sync"], capture_output=True, text=True, timeout=180)
     try:

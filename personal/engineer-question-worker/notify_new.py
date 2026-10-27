@@ -16,8 +16,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 QUEUE = ROOT / "queue.py"
 NOTIFIED = ROOT / "notified.json"
-EXAMS = {"survey": ("state.json", "측량"), "civil": ("civil-state.json", "토목시공")}
-LINKS = {"survey": "https://geoai-na.netlify.app/questions/", "civil": "https://geoai-na.netlify.app/civil-questions/"}
+EXAMS = {"survey": ("state.json", "측량"), "civil": ("civil-state.json", "토목시공"), "building": ("building-state.json", "건축시공")}
+LINKS = {"survey": "https://geoai-na.netlify.app/questions/", "civil": "https://geoai-na.netlify.app/civil-questions/", "building": "https://geoai-na.netlify.app/building-questions/"}
 
 
 def kakao_cmd():

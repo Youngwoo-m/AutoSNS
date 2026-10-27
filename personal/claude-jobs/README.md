@@ -8,8 +8,10 @@ launchd → `run_claude_job.sh <작업>` → axlock(비상 정지·중복 실행
 | survey-daily — 측량 하루 한 문제 | 06:00 · 08:00 | automation | 티스토리 · 유튜브 숏츠 · 카톡 |
 | survey-shorts — 측량 기출 핵심 숏츠 | 17:00 · 19:00 | 7 | 유튜브 숏츠 |
 | civil-daily — 토목시공 하루 한 문제 | 08:00 | 8 | 티스토리 · 개인 블로거 |
+| building-daily — 건축시공 하루 한 문제 | 09:00 | 신규 | 티스토리 · 개인 블로거 |
 | survey-friend — 측량 친구 요청 | 23:00 | automation-2 | 티스토리 · 카톡 |
 | civil-friend — 토목시공 친구 요청 | 23:10 | 11 | 티스토리 · 개인 블로거 |
+| building-friend — 건축시공 친구 요청 | 23:20 | 신규 | 티스토리 · 개인 블로거 |
 | safekorea — 안전한국훈련 | 09:00 · 12:00 · 18:00 | geoai | 티스토리 |
 | nordic — 노르딕워킹 | 07:00 | automation-3 | 티스토리 |
 

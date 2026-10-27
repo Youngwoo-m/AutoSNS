@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>문제 요청 · 건축시공기술사 | 재난안전과 GeoAI</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="description" content="건축시공기술사 문제를 요청하고, 발행된 모범답안과 따라쓰기 PDF를 티스토리에서 확인하세요.">
+<meta property="og:title" content="건축시공기술사 · 함께 푸는 한 문제">
+<meta property="og:description" content="궁금한 문제를 보내주세요. 모범답안과 따라쓰기 PDF로 함께 공부합니다.">
+<meta property="og:type" content="website"><link rel="canonical" href="https://geoai-na.netlify.app/building-questions/">
+<link rel="stylesheet" href="/questions/style.css">
+<script src="/building-questions/app.js" defer></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"문제 요청 · 건축시공기술사","url":"https://geoai-na.netlify.app/building-questions/","inLanguage":"ko","isPartOf":{"@id":"https://geoai-na.netlify.app/#site"},"author":{"@id":"https://geoai-na.netlify.app/#author"},"about":"건축시공기술사 문제 모범답안과 따라쓰기 PDF"}</script>
+</head>
+<body>
+<a class="skip" href="#question-form">문제 입력으로 바로가기</a>
+<header class="nav"><a class="brand" href="/">재난안전과 <b>GeoAI</b></a><nav aria-label="주 메뉴"><a href="/questions/">측량 문제</a><a href="/civil-questions/">토목시공 문제</a><a href="#published">발행된 문제</a><a class="nav-blog" href="https://na-geoai.tistory.com/" target="_blank" rel="noopener">티스토리 ↗</a></nav></header>
+<main>
+<section class="hero">
+<div class="hero-content"><p class="eyebrow"><span></span> 함께 공부하는 기술사</p><h1>건축시공기술사<br><strong>함께 푸는 한 문제.</strong></h1><p class="intro">궁금한 문제를 보내주세요.<br>모범답안과 그림·표, 따라쓰기 PDF로 함께 공부합니다.</p><p class="intro" style="margin-top:12px">최근 5년 기출의 빈출 유형부터 답안을 연습합니다.</p><div class="hero-actions"><a class="button" href="#question-form">문제 요청하기 <span aria-hidden="true">↓</span></a><a href="#published">발행된 답안 보기 →</a></div><div class="hero-note"><span>매일 오전 8시 · 원고 작성</span><span>친구 요청 · 매일 밤 11시</span></div></div>
+<svg class="contour" viewBox="0 0 460 340" aria-hidden="true" fill="none"><g stroke="currentColor" stroke-width="1"><path d="M-30 90C55-15 125 150 220 64S440-10 490 100M-30 108C62 4 126 170 224 84S440 15 490 122M-30 130C70 20 130 196 233 103S438 35 490 146M-30 154C78 38 135 223 245 123S442 56 490 167M-30 180C88 55 143 250 259 145S448 78 490 190M-30 210C99 77 157 279 278 168S452 102 490 218M-30 240C108 102 175 302 295 193S456 127 490 242M-30 270C122 124 185 333 313 221S458 150 490 270M-30 304C128 150 203 360 327 250S461 174 490 297M-30 336C145 181 212 391 344 279S470 202 490 324"/><circle cx="285" cy="173" r="26"/><path d="M285 134v78M246 173h78"/></g><circle cx="285" cy="173" r="4" fill="currentColor"/><text x="309" y="163" fill="currentColor" stroke="none" font-size="12" font-family="monospace">N 37° · E 127°</text></svg>
+</section>
+<div class="workspace">
+<section class="panel request" aria-labelledby="request-title"><div class="section-label">01 / REQUEST</div><h2 id="request-title">풀고 싶은 문제를 보내주세요</h2><p class="muted">문제 내용을 적으면 접수됩니다. 과목은 학습용 분류이며 공식 시험 과목 구분과는 다릅니다. 회차나 출처를 알면 함께 남겨주세요.</p>
+<form id="question-form" name="building-engineer-questions" method="POST" action="/building-questions/thanks/" data-netlify="true" netlify-honeypot="bot-field">
+<input type="hidden" name="form-name" value="building-engineer-questions">
+<p class="honeypot" aria-hidden="true"><label>비워두세요 <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+<label for="title">문제 제목 <span class="required">필수</span></label><input id="title" name="title" required maxlength="120" placeholder="예: 서중 콘크리트의 문제점과 대책">
+<label for="question">문제 내용 <span class="required">필수</span></label><textarea id="question" name="question" rows="7" required minlength="10" maxlength="5000" aria-describedby="question-help" placeholder="설명할 개념, 비교할 항목, 궁금한 실무 사례 등을 자세히 적어주세요."></textarea><div class="field-note"><span id="question-help">10자 이상 · 5,000자 이내</span><span id="count" aria-live="off">0 / 5,000</span></div>
+<div class="field-grid"><div><label for="topic">과목(학습 분류) <span class="optional">선택</span></label><select id="topic" name="topic"><option value="">과목 선택</option><option>가설·토공·지정</option><option>기초·지하공사</option><option>철근콘크리트공</option><option>철골공</option><option>조적·방수·미장·마감</option><option>커튼월·유리·외장</option><option>공정·원가·계약</option><option>품질·안전·환경·유지관리</option><option>스마트·디지털(BIM)</option><option>기타</option></select></div><div><label for="nickname">닉네임 <span class="optional">선택</span></label><input id="nickname" name="nickname" maxlength="40" placeholder="생략해도 괜찮아요"></div></div>
+<label for="reference">기출 회차 또는 참고 링크 <span class="optional">선택</span></label><input id="reference" name="reference" maxlength="500" placeholder="예: 제○○회 ○교시 ○번 / 참고 사이트 주소">
+<div class="consent"><input type="checkbox" id="consent" name="consent" value="동의" required><label for="consent">입력한 문제를 바탕으로 학습용 모범답안이 블로그에 공개되는 데 동의합니다.</label></div><p class="privacy">연락처나 개인정보는 적지 마세요. 닉네임은 공개 목록에 표시하지 않습니다.</p>
+<button class="button submit" type="submit">문제 접수하기 <span aria-hidden="true">↗</span></button><p id="form-status" role="status" aria-live="polite"></p>
+</form>
+<div class="how"><h3>접수 이후에는</h3><ol><li><b>문제 접수</b><span>접수한 문제는 매일 밤 11시에 순서대로 확인합니다.</span></li><li><b>모범답안 작성</b><span>그림·표와 출처, 옅은 회색 따라쓰기 PDF를 준비합니다.</span></li><li><b>티스토리 별도 발행</b><span>발행 후 오른쪽 목록에 글 링크가 추가됩니다.</span></li></ol><p>친구 요청은 매일 밤 11시(한국시간)에 확인하고 별도로 작성·발행합니다. 컴퓨터가 켜져 있고 자동화가 실행 가능한 동안 답안을 준비합니다. 꺼져 있으면 다시 실행될 때 이어서 처리하며, 작성·검증 시간에 따라 처리가 늦어질 수 있습니다. 밤 11시는 작업 시작 시각이며, 검토와 자료 준비를 마친 뒤 공개 발행합니다.</p></div>
+</section>
+<section class="panel library" id="published" aria-labelledby="published-title"><div class="section-label">02 / ANSWERS</div><div class="list-heading"><h2 id="published-title">발행된 문제</h2><span class="total" id="total">0문제</span></div><p class="muted">제목을 누르면 티스토리에서 모범답안과 PDF 첨부파일을 볼 수 있습니다.</p>
+<label class="sr-only" for="search">발행된 문제 검색</label><div class="search-wrap"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="제목·분야로 검색" autocomplete="off"></div><div class="filters" role="group" aria-label="발행 유형"><button type="button" class="filter active" data-kind="all" aria-pressed="true">전체</button><button type="button" class="filter" data-kind="daily" aria-pressed="false">하루 한 문제</button><button type="button" class="filter" data-kind="request" aria-pressed="false">친구 요청</button></div>
+<div id="answer-list" class="answer-list" aria-live="polite"><p class="empty">공개 발행된 건축시공 답안이 추가되면 이곳에 표시됩니다.</p></div>
+<p class="list-status" id="list-status"></p><a class="all-blog" href="https://na-geoai.tistory.com/category/건축시공기술사" target="_blank" rel="noopener">티스토리에서 전체 글 보기 ↗</a>
+<aside class="study-note"><span class="section-label">STUDY NOTE</span><h3>읽고, 그리고, 직접 써보기.</h3><p>모범답안은 학습용 예시입니다. 핵심 개념과 논리를 이해한 뒤, 옅은 회색 PDF를 출력해 손으로 따라 써보세요.</p></aside>
+</section>
+</div>
+</main><footer><a href="/">재난안전과 GeoAI</a><span>건축시공기술사 · 함께 쌓아가는 공부 기록</span></footer>
+</body></html>

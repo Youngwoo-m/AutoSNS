@@ -20,6 +20,11 @@ class ExamRoutingTest(unittest.TestCase):
         self.assertNotEqual(survey['state'], civil['state'])
         self.assertTrue(civil['published'].endswith('/civil-questions/published.json'))
         self.assertTrue(survey['published'].endswith('/questions/published.json'))
+    def test_building_has_own_form_state_and_list(self):
+        building = self.config('--exam', 'building')
+        self.assertEqual(building['form'], 'building-engineer-questions')
+        self.assertTrue(building['state'].endswith('building-state.json'))
+        self.assertTrue(building['published'].endswith('/building-questions/published.json'))
 
 if __name__ == '__main__':
     unittest.main()

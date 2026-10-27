@@ -37,7 +37,7 @@ def main():
         f = AGENTS / f'{label}.plist'
         f.write_bytes(plistlib.dumps(pl))
         keep.append({'job': f"claude.{j['key']}", 'account': 'personal', 'name': j['name'],
-                     'what': f"클로드(claude -p, {j['model']})가 지시문 jobs/{j['key']}.md 대로 작성·발행 (Codex '{j['codex']}' 에서 옮김)",
+                     'what': f"클로드(claude -p, {j['model']})가 지시문 jobs/{j['key']}.md 대로 작성·발행 ({'Codex ' + repr(j['codex']) + ' 에서 옮김' if j['codex'] != '신규' else '2026-10-27 신규'})",
                      'entry': f"personal/claude-jobs/jobs/{j['key']}.md", 'channels': j['channels'],
                      **notes.get(f"claude.{j['key']}", {})})
         print('작성', f.name)

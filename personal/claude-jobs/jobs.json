@@ -121,6 +121,50 @@
    ]
   },
   {
+   "key": "building-daily",
+   "codex": "신규",
+   "name": "건축시공 하루 한 문제 (티스토리+개인 블로거)",
+   "hours": [
+    9
+   ],
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ]
+  },
+  {
+   "key": "building-friend",
+   "codex": "신규",
+   "name": "건축시공 친구 요청 답안 (티스토리+개인 블로거)",
+   "hours": [
+    23
+   ],
+   "minute": 20,
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ],
+   "precheck": [
+    "python3",
+    "precheck_friend.py",
+    "building"
+   ]
+  },
+  {
    "key": "safekorea",
    "codex": "geoai",
    "name": "안전한국훈련 글 (하루 한 번, 12시 영상 소개)",
