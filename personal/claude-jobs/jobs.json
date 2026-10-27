@@ -165,6 +165,50 @@
    ]
   },
   {
+   "key": "safety-daily",
+   "codex": "신규",
+   "name": "건설안전 하루 한 문제 (티스토리+개인 블로거)",
+   "hours": [
+    10
+   ],
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ]
+  },
+  {
+   "key": "safety-friend",
+   "codex": "신규",
+   "name": "건설안전 친구 요청 답안 (티스토리+개인 블로거)",
+   "hours": [
+    23
+   ],
+   "minute": 30,
+   "model": "opus",
+   "channels": [
+    [
+     "personal",
+     "tistory"
+    ],
+    [
+     "personal",
+     "blogger"
+    ]
+   ],
+   "precheck": [
+    "python3",
+    "precheck_friend.py",
+    "safety"
+   ]
+  },
+  {
    "key": "safekorea",
    "codex": "geoai",
    "name": "안전한국훈련 글 (하루 한 번, 12시 영상 소개)",

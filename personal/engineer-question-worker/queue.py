@@ -70,7 +70,7 @@ def sync_list():
     file.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps({'published_count':len(data['items'])},ensure_ascii=False))
 
-p=argparse.ArgumentParser();p.add_argument('--exam',choices=['survey','civil','building'],default='survey');sub=p.add_subparsers(dest='command',required=True)
+p=argparse.ArgumentParser();p.add_argument('--exam',choices=['survey','civil','building','safety'],default='survey');sub=p.add_subparsers(dest='command',required=True)
 sub.add_parser('sync');sub.add_parser('sync-list');sub.add_parser('config')
 q=sub.add_parser('claim');q.add_argument('id')
 q=sub.add_parser('ignore');q.add_argument('id')
@@ -78,10 +78,10 @@ q=sub.add_parser('published');q.add_argument('id');q.add_argument('--url',requir
 q=sub.add_parser('finish');q.add_argument('id')
 q=sub.add_parser('add-post');q.add_argument('--url',required=True);q.add_argument('--title',required=True);q.add_argument('--date',required=True);q.add_argument('--kind',choices=['daily','request'],required=True);q.add_argument('--day',type=int);q.add_argument('--tags',default='');q.add_argument('--pdf',action='store_true')
 a=p.parse_args()
-EXAM_NAME={'civil':'토목시공기술사','building':'건축시공기술사'}.get(a.exam,'측량및지형공간정보기술사')
-FORM_NAME={'civil':'civil-engineer-questions','building':'building-engineer-questions'}.get(a.exam,'engineer-questions')
-STATE=ROOT/{'civil':'civil-state.json','building':'building-state.json'}.get(a.exam,'state.json')
-PUBLISHED_FILE=SITE_DIR/{'civil':'civil-questions','building':'building-questions'}.get(a.exam,'questions')/'published.json'
+EXAM_NAME={'civil':'토목시공기술사','building':'건축시공기술사','safety':'건설안전기술사'}.get(a.exam,'측량및지형공간정보기술사')
+FORM_NAME={'civil':'civil-engineer-questions','building':'building-engineer-questions','safety':'safety-engineer-questions'}.get(a.exam,'engineer-questions')
+STATE=ROOT/{'civil':'civil-state.json','building':'building-state.json','safety':'safety-state.json'}.get(a.exam,'state.json')
+PUBLISHED_FILE=SITE_DIR/{'civil':'civil-questions','building':'building-questions','safety':'safety-questions'}.get(a.exam,'questions')/'published.json'
 if a.command=='config': print(json.dumps({'exam':EXAM_NAME,'form':FORM_NAME,'state':str(STATE),'published':str(PUBLISHED_FILE)},ensure_ascii=False))
 elif a.command=='sync': sync()
 elif a.command=='sync-list': sync_list()

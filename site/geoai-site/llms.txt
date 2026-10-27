@@ -8,6 +8,7 @@
 - [측량및지형공간정보기술사 문제 요청](https://geoai-na.netlify.app/questions/): 모범답안·따라쓰기 PDF 요청
 - [토목시공기술사 문제 요청](https://geoai-na.netlify.app/civil-questions/): 모범답안·따라쓰기 PDF 요청
 - [건축시공기술사 문제 요청](https://geoai-na.netlify.app/building-questions/): 모범답안·따라쓰기 PDF 요청
+- [건설안전기술사 문제 요청](https://geoai-na.netlify.app/safety-questions/): 모범답안·따라쓰기 PDF 요청
 
 ## 글이 올라오는 곳
 - [티스토리](https://na-geoai.tistory.com/)

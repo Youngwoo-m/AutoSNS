@@ -612,6 +612,40 @@
       ]
     },
     {
+      "job": "claude.safety-daily",
+      "account": "personal",
+      "name": "건설안전 하루 한 문제 (티스토리+개인 블로거)",
+      "what": "클로드(claude -p, opus)가 지시문 jobs/safety-daily.md 대로 작성·발행 (2026-10-27 신규)",
+      "entry": "personal/claude-jobs/jobs/safety-daily.md",
+      "channels": [
+        [
+          "personal",
+          "tistory"
+        ],
+        [
+          "personal",
+          "blogger"
+        ]
+      ]
+    },
+    {
+      "job": "claude.safety-friend",
+      "account": "personal",
+      "name": "건설안전 친구 요청 답안 (티스토리+개인 블로거)",
+      "what": "클로드(claude -p, opus)가 지시문 jobs/safety-friend.md 대로 작성·발행 (2026-10-27 신규)",
+      "entry": "personal/claude-jobs/jobs/safety-friend.md",
+      "channels": [
+        [
+          "personal",
+          "tistory"
+        ],
+        [
+          "personal",
+          "blogger"
+        ]
+      ]
+    },
+    {
       "job": "claude.safekorea",
       "account": "personal",
       "name": "안전한국훈련 글 (하루 한 번, 12시 영상 소개)",

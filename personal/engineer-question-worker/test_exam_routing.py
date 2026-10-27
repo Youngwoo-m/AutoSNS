@@ -25,6 +25,12 @@ class ExamRoutingTest(unittest.TestCase):
         self.assertEqual(building['form'], 'building-engineer-questions')
         self.assertTrue(building['state'].endswith('building-state.json'))
         self.assertTrue(building['published'].endswith('/building-questions/published.json'))
+    def test_safety_has_own_form_state_and_list(self):
+        safety = self.config('--exam', 'safety')
+        self.assertEqual(safety['exam'], '건설안전기술사')
+        self.assertEqual(safety['form'], 'safety-engineer-questions')
+        self.assertTrue(safety['state'].endswith('safety-state.json'))
+        self.assertTrue(safety['published'].endswith('/safety-questions/published.json'))
 
 if __name__ == '__main__':
     unittest.main()
