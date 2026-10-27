@@ -158,13 +158,17 @@ def holder_of(res):
 
 
 def _profile_busy_outside(res):
-    """잠금을 거치지 않은 바깥 도구(Codex 자동화 등)가 같은 크롬 프로필을 쓰고 있는지."""
+    """잠금을 거치지 않은 바깥 도구(Codex 자동화·사용자가 열어 둔 로그인 브라우저 등)가 같은 크롬 프로필을 쓰고 있는지."""
     if not res.startswith('profile:'):
         return False
-    path = PROFILES.get(res[len('profile:'):])
-    if not path:
-        return False
-    for cand in {path, path.replace('/personal/naver-blog-auto/', '/naver-blog-auto/'), path.replace('/personal/', '/GeoAI_NA/')}:  # 링크 경로로 띄운 경우도
+    name = res[len('profile:'):]
+    if name.startswith('acct-'):
+        acct = name[len('acct-'):]
+        cands = {LOGIN_DIRS[acct]} | {str(ROOT / _LINKS[k]) for k, a in ACCOUNT_OF.items() if a == acct}
+    else:
+        path = PROFILES.get(name)
+        cands = {path} if path else set()
+    for cand in cands:
         r = subprocess.run(['pgrep', '-f', f'user-data-dir={re.escape(cand)}( |$)'], capture_output=True)
         if r.returncode == 0:
             return True
@@ -173,6 +177,7 @@ def _profile_busy_outside(res):
 
 def acquire(resources, job, wait=2400, poll=5):
     """자원을 모두 잡을 때까지 기다린다. 못 잡으면 Timeout. 잡은 [(자원, fd)] 를 돌려준다."""
+    resources = sorted({_canon(r) for r in resources})
     holder = {'job': job, 'pid': os.getpid(), 'since': _now()}
     wfile = DIR / 'waiting' / f'{os.getpid()}.json'
     wfile.parent.mkdir(parents=True, exist_ok=True)
@@ -241,17 +246,32 @@ def status():
 
 
 # 크롬 프로필 이름 → 폴더(잠금 밖 프로세스 감지용)
-PROFILES = {
-    'naver': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile'),
-    'safeworking': str(ROOT / 'channels' / 'naver-blog-auto' / 'chrome-profile-safeworking'),   # 개인 네이버 블로그
-    'tistory': str(ROOT / 'personal' / 'naver-blog-auto' / 'chrome-profile-tistory'),
-    'insta': str(ROOT / 'channels' / 'insta-cardnews' / 'chrome-profile-insta'),
-    'tiktok': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-tiktok'),
-    'youtube-personal': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-youtube'),
-    'youtube-dept': str(ROOT / 'channels' / 'youtube-shorts-auto' / 'chrome-profile-youtube-dept'),
-    'insta-manual': str(ROOT / 'channels' / 'insta-manual' / 'chrome-profile'),
-    'scratch': str(ROOT / 'ax-console' / 'data' / 'browser-scratch'),   # 콘솔 내부 브라우저용 빈 프로필
+# 2026-10-28 사용자 지정: 서비스별 프로필 8개를 계정별 로그인 브라우저 2개로 합쳤다.
+# 옛 chrome-profile* 폴더는 이 두 폴더를 가리키는 심볼릭 링크다(원본은 *.bak-20261028 로 보관).
+LOGIN_DIRS = {
+    'personal': str(Path.home() / '.autosns-login' / 'personal'),   # 개인: 개인 네이버·티스토리·개인 유튜브(블로거)
+    'dept': str(Path.home() / '.autosns-login' / 'dept'),           # 학과: 학과 네이버·유튜브·틱톡·인스타
 }
+ACCOUNT_OF = {
+    'naver': 'dept', 'insta': 'dept', 'tiktok': 'dept', 'youtube-dept': 'dept', 'insta-manual': 'dept',
+    'safeworking': 'personal', 'tistory': 'personal', 'youtube-personal': 'personal',
+}
+# 링크 경로로 띄운 크롬도 같은 폴더로 보고 잡는다
+_LINKS = {
+    'naver': 'dept/naver-blog-auto/chrome-profile', 'safeworking': 'dept/naver-blog-auto/chrome-profile-safeworking',
+    'tistory': 'personal/naver-blog-auto/chrome-profile-tistory', 'insta': 'dept/insta-cardnews/chrome-profile-insta',
+    'tiktok': 'dept/youtube-shorts-auto/chrome-profile-tiktok', 'youtube-personal': 'dept/youtube-shorts-auto/chrome-profile-youtube',
+    'youtube-dept': 'dept/youtube-shorts-auto/chrome-profile-youtube-dept', 'insta-manual': 'dept/insta-manual/chrome-profile',
+}
+PROFILES = {k: LOGIN_DIRS[a] for k, a in ACCOUNT_OF.items()}
+PROFILES['scratch'] = str(ROOT / 'ax-console' / 'data' / 'browser-scratch')   # 콘솔 내부 브라우저용 빈 프로필
+
+
+def _canon(res):
+    """같은 로그인 폴더를 쓰는 profile:* 자원은 계정 하나의 잠금으로 묶는다(한 폴더를 크롬 둘이 열지 않게)."""
+    if res.startswith('profile:') and res[len('profile:'):] in ACCOUNT_OF:
+        return 'profile:acct-' + ACCOUNT_OF[res[len('profile:'):]]
+    return res
 
 
 def set_skip(job, date, reason='', by='명령줄'):
