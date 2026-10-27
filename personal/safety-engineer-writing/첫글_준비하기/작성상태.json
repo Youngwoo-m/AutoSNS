@@ -11,7 +11,7 @@
     "합격": "100점 만점에 60점 이상",
     "출제기준": "2023.1.1~2027.12.31"
   },
-  "친구요청": "https://geoai-na.netlify.app/safety-questions/ (배포 전 — 글에는 아직 링크 안 넣음, 배포 뒤 make_draft.py --req-live)",
+  "친구요청": "https://geoai-na.netlify.app/safety-questions/ — 2026-10-28 Netlify 배포(200, 폼 safety-engineer-questions 등록), 초안에 맨 위 링크·안내 문장 넣음(make_draft.py --req-live, 확인 시각 '밤 11시'로 페이지와 맞춤). 매일 밤 11시 30분 launchd com.smuds.claude.safety-friend. 초안은 여전히 공개 안 함",
   "기출분석": {
     "범위": "2022~2026 제126~140회 15회분",
     "문항": 465,
