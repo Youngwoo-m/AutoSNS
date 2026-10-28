@@ -23,6 +23,14 @@ run_weekly.py         위 단계를 묶은 주간 엔트리 (스케줄러가 호
   폰트 경로는 `local_render.font_dir` — **비워두면 `../FONTS` 를 자동으로 찾습니다.**
 - `"gamma"`: Gamma REST API 로 AI 디자인 카드 생성(유료 크레딧). `gamma_api_key` 필요.
 
+## 릴 영상 제작 지침 (2026-10-28 정리)
+
+- **흐름**: `make_reel.py` 가 먼저 Remotion(`remotion_reel.py` → `remotion-shorts/src/insta-reel`)으로 렌더하고, 실패하면 예전 ffmpeg 합성으로 돌아간다. 카드 등장·진행 점·끝 화면·디오라마 편집은 Remotion 이 한다(2026-10-23).
+- **입력**: 카드 PNG + 배경음악(`reel.audio_file`, 기본 `assets/bgm.mp3`, 저작권 자유 음원만. 없으면 중단). ffmpeg 폴백은 1080x1920, 카드 가운데·위아래 브랜드색, 카드당 `reel.seconds_per_card`(기본 3.5초).
+- **디오라마**(CLAUDE.md 영상 지침): 영상마다 2~3장이 원칙이나 크레딧을 쓰므로 기본은 끈다. `reel.diorama.paths` 에 기존 그림 0~3개를 주면 크레딧을 쓰지 않고, 새로 만들려면 `reel.diorama.scenes`(영어 장면 설명)와 `generate=true` 를 둘 다 켠다. 그림이 들어가면 화면 아래에 AI 생성 그림 고지가 붙는다. 그림 안에 글자 금지, 사고 순간·부상자 같은 고통스러운 장면 금지(대비·대응·구조 장면), 미니어처·틸트시프트 질감을 분명히 한다. 더치 앵글은 대응·구조 장면에만 쓴다.
+- **배경 실사**(`reel_broll.py`, 2026-09-29): 카드 위아래 각 490px 띠에만 Pexels → Pixabay 영상을 깐다(카드 940px 은 가리지 않음). 사고·피해 장면은 쓰지 않고 상황 장면(빗길, 숲 연기, 눈길)만 고르며, 카드 아래 띠에 "배경: 자료 화면"을 표기한다. 키가 없거나 받기에 실패하면 단색 배경.
+- **글꼴**: 제목·보조 Pretendard Bold, 카드 본문 KoPub 돋움 Bold. 바꿀 때는 `shared/fonts.py` 의 DISPLAY 한 줄만 고친다.
+
 ## 최초 1회 설정
 
 1) **의존성 설치**
