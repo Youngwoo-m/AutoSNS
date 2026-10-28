@@ -28,6 +28,10 @@ AutoSNS `CLAUDE.md` 의 영상 제작 지침(Remotion 편집, 디오라마 2~3�
    - 대본에서 정한 카메라 기법은 `--camera 기법`(여러 번 가능)으로 넘긴다.
    - 결과 JSON 의 `text_found` 가 비어 있지 않으면 장면 설명을 바꿔 다시(최대 3번). 한 장에 게이트웨이 크레딧 약 39 — 쓸데없이 다시 그리지 않는다.
    - 부른 쪽이 "이 그림을 써라"라고 한 시험이면 새로 그리지 말고 그 파일을 쓴다.
+   - **첫 장면(에스태블리싱)은 시네마틱 디오라마 영상 클립으로 만들 수 있다(2026-10-28, 선택).** `./.venv/bin/python diorama_clip.py --scene "영어 장면 설명" --move dolly_in --camera anamorphic --camera tiltshift --seconds 6 --out 출력폴더/c1.mp4`
+     (한 클립 = 한 컷·움직임 하나, 6초 약 300 크레딧, 생성 2~5분). props 첫 장면에 `"kind": "dioclip"`, `"image": "<절대경로>/c1.mp4"` 로 넣으면 디오라마 1장으로 센다
+     (나머지 1~2장은 정지 그림). 결과의 `status` 가 error(월 할당 부족 등)이거나 `text_found` 가 비어 있지 않으면 클립을 쓰지 말고 정지 그림으로 대신한다.
+     클립 길이 = 그 장면 `seconds`, 클립 끝 1~2초가 흐려질 수 있어 5~6초로 쓴다. 시험(`AX_DRY`)에서는 만들지 않는다.
    - 공식·비교는 큰 글자 도식(Pillow, `FONTS/Pretendard-Bold.otf`)으로 만들 수 있다. 블로그 도식을 그대로 넣어 글자가 작아지면 쓰지 않는다.
 3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --job <작업이름>`
    (channels/youtube-shorts-auto 폴더에서). **기본 음성은 Voicebox 내 목소리다(2026-10-28 사용자 지시로 edge-tts 에서 되돌림).** Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다(`--seed N --check`).
