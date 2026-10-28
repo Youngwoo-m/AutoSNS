@@ -627,8 +627,12 @@ def publish(data, dry_run=None):
     category = data.get("category") or cfg.get("blog", {}).get("category", "")
 
     structured = bool(data.get("news_blocks"))
+    # paste: 티스토리 본문 HTML 을 붙여넣기로 옮기는 개인 교차 발행(naver_paste.py). 그림은 원문 것을 쓴다.
+    paste = bool(data.get("paste"))
 
-    if structured:
+    if paste:
+        pass
+    elif structured:
         # 뉴스별 이미지 준비(기사 og:image, 없으면 Gamma).
         # no_images: 기사가 없는 글(진로·자격증 시리즈)은 건너뛴다 — 넣어 봐야
         # 내용과 무관한 그림이고, Gamma 는 편당 크레딧 10을 태운다(2026-09-23 확인).
@@ -710,7 +714,11 @@ def publish(data, dry_run=None):
         type_contenteditable(driver, title_el, data["title"])
         time.sleep(0.5)
 
-        if structured:
+        if paste:
+            # 붙여넣고 그림·첨부를 제자리에 올린 뒤 원문과 구성요소 수를 맞춰 본다(다르면 여기서 멈춤)
+            import naver_paste
+            naver_paste.fill(driver, data)
+        elif structured:
             # 상단 배너 → 뉴스별 구조: 인사 → [소제목·본문·기사이미지·출처링크]×N
             #             → 안전수칙 → 마무리
             if data.get("banner"):
