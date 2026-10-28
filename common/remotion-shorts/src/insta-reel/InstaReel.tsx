@@ -17,6 +17,7 @@ export type InstaReelProps = {
   endText: string;        // 끝 화면 문구(\n 줄바꿈)
   account: string;        // 끝 화면 계정 표기
   disclosure: string;     // 디오라마가 보일 때 아래 작은 글씨(AI 생성 그림 고지)
+  stats?: { value: number; suffix: string; label: string }[]; // 모션그래픽: 숫자 올라가는 수치 띠(카드 사이 장면)
   secondsPerCard: number;
   hookSeconds: number;
   gapSeconds: number;     // 카드 사이 디오라마·배경이 보이는 시간
@@ -108,6 +109,28 @@ const RiseText: React.FC<{ children: React.ReactNode; top: number; size: number;
   );
 };
 
+// 모션그래픽: 숫자가 올라가는 수치 띠 + 아래에서 그어지는 선
+const StatRow: React.FC<{ stats: { value: number; suffix: string; label: string }[]; top: number }> = ({ stats, top }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  return (
+    <div style={{ position: "absolute", left: 60, right: 60, top, display: "flex", justifyContent: "center", gap: 60 }}>
+      {stats.map((st, i) => {
+        const t = spring({ frame: frame - 6 - i * 8, fps, config: { damping: 200 }, durationInFrames: Math.round(1.1 * fps) });
+        return (
+          <div key={i} style={{ textAlign: "center", opacity: Math.min(1, t * 2), transform: `translateY(${(1 - t) * 50}px)` }}>
+            <div style={{ fontSize: 150, lineHeight: 1, color: C.title, textShadow: "0 4px 24px rgba(0,0,0,0.6)" }}>
+              {Math.round(st.value * t)}<span style={{ fontSize: 64, color: C.accent }}>{st.suffix}</span>
+            </div>
+            <div style={{ marginTop: 14, height: 6, width: `${t * 100}%`, background: C.accent, borderRadius: 3, marginInline: "auto" }} />
+            <div style={{ marginTop: 14, fontSize: 40, color: C.text, textShadow: "0 3px 16px rgba(0,0,0,0.6)" }}>{st.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Hook: React.FC<{ p: InstaReelProps }> = ({ p }) => (
   <AbsoluteFill>
     {p.dioramas[0] ? <DioramaFull image={p.dioramas[0]} dark={0.35} note={p.disclosure} /> : null}
@@ -164,7 +187,12 @@ export const InstaReel: React.FC<InstaReelProps> = (props) => {
           <Sequence key={i} from={at} durationInFrames={s.frames} premountFor={FPS}>
             {s.kind === "hook" ? <Hook p={p} /> : null}
             {s.kind === "card" ? <CardSeg p={p} idx={s.idx} /> : null}
-            {s.kind === "gap" && s.dio ? <DioramaFull image={s.dio} note={p.disclosure} /> : null}
+            {s.kind === "gap" && s.dio ? (
+              <AbsoluteFill>
+                <DioramaFull image={s.dio} note={p.disclosure} />
+                {p.stats?.length ? <StatRow stats={p.stats} top={760} /> : null}
+              </AbsoluteFill>
+            ) : null}
             {s.kind === "end" ? <End p={p} /> : null}
           </Sequence>
         );

@@ -71,6 +71,8 @@ def render_reel(data, images, audio, out, rcfg, title=None):
             "endText": rcfg.get("end_text", "재난안전 소식\n팔로우하고 받아보세요"),
             "account": rcfg.get("account", "@smu_ds_official"),
             "secondsPerCard": float(rcfg.get("seconds_per_card", 3.5)),
+            "stats": rcfg.get("stats") or [],
+            "gapSeconds": float(rcfg.get("gap_seconds", 1.2)),
         }
         pj = os.path.join(pub, "_props.json")
         json.dump(props, open(pj, "w", encoding="utf-8"), ensure_ascii=False)
