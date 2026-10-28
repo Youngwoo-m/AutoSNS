@@ -30,6 +30,7 @@ description: AutoSNS 에서 주제·링크를 받아 학과 채널(네이버 블
 
 ## 순서
 1. 출처를 조사하고 사실 목록을 정리한다.
+1-1. 글 초안은 발행 전에 `humanizer-kr:humanizer-kr` 스킬로 다듬는다(2026-10-28). 숫자·날짜·고유명사·출처는 바꾸지 않았는지 원문과 대조하고, 바뀌었으면 원문대로 되돌린다.
 2. 인포그래픽·화면 캡처를 만들고 렌더 결과를 직접 열어 확인한다.
 3. 네이버는 `publish(data, dry_run=True)` 를 먼저 돌려 `logs/*after_typing*`, `*top_preview*`, `*publish_layer*` 스크린샷을 본다. 본문 확인(`_verify_document`)이 빠진 내용을 알리면 발행하지 않는다.
 4. 실제 발행한다.

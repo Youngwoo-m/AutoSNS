@@ -1,6 +1,82 @@
 {
   "items": [
     {
+      "title": "정확도와 정밀도 (2025년 제135회 기출)",
+      "url": "https://na-geoai.tistory.com/193",
+      "kind": "daily",
+      "date": "2026-10-29",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 21
+    },
+    {
+      "title": "GNSS 안테나고 측정과 ARP·위상중심 보정 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/192",
+      "kind": "request",
+      "date": "2026-10-28",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "GNSS 측량에서 위성의 기하학적 배치에 따른 정밀도저하율(DOP) (2022년 제128회 기출)",
+      "url": "https://na-geoai.tistory.com/184",
+      "kind": "daily",
+      "date": "2026-10-28",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 20
+    },
+    {
+      "title": "자오선수차 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/174",
+      "kind": "daily",
+      "date": "2026-10-27",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 19
+    },
+    {
+      "title": "재해정보지도·침수흔적도·침수예상도 제작 절차와 활용 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/166",
+      "kind": "daily",
+      "date": "2026-10-26",
+      "tags": [
+        "관련 제도·실무"
+      ],
+      "tracingPdf": true,
+      "day": 18
+    },
+    {
+      "title": "SLAM(Simultaneous Localization and Mapping) (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/157",
+      "kind": "daily",
+      "date": "2026-10-25",
+      "tags": [
+        "GIS·공간정보"
+      ],
+      "tracingPdf": true,
+      "day": 17
+    },
+    {
+      "title": "위성영상 공간·분광·방사·주기해상도 (2023년 제131회 기출)",
+      "url": "https://na-geoai.tistory.com/147",
+      "kind": "daily",
+      "date": "2026-10-24",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 16
+    },
+    {
       "title": "기복변위(Relief Displacement) (2026년 제140회 기출)",
       "url": "https://na-geoai.tistory.com/140",
       "kind": "daily",

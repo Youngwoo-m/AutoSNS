@@ -14,6 +14,7 @@ export type SurveyScene = {
   kind: "diorama" | "dioclip" | "diagram" | "clip"; // 디오라마는 꽉 채워 천천히 확대, dioclip 은 디오라마 영상 클립(무음)을 꽉 채워 재생, 도식은 흰 바탕에 온전히, clip 은 영상(무음)을 온전히
   audio: string;      // 이 장면 음성 파일(public 기준). 비우면 무음
   overlay?: string;   // 장면 맨 위에 얹는 투명 영상(public 기준 webm, 예: HyperFrames 로 만든 훅 제목). 비우면 없음
+  captionSize?: number; // 자막 글자 크기(기본 50). 3줄 자막이 아래 안내 문구에 닿으면 44 로
   seconds: number;    // 장면 길이(음성 길이 + 여유)
 };
 
@@ -79,7 +80,7 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
       <div
         style={{
           position: "absolute", left: 70, right: 70, top: 1500, minHeight: 190, padding: "24px 30px",
-          borderLeft: `8px solid ${C.accent}`, background: C.box, fontSize: 50, lineHeight: 1.42, whiteSpace: "pre-line",
+          borderLeft: `8px solid ${C.accent}`, background: C.box, fontSize: scene.captionSize ?? 50, lineHeight: 1.42, whiteSpace: "pre-line",
         }}
       >
         {scene.caption}

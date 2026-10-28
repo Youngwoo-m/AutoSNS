@@ -80,9 +80,9 @@ h1{font-size:clamp(18px,5.4vw,24px);margin:0;letter-spacing:-.5px;white-space:no
 .ftxt a{white-space:nowrap;color:var(--ink);font-weight:800;text-decoration:none;font-variant-numeric:tabular-nums;display:inline-block;padding:6px 0;margin:-6px 0}
 .fhome{margin-left:auto;padding:0 14px;min-height:44px;display:inline-flex;align-items:center;border-radius:10px;background:var(--bg);border:1px solid var(--line);color:var(--accent);font-weight:800;font-size:15px;text-decoration:none;white-space:nowrap}
 /* 메뉴 묶음: 옆으로 넘기는 칩 한 줄 */
-.ages{display:flex;gap:6px;overflow-x:auto;margin:0 -16px 8px;padding:2px 16px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.ages{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px;padding:2px 0}
 .ages::-webkit-scrollbar{display:none}
-.ages button{flex:none;padding:9px 14px;border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
+.ages button{flex:0 0 auto;padding:8px 12px;border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;font-size:14px;border:1px solid var(--line)}
 .ages button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .ages .emg-btn{border-style:dashed}
 .ages .near-btn{border-color:#2563eb;color:#2563eb}
@@ -162,7 +162,7 @@ button{font:inherit;border:0;cursor:pointer}
 .vside .vm{color:var(--ink);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .vside .vs2{color:var(--sub)}
 .vside a{margin-top:auto;display:block;text-align:center;padding:9px 4px;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:800;text-decoration:none;font-size:13.5px}
-.shop .ad{width:100%;max-width:300px;margin:0 auto}
+.shop .ad{width:100%;margin:0 auto}
 .kit{display:block;margin:0 0 12px;padding:12px 14px;border-radius:12px;background:var(--bg);border:1px solid var(--line);color:inherit;text-decoration:none}
 .kit b{display:block;font-size:15px}
 .kit span{display:block;margin-top:3px;color:var(--sub);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -288,7 +288,7 @@ details summary::after{content:" ▾";color:var(--sub)}
     <div class="ad">
       <script src="https://ads-partners.coupang.com/g.js"></script>
       <script>
-        new PartnersCoupang.G({"id":1037669,"template":"carousel","trackingCode":"AF2456793","width":"100%","height":"250","tsource":""});
+        new PartnersCoupang.G({"id":1037669,"template":"carousel","trackingCode":"AF2456793","width":"100%","height":"125","tsource":""});
       </script>
     </div>
     <p class="disclose">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</p>

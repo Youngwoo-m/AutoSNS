@@ -44,6 +44,21 @@
       "post_url": "https://na-geoai.tistory.com/120",
       "published_at": "2026-10-20T14:11:39.548954+00:00",
       "completed_at": "2026-10-20T14:12:05.563589+00:00"
+    },
+    "6ae1d74ab3203dce7fd5b686": {
+      "id": "6ae1d74ab3203dce7fd5b686",
+      "created_at": "2026-10-28T11:06:50.989Z",
+      "status": "done",
+      "title": "GNSS 수신기의 안테나고",
+      "question": "답안을 어떻게 써야할 지 몰라 문의드립니다.",
+      "topic": "GNSS",
+      "reference": "제137회 1교시 5번",
+      "nickname": "",
+      "source": "untrusted_netlify_submission",
+      "started_at": "2026-10-28T14:00:38.891268+00:00",
+      "post_url": "https://na-geoai.tistory.com/192",
+      "published_at": "2026-10-28T14:22:08.160245+00:00",
+      "completed_at": "2026-10-28T14:22:25.899064+00:00"
     }
   },
   "ignored": [

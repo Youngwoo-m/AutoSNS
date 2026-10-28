@@ -56,12 +56,17 @@ const [b64, name, mt] = arguments; const bin = atob(b64), u = new Uint8Array(bin
 for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
 const dt = new DataTransfer(); dt.items.add(new File([u], name, {type: mt}));
 const ed = tinymce.activeEditor, body = ed.getBody();
-ed.focus(); ed.selection.select(body.firstChild, true); ed.selection.collapse(true);
+// 맨 앞에 빈 문단을 새로 만들어 거기에 놓는다 — 첫 문단이 앞서 올린 첨부(맨 위 배너)면 그 문단 안에
+// 붙어 다음 자리표시로 함께 끌려간다(2026-10-25 토목 9일차)
+const np = ed.getDoc().createElement('p'); np.innerHTML = '<br data-mce-bogus="1">';
+body.insertBefore(np, body.firstChild);
+ed.focus(); ed.selection.select(np, true); ed.selection.collapse(true);
 for (const t of ['dragenter', 'dragover', 'drop'])
   body.dispatchEvent(new DragEvent(t, {bubbles: true, cancelable: true, dataTransfer: dt}));
 """
 TOKEN = re.compile(r'<p[^>]*>\s*\[##_(?:Image|File)\|.*?_##\]\s*</p>', re.S)
 MARKER = re.compile(r'<p[^>]*\bdata-ax-attach="[^"]*"[^>]*>.*?</p>', re.S)
+_LEAD_EMPTY = re.compile(r'^\s*(?:<p>(?:\s|&nbsp;|<br[^>]*>)*</p>\s*)+')
 
 
 def upload_at(d, path):
@@ -89,7 +94,22 @@ def upload_at(d, path):
         log(f"  첨부 대기 중 본문 앞부분: {c[:200]!r}")
         raise RuntimeError(f"첨부 업로드 시간 초과: {os.path.basename(path)}")
     token = new[0]
+    head, rest = token.split("[##_", 1)
+    if len(MARKER.findall(c)) < len(MARKER.findall(before)):
+        # 끌어다 놓은 자리가 빈 첫 자리표시 <p> 면 편집기가 그 문단을 첨부 문단으로 바꿔 자리표시가 사라진다 —
+        # 첨부는 이미 제자리다(2026-10-25 토목 9일차: 여기서 자리표시를 또 쓰면 하나씩 밀려 PDF 가 실패)
+        log(f"  첨부 올림(첫 자리표시 대체): {os.path.basename(path)} ({mt})")
+        return
+    if "data-ax-attach" in head:
+        # 첫 요소가 자리표시(맨 위 배너 등)면 토큰이 그 <p> 안에 들어간다 — 이미 제자리이니
+        # 자리표시 속성만 떼어 낸다(지우면 다음 자리표시가 하나씩 밀려 마지막 첨부가 실패한다, 2026-10-25)
+        c = c.replace(token, re.sub(r'\s*\bdata-ax-[\w-]+="[^"]*"', "", head) + "[##_" + rest, 1)
+        d.execute_script("tinymce.activeEditor.setContent(arguments[0]); tinymce.activeEditor.fire('change');"
+                         "tinymce.activeEditor.save();", c)
+        log(f"  첨부 올림(첫 자리표시 안): {os.path.basename(path)} ({mt})")
+        return
     c = c.replace(token, "", 1)
+    c = _LEAD_EMPTY.sub("", c)           # 끌어다 놓으려고 만든 빈 문단이 남았으면 지운다
     if not MARKER.search(c):
         raise RuntimeError(f"자리표시를 찾지 못함: {path}")
     c = MARKER.sub(lambda m: token, c, count=1)
@@ -154,9 +174,19 @@ def edit_body(args, body):
         cur_title = d.find_element(By.ID, "post-title-inp").get_attribute("value")
         if cur_title != args.title:
             raise RuntimeError(f"{args.edit_post}번 글 제목이 다름: {cur_title!r} — 저장하지 않음")
+        if args.move_top:   # 이미 올린 첨부 하나를 글 맨 앞 문단으로 옮긴다(본문 파일은 쓰지 않음)
+            body = d.execute_script("return tinymce.activeEditor.getContent();")
+            pat = re.compile(r"\[##_(?:Image|File)\|(?:(?!_##\]).)*?" + re.escape(args.move_top) + r"(?:(?!_##\]).)*?_##\]", re.S)
+            hit = pat.findall(body)
+            if len(hit) != 1:
+                raise RuntimeError(f"옮길 첨부 {args.move_top!r} 토큰이 {len(hit)}개 — 저장하지 않음")
+            body = re.sub(r"<p>(?:\s|&nbsp;)*</p>", "", body.replace(hit[0], "", 1), count=1)
+            body = f"<p>{hit[0]}</p>\n" + body
         d.execute_script("tinymce.activeEditor.setContent(arguments[0]);"
                          "tinymce.activeEditor.fire('change'); tinymce.activeEditor.save();", body)
         new = d.execute_script("return tinymce.activeEditor.getContent();")
+        if args.move_top and not new.lstrip().startswith("<p>[##_"):
+            raise RuntimeError("옮긴 첨부가 맨 앞에 없음 — 저장하지 않음")
         if len(new) < len(body) // 2:
             raise RuntimeError("편집기가 본문을 많이 지움 — 저장하지 않음")
         if not args.go:
@@ -182,6 +212,7 @@ def main():
     ap.add_argument("--category", default="", help="티스토리 관리 화면의 카테고리 이름 그대로(--edit-post 에서는 쓰지 않음)")
     ap.add_argument("--edit-post", type=int, default=0, help="이미 올린 글 번호 — 본문만 교체")
     ap.add_argument("--tags", default="", help="쉼표로 구분")
+    ap.add_argument("--move-top", default="", help="--edit-post 와 함께: 이미 올린 첨부(파일 이름) 하나를 글 맨 앞으로 옮김. --html 은 읽기만 함")
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--dry", action="store_true", help="발행 직전에 멈춤(실제로 올리지 않음)")
     g.add_argument("--go", action="store_true", help="공개 발행")
@@ -203,7 +234,7 @@ def main():
         from shared.axlock import Timeout, hold, stopped
         if args.go and stopped():
             return out("error", message="비상 정지 중이라 수정하지 않았습니다(ax-console/data/STOP.json)")
-        if files:
+        if files and not args.move_top:
             return out("error", message="--edit-post 는 첨부 자리표시를 지원하지 않습니다")
         try:
             with hold(["profile:tistory"], job=f"{args.job}:tistory_edit", wait=2400):
