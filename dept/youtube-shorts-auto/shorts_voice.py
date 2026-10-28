@@ -1,9 +1,9 @@
 """숏츠 나레이션을 만든다 — 숏츠 제작 공용 도구(shorts-maker 에이전트·클로드 작업).
 
-음성 엔진 두 가지(2026-10-22 사용자 지정: 내 목소리 Voicebox 가 맥을 과부하시켜 기본을 edge-tts 로 바꿨다):
-  edge       edge-tts 'ko-KR-InJoonNeural'(기본). 인터넷만 있으면 몇 초, 맥 부하 없음. 시드·받아 적기 검사 없음.
-  voicebox   Voicebox 내 목소리 1샘플. 컴퓨터 사양이 좋아지면 DEFAULT_BACKEND 를 "voicebox" 로 한 줄만 바꾸거나
-             `--backend voicebox` / 환경변수 SHORTS_VOICE_BACKEND=voicebox 로 쓴다. 평소 꺼 두므로 이 도구가
+음성 엔진 두 가지(2026-10-22 edge 로 바꿨다가 2026-10-28 사용자 지시로 기본을 Voicebox 로 되돌렸다):
+  edge       edge-tts 'ko-KR-InJoonNeural'. 인터넷만 있으면 몇 초, 맥 부하 없음. 시드·받아 적기 검사 없음.
+  voicebox   Voicebox 내 목소리 1샘플(기본, 2026-10-28 복귀). 과부하 시 DEFAULT_BACKEND 를 "edge" 로 바꾸거나
+             `--backend edge` / 환경변수 SHORTS_VOICE_BACKEND=edge 로 쓴다. 평소 꺼 두므로 이 도구가
              `shared/voicebox.sh up/down <작업>` 으로 켜고(응답할 때까지 기다림) 끝나면 끈다(--keep 이면 안 끔).
 
     python shorts_voice.py --text-file 대본.txt --out voice.wav [--backend edge|voicebox] [--seed 14005] [--check] [--job survey-daily]
@@ -31,8 +31,8 @@ VB = "http://127.0.0.1:17493/"
 PROFILE = "9ae4198e-a2c5-4604-9165-7d39adf0143c"       # 내 목소리(1샘플)
 SH = os.path.join(ROOT, "shared", "voicebox.sh")
 
-# 기본 음성 엔진. 컴퓨터 사양이 좋아져 Voicebox 를 다시 쓰려면 이 한 줄만 "voicebox" 로 바꾼다.
-DEFAULT_BACKEND = "edge"
+# 기본 음성 엔진. 2026-10-28 사용자 지시로 Voicebox 로 되돌렸다. 맥이 과부하되면 이 한 줄을 "edge" 로 바꾼다.
+DEFAULT_BACKEND = "voicebox"
 EDGE_VOICE = "ko-KR-InJoonNeural"
 EDGE_RATE = "+10%"   # +0% 는 Voicebox 보다 느려 같은 대본이 25초(공백 제외 108자)였다 — +10% 는 약 23초
 VOICE_LABEL = {"edge": "AI 합성 음성(TTS)", "voicebox": "AI 합성 음성(본인 목소리 복제)"}

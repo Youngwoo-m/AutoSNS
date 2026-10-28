@@ -1,7 +1,7 @@
 # 재난 유형별 피해 양상과 대응 방안 — 숏츠 파이프라인
 
 > 위치: `channels/disaster-shorts/` (2026-10-22 `/Volumes/USB256/shorts-disaster` 에서 이 저장소로 옮김, git 추적. 옛 경로는 바로가기만 남김).
-> 2026-10-22 사용자 지정 변경: ① 나레이션·인트로·아웃트로 목소리는 edge-tts **인준**(`ko-KR-InJoonNeural`, `config.json` 의 `voice_backend`/`edge`; 사양이 좋아지면 `"voicebox"` 로 되돌림)
+> 2026-10-22 사용자 지정 변경: ① 나레이션 목소리는 `config.json` 의 `voice_backend` 로 고른다 — 2026-10-22 edge-tts 인준(`ko-KR-InJoonNeural`)으로 바꿨다가 **2026-10-28 사용자 지시로 기본을 Voicebox 내 목소리로 되돌렸다**(맥이 과부하되면 `"edge"`). 이미 만든 인트로·아웃트로 영상은 인준 목소리 그대로다
 > ② 영상 첫 2.6초에 큰 글자 **훅**(`hook_text`, `hook_seconds`, 인트로·아웃트로를 붙일 때는 인트로 화면 아래 빈 공간 `hook_y` 에 겹침, 안 붙일 때는 본문 첫 장면에 Remotion 으로) ③ 화면 자막은 **대본(나레이션) 문장 그대로**(`captions_from_script`) ④ 인트로·아웃트로는 인준 목소리 새 HeyGen 아바타 영상을 다시 붙임(`intro_outro: true`)
 > ⑤ 대본은 더 짧게(한글 75~85자, 50초판 190~225자). 실행 설정 `tools/config.json` 은 비밀값이 있어 git 에 올리지 않는다 — `tools/config.example.json` 참고.
 > Remotion 글꼴은 git 에 없다: `assets/FONTS/` 의 `Pretendard-Bold.otf`(자막·훅·모션 글자 전부) 를 `remotion/public/fonts/` 에 복사한다.
@@ -10,13 +10,13 @@
 | 구간 | 길이 | 소스 | 비고 |
 |---|---|---|---|
 | 인트로 | ≈4.5초 | HeyGen 토킹포토 `b7a0513bc3644e2f9858982961cefcd9` ("Youngwoo in the light blue shirt") | "안녕하세요. 세명대학교 재난안전학과 나영우 교수입니다." — 1회 제작, 전 편 재사용 |
-| 본문 | ≈20초 | Veo 3.1 Lite 8초 클립 3개 (세명대 게이트웨이) + edge-tts 인준 나레이션 + 자막(대본 문장 그대로) | 편마다 새로 제작 |
+| 본문 | ≈20초 | Veo 3.1 Lite 8초 클립 3개 (세명대 게이트웨이) + Voicebox 내 목소리 나레이션(`voice_backend`) + 자막(대본 문장 그대로) | 편마다 새로 제작 |
 | 아웃트로 | ≈4.5초 | HeyGen 같은 아바타 | "이상 재난유형별 피해 양상과 대응방안을 말씀 드렸습니다." + 화면 하단 "다음 편: ○○" 자막(편마다 바뀜) |
 
 ## 단계
-0. 공통 자산(1회): edge-tts 인준으로 인트로·아웃트로 음성 생성(옛 내 목소리 버전은 `common/old_voicebox_20261022/`) → HeyGen에 오디오 업로드 → 토킹포토 립싱크 영상 2개 → `common/intro.mp4`, `common/outro.mp4`
+0. 공통 자산(1회): 인트로·아웃트로 음성 생성(현재 파일은 edge-tts 인준 버전, 옛 내 목소리 버전은 `common/old_voicebox_20261022/`) → HeyGen에 오디오 업로드 → 토킹포토 립싱크 영상 2개 → `common/intro.mp4`, `common/outro.mp4`
 1. 대본(Claude): `NN_type/script.json` — 장면 3개(나레이션·자막·영문 영상 프롬프트), 행안부 국민행동요령으로 사실 확인
-2. 나레이션(edge-tts `ko-KR-InJoonNeural`, `config.json` 의 `voice_backend`; Voicebox 는 선택으로 보존): 장면별 wav → 무음 정리·-14 LUFS
+2. 나레이션(기본 Voicebox 내 목소리, `config.json` 의 `voice_backend`; `"edge"` 면 edge-tts `ko-KR-InJoonNeural`): 장면별 wav → 무음 정리·-14 LUFS
 3. 영상(게이트웨이 Veo): 장면별 8초 9:16 클립, 요청 번호를 `_jobs.json`에 기록해 재실행 시 이어받기
 4. 조립(ffmpeg): 장면 클립을 나레이션 길이에 맞춰 자르기 → 자막(Whisper 타이밍) → 인트로 + 본문 + 아웃트로 → 1080x1920 30fps, -14 LUFS
 5. 업로드(youtube_upload.py 재사용): 합성 콘텐츠 표시, 설명란에 출처·AI 아바타 고지
@@ -53,7 +53,7 @@ Veo 클립에서 발이 뒤집히거나(빙판길 편 10~11초, 걷는 사람의
 ## 비용 (편당)
 - Veo: 3클립 × 400 = 1,200 크레딧 (월 12,000 → 최대 약 9편, 대본 몫 제외)
 - HeyGen: 인트로·아웃트로 1회만 (API 잔여 781)
-- 음성: edge-tts 무료(Voicebox 는 로컬 CPU 부하가 커 기본에서 뺌)
+- 음성: Voicebox 로컬(무료, CPU 부하 큼 — 과부하 시 `voice_backend: "edge"` 로 edge-tts 무료)
 
 ## 재사용 코드 (AutoSNS/youtube-shorts-auto)
 - `heygen_anchor.py` — upload_audio(), generate(audio_asset_id=…), await_video()  ※ HeyGen v2 API는 2026-10-31 종료 예정 → 인트로·아웃트로는 그 전에 생성하거나 v3로 이전

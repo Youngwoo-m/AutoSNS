@@ -30,9 +30,8 @@ AutoSNS `CLAUDE.md` 의 영상 제작 지침(Remotion 편집, 디오라마 2~3�
    - 부른 쪽이 "이 그림을 써라"라고 한 시험이면 새로 그리지 말고 그 파일을 쓴다.
    - 공식·비교는 큰 글자 도식(Pillow, `FONTS/Pretendard-Bold.otf`)으로 만들 수 있다. 블로그 도식을 그대로 넣어 글자가 작아지면 쓰지 않는다.
 3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --job <작업이름>`
-   (channels/youtube-shorts-auto 폴더에서). **기본 음성은 edge-tts `ko-KR-InJoonNeural`(+10%)이다(2026-10-22 사용자 지정: 내 목소리 Voicebox 가
-   맥을 과부하시킴).** 몇 초 만에 끝나고 맥 부하가 없다. 컴퓨터 사양이 좋아지면 `shorts_voice.py` 의 `DEFAULT_BACKEND` 한 줄을 "voicebox" 로 되돌리거나
-   `--backend voicebox [--seed N --check]`(Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다)로 쓴다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
+   (channels/youtube-shorts-auto 폴더에서). **기본 음성은 Voicebox 내 목소리다(2026-10-28 사용자 지시로 edge-tts 에서 되돌림).** Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다(`--seed N --check`).
+   맥이 과부하되면 `shorts_voice.py` 의 `DEFAULT_BACKEND` 한 줄을 "edge"(`ko-KR-InJoonNeural`, +10%) 로 바꾸거나 `--backend edge` 로 쓴다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
    빠르게 읽히게 하거나 음성을 자르지 않는다(edge 는 같은 대본이 Voicebox 보다 길다: 공백 제외 108자 = 23초). edge 는 받아 적기 검사가 없으므로 숫자·낱말은
    대본 표기(한글 풀어쓰기: '칠십오 퍼센트', '열둘')와 화면 자막을 직접 확인한다. 결과의 `voice_label` 을 4번 고지에 그대로 쓴다.
 4. **렌더** — `props.json` 을 쓰고(형식은 `remotion-shorts/render_survey_short.py` 첫머리) `cd /Volumes/USB256/devAPP/AutoSNS/remotion-shorts && python3 render_survey_short.py 출력폴더/props.json 출력폴더/short.mp4`.
