@@ -25,3 +25,6 @@
 2026-10-18 사용자 변경 — 클로드 이전 후 숏츠 제작 방식 (위 지침보다 우선)
 숏츠 제작은 `shorts-maker` 서브에이전트에 맡긴다(공통규칙 '숏츠 제작'): CLAUDE.md 영상 지침(Remotion 편집, 디오라마 2~3장, Pretendard Bold, AI 합성 고지), 음성 edge-tts InJoon(기본, Voicebox 는 선택), 20.0초 이하·한 영상 한 질문·질문형 첫 화면·큰 자막·학습 분야 표시는 그 에이전트가 지킨다. 업로드와 댓글은 channels/youtube-shorts-auto/geoai_short_post.py 로만 한다.
 하루 한 문제 숏츠(claude.survey-daily, 08:00 공개)와 같은 기출·주제를 겹치지 않게 `published_history.py` 와 양쪽 상태를 대조한다.
+
+
+2026-10-29 미리 만든 숏츠 우선: /Volumes/USB256/devAPP/AutoSNS/personal/engineer-video-output/premade/<날짜>-civil|building|safety|survey/ (저녁 순환) 폴더에 short.mp4·title.txt·description.txt·tags.txt·meta.json 이 있으면 숏츠를 새로 만들지 않고 그 영상을 쓴다(게이트웨이 크레딧 절약). 올리기 전에 검토 지적이 고쳐졌는지 보고, 관련 블로그 URL 이 비어 있으면 확인된 공개 글로 채운다. 쓴 폴더는 used.txt 를 만들어 표시한다. 폴더가 없으면 기존대로 shorts-maker 로 만든다.
