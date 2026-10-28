@@ -786,7 +786,10 @@ def publish(data, dry_run=None):
             raise RuntimeError("발행 설정 레이어가 열리지 않았습니다(발행 안 됨).")
 
         # 6) 카테고리 선택 (글별 지정 → config 기본값)
-        select_category(driver, category)
+        # 글별로 정한 카테고리를 못 고르면 기본값(스마트스토어 등)으로 들어가므로 멈춘다(2026-10-28).
+        if not select_category(driver, category) and data.get("category"):
+            shot(driver, "no_category")
+            raise RuntimeError(f"카테고리 '{category}' 를 찾지 못했습니다(발행 안 됨).")
         time.sleep(1)
 
         # 7) 태그 입력 (가능하면)
