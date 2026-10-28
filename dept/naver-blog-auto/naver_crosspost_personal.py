@@ -136,7 +136,7 @@ class Conv(HTMLParser):
 
 
 # 작업 이름 접두 → safeworking 카테고리 (2026-10-26 분리)
-JOB_CATEGORY = (("survey", "측량·GIS 기술사"), ("civil", "토목시공기술사"), ("building", "건축시공기술사"), ("safety", "건설안전기술사"), ("nordic", "노르딕워킹·건강"), ("safekorea", "안전한국훈련·재난"))
+JOB_CATEGORY = (("survey", "측량기술사"), ("civil", "토목시공기술사"), ("building", "건축시공기술사"), ("safety", "건설안전기술사"), ("nordic", "노르딕워킹·건강"), ("safekorea", "안전한국훈련·재난"))
 
 
 def category_for(job):
@@ -166,6 +166,10 @@ def build_data(url, assets_dir, category, tags_arg):
                 print(f"  그림 {len(imgs)}장 중 첫 장만 넣음: {b['heading']}", file=sys.stderr)
         blocks.append(blk)
     tags = [t.strip() for t in tags_arg.split(",") if t.strip()] if tags_arg else c.tags
+    if not tags:
+        # 본문 끝에 #해시태그 줄이 없는 글(184·189)은 태그 없이 발행됐다 → 티스토리 글의 태그 목록을 쓴다(2026-10-28).
+        m = re.search(r'<div class="box-tag">(.*?)</div>', page, re.S)
+        tags = [html.unescape(t).strip() for t in re.findall(r'rel="tag">([^<]+)<', m.group(1))] if m else []
     return {
         "title": title,
         "category": category,

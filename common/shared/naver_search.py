@@ -1,6 +1,6 @@
 """네이버 검색 API 로 블로그/웹 문서를 검색해 뉴스와 같은 형태로 돌려준다.
 
-무료 '네이버 검색 API'(developers.naver.com) 사용. 키는 config.news.naver_search 에.
+'네이버 검색 API'(2026-10 부터 NAVER API HUB, naverapihub.apigw.ntruss.com) 사용. 키는 config.news.naver_search 에.
 블로그 검색은 postdate(작성일)가 있어 최근 글만 거를 수 있다.
 
 fetch_news 가 이 결과를 뉴스 항목과 같은 형태(title/link/source/published)로 받아
@@ -31,7 +31,7 @@ def _api_get(url, cid, secret, what, q):
     """검색 API 를 호출해 JSON 을 돌려준다. 실패하면 이유를 남기고 None."""
     global _last_call
     req = urllib.request.Request(url, headers={
-        "X-Naver-Client-Id": cid, "X-Naver-Client-Secret": secret,
+        "X-NCP-APIGW-API-KEY-ID": cid, "X-NCP-APIGW-API-KEY": secret,
         "User-Agent": "smuds/1.0"})
     for attempt in range(_RETRIES + 1):
         gap = _MIN_GAP - (time.monotonic() - _last_call)
@@ -137,7 +137,7 @@ def naver_blog_search(queries, cid, secret, within_days=7, per_query=10, total=8
     cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
     seen, items = set(), []
     for q in _expand_all(queries):
-        url = "https://openapi.naver.com/v1/search/blog.json?" + urllib.parse.urlencode(
+        url = "https://naverapihub.apigw.ntruss.com/search/v1/blog?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
         data = _api_get(url, cid, secret, "네이버 블로그 검색", q)
         if data is None:
@@ -197,7 +197,7 @@ def naver_news_search(queries, cid, secret, within_days=7, per_query=10, total=1
     cutoff = datetime.now(timezone.utc) - timedelta(days=within_days)
     seen, items = set(), []
     for q in _expand_all(queries):
-        url = "https://openapi.naver.com/v1/search/news.json?" + urllib.parse.urlencode(
+        url = "https://naverapihub.apigw.ntruss.com/search/v1/news?" + urllib.parse.urlencode(
             {"query": q, "display": per_query, "sort": "date"})
         data = _api_get(url, cid, secret, "네이버 뉴스 검색", q)
         if data is None:

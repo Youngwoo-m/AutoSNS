@@ -11,7 +11,7 @@ export type SurveyScene = {
   title: string;      // 장면 위 큰 글자(\n 줄바꿈)
   caption: string;    // 아래 자막 상자 — 이 장면 음성과 같은 내용
   image: string;      // public 기준 파일 이름. 비우면 그림 없이. kind "clip" 이면 mp4(Manim 등)
-  kind: "diorama" | "diagram" | "clip"; // 디오라마는 꽉 채워 천천히 확대, 도식은 흰 바탕에 온전히, clip 은 영상(무음)을 온전히
+  kind: "diorama" | "dioclip" | "diagram" | "clip"; // 디오라마는 꽉 채워 천천히 확대, dioclip 은 디오라마 영상 클립(무음)을 꽉 채워 재생, 도식은 흰 바탕에 온전히, clip 은 영상(무음)을 온전히
   audio: string;      // 이 장면 음성 파일(public 기준). 비우면 무음
   overlay?: string;   // 장면 맨 위에 얹는 투명 영상(public 기준 webm, 예: HyperFrames 로 만든 훅 제목). 비우면 없음
   seconds: number;    // 장면 길이(음성 길이 + 여유)
@@ -56,12 +56,12 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
         <div
           style={{
             position: "absolute", left: 50, right: 50, top: 560, height: 900, borderRadius: 28, overflow: "hidden",
-            background: scene.kind === "diagram" ? "#ffffff" : scene.kind === "clip" ? "#0b1220" : "#000000",
+            background: scene.kind === "diagram" ? "#ffffff" : scene.kind === "clip" || scene.kind === "dioclip" ? "#0b1220" : "#000000",
             opacity: interpolate(frame, [0, 0.3 * fps], [0, 1], { extrapolateRight: "clamp" }),
           }}
         >
-          {scene.kind === "clip" ? (
-            <OffthreadVideo src={staticFile(scene.image)} muted style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          {scene.kind === "clip" || scene.kind === "dioclip" ? (
+            <OffthreadVideo src={staticFile(scene.image)} muted style={{ width: "100%", height: "100%", objectFit: scene.kind === "dioclip" ? "cover" : "contain" }} />
           ) : (
           <Img
             src={staticFile(scene.image)}

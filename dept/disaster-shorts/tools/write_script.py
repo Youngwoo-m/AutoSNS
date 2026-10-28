@@ -18,6 +18,7 @@ STYLE_PREFIX = ("Style: photorealistic documentary footage filmed on location in
                 "Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, "
                 "roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens "
                 "and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. "
+                "Cinematic look: anamorphic lens feel with gentle shallow depth of field, warm highlights and cool shadows, subtle film grain. "
                 "Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos.")
 # 장면마다 카메라 — 대본의 "camera" 값(aerial/eye). 영상은 움직임까지 정해 Veo 의 제멋대로 카메라를 막는다(10/12 프롬프트 개선)
 CAMERA = {"aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
