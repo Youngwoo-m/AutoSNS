@@ -18,6 +18,7 @@ export type InstaReelProps = {
   account: string;        // 끝 화면 계정 표기
   disclosure: string;     // 디오라마가 보일 때 아래 작은 글씨(AI 생성 그림 고지)
   stats?: { value: number; suffix: string; label: string }[]; // 모션그래픽: 숫자 올라가는 수치 띠(카드 사이 장면)
+  scenes?: { head: string; lines: string[] }[]; // 있으면 카드 PNG 대신 모션그래픽 글자 장면(디오라마 위)
   secondsPerCard: number;
   hookSeconds: number;
   gapSeconds: number;     // 카드 사이 디오라마·배경이 보이는 시간
@@ -51,7 +52,7 @@ type Seg =
 // 디오라마 배치: 첫 장은 첫 화면, 마지막 장은 끝 화면(한 장뿐이면 둘 다), 가운데 장은 카드 사이에 고르게.
 // 디오라마가 없는데 배경 영상이 있으면 예전처럼 카드마다 배경이 비치는 틈을 둔다.
 export const buildSegments = (p: InstaReelProps): Seg[] => {
-  const n = p.cards.length;
+  const n = p.scenes?.length || p.cards.length;
   const f = (s: number) => Math.max(1, Math.round(s * FPS));
   const d = p.dioramas;
   const middle = d.length > 2 ? d.slice(1, -1) : [];
@@ -149,6 +150,44 @@ const End: React.FC<{ p: InstaReelProps }> = ({ p }) => {
   );
 };
 
+// 모션그래픽 글자 장면: 디오라마를 어둡게 깔고 제목이 밀려 들어오고, 줄이 차례로 올라온다
+const MotionScene: React.FC<{ p: InstaReelProps; idx: number }> = ({ p, idx }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const sc = p.scenes![idx];
+  const n = p.scenes!.length;
+  const dio = p.dioramas.length ? p.dioramas[idx % p.dioramas.length] : "";
+  const head = spring({ frame, fps, config: { damping: 200 }, durationInFrames: Math.round(0.8 * fps) });
+  const out = interpolate(frame, [durationInFrames - 8, durationInFrames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill>
+      {dio ? <DioramaFull image={dio} dark={0.62} note={p.disclosure} /> : null}
+      <AbsoluteFill style={{ opacity: out }}>
+        <div style={{ position: "absolute", top: 250, display: "flex", gap: 12, left: 90 }}>
+          {Array.from({ length: n }).map((_, i) => (
+            <div key={i} style={{ width: i === idx ? 54 : 14, height: 14, borderRadius: 7, background: i === idx ? C.accent : "rgba(255,255,255,0.35)" }} />
+          ))}
+        </div>
+        <div style={{ position: "absolute", left: 90, right: 90, top: 330, opacity: head, transform: `translateX(${(1 - head) * -120}px)` }}>
+          <div style={{ fontSize: 92, lineHeight: 1.2, color: C.title, whiteSpace: "pre-line", textShadow: "0 4px 24px rgba(0,0,0,0.7)" }}>{sc.head}</div>
+          <div style={{ marginTop: 26, height: 8, width: `${head * 40}%`, background: C.accent, borderRadius: 4 }} />
+        </div>
+        <div style={{ position: "absolute", left: 90, right: 90, top: 700 }}>
+          {sc.lines.map((ln, i) => {
+            const t = spring({ frame: frame - 14 - i * 10, fps, config: { damping: 200 }, durationInFrames: Math.round(0.7 * fps) });
+            return (
+              <div key={i} style={{ display: "flex", gap: 24, marginBottom: 36, opacity: t, transform: `translateY(${(1 - t) * 50}px)` }}>
+                <div style={{ width: 10, borderRadius: 5, background: C.accent, flexShrink: 0 }} />
+                <div style={{ fontSize: 60, lineHeight: 1.3, color: C.text, textShadow: "0 3px 20px rgba(0,0,0,0.75)", wordBreak: "keep-all" }}>{ln}</div>
+              </div>
+            );
+          })}
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
 const CardSeg: React.FC<{ p: InstaReelProps; idx: number }> = ({ p, idx }) => {
   const size = 940;
   return (
@@ -186,7 +225,7 @@ export const InstaReel: React.FC<InstaReelProps> = (props) => {
         return (
           <Sequence key={i} from={at} durationInFrames={s.frames} premountFor={FPS}>
             {s.kind === "hook" ? <Hook p={p} /> : null}
-            {s.kind === "card" ? <CardSeg p={p} idx={s.idx} /> : null}
+            {s.kind === "card" ? (p.scenes?.length ? <MotionScene p={p} idx={s.idx} /> : <CardSeg p={p} idx={s.idx} />) : null}
             {s.kind === "gap" && s.dio ? (
               <AbsoluteFill>
                 <DioramaFull image={s.dio} note={p.disclosure} />

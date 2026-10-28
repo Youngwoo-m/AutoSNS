@@ -72,6 +72,7 @@ def render_reel(data, images, audio, out, rcfg, title=None):
             "account": rcfg.get("account", "@smu_ds_official"),
             "secondsPerCard": float(rcfg.get("seconds_per_card", 3.5)),
             "stats": rcfg.get("stats") or [],
+            "scenes": rcfg.get("scenes") or [],
             "gapSeconds": float(rcfg.get("gap_seconds", 1.2)),
         }
         pj = os.path.join(pub, "_props.json")
