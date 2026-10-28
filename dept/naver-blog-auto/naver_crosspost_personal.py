@@ -136,7 +136,7 @@ class Conv(HTMLParser):
 
 
 # 작업 이름 접두 → safeworking 카테고리 (2026-10-26 분리)
-JOB_CATEGORY = (("survey", "측량·GIS 기술사"), ("civil", "토목시공기술사"), ("building", "건축시공기술사"), ("safety", "건설안전기술사"), ("nordic", "노르딕워킹·건강"), ("safekorea", "안전한국훈련·재난"))
+JOB_CATEGORY = (("survey", "측량기술사"), ("civil", "토목시공기술사"), ("building", "건축시공기술사"), ("safety", "건설안전기술사"), ("nordic", "노르딕워킹·건강"), ("safekorea", "안전한국훈련·재난"))
 
 
 def category_for(job):
