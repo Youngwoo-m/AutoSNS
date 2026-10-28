@@ -28,7 +28,7 @@ MAX_AGE_DAYS = 14
 MAX_TRIES = 5          # 틱톡 화면이 간헐적으로 늦게 떠 3번으로는 멀쩡한 영상도 멈췄다(10/15)
 DELAY_MIN = 30          # 유튜브 공개 뒤 틱톡까지
 GAP_HOURS = 3           # 틱톡 게시 사이 최소 간격(밀린 영상 기준)
-GAP_FRESH_HOURS = 1     # 새 영상끼리는 1시간 — 화요일 GeoAI(08:10)·재난 숏츠(08:30)가 붙는다
+GAP_FRESH_HOURS = 3     # 2026-10-26 사용자 지정: 새 영상도 3시간 간격(전에는 1시간)
 HOURS = (7, 23)         # 이 시간대에만 올린다(간격 때문에 새벽으로 밀리지 않게)
 
 CAPTION_SYSTEM = """너는 세명대학교 재난안전학과 틱톡 계정의 캡션 작성자다.
@@ -66,7 +66,7 @@ def _save(q):
     os.replace(tmp, QUEUE)
 
 
-def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source="", backfill=False, notice=""):
+def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source="", backfill=False, notice="", ai_voice=False):
     """대기열에 한 편 넣는다. 어떤 경우에도 예외를 올리지 않는다(발행 흐름을 막지 않게)."""
     try:
         if not ((load_config().get("tiktok_web") or {}).get("daily", True)):
@@ -85,7 +85,7 @@ def add(video, title, description="", hashtags=(), ai_generated=False, not_befor
                   "ai_generated": bool(ai_generated),
                   "not_before": ((dt.datetime.fromisoformat(not_before) if not_before else dt.datetime.now())
                                  + dt.timedelta(minutes=DELAY_MIN)).isoformat(timespec="seconds"),
-                  "source": source, "backfill": bool(backfill), "notice": (notice or "").strip(),
+                  "source": source, "backfill": bool(backfill), "notice": (notice or "").strip(), "ai_voice": bool(ai_voice),
                   "added": dt.datetime.now().isoformat(timespec="seconds"),
                   "posted": None, "tries": 0})
         _save(q)
@@ -131,7 +131,8 @@ def make_caption(e, cfg=None):
         text = "\n".join(lines)
     if e.get("ai_generated"):
         lines = text.split("\n")
-        lines.insert(len(lines) - 1, "※ 진행자 모습과 목소리는 AI로 합성한 아바타입니다.")
+        lines.insert(len(lines) - 1, "※ 영상의 목소리는 AI로 합성한 음성입니다." if e.get("ai_voice")
+                     else "※ 진행자 모습과 목소리는 AI로 합성한 아바타입니다.")
         text = "\n".join(lines)
     # 채널 간 상호 언급. 틱톡 캡션의 주소는 클릭되지 않으므로 외우기 쉬운 단축주소로 적는다.
     if CROSS_LINE and CROSS_LINE not in text:

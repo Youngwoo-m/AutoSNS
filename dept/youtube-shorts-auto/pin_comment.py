@@ -66,6 +66,8 @@ def _options(profile_dir, headless=True):
     o2 = type(o)()
     for a in args:
         o2.add_argument(a)
+    for k, v in o.experimental_options.items():   # excludeSwitches(진짜 키체인) 도 그대로 옮긴다
+        o2.add_experimental_option(k, v)
     o2.add_argument(f"--user-data-dir={profile_dir}")
     return o2
 

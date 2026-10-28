@@ -21,7 +21,7 @@ api.txt
 *.bak.*
 
 # ── 로그인 세션(쿠키·프로필) ────────────────────────────────
-chrome-profile/
+chrome-profile*
 chrome-profile-insta/
 _profile_backup_*/
 backups/

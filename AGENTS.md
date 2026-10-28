@@ -11,14 +11,15 @@
 python3 shared/axlock.py run --job <작업이름> --res profile:<프로필> -- <명령> …
 ```
 
-| 프로필 이름 | 폴더 |
+계정별 로그인 브라우저 2개로 합쳤다(2026-10-28 사용자 지정). 자원 이름은 그대로 쓰고, 같은 계정 프로필은 잠금 하나로 묶인다.
+
+| 프로필 이름 | 실제 폴더 |
 |---|---|
-| `profile:naver` | dept/naver-blog-auto/chrome-profile |
-| `profile:safeworking` | dept/naver-blog-auto/chrome-profile-safeworking (개인 네이버 블로그) |
-| `profile:tistory` | personal/naver-blog-auto/chrome-profile-tistory |
-| `profile:insta` | dept/insta-cardnews/chrome-profile-insta (인스타·스레드) |
-| `profile:tiktok` | dept/youtube-shorts-auto/chrome-profile-tiktok |
-| `profile:youtube-personal` / `profile:youtube-dept` | dept/youtube-shorts-auto/chrome-profile-youtube(-dept) |
+| `profile:naver` `profile:insta` `profile:tiktok` `profile:youtube-dept` `profile:insta-manual` | `~/.autosns-login/dept` (학과) |
+| `profile:safeworking` `profile:tistory` `profile:youtube-personal` | `~/.autosns-login/personal` (개인) |
+
+옛 `chrome-profile*` 폴더는 위 폴더를 가리키는 심볼릭 링크다. 원본 세션은 같은 자리의 `*.bak-20261028` 에 있다(되돌리려면 링크를 지우고 이름을 되돌린다).
+**바탕화면 `로그인-학과.app`·`로그인-개인.app` 으로 연 브라우저가 열려 있는 동안은 같은 폴더를 쓰는 자동 작업이 기다리다 건너뛴다.** 로그인이 끝나면 그 브라우저를 닫는다.
 
 - 다른 작업이 쓰는 중이면 비기를 기다린다(기본 40분). 작업이 끝나면 크롬을 닫는다.
 - **비상 정지** 중(`ax-console/data/STOP.json` 이 있음)에는 발행 작업을 시작하지 않는다. 상태: `python3 shared/axlock.py status`

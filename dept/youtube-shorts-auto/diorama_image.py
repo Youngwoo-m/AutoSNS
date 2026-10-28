@@ -4,6 +4,7 @@ CLAUDE.md 영상 지침(2026-10-15): 영상마다 디오라마 2~3장, 그림 �
 
     ./.venv/bin/python diorama_image.py --scene "surveyors setting a GNSS antenna on a benchmark on a hill village" --out d1.png
 
+--camera 로 카메라 기법(establishing·insert·rack·frame·dutch·anamorphic·tiltshift)을 덧붙인다.
 --scene 에는 장면만 영어로 적는다(스타일·글자 금지 문구는 이 도구가 붙인다).
 키는 주 키 → 추가 키 순서로, 월 할당이 (이미지값 + 예비 150) 넘게 남은 키만 쓴다. 구매 크레딧은 쓰지 않는다.
 그림에 글자가 보이면(맥 OCR) 글자 금지 문구를 세게 해서 한 번 다시 만들고 글자가 적은 쪽을 남긴다.
@@ -29,6 +30,16 @@ STYLE_T = ("Isometric miniature diorama on a small square base, handcrafted mode
          "clearly a toy-like scale model and not a real photograph, calm and orderly mood, {ASPECT} composition. "
          "No text, no letters, no numbers, no logos anywhere. Scene: ")
 STYLE = STYLE_T.replace("{ASPECT}", "vertical 9:16")
+# CLAUDE.md 카메라 기법(2026-10-26): --camera 로 골라 프롬프트에 한 줄씩 붙인다. 더치 앵글은 대응·구조 장면에만.
+CAMERA = {
+    "establishing": "Establishing shot: start from a wide foreground view of the whole scene.",
+    "insert": "Insert shot: close-up on a small prop as the subject.",
+    "rack": "Rack focus: focus shifts from the foreground subject to the subject behind it.",
+    "frame": "Frame within a frame: the scene is seen through an arch, door or window.",
+    "dutch": "Dutch angle: tilted camera for tension (use only for response or rescue scenes).",
+    "anamorphic": "Anamorphic look: wide frame, horizontal lens flare, oval bokeh.",
+    "tiltshift": "Tilt-shift: blur the top and bottom so it looks like a miniature.",
+}
 NO_TEXT = (" Absolutely no writing anywhere: every sign, screen, label, banner and instrument display is completely blank.")
 
 
@@ -74,15 +85,18 @@ def main():
     ap.add_argument("--scene", required=True, help="장면 설명(영어)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--aspect", default="9:16", help="9:16(기본)·1:1·16:9 등 — 배너 배경은 1:1/16:9")
+    ap.add_argument("--camera", action="append", choices=sorted(CAMERA), default=[],
+                    help="카메라 기법(여러 번 가능): " + ", ".join(sorted(CAMERA)))
     a = ap.parse_args()
     try:
         style = STYLE_T.replace("{ASPECT}", a.aspect + " (centered subject, calm empty space around)" if a.aspect != "9:16" else "vertical 9:16")
-        img, cr = gen(style + a.scene, a.aspect)
+        scene = a.scene + "".join(" " + CAMERA[c] for c in a.camera)
+        img, cr = gen(style + scene, a.aspect)
         open(a.out, "wb").write(img)
         found = text_in(a.out)
         if found:
             alt = a.out + ".retry.png"
-            img2, cr2 = gen(style + a.scene + NO_TEXT, a.aspect)
+            img2, cr2 = gen(style + scene + NO_TEXT, a.aspect)
             cr += cr2
             open(alt, "wb").write(img2)
             left = text_in(alt)

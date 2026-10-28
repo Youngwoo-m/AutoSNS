@@ -229,7 +229,8 @@ def build_driver(headless):
     o = Options()
     o.add_argument(f"--user-data-dir={PROFILE}")
     o.add_argument("--disable-blink-features=AutomationControlled")
-    o.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # use-mock-keychain 을 빼 로그인 앱(일반 크롬)과 같은 진짜 키체인 키로 쿠키를 읽고 쓴다(2026-10-28)
+    o.add_experimental_option("excludeSwitches", ["enable-automation", "use-mock-keychain"])
     o.add_experimental_option("useAutomationExtension", False)
     o.add_argument("--window-size=1400,1000")
     o.add_argument("--lang=ko-KR")
@@ -375,7 +376,10 @@ def write_post(d, post, body, category, tags, go):
 
     # 카테고리
     # 화면이 다 뜨기 전에 누르면 목록이 안 열려 시간 초과가 났다(10/10) — 세 번까지 다시 연다
-    sel = f'#category-list [role="option"][aria-label="{category}"]'
+    # 하위 카테고리는 목록에 '- 이름' 으로 뜬다(2026-10-27 '기술사' 아래로 옮긴 뒤 토목·측량·건축이 못 골랐다)
+    name = category[2:] if category.startswith("- ") else category
+    sel = (f'#category-list [role="option"][aria-label="{name}"], '
+           f'#category-list [role="option"][aria-label="- {name}"]')
     for n in range(3):
         try:
             time.sleep(1 + n)

@@ -86,6 +86,11 @@ def start_chrome(options, tries=3, wait=90):
     from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     options.add_argument("--disable-features=MacAppCodeSignClone")
+    # chromedriver 는 맥에서 --use-mock-keychain 을 붙여 가짜 키로 쿠키를 암호화한다. 그러면 로그인 앱(일반 크롬)으로
+    # 로그인한 쿠키를 못 풀고 지워 '로그인 만료'가 난다(2026-10-28 개인 교차 발행 3건). 진짜 키체인을 쓰게 뺀다.
+    ex = options.experimental_options.get("excludeSwitches") or []
+    if "use-mock-keychain" not in ex:
+        options.add_experimental_option("excludeSwitches", list(ex) + ["use-mock-keychain"])
     # 콘솔 브라우저 서비스가 켜진 프로필이면 창 없는 크롬을 빌려 쓴다(D3, ax-console/config/browser_service.json)
     try:
         import sys
