@@ -107,7 +107,7 @@ def transcribe(path):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="숏츠 나레이션(edge-tts 기본 / Voicebox 내 목소리)")
+    ap = argparse.ArgumentParser(description="숏츠 나레이션(Voicebox 내 목소리 기본 / edge-tts)")
     ap.add_argument("--backend", choices=["edge", "voicebox"],
                     default=os.environ.get("SHORTS_VOICE_BACKEND", DEFAULT_BACKEND))
     ap.add_argument("--text-file", required=True)
