@@ -199,14 +199,18 @@ def compose(body_html, images=(), video_id="", cfg=None, title=""):
     return "\n".join(p for p in parts if p)
 
 
-def publish(title, html_body, labels, dry_run=False, cfg=None, pinned=()):
-    """GeoAI 블로그에 글 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다."""
+def publish(title, html_body, labels, dry_run=False, cfg=None, pinned=(), published=None):
+    """GeoAI 블로그에 글 하나를 올린다. 실패해도 예외를 올리지 않고 결과 dict 를 준다.
+
+    published: RFC3339 시각(예: 2026-10-21T06:06:33+09:00)을 주면 그 날짜로 올린다(티스토리 교차 발행)."""
     cfg = cfg or load_config()
     g = gcfg(cfg)
     if not g.get("enabled", False):
         return {"status": "disabled"}
     body = {"kind": "blogger#post", "title": title, "content": html_body,
             "labels": merge_labels(labels, cfg, pinned=pinned)}
+    if published:
+        body["published"] = published
     loc = g.get("location") or {}
     if loc.get("name"):
         body["location"] = {k: v for k, v in loc.items() if v is not None}
