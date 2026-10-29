@@ -1,0 +1,412 @@
+한국지반공학회논문집 제38권 12호 2022년 12월 pp. 67 ～ 78 ISSN 1229-2427(Print)
+JOURNAL OF THE KOREAN GEOTECHNICAL SOCIETY ISSN 2288-646X(Online)
+Vol.38, No.12, December 2022 pp. 67 ～ 78 https://doi.org/10.7843/kgs.2022.38.12.67
+준설점토가 상부에 매립된 대심도 연약지반 계측관리
+Instrumentation Management of the Deep Soft Ground
+with Dredged Clay Reclaimed in the Upper
+정 나 영 1 Jung, Na-Young
+강 승 찬 2 Kang, Seung-Chan
+김 태 형 3 Kim, Tae-Hyung
+Abstract
+In this study, the measurement results of the coastal deep soft ground buried in the upper part of the dredged clay
+were analyzed and compared with the current specification standards. Based on the results, a suitable proposal was
+suggested for the selection, installation, data arrangement, and analysis of each instrument used in the deep soft ground
+improvement construction. The pore water pressure meter has a range of 1.5 times or more of the expected measurement
+range, considering the field conditions of the soft ground. The groundwater level meter installed in the horizontal drainage
+layer checks the change in the groundwater level during the embanking as well as the performance of the catchment
+well and the horizontal drainage layer. Therefore, it is important to manage so that the groundwater level exists inside
+the horizontal drainage layer during embanking. It is enough to install the inclinometer in the gravel layer below the
+soft ground or weathered rock with an N value of 40 or more for the deep soft ground. It seems desirable to install
+a screw type for differential settlement meter. However, the screw type should not settle due to its own weight. Considering
+that it is a dredged landfill where subsidence occurs significantly, it is sufficient to manage the tolerance of leveling
+at about 10 mm (L is the one-way distance (km)).
+요 지
+본 연구에서는 준설점토가 상부에 매립된 해안가 대심도 연약지반의 계측결과를 분석하고 현재의 시방기준과
+비교하여 그 결과를 바탕으로 대심도 연약지반 개량공사에 사용되는 각 계측별 계측기 선정, 설치, 데이터 정리
+및 분석에 대하여 적합한 안을 제안하였다. 간극수압계의 경우, 연약지반 현장 여건을 고려하여 예상 가능한 측정
+범위의 1.5배 이상 정도의 계측 범위가 가능한 게이지를 적용하는 것이 바람직하다. 수평배수층에 설치되는 지하
+수위계는 성토 중 지하수위의 변화, 집수정 및 수평배수층의 성능을 확인하는 것으로 성토 중에는 지하수위가
+수평배수층 내부에 존재하도록 관리하는 것이 중요하다. 대심도 연약지반에서 지중경사계의 설치심도는 N치가
+40 이상인 풍화암 또는 연약지반 하부의 자갈층에 설치하면 충분하다. 층별침하계는 스크류타입을 설치하는 것이
+바람직해 보인다. 그러나 스크류타입 게이지가 자중에 의한 침하가 발생하지 않아야 한다. 폐합 또는 결합측량
+1 비회원, 한국해양대학교 석사과정 (Graduate Student, Korea Maritime and Ocean Univ.)
+2 정회원, (주)광림엔지니어링 이사 (Member, Director, Kwanglim Engineering)
+3 정회원, 한국해양대학교 건설공학전공 교수 (Member, Dept. of Civil Engrg., Korea Maritime and Ocean Univ., Tel: +82-51-410-4465, Fax: +82-51-410-4460,
+kth67399@kmou.ac.kr, Corresponding author, 교신저자)
+* 본 논문에 대한 토의를 원하는 회원은 2023년 6월 30일까지 그 내용을 학회로 보내주시기 바랍니다. 저자의 검토 내용과 함께 논문집에 게재하여 드립니다.
+Copyright © 2022 by the Korean Geotechnical Society
+This is an Open-Access article distributed under the terms of the Creative Commons Attribution Non-Commercial License (http://creativecommons.org/licenses/by-nc/3.0)
+which permits unrestricted non-commercial use, distribution, and reproduction in any medium, provided the original work is properly cited.
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 67
+시 수준측량의 허용오차는 침하가 크게 발생하는 준설매립지임을 고려하면 10mm(L은 편도거리(km)) 정도로
+관리하면 충분하다.
+Keywords : Data arrangement and analysis, Deep soft ground, Dredged clay reclaimed, Instrumentation management,
+Measuring instruments
+1. Infrastructure and Transport, 2018a, 2018b).
+서 론
+효과적인 계측을 위해서는 다음의 사항이 고려가 필
+준설매립지반에서의 계측관리는 연약지반 공사 중의 요하다. 계측 대상 시설물(공사)의 규모 및 구조적 형태,
+안정관리 및 침하관리를 목적으로 한다(Asaoka, 1978). 계측항목, 계측범위, 계측위치, 계측방법 및 시스템의
+즉 계측은 시공 중 수집 자료로 성토 중 안정성과 침하 구성, 계측기기의 종류, 사양 및 수량, 계측기의 설치,
+거동을 분석하여 설계를 보완 수정하고 최종 지반개량 설치 시기, 유지관리 방법 등이다. 그 외 수준측량 계획,
+도 품질을 확인하는 것이 주 목적이다(Kim et al., 2015; 계측결과의 수집 및 데이터 관리방법, 계측결과의 해석
+Kim, 2019). 그리고 계측관리를 통해 설계 시 예상한 지 방법 등도 필요하다. 장기적인 측면에서 계측자료의 보
+반거동 특성과 실제 지반거동과의 차이를 보완하여 시 관, 활용 방법 및 체계, 계측결과를 유지관리에 활용하
+공 중 안정성과 경제성을 확보하도록 하고 있다(Bjerrum, 는 방법, 계측관리방법(위탁 또는 직영), 직영 관리 시
+1967). 구체적인 계측관리의 기본방향은 1) 지반조사 결 계측요원의 교육방법 등이 포함될 수 있다(Ministry of
+과로 추정한 설계 지반정수의 수정, 2) 시공 중 지반조 Land, Infrastructure and Transport, 2018b).
+사 결과와 계측자료를 역해석한 지반정수로 연약지반 본 연구에서 준설매립지반에서의 연약지반 계측관리
+설계 수정, 3) 계측결과와 확인지반조사 통한 최종 시공 방법에 적용하고 있는 기존의 설계기준과 전문시방서
+품질확인 등 이다. 를 고찰하고 대심도 연약지반 개량공사 현장에서 수행
+현재까지 많은 연구자들이 해안가 준설매립 연약지 된 실제 계측자료를 계측기별로 내용을 정리, 기술, 분
+반의 압밀에 대한 침하특성 및 침하량 예측에 관한 연구 석하여 현재의 시공중 계측관리 기준을 보완할 수 있는
+를 수행하였는데 주로 계측관련 연구는 데이터 분석을 연약지반 계측관리 방법에 대한 개선 방안을 제안하였
+통한 침하량 예측에 집중되었다(Bo et al., 1998; Arulrajah 다. 연구에 사용된 현장 자료는 부산항 신항만 일대 자
+et al., 2003; Park, 2009, Choo et al., 2010). 즉 계측결과 료를 중점적으로 활용하여다.
+의 해석 또는 수학적 기법을 통한 장기 침하량을 예측하
+는 것이 연구의 대부분을 차지하였다(Chung et al., 2009; 2.
+국내 기준의 현황
+Kim et al., 2015; Kang et al., 2021). 압밀 침하량 연구
+와 달리 계측관리, 계측기기, 데이터 정리 및 분석과 관 항만 및 어항 설계기준이나 표준시방서에서의 계측
+련된 연구는 상대적으로 미비한 실정이다(Nomura et al., 관리 부분은 국가건설기준을 적용토록 하고 있어 연약
+2008; Jang, 2020; Jang et al., 2021). 지반 계측관리에 대한 내용은 미흡한 상태이다(Ministry
+해안가 준설매립지반에서 계측의 목적을 효과적으로 of Oceans and Fisheries, 2016, 2018).
+확보하기 위해서는 여러 사항을 충분히 고려하여 상세 KDS 11 10 15(지반계측)(Ministry of Land, Infrastructure
+히 수립하여야 한다. 하지만 국가건설기준(KDS 11 10 15) and Transport, 2018a)에 따르면 계측계획의 수립, 계측
+에는 연약지반에서의 계측 시 고려되어야 하는 분석방 단면의 선정, 계측항목의 선정 및 배치 기준, 계측기기
+법이나 데이터의 선정, 분석구간 선정, 지하수위의 적용 의 선정과 같은 일반적인 내용은 포함하고 있다. 하지만
+등은 명확히 정의되어 있지 않은 현실이다. KCS 11 10 연약지반에서의 계측 시 고려되어야 하는 여러 가지 기
+15에서도 주로 시공 중 계측관리는 안정관리를 주목적 준들 예를 들면, 분석방법이나 데이터의 선정, 분석구간
+으로 기술되어 계측 침하관리의 주요 기준에 대해서는 선정, 지하수위의 적용 등은 명확히 정의되어 있지 않은
+구체적인 기준 제안이 없는 상태이다(Ministry of Land, 현실이다. 즉 현 설계기준에는 계측결과의 해석방법을
+68 한국지반공학회논문집 제38권 제12호
+계측계획서에 제안토록 하고 있어 해석방법에 대한 명 검토 결과, 시공 중 계측관리는 안정관리를 주목적으로
+확한 규정이 없으므로 계측관리 주체에 따라 다양하게 기술된 것으로 보인다. 이로 인하여 침하관리에 대해서
+가정하여 해석하고 있는 실정이다. 는 구체적인 기준 제안이 없는 것으로 판단된다. 준설매
+KCS 11 10 15(시공중 지반계측)(Ministry of Land, 립지반에서의 계측관리는 연약지반 공사 중의 안정관
+Infrastructure and Transport, 2018b)의 경우, 연약지반공 리뿐만 아니라 침하관리도 반드시 요구되는 항목이다.
+사 중 일반사항과 계측기 종류, 계측기 설치 방법, 계측 각 계측별 계측기 선정, 설치, 데이터 정리 및 분석에
+수행 방법, 계측빈도에 대하여 비교적 상세한 내용을 포 대해 다음 사항을 제안한다.
+함하고 있다. 이 시방서는 주로 시공 중 계측관리는 안
+정관리를 주목적으로 기술된 것으로 보이며, 이로 인하 3.1 간극수압계
+여 침하관리의 주요 기준에 대해서는 구체적인 기준 제
+안이 없는 상태이다. 현행 시공 중 지반계측 표준시방서에는 간극수압의
+지반공사 일반 전문시방서(EXCS 11 10 15, 시공 중 측정범위는 설계상의 작용 간극수압을 고려하여 계획되
+지반계측)(Korea Expressway Corporation, 2018)도 연약 어야 하며, 기본적으로 1MPa 이상을 측정할 수 있어야
+지반 계측관리에 자주 이용되는 기준이다. 이 기준의 경 한다. 그러나 모든 종류의 계측센서는 측정범위가 넓어
+우 연약지반공사 계측관리에 대한 측정방법, 일부 침하 질수록 정밀도가 감소하게 되므로 단순히 센서의 측정
+관리에 대한 언급은 있으나 결과 정리, 분석 방법 등이 범위가 넓은 제품을 적용한다고 해서 효과적인 관리가
+명확하지 않고, KCS 11 10 15에 준하여 관리하도록 하 이루어지는 것은 아니다. 따라서, 현장여건을 고려하여
+고 있다. 예상 가능한 측정범위의 1.5배 이상 정도의 범위에 맞추
+국가건설기준센터에 기준 통합 이전에 적용하였던 어 간극수압 센서를 적용하는 것이 바람직하다. Table 1
+연약지반 상의 흙쌓기에 대한 도로설계기준(Ministry of 은 부산항 신항만에 설치된 간극수압계이다. 부산항 신
+Land, Infrastructure and Transport, 2016)을 보면, 연약 항만 일대에 설치된 간극수압계는 대부분 심도별 예상
+지반공사 중 침하분석 방법에 대하여 일부 언급하고 있 정수압과 성토에 의해 예상되는 과잉간극수압을 고려
+으나, 구체적인 분석방법이나 데이터의 선정, 분석구간 하여 측정범위의 1.5배 정도의 적정한 범위에 있는 센서
+선정, 지하수위의 적용과 같은 실제 침하분석에서 필요 를 설치한 것으로 판단되지만 일부 현장에서는 관리의
+한 여러 가지 기준들은 없다. 다만 현재 사용되고 있는 편의성 등으로 설치심도 및 예상되는 측정치보다 훨씬
+설계기준이나 표준시방서보다는 연약지반 침하분석의 큰 범위의 센서를 설치한 것으로 나타난다.
+방향이나 고려사항을 더 많이 수록하고 있다. Fig. 1은 부산항 신항만 인근의 연약지반 현장에서 성
+여러 기준들의 분석 결과를 종합하면, 연약지반 시공 토에 따른 간극수압의 변화를 나타낸 그림이다. Fig. 1(a)
+중 계측관리에 대한 계획, 설치방법, 측정방법에 대해서 는 GL(-)10m지점, Fig. 1(b)는 GL(-)18m지점에 설치한
+는 기술하고 있으나 결과 정리, 분석 방법에 대한 명확 간극수압계이며, 계측결과 성토 직전 PBD시공에 따라
+한 기준이 없어, 향후 연약지반 침하분석을 명확히 할 미소한 간극수압의 증가가 발생한 후 성토에 따라 과잉
+수 있는 기준 제시가 필요한 상황이다. 특히 부산 신항 간극수압이 증가하고 압밀대기 중에 과잉간극수압이 소
+만과 같은 준설매립된 대심도연약지반에서는 계측기기, 산되는 경향으로 나타난다. 구체적으로 보면 6.8m 성토
+분석방법이나 가정조건에 따라 침하 예측정밀도의 편 에 따른 최대 과잉간극수압의 증가는 GL(-)10m지점에
+차가 크게 발생할 수 있으므로 분석방법에 대해서는 상 서 94kPa 정도로 나타나며, GL(-)18m지점에서는 77kPa
+세한 기준의 정립이 필요하다. 정도로 나타나 성토하중 122kPa(6.8m×18)보다 작
+게 증가한 것으로 나타났다. 이는 성토 중 일부 과잉간
+3. (KCS 11 10 15) 극수압이 소산됨에 따라 작게 평가되는 것으로 판단되
+현 지반공사 표준시방서 의 개선
+며, 상부에 설치된 간극수압계가 하부에 설치한 것보다
+사항 제안
+과잉간극수압이 더 크게 발생한 사실을 검토하면 성토
+계측관리의 정밀도에 따라 지반개량 품질의 차이가 에 따른 지중응력 증분이나 장비 사용하중이 상부지점
+크게 발생하게 된다. 기존 표준시방서 시공 중 지반계측 에 더 크게 작용하였을 것으로 판단된다.
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 69
+Table 1. Type and measurement range of pore water pressure gauges applied to each site of Busan Port New Port
+Max. measurement range Manufacture/
+Site Pore water pressure meter Model name
+(kPa) Country
+North container terminal stage EPP-5803 Sakadadenki/
+Differential pressure transmitter 300 ~ 700
+1 quay and yard construction ~EPP-5807 Japan
+North container terminal EPP-5803 Sakadadenki/
+Differential pressure transmitter 300 ~ 700
+stage 2-1 ~EPP-5807 Japan
+South container terminal EPP-5803 Sakadadenki/
+Differential pressure transmitter 300 ~ 700
+stage 2-2 ~EPP-5807 Japan
+South container terminal EPP-5803 Sakadadenki/
+Automatic : Differential pressure transmitter 300 ~ 700
+stage 2-3 ~EPP-5810 Japan
+South container terminal EPP-5803 Sakadadenki/
+Automatic : Differential pressure transmitter 300 ~ 700
+stage 2-4 ~EPP-5807 Japan
+West container terminal Automatic : Differential pressure transmitter EPP-5803 Sakadadenki/
+300 ~ 700
+stage 2-5 Manual : Differential pressure transmitter ~EPP-5810 Japan
+EPP-5803 Sakadadenki/
+Ungdong hinterland zone 1 Automatic : Differential pressure transmitter 300 ~ 700
+~EPP-5807 Japan
+Daedong Inst./
+Ungdong hinterland zone 2 Manual : Vibrating string type 500 ~ 1000 G086448
+Korea
+Daedong Inst./
+Ungdong hinterland zone 3 Manual : Vibrating string type 500 ~ 1000 G086448
+Korea
+EPP-5803 Sakadadenki/
+Ungdong hinterland area 4 Manual : Differential pressure transmitter 300 ~ 700
+~EPP-5807 Japan
+Automatic : Differential pressure transmitter 300 ~ 700 Daedong Inst./
+North container terminal hinterland varous
+Manual : Vibrating string type 500 ~ 1000 Korea
+(a) At GL (-)10.0m
+(b) At GL. (-)18.0m
+Fig. 1. Examples of pore water pressure measurement
+70 한국지반공학회논문집 제38권 제12호
+간극수압계 설치지역 주변에 하중의 변화가 발생하 평가될 수 있으므로 분석 시 이를 고려하여 평가하여야
+면 측정값의 정밀도가 떨어진다. 예를 들어 간극수압계 한다. 사업지구 외에 지하수위계의 설치가 가능할 경우
+설치 지역의 연약층 심도의 2배 반경 이내에서 성토중 에는 토공사 이전 시점에 지하수위계를 선 시공하여 초
+이거나 중장비가 있는 경우가 해당된다. 하지만 계측된 기 지하수위 경향을 확인하고 이를 침하 검토 시 초기
+간극수압을 통하여 압밀대상층에서의 하중 및 응력의 지하수위 자료로 활용하여야 한다. 이 때 정확한 정수
+변화 여부를 판단할 수 있으므로 간극수압의 측정은 수 위 측정을 위하여 성토의 영향이 없는 구간에 설치하여
+행되어야 한다. Terzaghi 1차원 압밀식에서의 정확한 압 야 하며, 피압이 예상되는 구간의 경우 압밀대상층의
+밀의 개념은 과잉간극수압의 소산유무를 통한 압밀도 상부 투수층에 1개소, 하부 투수층에 1개소 총 2개소를
+평가이다. 실무에서의 간극수압계 계측결과는 연직배수 1set로 설치하여 정확한 지하수위 변화를 확인하여야
+재와의 이격거리 등에 따라 실제 평균적인 과잉간극수 한다.
+압 소산정도를 평가하는 데에는 한계가 있지만 최대한 Fig. 2는 연약지반 조성 후 유지관리단계에서 동일한
+정확히 설치하여 압밀경향을 확인하는 것이 중요하다 지점에 설치한 지하수위 변화를 나타낸 그림이다. Fig.
+(Kim et al., 2014). 2(a)는 상부모래층에 설치한 지하수위계이며, Fig. 2(b)
+다만 측정 자료의 침하분석자료로의 사용 여부는 지 는 하부모래층에 설치한 지하수위계이다. 그림에서 보
+반기술자의 판단에 의해 결정하는 것이 적절해 보인다. 면 동일한 지점에 설치되어 있더라도 수두 측정지점에
+간극수압계 계측결과만으로 지반개량도 분석은 현실적 따라 지하수위계의 변화 경향이 다른 것을 알 수 있다.
+으로 어려우므로 동일지점 계측자료와의 비교를 통하 상부 모래층 설치 지하수위계는 수위 변화의 폭이 크지
+여 정성적인 분석을 시행하여 참고용으로 활용하는 것 않으나 우천의 따른 영향을 크게 받는 것으로 나타났으
+을 추천한다. 즉 간극수압계의 측정결과를 이용하여 과 며, 하부 모래자갈층 설치 지하수위계는 우천의 영향은
+잉간극수압의 소산유무를 확인하고 층별침하계의 침하 크게 받지 않으나 인접 대심도 굴착공사의 영향을 받아
+속도 및 침하량과 비교 분석에 활용하는 것이 바람직하 지하수위의 변화가 크게 발생하기도 한다.
+다(Choi, 2020). Fig. 3과 Fig. 4는 자동수위측정 센서를 이용하여 점
+토층 상, 하부 투수층에 설치한 지하수위계의 변화를 나
+3.2 지하수위계 타낸 그림이다. Fig. 3에서 보면 점토층 상부에 존재하
+는 투수층에 설치한 지하수위계의 경우 조위의 영향을
+시공 중 및 준공 후 지하수위 적용 기준에 따라 준설 받지 않는 것으로 나타났다. 그림에서 왼쪽은 부산항 신
+매립 연약지반의 시공품질의 차이가 크게 발생하므로 항 조위도이다. 점토층 하부에 존재하는 투수층에 설치
+정확한 지하수위 평가가 중요하다(Yang 2005; Nomura 한 지하수위계의 경우 해안에서의 위치에 따라 그 영향
+et al., 2008; Jang et al., 2021). 현행 시공 중 지반계측 정도는 차이가 있지만 조위의 영향을 받는 것으로 나타
+(KCS 11 10 15 : 2018)에 제안된 지하수위 설치 및 관리 났다. 두 현장 모두 부산항 신항 인접지역이다.
+방법은 준설매립지반에서의 정확한 시공 중 지하수위를 Fig. 5는 연약지반에서 지반개량 중 지하수위 관리 예
+파악하기 어려우므로 보완이 필요하다. 준설매립지반에 를 나타낸 것이다. 수평배수층에 설치되는 지하수위계
+서의 지하수위계는 사업지구 내 수평배수층에 설치되 는 성토 중 지하수위의 변화를 통하여 집수정 및 수평배
+는 지하수위계와 사업지구 내 점토층 하부 투수층에 설 수층의 성능을 확인하고 이를 통해 지반개량효과를 검
+치되는 지하수위계, 사업지구 외 지하수위계가 있다. 증하여야 한다. 또한, 성토시공 중에는 성토에 따른 지
+사업지구 내 점토층 하부 투수층에 설치되는 지하수 중응력증분량을 최대로 발휘하기 위하여 지하수위가
+위계는 침하로 인한 파손의 우려가 크므로 센서형 지하 수평배수층 내부에 존재하도록 관리하는 것이 중요하
+수위계를 설치하고, 사업지구 내 수평배수층에 설치되 다. 지하수위가 수평배수층 내에 존재하지 않으면 수평
+는 지하수위계는 수평배수층에 스탠드 형식으로 설치 배수층에서의 압밀수의 배수가 원활하게 이루어지지
+한다. 다만, 수평배수층 내에 설치되는 지하수위계의 않은 것으로 결과적으로 그 위치에서 지반개량이 원활
+경우 시공 중 예상되는 지하수위보다 높게 시공이 되면 하게 이루어졌다고 볼 수 없다.
+지반내 건수나 지표수 유입에 의하여 지하수위가 높게
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 71
+(a) Groundwater level gauge installed in the upper sand layer
+(b) Groundwater level gauge installed in the lower sand layer
+Fig. 2. Groundwater level mesurement results in the upper and lower sand layers of soft ground (○○ site)
+(a) (b)
+Fig. 3. Groundwater level measurement results at upper permeable layer of the clay layer (Ungdong hinterland)
+(a) (b)
+Fig. 4. Groundwater level measurement results at lower permeable layer of the clay layer (○○ site)
+72 한국지반공학회논문집 제38권 제12호
+(a) Not good example
+(b) Good example
+Fig. 5. Cases of groundwater level management during soft ground improvement (Ungdong hinterland)
+3.3 지중경사계 약지반 하부지점부터 발생할 수 있으며, 계측관리 시에
+는 지중경사계 설치심도의 맨 하단부를 “0”으로 설정하
+시공 중 지반계측(KCS 11 10 15 : 2018) 표준시방서 고 심도별 상대변위를 구하여 전체변위량을 산정하기
+에서는 지중경사계를 반드시 부동층(예를 들면 기반암) 때문에 지중경사계 하부 설치심도를 부동점이 아닌 지
+에 설치하도록 되어 있으나, 연약지반 개량공사가 수행 점에 설치할 경우에는 설치지점 이하에서 발생하는 수
+되는 준설매립된 대심도 연약지반의 경우 N치가 40 이상 평변위량을 확인할 수 없으므로 정확한 안정성 평가가
+인 풍화암 또는 연약지반 하부의 자갈층에 설치하더라 어렵다.
+도 수평변위량을 파악하는데 문제가 없다고 본다(Fig. 6).
+연약지반에서는 재하성토에 의한 수평변위 발생이 연
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 73
+Fig. 6. Cross-sectional view of the installation of a inclinometer during soft ground improvement
+3.4 층별침하계 층(준설토층, 압축성이 큰 점토층, 압축성이 작은
+점토층, 실트층)의 경계부, 연약층 층후가 두꺼울
+층별침하계는 설계도서의 심도, 연직배수재 시공 심 경우(15m 이상) 토질특성이 비슷하더라도 10~15m
+도 및 지층정보를 고려하여 정확히 설치되어야 하며, 수 간격으로 구분하여 설치, 배수재 시공 경계부(개
+직배수재 시공이 이루어지더라도 미개량층이 존재할 경 량층, 미개량층)에 설치가 이루어져야 한다.
+우 미개량층에 반드시 층별침하계를 설치하여 미개량 ④ 현장에 반입된 층별침하계는 설치하기 전에 자재
+층의 침하특성도 확인하여야 한다. 확인 및 초기치 측정, 장비실험을 실시하고 공사
+층별침하계의 경우 설치형식에 따라 설치방법이 다 시방서 사양과 동일여부를 확인한 후 설치하여야
+르지만, 시공 중 지반계측(KCS 11 10 15 : 2018) 표준시
+한다.
+방서에는 침하소자식(마그네틱타입) 층별침하계 설치방
+⑤ 지층 경계의 구분은 설계도서의 심도, 연직배수재
+법만 언급하고 있다.
+시공 심도 및 계측기 설치를 위해 천공 시 판정되
+기본적으로 준설매립지반에 설치되는 층별침하계는
+는 지층정보를 이용하여 설치되어야 한다.
+그 설치 형식에 따라 설치방법이 다르므로 이를 고려하
+여 설치가 필요한데 형식에 상관없이 공통적으로 고려 준설매립지반에서 현장사례 조사 결과(Table 2), 침
+하여야 할 사항은 다음과 같다. 하소자식(마그네틱타입) 층별침하계의 경우 소규모 전
+① 준설매립지반에서는 지층별 침하분석이 이루어져 단변형, 가이드 파이프의 마찰, 연결 coupling의 문제로
+야 하므로 지층별 침하 정밀도가 확보될 수 있는 인하여 대부분 침하량이 과소평가되었다. Fig. 7은 마그
+층별침하계 형식 선정이 중요하다. 네틱 층별 침하계가 사용된 부산항 신항에서 측정된 계
+② 현장 여건, 예상침하량을 고려하여 설치 형식을 선 측 결과이다. 전반적으로 지표침하판으로 측정된 결과
+정한다. 와 층별침하계로 측정된 결과와 많은 차이가 있음을 알
+③ 층별침하계 설치 위치는 압축특성의 변화가 큰 지 수 있다. 이것은 마그네틱타입 층별침하계가 좌굴 변위
+74 한국지반공학회논문집 제38권 제12호
+Table 2. Type of multi-layer settlement gauges applied to each site of Busan Port New Port
+Site Differential settlement meter Model name Manufacture/ Country
+North container terminal stage 1 quay
+Sliding resistance ESD-7120C Sakadadenki/ Japan
+and yard construction
+North container terminal stage 2-1 Sliding resistance ESD-7120C Sakadadenki/ Japan
+South container terminal stage 2-2 Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+South container terminal stage 2-3
+Manual : Magnetic HI3P+Ringmagnet Daedong Instuments/ Korea
+Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+South container terminal stage 2-4
+Manual : Magnetic HI3P+Ringmagnet Daedong Instuments/ Korea
+Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+West container terminal stage 2-5
+Manual : Magnetic HI3P+Ringmagnet Daedong Instuments/ Korea
+Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+Ungdong hinterland zone 1
+Manual : Magnetic HI3P+Ringmagnet Daedong Inst./ Korea
+Ungdong hinterland zone 2 Manual : Magnetic HI3P+Ringmagnet Daedong Inst./ Korea
+Ungdong hinterland zone 3 Manual : Magnetic (double tube) -
+Ungdong hinterland area 4 Manual : sliding resistance ESD-7120C Sakadadenki/ Japan
+Automatic : sliding resistance ESD-7120C Sakadadenki/ Japan
+North container terminal hinterland
+Manual : screw HI3P+Ringmagnet Daedong Inst./ Korea
+Fig. 7. Comparison of settlements of surface settlement plate and differential settlement meter (magnetic type) installed at the same point
+Fig. 8. Causes of under settlement in the differential settlement meter (magnetic type)
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 75
+에 취약한 구조를 가지고 있어 휨 변형 발생 시 측정 법은 다음과 같다.
+센서 관입이 불가능하거나 파손이 자주 발생하여 침하 ① 지표침하판에 대한 매회의 수준측량은 관리구역
+량 측정을 제대로 할 수 없기 때문이다(Fig. 8). 단위로 실시하고 해당 수준기준점에 폐합 또는 결
+그러므로 대심도 연약지반의 침하 특성을 고려하여 합시켜 측량의 정밀도를 검증한 후 오차를 보정하
+층별침하계는 스크류타입으로 설치하는 것이 바람직해 여야 하며, 계측성과는 측량야장과 침하관리대장
+보인다. 다만 설치지점에서의 지반강도가 상당히 연약 을 정리하여 확인을 받아야 한다.
+할 경우에는 지반 내로 관입될 수 있으므로 스크류타입 ② 수준측량의 허용오차는 연약지반 시공 중 발생침
+층별침하계가 자중에 의해 관입되지 않도록 하는 것이 하량의 크기나 측량 목적에 따라 적정하게 선정되
+중요하다. 어야 하며, 침하량이 작거나 정밀측량을 요구할
+각각의 층별침하계 결과의 정리 및 침하분석은 각 지 경우 2등수준측량의 허용오차 이내로 관리하고,
+층별, 배수 특성별로 각각 분석이 이루어져야 한다. 침 준설매립지반과 같은 큰 침하가 발생하는 경우 3
+하분석 시 압축특성이 다른 다층지반일 경우 층별침하 등수준측량의 허용오차 이내로 관리한다.
+계를 이용하여 각 지층별 압밀특성을 각각 산정하여 침 시공 중 정도 높은 침하분석을 위해서는 오차관리가
+하분석이 이루어져야 한다. 일반적으로 전체층의 침하 중요하므로 수준점 관리 및 측량오차를 최소화하기 위
+량으로 침하분석을 실시하는 것보다 각 침하특성이 다 해 폐합측량이나 결합측량을 실시하여야 한다. Fig. 9는
+른 각 지층별(준설매립층, 모래층, 점토층, 미개량층)로 시공 중 수준측량 오차에 따른 장래침하량 예측범위를
+침하분석을 실시하고 합산할 경우 잔류침하량이 크다. 나타낸 것이다. 수준측량 오차관리를 5mm 이내로 관리
+할 경우와 50mm 이내로 관리한 경우를 비교한 결과,
+침하 예측범위의 크기는 10배 이상 차이가 발생한다.
+3.5 수준측량에 대한 오차 관리
+부득이한 현장 여건으로 수준점(reference point) 관리
+연약지반 공사 중 최종성토단계에서의 정확한 침하 가 어려울 경우 부지 외곽부에 성토에 의한 침하나 수평
+분석을 위해서는 시공 중 정확한 침하 계측자료의 수집 변위가 없을 것으로 예상되는 지점을 선정하고 지지층
+이 중요하다. 그러므로 정도 높은 침하계측자료의 확보 까지 시추 및 롯드(φ34mm 강관)를 고정 설치하고, 이를
+를 위해서는 수준측량 계획 및 오차 관리가 필요하다. 소규모 침하기준점(base point)으로 활용할 수 있다. 이
+수준측량에 대한 계획은 다음과 같다. 러한 경우 주기적으로 확인 측량이 이루어져야 한다.
+과업착수 전 수준측량 계획서를 작성하여 제출한다. 폐합 또는 결합측량 시 수준측량의 허용오차는 침하
+수준측량은 수준측량기에 의한 수준측량을 원칙으로 하 가 크게 발생하는 준설매립지임을 감안하면 공공수준
+며, 수준측량 계획서에는 수준점의 위치, 관리구역의 설 측량의 3등급 정도인 10mm(L은 편도거리(km)) 정
+정, 폐합 또는 결합 측량방법, 허용오차 및 오차의 보정 도로 관리하여 오차 보정을 실시한다면 침하분석에 큰
+방법이 수록되어야 한다, 자세한 수준측량 오차관리 방 영향은 없을 것으로 판단된다. 다만, 침하발생이 크지
+Fig. 9. The magnitude of the final settlement prediction range according to the error (Kang, 2012)
+76 한국지반공학회논문집 제38권 제12호
+Table 3. Leveling tolerances
+Gauge Reclamined soft ground (mm) General soft ground or required high precision
+Surface settlement plate 3rd degree error 2nd degree error
+Differential settlement meter 10
+mm
+(L: one-way distance, km) 5
+mm
+(L: one-way distance, km)
+않거나 정도 높은 측량을 요하는 경우에는 기본수준측 가 크게 발생하는 준설매립지임을 감안하면 공공수준
+량의 2등급 정도를 제안한다(Table 3). 측량의 3등급 정도인 10mm(L은 편도거리(km)) 정
+도로 관리하면 충분할 것으로 판단된다.
+4.
+결 론
+감사의 글
+계측관리에 따라 지반개량 품질의 차이가 크게 발생
+하게 된다. 부산항 신항만과 같이 대심도 준설매립 연약 본 연구는 해양수산부 부산지방해양수산청 부산항건
+지반에서의 계측관리는 지반개량의 품질을 확보하는 측 설사무소의 “부산항 진해신항 지반성능 개선 연구용역”
+면에서 더 중요하다. 본 연구에서는 부산항 신항 주변 의 지원으로 이루어진 결과임.
+자료를 분석하여 대심도 연약지반의 개량공사에 사용
+되는 각 계측별 계측기 선정, 설치, 데이터 정리 및 분석 (References)
+참고문헌
+에 대해 다음 사항을 제안하였다.
+간극수압계의 경우, 연약지반 현장 여건을 고려하여 1. Arulrajah, A., Nikraz, H., and Bo, M.W. (2003), “Factors Affecting
+Field Settlement Assessment and Back-analysis by the Asaoka and
+예상 가능한 측정범위의 1.5배 이상 정도의 범위를 가진
+Hyperbolic Methods”, Australian Geomechanics, Vol.38, No.2, pp.
+간극수압 센서를 적용하는 것이 바람직하다. 간극수압
+29-37.
+의 측정결과는 과잉간극수압의 소산을 확인하고 층별 2. Asaoka, A. (1978), “Observational Procedure of Settlement Prediction”,
+Soil and Foundations, J. of the Japanese Society of Soil Mechanics
+침하계의 침하속도 및 침하량과 비교 분석에 간접적으
+and Foundation Engineering, Vol.18, No.4, pp.87-101.
+로 활용할 수 있다. 3. Bjerrum, L. (1967), “Engineering Geology of Norwegian Normally-
+지하수위계의 경우, 평면상의 동일한 지점에 설치되 consolidated Marine Clays as Related to Settlement of Buildings”,
+Geotechnique, pp.17-83.
+어 있더라도 수두 측정지점에 따라 지하수위계의 변화
+4. Bo, M.W., Arulrajah, A., and Choa, V. (1998), “Instrumentation
+경향이 다르게 나타날 수 있다. 그러므로 지하수위계의 and Monitoring of Soil Improvement Work in Land Reclamation
+Projects”, Proceedings of the Eighth International Congress of the
+설치는 점토층 상부 통수층과 점토층 하부 통수층에 2
+International Association for Engineering Geology and the Environment,
+개소를 설치하여 관리하는 것이 필요하다. 연약지반 개
+Vancouver, Canada.
+량공사 중 수평배수층에 설치되는 지하수위계는 시공 5. Choi, H.S. (2020), Prediction of consolidation settlement by measuring
+settlement and pore water pressure of soft ground, PhD. Dissertation,
+중에는 시공관리에 사용되어 지하수위가 수평배수층 내
+Chosun University.
+부에서 관리 되도록 하는 것이 중요하다. 6. Choo, Y.S., Kim, J.H., Hwang, S.H., and Chung C.K. (2010), “The
+Optimization of Hyperbolic Settlement Prediction Method with the
+연약지반 개량공사가 수행되는 지중경사계는 준설매
+Field Data for Preloading on the Soft Ground”, J. of the Korean
+립된 대심도 연약지반의 경우 N치가 40 이상인 풍화암
+Geotechnical Society, Vol.26, No.7, pp.153-159.
+또는 연약지반 하부의 자갈층에 설치하더라도 수평변 7. Chung, S.G., Lee, N.K., and Kim, S.R. (2009), “Hyperbolic Method
+for Prediction of Prefabricated Vertical Drains Performance”, J. of
+위량을 파악하는데 문제가 없다고 본다.
+Geotechnical and Geoenvironmental Engineering, ASCE, Vol.135,
+층별침하계는 스크류타입을 설치하는 것이 바람직해 No.10, pp.640-642.
+보인다. 스크류타입 층별침하계는 자중에 의한 침하가 8. Jang, J.-G. (2020), A study on the application of settlement prediction
+method according to field Comditions at the field of soft ground,
+발생하지 않게 중량과 스크류 관입심도를 지반특성에
+Ph.D. Dissertations, Pusan Nation University.
+맞게 검토한 후 설치되어야 한다. 각각의 층별침하계 결 9. Jang, J.-G., Son, S.-W., and Hong, S.-W. (2021), “A Study on the
+Analysis of Monitoring Settlement Considering the History of the
+과의 정리 및 침하분석은 각 지층별, 배수 특성별로 각
+Groundwater Level in the Dredged Landfill Area Affected by Algae”,
+각 분석이 이루어져야 한다.
+J. of the Korean Geotechnical Society, Vol.37, No.7, pp.13-23.
+폐합 또는 결합측량 시 수준측량의 허용오차는 침하 10. Kang, S.C. (2012), Sensitivity of the parameters affecting estimation
+준설점토가 상부에 매립된 대심도 연약지반 계측관리 77
+of the final consolidation settlement, MD thesis, Korea Maritime Geotechnical Society, Vol.56, No.9, pp.10-13.
+University and Maritime Industry University. 17. Ministry of Land, Infrastructure and Transport (2016), Road design
+11. Kang, G., Kim, T.-H., and Yun, S.-K. (2021), “Measured Performance standards.
+and Analysis of the Residual Settlement of a PVD-improved Marine 18. Ministry of Land, Infrastructure and Transport (2018a), Korean
+soft Hround”, J. of Ocean University of China, Vol.20, pp.1055- Design Standards (KDS) 11 10 15 : Ground measurement.
+1066. 19. Ministry of Land, Infrastructure and Transport (2018b), Korean
+12. Kim, J.-H., Kang, S.-H., and Kim, T.-H. (2015), “Settlement Prediction Construction Specification (KCS) 11 10 15 : Ground measurement
+for Staged Filling Construction on the PVD-improved Soft Ground during construction.
+Using SPSFC Method”, Procedia Earth and Planetary Science, 20. Ministry of Oceans and Fisheries (2016), Port and fishing port
+Vol.15, pp.146-151. design standards.
+13. Kim, J.-M. (2019), A case study on the prediction of final con- 21. Ministry of Oceans and Fisheries (2018), Port and fishing port
+solidation settlement analysis considering the results of soft ground standard specifications.
+instrumentation in Busan, Master thesis, Pukyong National University. 22. Park, C.H. (2009), A study on prediction of consolidation settlement
+14. Kim, S. K., Kim, Y. T., and Kim, J. H. (2014), “Considering Factors of soft soils, Master thesis, Pukyong National University
+in Design of Vertical Drainage in Deep Thick Soft Soil”, Technical 23. Yang, T.S. (2005), “A Case Study of Measuring Residual Groundwater
+Note, Korean Geotechnical Society, Vol.30, No.5, pp.15-24. Level on Reclaimed and Dredging Clay Layer”, J. of the Korean
+15. Korea Expressway Corporation (2018), General specialty specification Geotechnical Society, Vol.21, No.7, pp.63-72.
+for ground measurement during construction (EXCS 11 10 15).
+16. Nomura, S., Ikeda, T., Katagiri, M., and Terachi, M. (2008), “Con- Received : November 9th, 2022
+solidation Settlement Prediction of Reclaimed Land with Dredged Revised : November 17th, 2022
+Clay Case Record of Kita-Kyushu Airport”, J. of the Japanese Accepted : November 17th, 2022
+78 한국지반공학회논문집 제38권 제12호
