@@ -80,7 +80,7 @@ const Scene: React.FC<{ scene: SurveyScene; props: SurveyShortProps }> = ({ scen
       <div
         style={{
           position: "absolute", left: 70, right: 70, top: 1500, minHeight: 190, padding: "24px 30px",
-          borderLeft: `8px solid ${C.accent}`, background: C.box, fontSize: scene.captionSize ?? 50, lineHeight: 1.42, whiteSpace: "pre-line",
+          borderLeft: `8px solid ${C.accent}`, background: C.box, fontSize: scene.captionSize ?? 50, lineHeight: 1.42, whiteSpace: "pre-line", wordBreak: "keep-all",
         }}
       >
         {scene.caption}
