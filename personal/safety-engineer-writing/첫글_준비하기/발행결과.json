@@ -1,0 +1,13 @@
+{
+  "url": "https://na-geoai.tistory.com/183",
+  "title": "[건설안전기술사] 건설안전기술사 준비하기",
+  "category": "기술사 > 건설안전기술사",
+  "tags": "건설안전기술사,건설안전기술사준비,기술사공부,기술사답안작성,기술사기출문제,건설안전,하루한문제",
+  "published_at": "2026-10-28 00:31 Asia/Seoul",
+  "command": "tistory_post.py --category 건설안전기술사 --go --job safety-intro",
+  "verified_public": true,
+  "tables": 6,
+  "source_links": 17,
+  "edited_at": "2026-10-28 00:48",
+  "edit_note": "humanizer-kr 2번 다듬은 수정본으로 본문 교체(제목 그대로)"
+}

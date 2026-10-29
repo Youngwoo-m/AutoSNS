@@ -33,7 +33,8 @@ def build_driver(headless):
     opts = Options()
     opts.add_argument(f"--user-data-dir={PROFILE_DIR}")
     opts.add_argument("--disable-blink-features=AutomationControlled")
-    opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+    # use-mock-keychain 을 빼 로그인 앱(일반 크롬)과 같은 진짜 키체인 키로 쿠키를 읽고 쓴다(2026-10-28)
+    opts.add_experimental_option("excludeSwitches", ["enable-automation", "use-mock-keychain"])
     opts.add_experimental_option("useAutomationExtension", False)
     opts.add_argument("--window-size=1280,1000")
     opts.add_argument("--lang=ko-KR")
@@ -626,8 +627,12 @@ def publish(data, dry_run=None):
     category = data.get("category") or cfg.get("blog", {}).get("category", "")
 
     structured = bool(data.get("news_blocks"))
+    # paste: 티스토리 본문 HTML 을 붙여넣기로 옮기는 개인 교차 발행(naver_paste.py). 그림은 원문 것을 쓴다.
+    paste = bool(data.get("paste"))
 
-    if structured:
+    if paste:
+        pass
+    elif structured:
         # 뉴스별 이미지 준비(기사 og:image, 없으면 Gamma).
         # no_images: 기사가 없는 글(진로·자격증 시리즈)은 건너뛴다 — 넣어 봐야
         # 내용과 무관한 그림이고, Gamma 는 편당 크레딧 10을 태운다(2026-09-23 확인).
@@ -709,7 +714,11 @@ def publish(data, dry_run=None):
         type_contenteditable(driver, title_el, data["title"])
         time.sleep(0.5)
 
-        if structured:
+        if paste:
+            # 붙여넣고 그림·첨부를 제자리에 올린 뒤 원문과 구성요소 수를 맞춰 본다(다르면 여기서 멈춤)
+            import naver_paste
+            naver_paste.fill(driver, data)
+        elif structured:
             # 상단 배너 → 뉴스별 구조: 인사 → [소제목·본문·기사이미지·출처링크]×N
             #             → 안전수칙 → 마무리
             if data.get("banner"):
@@ -785,7 +794,10 @@ def publish(data, dry_run=None):
             raise RuntimeError("발행 설정 레이어가 열리지 않았습니다(발행 안 됨).")
 
         # 6) 카테고리 선택 (글별 지정 → config 기본값)
-        select_category(driver, category)
+        # 글별로 정한 카테고리를 못 고르면 기본값(스마트스토어 등)으로 들어가므로 멈춘다(2026-10-28).
+        if not select_category(driver, category) and data.get("category"):
+            shot(driver, "no_category")
+            raise RuntimeError(f"카테고리 '{category}' 를 찾지 못했습니다(발행 안 됨).")
         time.sleep(1)
 
         # 7) 태그 입력 (가능하면)

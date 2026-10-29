@@ -414,6 +414,12 @@ def caption_layout(text, size=62):
     return lines, size
 
 
+# 시네마틱 보정(2026-10-28 사용자 지시): 장면 영상에만 건다 — 자막·훅·모션 글자는 Remotion 이 그 위에 얹으니 영향 없음.
+# 대비·채도를 살짝, 밝은 곳은 따뜻하게 그림자는 차갑게, 가장자리 비네트, 약한 필름 그레인. 끄기: script.json 또는 config.json 의 "cinematic": false
+CINEMATIC = (",eq=contrast=1.07:saturation=1.08:gamma=0.97,colorbalance=rs=-0.03:bs=0.04:rh=0.04:bh=-0.03,"
+             "vignette=angle=PI/5,noise=alls=7:allf=t")
+
+
 def remotion_body(ep_dir, sc, style, out):
     """장면 영상은 파이썬이 속도·길이를 맞춰 두고, 화면 장식·자막·나레이션 배치는 Remotion 이 그린다."""
     import shutil, subprocess
@@ -443,7 +449,7 @@ def remotion_body(ep_dir, sc, style, out):
         slow = min(max(t / cd, 1.0), 1.3)
         pad = max(t - cd * slow, 0) + 0.1
         prep = os.path.join(work, f"prep{n}.mp4")
-        ff("-i", clip, "-vf", f"setpts={slow:.4f}*PTS,tpad=stop_mode=clone:stop_duration={pad:.2f},scale={W}:{H}:flags=lanczos,setsar=1,fps={FPS}",
+        ff("-i", clip, "-vf", f"setpts={slow:.4f}*PTS,tpad=stop_mode=clone:stop_duration={pad:.2f},scale={W}:{H}:flags=lanczos,setsar=1,fps={FPS}" + (CINEMATIC if sc.get("cinematic", CFG.get("cinematic", True)) else ""),
            "-an", "-t", f"{t:.2f}", "-c:v", "libx264", "-crf", "17", "-pix_fmt", "yuv420p", prep)
         frames = int(round(t * FPS))
         subs = subs_for(s)

@@ -64,9 +64,6 @@ def _free_port():
     return p
 
 
-REAL_KEYCHAIN = {'tiktok', 'scratch'}   # 셀레니움 밖에서 크롬을 직접 띄워 쓰는 프로필(쿠키가 진짜 키체인 키로 암호화돼 있음)
-
-
 class Session:
     def __init__(self, profile, mode, owner_pid=None, extra=()):
         if profile not in axlock.PROFILES:
@@ -85,11 +82,9 @@ class Session:
         args = [CHROME, f'--user-data-dir={axlock.PROFILES[profile]}', f'--remote-debugging-port={self.port}', MARK,
                 '--remote-allow-origins=*', '--no-first-run', '--no-default-browser-check', '--disable-features=Translate,MacAppCodeSignClone',
                 f'--window-size={VW},{VH}', '--lang=ko-KR'] + [a for a in extra if a in ALLOWED_EXTRA]
-        # 쿠키 암호화 키를 그 프로필을 여는 다른 도구와 맞춘다. 셀레니움(chromedriver)은 맥에서 늘 --use-mock-keychain 을 붙인다.
-        # 키가 다르면 크롬이 못 푸는 쿠키를 지워 로그인이 풀린다(2026-10-19 네이버: 콘솔에서 로그인 → 보고서 셀레니움이 열며 삭제 → 통계 401).
-        # 틱톡(tiktok_web 이 크롬을 직접 띄움)·빈 브라우저만 진짜 키체인, 나머지는 셀레니움과 같은 mock 키.
-        if profile not in REAL_KEYCHAIN:
-            args.append('--use-mock-keychain')
+        # 쿠키 암호화 키를 그 프로필을 여는 다른 도구와 맞춘다. 키가 다르면 크롬이 못 푸는 쿠키를 지워 로그인이 풀린다
+        # (2026-10-19 네이버 통계 401, 10-28 개인 교차 발행 '로그인 만료'). 10-28 부터 로그인 앱·틱톡·셀레니움(excludeSwitches 로
+        # use-mock-keychain 을 뺌)이 모두 진짜 키체인을 쓰므로 여기서도 --use-mock-keychain 을 붙이지 않는다.
         args += ['--headless=new'] if mode == 'headless' else ['--window-position=-3000,-3000']
         self.proc = subprocess.Popen(args + ['about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.ws, self.mid, self.last = None, 0, time.time()

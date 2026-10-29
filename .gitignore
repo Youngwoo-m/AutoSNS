@@ -21,7 +21,7 @@ api.txt
 *.bak.*
 
 # ── 로그인 세션(쿠키·프로필) ────────────────────────────────
-chrome-profile/
+chrome-profile*
 chrome-profile-insta/
 _profile_backup_*/
 backups/
@@ -107,11 +107,11 @@ common/remotion-shorts/node_modules/
 common/remotion-shorts/out/
 
 # 클로드 자동 작업(GeoAI_NA/claude-jobs) 실행 기록·시험 산출물
-GeoAI_NA/claude-jobs/state/
-GeoAI_NA/claude-jobs/dry/
-GeoAI_NA/claude-jobs/work/
+personal/claude-jobs/state/
+personal/claude-jobs/dry/
+personal/claude-jobs/work/
 
-# 티스토리 프로필은 GeoAI_NA 쪽 폴더를 가리키는 바로가기라 끝에 슬래시가 없는 이름도 막아야 한다
+# 티스토리 프로필은 personal 쪽 폴더를 가리키는 바로가기라 끝에 슬래시가 없는 이름도 막아야 한다
 chrome-profile-tistory
 
 # 재난 유형별 숏츠(dept/disaster-shorts, 2026-10-22 이 저장소로 옮김) — 코드·설정 예시·대본은 올리고 영상·음성·로그·비밀값은 올리지 않는다
@@ -137,3 +137,10 @@ dept/disaster-shorts/sample_*/*
 !dept/disaster-shorts/sample_*/script.json
 !dept/disaster-shorts/sample_*/source.md
 dept/disaster-shorts/remotion/src/*.bak*
+
+# geoai-na 사이트가 쓰는 아이콘·공유 미리보기(손으로 만든 자산, 배포에 실려야 한다)
+!site/geoai-site/og.jpg
+!site/geoai-site/geopanda.png
+!site/geoai-site/favicon-32.png
+!site/geoai-site/apple-touch-icon.png
+!site/geoai-site/icon-192.png

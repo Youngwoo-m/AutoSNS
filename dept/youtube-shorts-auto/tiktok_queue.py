@@ -153,6 +153,7 @@ def pick(q, now=None):
     cutoff = (now - dt.timedelta(days=MAX_AGE_DAYS)).isoformat()
     ready = [e for e in q if not e.get("posted") and not e.get("skipped") and e.get("tries", 0) < MAX_TRIES
              and e["added"] >= cutoff and (e.get("not_before") or "") <= now.isoformat()
+             and (e.get("hold_until") or "") <= now.isoformat()
              and os.path.exists(e["video"])]
     if not ready:
         left = [e for e in q if not e.get("posted")]
@@ -186,7 +187,10 @@ def main(argv):
         log("틱톡 하루 1편: tiktok_web.daily 꺼짐 — 건너뜀")
         return 0
     from tiktok_web import upload
-    caption = make_caption(e)
+    caption = e.get("caption")           # 재시도마다 Claude 로 다시 만들지 않는다(토큰 절약)
+    if not caption:
+        caption = e["caption"] = make_caption(e)
+        _save(q)
     log(f"===== 틱톡 게시: {os.path.basename(e['video'])} =====")
     try:
         r = upload(e["video"], caption, post=True, ai_generated=e.get("ai_generated", False))
@@ -198,6 +202,14 @@ def main(argv):
             or "Chrome 디버깅 포트" in str(ex)
         if not infra:
             e["tries"] = e.get("tries", 0) + 1
+            sig = f"{type(ex).__name__}:{str(ex)[:40]}"
+            e["fail_streak"] = e.get("fail_streak", 0) + 1 if e.get("last_fail") == sig else 1
+            e["last_fail"] = sig
+            if e["fail_streak"] >= 2:      # 같은 화면 오류 두 번 — 오늘은 쉬고 내일 다시
+                tomorrow = dt.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days=1)
+                e["hold_until"] = tomorrow.isoformat(timespec="seconds")
+                e["fail_streak"] = 0
+                log(f"!!! 틱톡 같은 오류 2회 — {os.path.basename(e['video'])} 오늘은 중단, 내일 재시도(확인 필요): {sig}")
             _save(q)
         why = "크롬 연결" if infra else f"{e.get('tries', 0)}/{MAX_TRIES}"
         log(f"===== 틱톡 게시 실패({why}, 다음 실행에서 다시): {type(ex).__name__}: {str(ex)[:150]} =====")

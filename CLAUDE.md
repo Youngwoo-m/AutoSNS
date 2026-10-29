@@ -15,6 +15,15 @@
    - 그림 안에 글자를 넣지 않는다(AI가 그린 한글은 깨진다). 글자는 편집 단계에서 얹는다.
    - 사고 순간·부상자·불길 한가운데처럼 고통스러운 장면은 피하고, 대비·대응·구조 장면으로.
    - 실제 사진처럼 보이지 않게 디오라마 질감(미니어처·틸트시프트)을 분명히 한다.
+   - 카메라 기법(2026-10-26 추가, 이미지·영상 프롬프트에 한 줄씩 지시): 에스태블리싱 샷 "전경으로 시작"
+     / 인서트 샷 "소품을 인서트 샷으로" / 랙 포커스 "앞 피사체에서 뒤 피사체로 초점 이동" /
+     프레임 인 프레임 "아치·문·창으로 프레임 인 프레임" / 더치 앵글 "기울인 앵글로 긴장감" /
+     아나모픽 "와이드 화면비·가로 플레어·타원 보케" / 틸트 시프트 "위아래를 흐려 미니어처처럼".
+     더치 앵글은 불안감을 주므로 재난 영상에서는 대응·구조 장면에만 쓴다.
+   - 시네마틱 영상(2026-10-28 추가): 디오라마 영상 클립은 `dept/youtube-shorts-auto/diorama_clip.py`(--move 카메라 움직임 한 가지
+     + --camera 룩, 8초 약 240~400 크레딧). 한 클립 = 한 컷·움직임 하나, 룩은 아나모픽·얕은 심도·따뜻한 빛/차가운 그림자·약한 그레인.
+     Remotion `survey-short` 는 `kind: "dioclip"` 장면으로 넣는다(디오라마 장면 수에 셈). 재난숏츠(`dept/disaster-shorts`)는
+     `assemble.py` 가 장면 영상에 시네마틱 보정(색·비네트·그레인)을 건다(`cinematic: false` 로 끔).
 3. 글꼴: 제목·보조 모두 **Pretendard Bold**, 인스타 카드 본문만 KoPub 돋움 Bold
    (assets/FONTS/). 굵기 대신 글자 크기와 색으로 위계를 준다 — Black·검은고딕은 "너무 두꺼워
    읽기 어렵다"고 반려됐다(2026-10-14). 글꼴을 바꿀 때는 `shared/fonts.py` 의 DISPLAY
@@ -23,7 +32,7 @@
 
 기존 자동 발행 파이프라인(make_video.py 등 ffmpeg 기반)은 아직 이 지침으로 바꾸지 않았다.
 바꿀 때는 사용자와 범위를 정한 뒤 옮긴다.
-(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `channels/youtube-shorts-auto/diorama_image.py`.)
+(2026-10-18 옮김: 클로드 자동 작업 survey-daily 숏츠 — `remotion-shorts/src/survey-short` + `dept/youtube-shorts-auto/diorama_image.py`.)
 
 ## 자동 작업 잠금·비상 정지 (2026-10-18)
 
@@ -41,7 +50,7 @@ claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<too
 
 블로거·티스토리·네이버 글에 수식이 있으면 ① 수식은 LaTeX(Manim MathTex)로 써서 이미지로, ② 핵심 식은 Manim 도식 GIF
 (글당 1~2개)로 넣는다. 수식이 없는 글에는 만들지 않는다. 지시문·렌더 스크립트·샘플은
-`channels/naver-blog-auto/MATH_GIF_PROMPT.md`, `channels/naver-blog-auto/math_gif/` 를 따른다.
+`dept/naver-blog-auto/MATH_GIF_PROMPT.md`, `dept/naver-blog-auto/math_gif/` 를 따른다.
 GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄이지 않고 올린다(`math_gif/post_draft.py`).
 시험 글은 공개하지 말고 Blogger 초안으로 먼저 확인한다. 숫자 계산은 calc-verifier, 출처는 source-reviewer 로 검토한다.
 

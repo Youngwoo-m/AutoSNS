@@ -17,7 +17,7 @@ DISCLOSURE = ("※ 인트로·아웃트로는 세명대학교 재난안전학과
               "아바타 영상이며, 본문 배경은 AI로 생성한 3D 재현 영상입니다(합성 음성·영상).")
 DISCLOSURE_LOOP = ("※ 나레이션은 세명대학교 재난안전학과 나영우 교수의 목소리를 바탕으로 AI로 합성했으며, "
                    "배경은 AI로 생성한 3D 재현 영상입니다(합성 음성·영상).")
-if CFG.get("voice_backend") == "edge":      # 2026-10-22: 본문 나레이션을 edge-tts(ko-KR-InJoonNeural)로 바꿨다
+if CFG.get("voice_backend") == "edge":      # edge 백엔드일 때만 TTS 고지로 바꾼다(기본 Voicebox 는 위 문구 그대로)
     DISCLOSURE = ("※ 인트로·아웃트로는 세명대학교 재난안전학과 나영우 교수의 모습과 목소리를 바탕으로 AI로 만든 "
                   "아바타 영상이며, 본문 나레이션은 AI 합성 음성(TTS), 본문 배경은 AI로 생성한 3D 재현 영상입니다(합성 음성·영상).")
     DISCLOSURE_LOOP = ("※ 나레이션은 AI 합성 음성(TTS)이며, 배경은 AI로 생성한 3D 재현 영상입니다(합성 음성·영상).")

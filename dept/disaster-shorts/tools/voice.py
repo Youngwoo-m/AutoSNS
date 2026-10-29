@@ -1,4 +1,4 @@
-"""나레이션 음성. config.json 의 voice_backend 로 고른다(2026-10-22: 내 목소리 Voicebox 가 맥을 과부하시켜 기본 edge).
+"""나레이션 음성. config.json 의 voice_backend 로 고른다(2026-10-28 사용자 지시로 기본 Voicebox 로 되돌림).
 
   edge       edge-tts 'ko-KR-InJoonNeural'(config.edge). 몇 초, 맥 부하 없음. 받아쓰기 검사 없음.
   voicebox   Voicebox(내 목소리)로 읽게 하고 받아쓰기로 발음을 검사한다. 컴퓨터 사양이 좋아지면 이 값으로 되돌린다.

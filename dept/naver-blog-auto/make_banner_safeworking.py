@@ -36,9 +36,11 @@ CSS = f"""
  .bg{{position:absolute;inset:0;width:100%;height:100%}}
  .mark{{display:none}}
  .txt{{position:absolute;left:64px;top:0;height:100%;display:flex;flex-direction:column;justify-content:center}}
- .ko{{font-size:92px;letter-spacing:-4px;line-height:1.05}}
+ .ko{{font-size:84px;letter-spacing:-4px;line-height:1.05}}
  .bar{{width:84px;height:7px;background:{SAND};border-radius:4px;margin:16px 0 14px}}
  .sub{{font-size:27px;color:#cfe0d6}}
+ .chips{{display:flex;gap:10px;margin-top:18px}}
+ .chips span{{font-size:19px;color:{SAND};border:2px solid {SAND};border-radius:20px;padding:4px 14px;background:rgba(31,78,61,.55)}}
 """
 
 HTML = f"""<!doctype html><html><head><meta charset='utf-8'><style>{CSS}</style></head><body>
@@ -46,7 +48,8 @@ HTML = f"""<!doctype html><html><head><meta charset='utf-8'><style>{CSS}</style>
   <svg viewBox="0 0 100 100" class="mark"><path d="M50 12 L88 82 H12 Z" fill="none" stroke="{SAND}" stroke-width="3.5"/>
     <circle cx="50" cy="32" r="3" fill="{SAND}"/></svg>
   <div class="txt"><div class="ko">토목·측량</div><div class="bar"></div>
-    <div class="sub">기술사 공부 · 현장 · GeoAI</div></div>
+    <div class="sub">기술사 공부 · 현장 · GeoAI</div>
+    <div class="chips"><span>측량·GIS</span><span>토목</span><span>노르딕워킹</span><span>안전·재난</span></div></div>
 </div></body></html>"""
 
 

@@ -27,7 +27,7 @@
     "channel_token": "",
     "category_id": "27"
   },
-  "voice_backend": "edge",
+  "voice_backend": "voicebox",
   "edge": {
     "voice": "ko-KR-InJoonNeural",
     "rate": "+10%"

@@ -59,10 +59,10 @@ def _search_blog_ids(cfg, keywords, per=20):
         return ids
     for kw in keywords:
         try:
-            url = "https://openapi.naver.com/v1/search/blog.json?" + urllib.parse.urlencode(
+            url = "https://naverapihub.apigw.ntruss.com/search/v1/blog?" + urllib.parse.urlencode(
                 {"query": kw, "display": per, "sort": "date"})
             req = urllib.request.Request(
-                url, headers={"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec})
+                url, headers={"X-NCP-APIGW-API-KEY-ID": cid, "X-NCP-APIGW-API-KEY": sec})
             with urllib.request.urlopen(req, timeout=15) as r:
                 data = json.load(r)
             for it in data.get("items", []):

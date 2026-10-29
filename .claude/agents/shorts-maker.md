@@ -18,17 +18,24 @@ AutoSNS `CLAUDE.md` 의 영상 제작 지침(Remotion 편집, 디오라마 2~3�
 ## 만드는 순서
 
 1. **대본** — 한 영상에 질문 하나, 핵심 하나. 0~2초 질문, 2~14초 핵심 답·차이·공식, 끝에 암기어·블로그 안내. 목표 14~16초
-   (2026-10-22 사용자 지시로 더 짧게. 음성 엔진 edge-tts +10% 기준 공백 제외 65~75자 ≈ 14~16초, 공백 포함 약 90~100자. 문장은 짧게 끊는다). 긴 인사·전체 답안·복잡한 표는 넣지 않는다. 수식·기호는 음성이 읽기 쉽게 한글로 풀어 쓴다
+   (2026-10-22 사용자 지시로 더 짧게. 공백 제외 65~75자, 공백 포함 약 90~100자 — 이 글자 수는 edge-tts +10% 기준(≈ 14~16초)으로 잡았다. Voicebox 실측은 한글 82자 = 16.3초(초당 약 5자)라 edge 보다 약간 빠르니 `seconds` 로 확인한다. 문장은 짧게 끊는다). 긴 인사·전체 답안·복잡한 표는 넣지 않는다. 수식·기호는 음성이 읽기 쉽게 한글로 풀어 쓴다
    ('R·L=A²' → '알 곱하기 엘은 에이 제곱'). 대본은 `대본.txt` 로 저장.
+   **대본은 디오라마 그림 2~3장에 맞춰 장면 단위로 쓴다(2026-10-26 사용자 지시).** 문장 1~2개가 그림 한 장이 되게 나누고,
+   장면마다 그릴 소재와 카메라 기법(`establishing`·`insert`·`rack`·`frame`·`tiltshift` 등, 더치 앵글은 대응·구조 장면만)을
+   정해 `대본.txt` 아래나 별도 메모에 적어 둔다. 첫 장면은 전경으로 시작하는 에스태블리싱 샷으로 잡는다.
 2. **디오라마 그림 2~3장** — `cd /Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto && ./.venv/bin/python diorama_image.py --scene "영어 장면 설명" --out 출력폴더/d1.png`
    - 주제 장면을 아이소메트릭 미니어처·틸트시프트 질감으로, **글자 없이**, 대비·작업·대응 장면으로(사고 순간·부상자·불길 한가운데는 피한다).
+   - 대본에서 정한 카메라 기법은 `--camera 기법`(여러 번 가능)으로 넘긴다.
    - 결과 JSON 의 `text_found` 가 비어 있지 않으면 장면 설명을 바꿔 다시(최대 3번). 한 장에 게이트웨이 크레딧 약 39 — 쓸데없이 다시 그리지 않는다.
    - 부른 쪽이 "이 그림을 써라"라고 한 시험이면 새로 그리지 말고 그 파일을 쓴다.
+   - **첫 장면(에스태블리싱)은 시네마틱 디오라마 영상 클립으로 만들 수 있다(2026-10-28, 선택).** `./.venv/bin/python diorama_clip.py --scene "영어 장면 설명" --move dolly_in --camera anamorphic --camera tiltshift --seconds 6 --out 출력폴더/c1.mp4`
+     (한 클립 = 한 컷·움직임 하나, 6초 약 300 크레딧, 생성 2~5분). props 첫 장면에 `"kind": "dioclip"`, `"image": "<절대경로>/c1.mp4"` 로 넣으면 디오라마 1장으로 센다
+     (나머지 1~2장은 정지 그림). 결과의 `status` 가 error(월 할당 부족 등)이거나 `text_found` 가 비어 있지 않으면 클립을 쓰지 말고 정지 그림으로 대신한다.
+     클립 길이 = 그 장면 `seconds`, 클립 끝 1~2초가 흐려질 수 있어 5~6초로 쓴다. 시험(`AX_DRY`)에서는 만들지 않는다.
    - 공식·비교는 큰 글자 도식(Pillow, `FONTS/Pretendard-Bold.otf`)으로 만들 수 있다. 블로그 도식을 그대로 넣어 글자가 작아지면 쓰지 않는다.
 3. **음성** — `./.venv/bin/python shorts_voice.py --text-file 출력폴더/대본.txt --out 출력폴더/voice.wav --job <작업이름>`
-   (channels/youtube-shorts-auto 폴더에서). **기본 음성은 edge-tts `ko-KR-InJoonNeural`(+10%)이다(2026-10-22 사용자 지정: 내 목소리 Voicebox 가
-   맥을 과부하시킴).** 몇 초 만에 끝나고 맥 부하가 없다. 컴퓨터 사양이 좋아지면 `shorts_voice.py` 의 `DEFAULT_BACKEND` 한 줄을 "voicebox" 로 되돌리거나
-   `--backend voicebox [--seed N --check]`(Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다)로 쓴다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
+   (channels/youtube-shorts-auto 폴더에서). **기본 음성은 Voicebox 내 목소리다(2026-10-28 사용자 지시로 edge-tts 에서 되돌림).** Voicebox 켜고 끄기·받아 적기 검사는 도구가 알아서 한다(`--seed N --check`).
+   맥이 과부하되면 `shorts_voice.py` 의 `DEFAULT_BACKEND` 한 줄을 "edge"(`ko-KR-InJoonNeural`, +10%) 로 바꾸거나 `--backend edge` 로 쓴다. 결과의 `seconds` 가 20.0 을 넘으면 대본을 줄여 다시 —
    빠르게 읽히게 하거나 음성을 자르지 않는다(edge 는 같은 대본이 Voicebox 보다 길다: 공백 제외 108자 = 23초). edge 는 받아 적기 검사가 없으므로 숫자·낱말은
    대본 표기(한글 풀어쓰기: '칠십오 퍼센트', '열둘')와 화면 자막을 직접 확인한다. 결과의 `voice_label` 을 4번 고지에 그대로 쓴다.
 4. **렌더** — `props.json` 을 쓰고(형식은 `remotion-shorts/render_survey_short.py` 첫머리) `cd /Volumes/USB256/devAPP/AutoSNS/remotion-shorts && python3 render_survey_short.py 출력폴더/props.json 출력폴더/short.mp4`.

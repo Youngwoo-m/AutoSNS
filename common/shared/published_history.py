@@ -129,7 +129,7 @@ def _local():
             add(x.get("title"), x.get("date") or x.get("publish_at") or "")
     except (OSError, ValueError, AttributeError):
         pass
-    for f in sorted((ROOT / "GeoAI_NA/claude-jobs/state").glob("*.jsonl")):
+    for f in sorted((ROOT / "personal/claude-jobs/state").glob("*.jsonl")):
         for line in f.read_text(errors="ignore").splitlines()[-200:]:
             try:
                 r = json.loads(line)
@@ -137,7 +137,7 @@ def _local():
                 continue
             if r.get("status") == "published":
                 add(r.get("title"), r.get("at", ""), next(iter((r.get("urls") or {}).values()), ""))
-    for f in (ROOT / "GeoAI_NA").glob("*engineer-writing*/**/작성상태.json"):
+    for f in (ROOT / "personal").glob("*engineer-writing*/**/작성상태.json"):
         try:
             r = json.loads(f.read_text())
             add(r.get("제목"), r.get("작성일", ""))

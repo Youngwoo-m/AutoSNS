@@ -9,7 +9,7 @@ props.json (그림·음성은 절대 경로로 적는다 — 이 스크립트가
    "voice": "/abs/voice.wav (선택: 영상 전체 음성 한 개. 장면별로 나눴으면 scenes[].audio)",
    "scenes": [{"title": "…", "caption": "…", "image": "/abs/diorama1.png", "kind": "diorama",
                "audio": "/abs/voice-1.wav", "seconds": 4.2}, …]}
-  kind 는 diorama | diagram | clip. clip 은 image 칸에 Manim 등으로 만든 mp4(980x900, 30fps, 무음)를 적는다.
+  kind 는 diorama | dioclip | diagram | clip. dioclip 은 diorama_clip.py 로 만든 디오라마 영상(무음 mp4, 장면 길이보다 길어야 함)이며 디오라마 장면 수에 센다. clip 은 image 칸에 Manim 등으로 만든 mp4(980x900, 30fps, 무음)를 적는다.
   overlay(선택)는 장면 위에 얹는 투명 webm(HyperFrames 훅 제목 등, 1080x1920, 알파 포함).
   (Manim 샘플: manim/error_propagation.py ErrorPropagationBox — 디오라마 2~3장 규칙에는 세지 않는다)
 
@@ -40,7 +40,7 @@ def main():
     src, video = sys.argv[1], os.path.abspath(sys.argv[2])
     props = json.load(open(src, encoding="utf-8"))
     scenes = props.get("scenes") or []
-    dio = sum(1 for s in scenes if s.get("kind") == "diorama" and s.get("image"))
+    dio = sum(1 for s in scenes if s.get("kind") in ("diorama", "dioclip") and s.get("image"))
     total = sum(round(float(s["seconds"]) * 30) for s in scenes) / 30
     problems = []
     if not 2 <= dio <= 3:
