@@ -26,6 +26,8 @@
 숏츠 제작은 `shorts-maker` 서브에이전트에 맡긴다(공통규칙 '숏츠 제작'): CLAUDE.md 영상 지침(Remotion 편집, 디오라마 2~3장, Pretendard Bold, AI 합성 고지), 음성 Voicebox 내 목소리(기본, edge-tts 는 선택), 20.0초 이하·한 영상 한 질문·질문형 첫 화면·큰 자막·학습 분야 표시는 그 에이전트가 지킨다. 업로드와 댓글은 channels/youtube-shorts-auto/geoai_short_post.py 로만 한다.
 하루 한 문제 숏츠(claude.survey-daily, 08:00 공개)와 같은 기출·주제를 겹치지 않게 `published_history.py` 와 양쪽 상태를 대조한다.
 
+
+2026-10-29 미리 만든 숏츠 우선: /Volumes/USB256/devAPP/AutoSNS/personal/engineer-video-output/premade/<날짜>-civil|building|safety|survey/ (저녁 순환) 폴더에 short.mp4·title.txt·description.txt·tags.txt·meta.json 이 있으면 숏츠를 새로 만들지 않고 그 영상을 쓴다(게이트웨이 크레딧 절약). 올리기 전에 검토 지적이 고쳐졌는지 보고, 관련 블로그 URL 이 비어 있으면 확인된 공개 글로 채운다. 쓴 폴더는 used.txt 를 만들어 표시한다. 폴더가 없으면 기존대로 shorts-maker 로 만든다.
 2026-10-25 사용자 승인 — 조회수 개선 (위 지침과 충돌하면 기출 표기·검증 규칙이 우선)
 1. 제목 앞부분은 개념 이름만 쓰지 말고 실무 장면 질문으로 시작한다. 예: ‘GML, 지리정보를 어떻게 주고받을까?’ → ‘공공 지도 데이터는 왜 다들 GML 로 주고받을까?’. ‘ | 측량및지형공간정보기술사 · 분야 · 회차·교시·문항’ 꼬리는 그대로 둔다. 첫 화면 질문과 제목 앞부분을 맞춘다.
 2. 주제와 맞는 최근 뉴스(드론 측량·위성 발사·공간정보 개방 등)가 실제로 있고 출처를 열어 확인한 날만 그 뉴스를 첫 화면 훅으로 쓴다. 억지로 붙이지 않고, 뉴스 내용은 기출 해설과 섞어 단정하지 않는다. 뉴스를 쓰면 설명란에 출처 URL 을 적는다.
