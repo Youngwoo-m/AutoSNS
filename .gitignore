@@ -144,3 +144,6 @@ dept/disaster-shorts/remotion/src/*.bak*
 !site/geoai-site/favicon-32.png
 !site/geoai-site/apple-touch-icon.png
 !site/geoai-site/icon-192.png
+
+# 기술사 글 참고 논문 원문(출처 폴더)은 저장소에 넣지 않는다
+personal/civil-engineer-writing/*/출처/
