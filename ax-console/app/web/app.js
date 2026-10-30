@@ -100,7 +100,7 @@ function incidentRows(incidents) {
 function renderToday() {
   const s=state.snapshot,a=aggregate(s),today=dayKey(new Date().toISOString());
   const events=s.schedule.filter(e=>dayKey(e.scheduled_at)===today).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at)));
-  return h('div',{},stats([['관련 원본 콘텐츠',`${a.contents}건`,'콘텐츠 단위 · 오늘 생성 수와 다름'],['채널별 배포 기록',`${a.deliveries}건`,`${a.pending}건 예약·대기 · 전체 수집 기록`],['공개·내용 확인 완료',`${a.verified}건`,'명시적 검증 근거가 있는 배포만'],['검토·조치 필요',`${a.review} / ${a.incidents}건`,'원본 검토 / 열린 조치 기록']]),h('div',{class:'two-col'},panel(`오늘 일정 · ${today}`,scheduleList(events),h('div',{class:'mini-note'},'정확한 시각이 없는 자동 실행은 캘린더에서 별도로 표시합니다.')),h('div',{},panel('필요한 조치',incidentRows(s.incidents.filter(i=>!['closed','resolved'].includes(i.status)).slice(0,4))),panel('교차 발행 경로',h('div',{class:'panel-body'},muted(`조회된 규칙 ${s.crossposts.length}개 · 대상별 결과는 교차 발행에서 확인합니다.`),h('button',{class:'btn btn-small',onclick:()=>setView('crosspost')},'교차 발행 보기'))))));
+  return h('div',{},stats([['관련 원본 콘텐츠',`${a.contents}건`,'콘텐츠 단위 · 오늘 생성 수와 다름'],['채널별 배포 기록',`${a.deliveries}건`,`${a.pending}건 예약·대기 · 전체 수집 기록`],['공개·내용 확인 완료',`${a.verified}건`,'명시적 검증 근거가 있는 배포만'],['검토·조치 필요',`${a.review} / ${a.incidents}건`,'원본 검토 / 열린 조치 기록']]),h('div',{class:'two-col'},panel(`오늘 일정 · ${today}`,scheduleList(events),h('div',{class:'mini-note'},'정확한 시각이 없는 자동 실행은 캘린더에서 별도로 표시합니다.')),h('div',{},panel('필요한 조치',incidentRows(s.incidents.filter(i=>!['closed','resolved'].includes(i.status)).slice(0,4))),panel('교차 발행 경로',h('div',{class:'panel-body'},muted(s.crosspost_catalog_status==='available'?`등록부 규칙 ${s.crossposts.length}개 · 자동 작업 관측 ${(s.legacy_crosspost_observations||[]).length}개 · 출처별 조회`:`자동 작업 관측 ${(s.crossposts||[]).length}개 · 등록부 조회 상태 미확인`),h('button',{class:'btn btn-small',onclick:()=>setView('crosspost')},'교차 발행 보기'))))));
 }
 function filterControls() {
   const s=state.snapshot;
@@ -148,7 +148,18 @@ function renderCalendar() {
 }
 function renderCrosspost() {
   const s=state.snapshot,deliveries=s.deliveries.filter(d=>d.owner_account_id!==d.destination_account_id);
-  return h('div',{},tabs('교차 발행 보기',[['rules','기존 규칙'],['deliveries','배포 계획·기록']],crosspostTab,id=>{crosspostTab=id;render();}),h('div',{class:'inline-note'},'원본 또는 게시 대상이 선택 계정에 속한 기존 경로를 표시합니다. 규칙 수정과 활성 변경은 미지원입니다.'),crosspostTab==='deliveries'?panel('계정 간 배포 기록',deliveryTable(deliveries)):panel('조회된 교차 발행 규칙',s.crossposts.length?table(['원본 소유 계정·채널 → 게시 대상','시점·조건','설정 활성 여부','변경'],s.crossposts.map(r=>h('tr',{},td(h('div',{class:'rule-route'},h('div',{},account(r.owner_account_id),h('div',{class:'cell-sub'},text(r.source_channel))),h('span',{'aria-hidden':'true'},'→'),h('div',{},account(r.destination_account_id),h('div',{class:'cell-sub'},text(r.destination_channel)))),h('div',{class:'cell-sub'},text(r.title))),td(r.condition||'조건 미수집'),td(r.enabled===true?'설정상 활성':r.enabled===false?'설정상 중지':'활성 여부 미확인'),td(disabled('수정 미지원'))))):empty('조회된 규칙이 없습니다','교차 발행 등록 자료가 누락되었거나 수집되지 않았습니다. 기존 경로가 없거나 해제되었다고 판정하지 않습니다.')));
+  const available=s.crosspost_catalog_status==='available';
+  const observations=Array.isArray(s.legacy_crosspost_observations)?s.legacy_crosspost_observations:(s.crossposts||[]);
+  const rules=available?(s.crossposts||[]):[];
+  const rows=crosspostTab==='observations'?observations:rules;
+  const routeTable=rows.length?table(['원본 소유 계정·채널 → 게시 대상','시점·조건','설정·가동 상태','확인 근거'],rows.map(r=>h('tr',{},
+    td(h('div',{class:'rule-route'},h('div',{},account(r.owner_account_id),h('div',{class:'cell-sub'},text(r.source_channel))),h('span',{'aria-hidden':'true'},'→'),h('div',{},account(r.destination_account_id),h('div',{class:'cell-sub'},text(r.destination_channel)))),h('div',{class:'cell-sub'},text(r.title))),
+    td(r.condition||'조건 미수집'),
+    td(h('div',{},r.enabled===true?'설정상 활성':r.enabled===false?'설정상 중지':'설정 활성 여부 미확인'),h('div',{class:'cell-sub'},r.activation_summary||'가동 상태 미확인')),
+    td(r.evidence_summary||'자동 작업 관측 자료 · 등록 규칙과 별도 집계')))):empty(crosspostTab==='observations'?'자동 작업 관측 자료가 없습니다':available?'관련 등록 규칙이 없습니다':'등록 규칙을 조회할 수 없습니다',available?'현재 선택 계정의 조회 결과입니다.':'등록부 미수집·오류가 기존 경로의 해제를 뜻하지 않습니다. 자동 작업 관측 탭에서 기존 자료를 확인할 수 있습니다.');
+  return h('div',{},tabs('교차 발행 보기',[['rules','등록 규칙'],['observations','자동 작업 관측'],['deliveries','배포 계획·기록']],crosspostTab,id=>{crosspostTab=id;render();}),
+    h('div',{class:'inline-note'},`등록부 규칙 ${available?rules.length+'개':'조회 불가'} · 자동 작업 관측 ${observations.length}개 · 계정 간 배포 계획·기록 ${deliveries.length}건. 출처가 달라 합산하지 않습니다. 원본 또는 게시 대상이 선택 계정에 속한 경로입니다. 설정 활성은 실제 가동·인증 확인을 뜻하지 않습니다.`),
+    crosspostTab==='deliveries'?panel('계정 간 배포 계획·기록',deliveryTable(deliveries)):panel(crosspostTab==='observations'?'자동 작업에서 관측한 경로':'등록부의 교차 발행 규칙',routeTable));
 }
 function renderIntegrations() {
   const integrations=Array.isArray(state.snapshot.integrations)?state.snapshot.integrations.filter(item=>item&&typeof item==='object'):[];

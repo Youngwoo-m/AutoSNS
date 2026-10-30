@@ -4,6 +4,8 @@ import sqlite3
 
 from common.operations.content_store import ContentStore, StoreError
 from common.operations.database import connect_database
+from common.operations.crosspost_catalog import crosspost_catalog
+from common.operations.models import ContractError
 from read_model import build_snapshot
 from web_content import content_summary
 
@@ -25,6 +27,16 @@ def compose_workspace_snapshot(snapshot, workspace_root, account='all', *, ledge
     result = {**snapshot, 'read_only': True, 'workspace_writable': False,
               'contents': [{**item, 'source': 'legacy'} for item in snapshot.get('contents', [])],
               'warnings': list(snapshot.get('warnings', []))}
+    result['legacy_crosspost_observations'] = list(snapshot.get('crossposts', []))
+    result['crosspost_catalog_status'] = 'unavailable'
+    if ledger is not None:
+        try:
+            result['crossposts'] = crosspost_catalog(ledger.registry(), account)
+            result['crosspost_catalog_status'] = 'available'
+            old_warning = '별도 교차 발행 규칙 등록부가 없습니다. 자동 작업의 대상 목록만 표시하며 실제 트리거·세부 조건은 미확인입니다.'
+            result['warnings'] = [('기존 운영 자료는 자동 작업 관측이며 관리 등록부 규칙과 별도로 표시합니다.' if warning == old_warning else warning) for warning in result['warnings']]
+        except (ContractError, StoreError, OSError, ValueError, TypeError, KeyError):
+            result['warnings'].append('교차 발행 등록부를 읽지 못해 자동 작업 관측 자료를 표시합니다.')
     try:
         available = workspace_available(workspace_root)
         if available:

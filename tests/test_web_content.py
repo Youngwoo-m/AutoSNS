@@ -66,3 +66,38 @@ class WebContentTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CrosspostSnapshotTests(unittest.TestCase):
+    def test_registered_catalog_available_without_database_and_preserves_observations(self):
+        from common.operations.ledger import Ledger
+        from workspace_snapshot import compose_workspace_snapshot
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / 'absent'
+            old = [{'id': 'observed', 'owner_account_id': 'dept'}]
+            warning = '별도 교차 발행 규칙 등록부가 없습니다. 자동 작업의 대상 목록만 표시하며 실제 트리거·세부 조건은 미확인입니다.'
+            original = {'crossposts': old, 'contents': [], 'warnings': [warning, '다른 경고']}
+            result = compose_workspace_snapshot(original, root, 'personal', ledger=Ledger(root))
+            self.assertEqual(result['crosspost_catalog_status'], 'available')
+            self.assertTrue(result['crossposts'])
+            self.assertEqual(result['legacy_crosspost_observations'], old)
+            self.assertEqual(original['crossposts'], old)
+            self.assertNotIn(warning, result['warnings'])
+            self.assertIn(warning, original['warnings'])
+            self.assertIn('다른 경고', result['warnings'])
+            self.assertTrue(any('자동 작업 관측' in w for w in result['warnings']))
+            self.assertFalse(root.exists())
+
+    def test_unavailable_catalog_keeps_old_fallback_and_honest_warning(self):
+        from workspace_snapshot import compose_workspace_snapshot
+        class BrokenLedger:
+            def registry(self):
+                from common.operations.models import ContractError
+                raise ContractError('invalid_registry')
+        with tempfile.TemporaryDirectory() as temp:
+            old = [{'id': 'observed'}]
+            result = compose_workspace_snapshot({'crossposts': old}, Path(temp) / 'absent', ledger=BrokenLedger())
+            self.assertEqual(result['crosspost_catalog_status'], 'unavailable')
+            self.assertEqual(result['crossposts'], old)
+            self.assertEqual(result['legacy_crosspost_observations'], old)
+            self.assertTrue(any('교차 발행 등록부' in w for w in result['warnings']))
