@@ -270,6 +270,50 @@ class RuntimeStore:
             p=c.execute('SELECT * FROM submission_permits WHERE attempt_id=?',(permit.attempt_id,)).fetchone()
             if not p or p['consumed'] or p['invalidated'] or utc(p['expires_at'])<=utc(now) or p['nonce_hash']!=hashlib.sha256(permit.nonce.encode()).hexdigest() or p['run_id']!=lease.run_id or p['generation']!=lease.generation or permit.run_id!=lease.run_id or permit.generation!=lease.generation or p['context_hash']!=permit.context_hash or p['approval_hash']!=permit.approval_hash or a['request_started'] or a['resolved']:raise ConflictError()
             c.execute('UPDATE submission_permits SET consumed=1 WHERE attempt_id=?',(permit.attempt_id,));c.execute('UPDATE attempts SET request_started=1 WHERE id=?',(permit.attempt_id,));self._state(c,d['id'],'submitting');self._event(c,d['id'],'request_started',{},a['id']);return self._attempt(c,a['id'])
+    def redeem_bridge(self,permit,executor_id,action,prepared_hash,now,*,clock=None):
+        """소비된 permit을 자식 leaf에서 딱 한 번 사용한다. 외부 I/O 없음."""
+        if (not isinstance(permit,SubmissionPermit) or
+            not all(isinstance(v,str) and v for v in (executor_id,action,prepared_hash)) or
+            len(prepared_hash)!=64 or any(v not in '0123456789abcdef' for v in prepared_hash)):
+            raise StoreError('invalid')
+        with self._db(True) as c:
+            if clock is not None:now=clock()
+            now=utc(now)
+            a=self._attempt(c,permit.attempt_id);d=self._delivery(c,a['delivery_id']);run=self._run(c,d['run_id'])
+            if not run.get('worker_id') or not run.get('lease_expires_at'):raise ConflictError()
+            lease=RunLease(run['id'],run['worker_id'],run['generation'],run['lease_expires_at'])
+            self._lease(c,lease,now)
+            p=c.execute('SELECT * FROM submission_permits WHERE attempt_id=?',(permit.attempt_id,)).fetchone()
+            if (not p or not p['consumed'] or p['invalidated'] or
+                utc(p['expires_at'])<=now or permit.expires_at<=now or
+                stamp(permit.expires_at)!=p['expires_at'] or
+                not secrets.compare_digest(p['nonce_hash'],hashlib.sha256(permit.nonce.encode()).hexdigest()) or
+                p['run_id']!=lease.run_id or permit.run_id!=lease.run_id or
+                p['generation']!=lease.generation or permit.generation!=lease.generation or
+                a['generation']!=lease.generation or
+                p['context_hash']!=permit.context_hash or a['context_hash']!=permit.context_hash or
+                p['approval_hash']!=permit.approval_hash or a['approval_hash']!=permit.approval_hash or
+                not a['request_started'] or a['resolved'] or a['outcome'] is not None or
+                d['state']!='submitting'):
+                raise ConflictError()
+            self._check_approval(c,d,permit.context_hash,permit.approval_hash,now)
+            content=c.execute('SELECT current_revision FROM contents WHERE id=?',(d['context']['content_id'],)).fetchone()
+            revision=c.execute('SELECT manifest_hash FROM revisions WHERE content_id=? AND revision=?',
+                (d['context']['content_id'],d['context']['content_revision'])).fetchone()
+            if not content or content[0]!=d['context']['content_revision'] or not revision or revision[0]!=d['context']['manifest_hash']:
+                raise ConflictError()
+            if self.registry is not None:
+                policy=self.registry.policies.get(d['context']['policy_revision'],{})
+                max_age=policy.get('auth_max_age_seconds',300)
+                if now-utc(d['context']['auth_checked_at'])>timedelta(seconds=max_age):raise ConflictError()
+            if a['reservation_id']:
+                reservation=self._reservation(c,a['reservation_id'])
+                if reservation['state']!='held' or reservation['delivery_id']!=d['id']:raise ConflictError()
+            c.execute('INSERT INTO bridge_redemptions VALUES(?,?,?,?,?)',
+                (permit.attempt_id,executor_id,action,prepared_hash,stamp(now)))
+            return dict(attempt_id=permit.attempt_id,executor_id=executor_id,action=action,
+                        prepared_hash=prepared_hash,redeemed_at=stamp(now))
+
     def invalidate_permits(self,delivery_id):
         with self._db(True) as c:c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
     def finish_attempt(self,attempt_id,outcome,*,remote_id=None,url=None,scheduled_at=None,evidence=None,now=None):
