@@ -106,3 +106,12 @@ test('로컬 취소는 접힌 고급 JSON 없이 검토 메모만으로 기록�
  field(root,'note').value='이 실행은 로컬에서 취소';await field(root,'note').fire('input');await all(panel.render()).find(n=>n.tagName==='form').fire('submit');await all(panel.render()).find(n=>n.tagName==='form').fire('submit');
  assert.equal(sent.length,2);assert.deepEqual(sent[0].evidence,{reason:'이 실행은 로컬에서 취소'});assert.deepEqual(sent[0],sent[1]);assert.equal(field(panel.render(),'evidence').value,'{}');assert.equal(field(panel.render(),'note').value,'이 실행은 로컬에서 취소');assert.equal(panel.isDirty(),true);fail=false;await all(panel.render()).find(n=>n.tagName==='form').fire('submit');assert.equal(panel.isDirty(),false);assert.deepEqual(sent[2],sent[0]);
 });
+test('로컬 취소 후 원격 미확정 기록은 전체·불확실 필터와 오늘 화면에 경고와 함께 남는다',async()=>{
+ let row=item('cancelled_unknown',{title:'원격 결과 미확정 원본',available_resolution_kinds:['cancel_local'],remote_uncertain:true});let calls=0;
+ const panel=createOperationsPanel({document,api:apiFor({list:async()=>listing([row]),get:async()=>row,resolve:async()=>{calls++;row={...row,execution_state:'cancelled',state:'cancelled',version:3,available_actions:[],available_resolution_kinds:[]};return row;}})});
+ await panel.load();await find(panel.render(),'상세 · 원격 결과 미확정 원본').fire('click');field(panel.render(),'note').value='로컬 실행만 취소';await field(panel.render(),'note').fire('input');await all(panel.render()).find(n=>n.tagName==='form').fire('submit');assert.equal(calls,1);
+ let root=panel.render();assert.match(root.textContent,/실행 로컬 취소/);assert.match(root.textContent,/게시 여부 불확실.*원격 결과가 확정되지 않았습니다/);assert.ok(find(root,'상세 · 원격 결과 미확정 원본'));
+ field(root,'issue-filter').value='unknown';await field(root,'issue-filter').fire('change');assert.ok(find(panel.render(),'상세 · 원격 결과 미확정 원본'));
+ await find(panel.render(),'상세 · 원격 결과 미확정 원본').fire('click');assert.match(panel.render().textContent,/실행 상태: 로컬 취소/);assert.match(panel.render().textContent,/게시 여부 불확실.*원격 결과가 확정되지 않았습니다/);assert.equal(field(panel.render(),'kind').children.length,0);
+ await all(panel.render()).find(n=>n.tagName==='form').fire('submit');assert.equal(calls,1);assert.match(panel.render('today').textContent,/실행 로컬 취소/);assert.match(panel.render('today').textContent,/원격 결과가 확정되지 않았습니다/);
+});

@@ -1,7 +1,7 @@
 import {safeUrl,formatDateTime} from './view_helpers.js';
 const scopes=new Set(['all','personal','dept']);
 const key=()=>globalThis.crypto.randomUUID();
-const labels={unknown:'게시 여부 불확실',needs_review:'검토 필요',auth_required:'인증 필요',failed:'실패',retry_wait:'재개 대기',queued:'대기',running:'진행 중',submitting:'제출 중',uploaded:'업로드됨',scheduled:'예약됨 · 공개 확인 전',published:'게시됨 · 검증 전',verified:'공개 검증 완료',completed:'완료',partial:'부분 실패',waiting:'확인 대기'};
+const labels={cancelled:'로컬 취소',unknown:'게시 여부 불확실',needs_review:'검토 필요',auth_required:'인증 필요',failed:'실패',retry_wait:'재개 대기',queued:'대기',running:'진행 중',submitting:'제출 중',uploaded:'업로드됨',scheduled:'예약됨 · 공개 확인 전',published:'게시됨 · 검증 전',verified:'공개 검증 완료',completed:'완료',partial:'부분 실패',waiting:'확인 대기'};
 const accountName=id=>({personal:'개인',dept:'학과'}[id]||'계정 미확인');
 const platformName=id=>({naver_blog:'네이버 블로그',youtube:'유튜브',tiktok:'틱톡',instagram:'인스타그램',threads:'스레드',x:'엑스',facebook:'페이스북',tistory:'티스토리',blogger:'블로거',homepage:'홈페이지',kakao:'카카오'}[id]||'플랫폼 미확인');
 const planName=id=>({pending:'대기',ready:'준비 완료',approved:'승인 완료',draft:'초안',planned:'계획됨',scheduled:'예약됨',cancelled:'취소됨',failed:'실패',published:'게시됨',verified:'검증 완료',needs_review:'검토 필요'}[id]||'상태 미확인');
@@ -110,6 +110,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
   function renderDetail(root){
     if(!detail)return;const box=node('section',undefined,'operations-detail');box.append(node('h3',detail.title||'실행 상세'),node('p',detail.target_label||platformName(detail.platform)));const identity=node('details');identity.append(node('summary','내부 실행 식별자'),node('p',`실행 상세 · ${detail.id}`));box.append(identity);
     for(const [label,value] of [['계획 상태',planName(detail.plan_status)],['실행 상태',labels[detail.execution_state]||'상태 미확인'],['원본 소유 계정',accountName(detail.owner_account_id)],['대상 계정',accountName(detail.destination_account_id)],['연결',detail.connection_id],['플랫폼',platformName(detail.platform)],['버전',detail.version],['생성 시각',localTime(detail.created_at)],['확인 시각',localTime(detail.checked_at)],['예약 시각',localTime(detail.scheduled_at)]])box.append(node('p',`${label}: ${value??'미확인'}`));
+    if(detail.remote_uncertain)box.append(node('p','게시 여부 불확실 · 로컬 상태와 별개로 원격 결과가 확정되지 않았습니다. 새 제출 없이 근거를 확인하세요.','operations-warning'));
     box.append(node('h4','시도 기록'));evidence(box,detail.attempts);box.append(node('h4','확인 근거'));evidence(box,detail.evidence);
     for(const reason of detail.blockers||[])if(typeof reason==='string')box.append(node('p',blockerText(reason),'operations-warning'));
     box.append(button('상태 다시 조회',()=>runAction('reconcile'),!allowed('reconcile')),button('동일 실행 재개',()=>runAction('retry'),!allowed('retry')));
@@ -151,9 +152,9 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
       if(mode==='accounts'){renderControls(root);continue;}
       if(mode==='today'){const s=snapshot?.summary||{};root.append(node('p',`관리 실행 · 진행 ${s.active??0} · 완료 ${s.completed??0} · 부분 실패 ${s.partial??0} · 확인 대기 ${s.waiting??0}`),node('p','아래 항목은 관리 실행 기록입니다. 기존 발행 관측·관리 계획은 각 화면의 별도 기록을 확인하세요.'));}
       if(mode==='issues')input(root,'issue-filter','문제 유형',filter,{options:[['all','전체 문제'],['unknown','게시 여부 불확실'],['auth_required','인증 필요'],['needs_review','검토 필요'],['failed','실패'],['retry_wait','재개 대기']],change:value=>{filter=value;emit();}});
-      const items=(snapshot?.items||[]).filter(item=>mode==='today'||(filter==='all'?['unknown','auth_required','needs_review','failed','retry_wait'].includes(item.execution_state):item.execution_state===filter));
+      const items=(snapshot?.items||[]).filter(item=>mode==='today'||(item.remote_uncertain&&(filter==='all'||filter==='unknown'))||(filter==='all'?['unknown','auth_required','needs_review','failed','retry_wait'].includes(item.execution_state):item.execution_state===filter));
       if(!items.length)root.append(node('p',snapshot?'해당 실행 기록이 없습니다.':'조회된 실행 기록이 없습니다.'));
-      const list=node('div',undefined,'operations-list');for(const item of items){const row=node('article',undefined,'operations-row');row.append(node('h3',item.title||'원본 제목 미수집'),node('p',item.target_label||item.connection_id||'대상 채널 미확인'),node('p',`${platformName(item.platform)} · 원본 소유 ${accountName(item.owner_account_id)} → 게시 대상 ${accountName(item.destination_account_id)}`),node('p',`계획 ${planName(item.plan_status)} · 실행 ${labels[item.execution_state]||'상태 미확인'}`),button(`상세 · ${item.title||item.id}`,()=>open(item.id)));list.append(row);}root.append(list);renderDetail(root);
+      const list=node('div',undefined,'operations-list');for(const item of items){const row=node('article',undefined,'operations-row');row.append(node('h3',item.title||'원본 제목 미수집'),node('p',item.target_label||item.connection_id||'대상 채널 미확인'),node('p',`${platformName(item.platform)} · 원본 소유 ${accountName(item.owner_account_id)} → 게시 대상 ${accountName(item.destination_account_id)}`),node('p',`계획 ${planName(item.plan_status)} · 실행 ${labels[item.execution_state]||'상태 미확인'}`),button(`상세 · ${item.title||item.id}`,()=>open(item.id)));if(item.remote_uncertain)row.append(node('p','게시 여부 불확실 · 로컬 상태와 별개로 원격 결과가 확정되지 않았습니다. 새 제출 없이 근거를 확인하세요.','operations-warning'));list.append(row);}root.append(list);renderDetail(root);
     }
   }
   function discard(){if(busy)return;dirty=false;controls.clear();if(detail)newDraft();message='미저장 입력을 버렸습니다.';emit();}

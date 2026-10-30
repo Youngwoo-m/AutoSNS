@@ -83,6 +83,12 @@ class OperationsHTTPTests(unittest.TestCase):
         status,first=self.request(url+'/resolve','POST',body);self.assertEqual(status,200)
         self.assertTrue(first['remote_uncertain']);self.assertEqual(first['state'],'cancelled')
         self.assertEqual(self.request(url+'/resolve','POST',body),(200,first))
+        status,detail=self.request(url);self.assertEqual(status,200)
+        self.assertEqual(detail['state'],'cancelled');self.assertTrue(detail['remote_uncertain'])
+        self.assertNotIn('cancel_local',detail['available_resolution_kinds']);self.assertNotIn('retry',detail['available_actions'])
+        listing=self.request('/api/v2/operations?account=personal')[1]
+        self.assertTrue(next(row['remote_uncertain'] for row in listing['items'] if row['id']==fixture.id))
+        self.assertEqual(self.request(url+'/resolve','POST',dict(body,expected_version=first['version'],request_key='cancel-again'))[0],409)
         self.assertEqual(self.request(url+'/resolve','POST',dict(body,note='changed'))[0],409)
         for field in ('actor','process_probe','lock_probe','adapter','executor','credential'):
             self.assertEqual(self.request(url+'/resolve','POST',dict(body,**{field:True}))[0],400)
@@ -288,6 +294,23 @@ class RecoveryAPIIntegrationTests(unittest.TestCase):
         self.now+=timedelta(minutes=2)
         with self.assertRaises(ConflictError):self.request('retry',{'expected_version':self.store.get_delivery(self.id)['version'],'request_key':'never'},policy=ExecutionPolicy(True,('x',),'cutover'),registry=registry(),process_probe=lambda i:dict(i,status='dead'),lock_probe=lambda c:dict(status='free',connection_id='x'),adapters={'x':Adapter()})
         self.assertEqual((self.root/'operations.sqlite3').read_bytes(),before)
+
+    def test_cancelled_uncertain_keeps_remote_resolution_but_cannot_cancel_twice(self):
+        from web_operations import item
+        from common.operations.content_store import ConflictError
+        result=self.request('resolve',self.decision())
+        row=self.store.get_delivery(self.id);self.assertTrue(row['remote_uncertain']);self.assertEqual(self.store.get_run('r')['state'],'waiting')
+        detail=item(row,detail=True,store=self.store)
+        self.assertEqual(detail['available_resolution_kinds'],[]);self.assertNotIn('retry',detail['available_actions'])
+        dead=lambda identity:dict(identity,status='dead')
+        free=lambda context:dict(status='free',connection_id=context['connection_id'])
+        supported=item(row,detail=True,store=self.store,adapters={'x':object()},process_probe=dead,lock_probe=free)
+        self.assertEqual(supported['available_resolution_kinds'],['link_existing','confirmed_not_posted'])
+        self.assertIn('reconcile',supported['available_actions'])
+        with self.assertRaises(ConflictError):self.request('resolve',dict(self.decision(),request_key='cancel-again'))
+        confirm=self.decision('confirmed_not_posted');confirm.update(request_key='confirm-after-cancel',evidence={'confirmed_not_posted':True})
+        result=self.request('resolve',confirm,process_probe=dead,lock_probe=free)
+        self.assertEqual(result['state'],'retry_wait');self.assertFalse(result['remote_uncertain'])
 
 class OperationsFactoryContractTests(unittest.TestCase):
     def test_server_owned_dependencies_are_explicit_factory_arguments(self):
