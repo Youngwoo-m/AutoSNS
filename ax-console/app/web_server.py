@@ -14,11 +14,23 @@ import os
 from pathlib import Path
 import re
 import socket
+import sqlite3
+import sys
 import threading
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlsplit, unquote, quote
 
 
 _APP = Path(__file__).resolve().parent
+# 단독 실행과 importlib에서 같은 로컬 모듈을 사용한다.
+for _module_root in (_APP.parents[1], _APP):
+    if str(_module_root) not in sys.path:
+        sys.path.insert(0, str(_module_root))
+from common.operations.content_store import ContentStore, StoreError, MAX_ASSET_BYTES
+from common.operations.integration_store import IntegrationStore
+from web_content import (CONTENT_ID, ASSET_ID, MEDIA_TYPES, ERROR_STATUS, ERROR_MESSAGES,
+                         content_body, review_body, serialize_content)
+from web_integrations import validate_settings_body, settings_response
+from workspace_snapshot import compose_workspace_snapshot
 _AUTH_LOCKS = {}
 _AUTH_LOCKS_LOCK = threading.Lock()
 _STATIC = {
@@ -27,6 +39,8 @@ _STATIC = {
     'api.js': 'text/javascript; charset=utf-8',
     'app.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
+    'content_editor.js': 'text/javascript; charset=utf-8',
+    'integration_settings.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -171,7 +185,7 @@ class _IPv6WebServer(_WebServer):
 
 
 class _Handler(BaseHTTPRequestHandler):
-    server_version = 'AXReadOnly'
+    server_version = 'AXWeb'
     sys_version = ''
 
     def setup(self):
@@ -182,7 +196,7 @@ class _Handler(BaseHTTPRequestHandler):
         # 요청 URL·인증 머리글·원본 예외를 로그로 남기지 않는다.
         pass
 
-    def _send(self, status, obj=None, *, body=None, content_type='application/json; charset=utf-8', headers=None):
+    def _send_response(self, status, obj=None, *, body=None, content_type='application/json; charset=utf-8', headers=None):
         data = body if body is not None else json.dumps(obj, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -197,6 +211,12 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         if self.command != 'HEAD':
             self.wfile.write(data)
+
+    def _send(self, status, obj=None, **kwargs):
+        try:
+            self._send_response(status, obj, **kwargs)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            self.close_connection = True
 
     def send_error(self, code, message=None, explain=None):
         self._send(code, {'error': '요청을 처리할 수 없습니다'})
@@ -219,7 +239,8 @@ class _Handler(BaseHTTPRequestHandler):
         if parsed.scheme or parsed.netloc or parsed.fragment or '%' in parsed.path or '..' in parsed.path.split('/'):
             self._error(400, '올바르지 않은 경로입니다')
             return None
-        for name in ('Host', 'Origin', 'Cookie', 'X-AX-Internal', 'Content-Length', 'Content-Type', 'Sec-Fetch-Site'):
+        for name in ('Host', 'Origin', 'Cookie', 'X-AX-Internal', 'Content-Length', 'Content-Type', 'Sec-Fetch-Site',
+                     'X-AX-Filename', 'X-AX-Expected-Revision'):
             if len(self.headers.get_all(name, [])) > 1:
                 self._error(400, '중복된 요청 머리글입니다')
                 return None
@@ -244,12 +265,17 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(400, '올바르지 않은 조회 조건입니다')
             return None
-        if parsed.path == '/api/v2/snapshot':
+        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
             if query.get('account', ['all'])[0] not in ('all', 'dept', 'personal'):
                 self._error(400, '올바르지 않은 계정입니다')
+                return None
+        elif re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path):
+            if (set(query) - {'revision'} or any(len(values) != 1 for values in query.values())
+                    or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
+                self._error(400, '올바르지 않은 버전입니다')
                 return None
         elif query:
             self._error(400, '지원하지 않는 조회 조건입니다')
@@ -295,8 +321,13 @@ class _Handler(BaseHTTPRequestHandler):
             if validated is None:
                 return
             path, query = validated
-            if method == 'POST':
+            if method == 'POST' and path in ('/api/auth/login', '/api/auth/logout'):
                 return self._post(path)
+            managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
+            if managed:
+                if not self._authed():
+                    return self._error(401, '로그인이 필요합니다')
+                return self._managed(method, path, query)
             if method != 'GET':
                 return self._error(405, '조회 전용 화면에서는 지원하지 않는 요청입니다')
             auth = self.server.auth_backend
@@ -316,14 +347,142 @@ class _Handler(BaseHTTPRequestHandler):
                 kwargs = ({'launchagents_dir': self.server.launchagents_dir}
                           if self.server.launchagents_dir is not None else {})
                 snapshot = self.server.snapshot_builder(self.server.source_root, query.get('account', ['all'])[0], **kwargs)
+                if self.server.workspace_root is not None:
+                    snapshot = compose_workspace_snapshot(snapshot, self.server.workspace_root,
+                                                          query.get('account', ['all'])[0])
+                    if not getattr(self.server.content_store, '_initialized', False):
+                        snapshot['workspace_writable'] = False
                 return self._send(200, snapshot)
             if path in ('/', '/web/'):
                 return self._static('index.html')
             if path.startswith('/web/') and path[5:] in _STATIC:
                 return self._static(path[5:])
             return self._error(404, '지원하지 않는 경로입니다')
+        except StoreError as exc:
+            self._error(ERROR_STATUS.get(exc.code, 503), ERROR_MESSAGES.get(exc.code, ERROR_MESSAGES['storage_error']))
+        except (BrokenPipeError, ConnectionResetError, TimeoutError):
+            self.close_connection = True
+        except (OSError, sqlite3.Error):
+            self._error(503, ERROR_MESSAGES['storage_error'])
         except Exception:
             self._error(500, '조회 요청을 처리하지 못했습니다. 잠시 뒤 다시 시도하세요')
+
+    def _read_body(self, limit, *, json_body=False):
+        length_text = self.headers.get('Content-Length', '')
+        if not re.fullmatch(r'[0-9]{1,12}', length_text):
+            raise StoreError('invalid')
+        length = int(length_text)
+        if length > limit:
+            raise StoreError('too_large')
+        if json_body and self.headers.get('Content-Type', '').split(';', 1)[0].strip().lower() != 'application/json':
+            raise StoreError('unsupported_media')
+        try:
+            raw = self.rfile.read(length)
+        except (OSError, TimeoutError) as exc:
+            self.close_connection = True
+            raise StoreError('invalid') from exc
+        if len(raw) != length:
+            raise StoreError('invalid')
+        if not json_body:
+            return raw
+        try:
+            def object_fields(pairs):
+                obj = {}
+                for key, value in pairs:
+                    if key in obj:
+                        raise ValueError('duplicate field')
+                    obj[key] = value
+                return obj
+
+            def invalid_constant(_value):
+                raise ValueError('invalid constant')
+
+            return json.loads(raw.decode('utf-8'), object_pairs_hook=object_fields,
+                              parse_constant=invalid_constant)
+        except (ValueError, UnicodeError, RecursionError) as exc:
+            raise StoreError('invalid') from exc
+
+    def _managed(self, method, path, query):
+        if method not in ('GET', 'POST', 'PUT'):
+            return self._error(405, '지원하지 않는 요청입니다')
+        if self.server.workspace_root is None:
+            if method != 'GET':
+                return self._error(405, '조회 전용 화면에서는 지원하지 않는 요청입니다')
+            if path in ('/api/v2/contents', '/api/v2/integrations/settings'):
+                return self._send(200, {'items': []})
+            raise StoreError('not_found')
+        store = self.server.content_store
+        if method != 'GET' and not getattr(store, '_initialized', False):
+            raise StoreError('storage_error')
+        if method != 'GET' and query:
+            raise StoreError('invalid')
+        account = query.get('account', ['all'])[0]
+        if path == '/api/v2/integrations/settings':
+            if method == 'GET':
+                return self._send(200, settings_response(self.server.integration_store.list(account)))
+            if method == 'PUT':
+                values = validate_settings_body(self._read_body(1024 * 1024, json_body=True))
+                return self._send(200, self.server.integration_store.put(*values))
+            return self._error(405, '지원하지 않는 요청입니다')
+        if path == '/api/v2/contents':
+            if method == 'GET':
+                return self._send(200, {'items': [serialize_content(item) for item in store.list(account)]})
+            if method == 'POST':
+                owner, payload = content_body(self._read_body(1024 * 1024, json_body=True), create=True)
+                return self._send(201, serialize_content(store.create(owner, payload)))
+            return self._error(405, '지원하지 않는 요청입니다')
+        match = re.fullmatch(r'/api/v2/contents/(' + CONTENT_ID + r')(.*)', path)
+        if not match:
+            raise StoreError('not_found')
+        content_id, suffix = match.groups()
+        if not suffix:
+            if method == 'GET':
+                revision = int(query['revision'][0]) if 'revision' in query else None
+                item = store.get(content_id, revision)
+                if item is None:
+                    raise StoreError('not_found')
+                return self._send(200, serialize_content(item))
+            if method == 'PUT':
+                revision, payload = content_body(self._read_body(1024 * 1024, json_body=True))
+                return self._send(200, serialize_content(store.update(content_id, revision, payload)))
+        elif suffix == '/revisions' and method == 'GET':
+            if store.get(content_id) is None:
+                raise StoreError('not_found')
+            return self._send(200, {'items': store.list_revisions(content_id)})
+        elif suffix == '/reviews' and method == 'POST':
+            values = review_body(self._read_body(1024 * 1024, json_body=True))
+            store.record_review(content_id, *values)
+            return self._send(200, serialize_content(store.get(content_id, values[0])))
+        elif suffix == '/assets' and method == 'POST':
+            encoded = self.headers.get('X-AX-Filename', '')
+            revision = self.headers.get('X-AX-Expected-Revision', '')
+            if (not encoded or len(encoded) > 2400 or re.search(r'%(?![0-9a-fA-F]{2})', encoded)
+                    or not re.fullmatch(r'[1-9][0-9]{0,9}', revision)):
+                raise StoreError('invalid')
+            try:
+                encoded.encode('ascii')
+                filename = unquote(encoded, encoding='utf-8', errors='strict')
+            except UnicodeError as exc:
+                raise StoreError('invalid') from exc
+            if not filename or len(filename) > 200 or any(c in filename for c in '/\\\x00\r\n'):
+                raise StoreError('invalid')
+            media_type = self.headers.get('Content-Type', '').strip().lower()
+            if media_type not in MEDIA_TYPES:
+                raise StoreError('unsupported_media')
+            raw = self._read_body(MAX_ASSET_BYTES)
+            return self._send(200, serialize_content(store.add_asset(content_id, int(revision), filename, media_type, raw)))
+        else:
+            asset_match = re.fullmatch(r'/revisions/([1-9][0-9]{0,9})/assets/(' + ASSET_ID + ')', suffix)
+            if asset_match and method == 'GET':
+                if self.headers.get('Range') is not None:
+                    return self._error(416, '부분 자산 요청은 지원하지 않습니다')
+                asset, raw = store.read_asset(content_id, int(asset_match[1]), asset_match[2])
+                if asset['media_type'] not in MEDIA_TYPES:
+                    raise StoreError('storage_error')
+                return self._send(200, body=raw, content_type=asset['media_type'],
+                                  headers={'Content-Disposition': "attachment; filename*=UTF-8''" + quote(asset['filename'], safe='')})
+            raise StoreError('not_found')
+        return self._error(405, '지원하지 않는 요청입니다')
 
     def _post(self, path):
         if path not in ('/api/auth/login', '/api/auth/logout'):
@@ -337,18 +496,10 @@ class _Handler(BaseHTTPRequestHandler):
         if not auth.is_setup():
             return self._error(503, '기존 콘솔에서 인증을 먼저 설정하세요')
         try:
-            length_text = self.headers.get('Content-Length', '')
-            if not length_text.isdecimal():
-                return self._error(400, '올바르지 않은 요청 길이입니다')
-            length = int(length_text)
-            if length > 4096:
-                return self._error(413, '로그인 요청이 너무 큽니다')
-            if self.headers.get('Content-Type', '').split(';', 1)[0].strip().lower() != 'application/json':
-                return self._error(415, 'JSON 요청만 지원합니다')
-            body = json.loads(self.rfile.read(length))
+            body = self._read_body(4096, json_body=True)
             if not isinstance(body, dict) or not isinstance(body.get('password'), str) or len(body['password']) > 512:
                 return self._error(400, '올바른 비밀번호를 입력하세요')
-        except (ValueError, UnicodeError):
+        except (ValueError, UnicodeError, OSError):
             return self._error(400, '올바르지 않은 로그인 요청입니다')
         try:
             verified = auth.verify(body['password'], self.client_address[0])
@@ -369,7 +520,8 @@ class _Handler(BaseHTTPRequestHandler):
 
 
 def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
-                  web_root: Path, auth_backend=None, snapshot_builder=None) -> ThreadingHTTPServer:
+                  web_root: Path, auth_backend=None, snapshot_builder=None,
+                  workspace_root: Path | None = None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -378,10 +530,16 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     if not address.is_loopback:
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다')
     source_root, web_root = Path(source_root).resolve(), Path(web_root).resolve()
+    workspace_root = Path(workspace_root).resolve() if workspace_root is not None else None
+    if workspace_root is not None and (workspace_root.is_relative_to(source_root) or source_root.is_relative_to(workspace_root)):
+        raise ValueError('관리 저장소와 운영 루트는 분리해야 합니다')
     backend = auth_backend if auth_backend is not None else _load_auth(source_root)
     server_class = _IPv6WebServer if address.version == 6 else _WebServer
     server = server_class((str(address), port), _Handler)
     server.source_root = source_root
+    server.workspace_root = workspace_root
+    server.content_store = ContentStore(workspace_root) if workspace_root is not None else None
+    server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.web_root = web_root
     server.auth_backend = backend
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot
@@ -398,8 +556,12 @@ def main():
         raise SystemExit('AX_SOURCE_ROOT로 조회할 운영 루트를 지정하세요')
     server = create_server(os.environ.get('AX_HOST', '127.0.0.1'),
                            int(os.environ.get('AX_PORT', '8767')),
-                           source_root=Path(source), web_root=_APP / 'web')
+                           source_root=Path(source), web_root=_APP / 'web',
+                           workspace_root=Path(os.environ['AX_WORKSPACE_ROOT']) if os.environ.get('AX_WORKSPACE_ROOT') else None)
     try:
+        if server.workspace_root is not None:
+            server.content_store.initialize()
+            server.integration_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass

@@ -428,5 +428,193 @@ print(token, flush=True)
                                           auth_backend=self.auth, snapshot_builder=self.snapshot)
 
 
+class ManagedWebServerTests(unittest.TestCase):
+    setUpClass = classmethod(WebServerTests.setUpClass.__func__)
+    request = WebServerTests.request
+    login = WebServerTests.login
+    stop = WebServerTests.stop
+    file_state = staticmethod(WebServerTests.file_state)
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.source = Path(self.tmp.name) / 'source'
+        self.source.mkdir()
+        (self.source / 'legacy.json').write_text('{"original":"keep"}')
+        self.workspace = Path(self.tmp.name) / 'workspace'
+        self.auth = FakeAuth()
+        self.server = self.module.create_server(source_root=self.source, web_root=APP / 'web',
+                                               auth_backend=self.auth, workspace_root=self.workspace)
+        self.assertFalse(self.workspace.exists(), 'factory must not initialize storage')
+        self.server.launchagents_dir = Path(self.tmp.name) / 'agents'
+        self.server.content_store.initialize()
+        self.server.integration_store.initialize()
+        self.source_before = self.file_state(self.source)
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.addCleanup(self.stop)
+        self.cookie = self.login()
+
+    def create(self):
+        status, _, body = self.request('/api/v2/contents', 'POST', {
+            'owner_account_id': 'personal', 'title': '개인 원본', 'kind': 'article', 'original': '본문',
+            'variants': [{'destination_account_id': 'dept', 'platform': 'youtube', 'text': '학과 변환'}]}, self.cookie)
+        self.assertEqual(status, 201, body)
+        return json.loads(body)
+
+    def raw(self, path, body=b'', headers=None, method='POST', authenticated=True):
+        conn = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=3)
+        conn.request(method, path, body=body, headers={**(self.cookie if authenticated else {}), **(headers or {})})
+        response = conn.getresponse()
+        result = response.status, dict(response.getheaders()), response.read()
+        conn.close()
+        return result
+
+    def test_create_scope_update_revisions_and_manual_review(self):
+        item = self.create()
+        path = '/api/v2/contents/' + item['id']
+        scoped = json.loads(self.request('/api/v2/contents?account=dept', headers=self.cookie)[2])
+        self.assertEqual(scoped['items'][0]['owner_account_id'], 'personal')
+        snapshot = json.loads(self.request('/api/v2/snapshot?account=dept', headers=self.cookie)[2])
+        self.assertTrue(snapshot['workspace_writable'])
+        self.assertEqual(snapshot['contents'][0]['target_accounts'], ['dept'])
+        self.assertEqual(snapshot['deliveries'], [])
+        edit = {'expected_revision': 1, 'title': '수정', 'kind': 'article', 'original': '새 본문'}
+        status, _, body = self.request(path, 'PUT', edit, self.cookie)
+        self.assertEqual(status, 200, body)
+        updated = json.loads(body)
+        self.assertEqual(updated['revision'], 2)
+        self.assertEqual(self.request(path, 'PUT', edit, self.cookie)[0], 409)
+        self.assertEqual(json.loads(self.request(path + '?revision=1', headers=self.cookie)[2])['original'], '본문')
+        revisions = json.loads(self.request(path + '/revisions', headers=self.cookie)[2])
+        self.assertEqual([row['revision'] for row in revisions['items']], [1, 2])
+        review = {'revision': 2, 'manifest_hash': updated['manifest_hash'], 'kind': 'source', 'decision': 'pass', 'notes': '사람 확인'}
+        status, _, body = self.request(path + '/reviews', 'POST', review, self.cookie)
+        self.assertEqual(status, 200, body)
+        self.assertEqual(json.loads(body)['reviews'][0]['method'], 'manual')
+        self.assertEqual(json.loads(body)['status'], 'idea')
+        review['manifest_hash'] = '0' * 64
+        self.assertEqual(self.request(path + '/reviews', 'POST', review, self.cookie)[0], 409)
+        self.assertEqual(self.file_state(self.source), self.source_before)
+
+    def test_asset_roundtrip_metadata_cas_range_and_integrity(self):
+        from urllib.parse import quote
+        item = self.create()
+        path = '/api/v2/contents/' + item['id'] + '/assets'
+        # PNG signature is the store's accepted minimum; no executable format involved.
+        data = b'\x89PNG\r\n\x1a\nfixture'
+        headers = {'Content-Type': 'image/png', 'X-AX-Filename': quote('그림.png'), 'X-AX-Expected-Revision': '1'}
+        status, _, body = self.raw(path, data, headers)
+        self.assertEqual(status, 200, body)
+        saved = json.loads(body)
+        asset = saved['assets'][0]
+        status, response_headers, raw = self.raw(asset['url'], method='GET')
+        self.assertEqual((status, raw), (200, data))
+        self.assertEqual(response_headers['Content-Type'], 'image/png')
+        self.assertEqual(response_headers['X-Content-Type-Options'], 'nosniff')
+        self.assertEqual(response_headers['Cache-Control'], 'no-store')
+        self.assertIn("filename*=UTF-8''%", response_headers['Content-Disposition'])
+        self.assertEqual(self.raw(asset['url'], headers={'Range': 'bytes=0-2'}, method='GET')[0], 416)
+        self.assertEqual(self.raw(path, data, headers)[0], 409)
+        headers['X-AX-Expected-Revision'] = '2'
+        for filename in ('..%2Fsecret.png', '%00bad.png', '%zz', '%FF.png'):
+            self.assertEqual(self.raw(path, data, {**headers, 'X-AX-Filename': filename})[0], 400)
+        self.assertEqual(self.raw(path, b'<svg/>', {**headers, 'Content-Type': 'image/svg+xml'})[0], 415)
+        self.assertEqual(self.raw(path, data, {**headers, 'Content-Length': str(100 * 1024 * 1024 + 1)})[0], 413)
+        physical = next(p for p in self.workspace.rglob(asset['id']) if p.is_file())
+        physical.write_bytes(b'corrupt')
+        status, _, body = self.raw(asset['url'], method='GET')
+        self.assertEqual(status, 503)
+        self.assertNotIn(str(self.workspace).encode(), body)
+
+    def test_auth_and_csrf_before_body_schema_and_invalid_queries(self):
+        path = '/api/v2/contents'
+        self.assertEqual(self.raw(path, headers={'Content-Length': '100000'}, authenticated=False)[0], 401)
+        self.assertEqual(self.raw(path, headers={'Content-Length': '100000', 'Origin': 'http://evil.example'})[0], 403)
+        for body in ([], {'title': 'x', 'kind': 'article'}, {'owner_account_id': 'all', 'title': 'x', 'kind': 'article'},
+                     {'owner_account_id': 'personal', 'title': 'x', 'kind': 'article', 'token': 'forbidden'}):
+            self.assertEqual(self.request(path, 'POST', body, self.cookie)[0], 400)
+        self.assertEqual(self.raw(path, b'', {'Content-Type': 'application/json', 'Content-Length': str(1024 * 1024 + 1)})[0], 413)
+        for raw in (b'{"owner_account_id":"personal","title":"a","title":"b","kind":"article"}',
+                    b'{"owner_account_id":"personal","title":NaN,"kind":"article"}', b'\xff', b'[]'):
+            self.assertEqual(self.raw(path, raw, {'Content-Type': 'application/json'})[0], 400)
+        item = self.create()
+        for suffix in ('?revision=0', '?revision=1&revision=2', '?account=personal'):
+            self.assertEqual(self.request(path + '/' + item['id'] + suffix, headers=self.cookie)[0], 400)
+        for suffix in ('?account=all&account=dept', '?root=x', '?revision=1'):
+            self.assertEqual(self.request(path + suffix, headers=self.cookie)[0], 400)
+        self.assertEqual(self.request(path + '/legacy_123', 'PUT', {}, self.cookie)[0], 404)
+        self.assertEqual(self.request(path + '/' + item['id'], 'PUT', {
+            'expected_revision': 1, 'title': 'x', 'kind': 'article', 'owner_account_id': 'dept'}, self.cookie)[0], 400)
+
+    def test_short_body_and_duplicate_asset_header_rejected(self):
+        item = self.create()
+        path = '/api/v2/contents/' + item['id'] + '/assets'
+        conn = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=3)
+        conn.putrequest('POST', path)
+        for name, value in {**self.cookie, 'Content-Type': 'image/png', 'Content-Length': '30',
+                            'X-AX-Filename': 'a.png', 'X-AX-Expected-Revision': '1'}.items():
+            conn.putheader(name, value)
+        conn.endheaders(b'short')
+        conn.sock.shutdown(1)
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        response.read()
+        conn.close()
+        for header in ('X-AX-Filename', 'X-AX-Expected-Revision'):
+            conn = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=3)
+            conn.putrequest('POST', path)
+            conn.putheader('Cookie', self.cookie['Cookie'])
+            conn.putheader(header, '1')
+            conn.putheader(header, '2')
+            conn.endheaders()
+            response = conn.getresponse()
+            self.assertEqual(response.status, 400)
+            response.read()
+            conn.close()
+
+    def test_settings_scoped_cas_persistence_and_secret_rejection(self):
+        path = '/api/v2/integrations/settings'
+        payload = {'account_id': 'dept', 'provider_id': 'metricool', 'connection_id': 'main', 'expected_revision': 0,
+                   'platform': 'instagram', 'target_label': '학과', 'enabled_preference': True, 'notes': '사용 선호'}
+        status, _, raw = self.request(path, 'PUT', payload, self.cookie)
+        self.assertEqual(status, 200, raw)
+        saved = json.loads(raw)
+        self.assertEqual(saved['connection_status'], 'unknown')
+        self.assertEqual(saved['execution_status'], 'not_connected')
+        self.assertEqual(self.request(path, 'PUT', payload, self.cookie)[0], 409)
+        self.assertEqual(json.loads(self.request(path + '?account=personal', headers=self.cookie)[2]), {'items': []})
+        self.assertEqual(len(json.loads(self.request(path + '?account=dept', headers=self.cookie)[2])['items']), 1)
+        self.assertEqual(self.request(path, 'PUT', {**payload, 'token': 'no'}, self.cookie)[0], 400)
+        self.assertEqual(self.request(path, 'PUT', {**payload, 'platform': 'shell'}, self.cookie)[0], 400)
+        from common.operations.integration_store import IntegrationStore
+        self.assertEqual(IntegrationStore(self.workspace).list('dept')[0], saved)
+        self.assertEqual(self.file_state(self.source), self.source_before)
+
+    def test_factory_uninitialized_and_no_workspace_modes(self):
+        for workspace in (None, Path(self.tmp.name) / 'not-initialized'):
+            server = self.module.create_server(source_root=self.source, web_root=APP / 'web', auth_backend=self.auth,
+                                               workspace_root=workspace)
+            server.launchagents_dir = Path(self.tmp.name) / 'agents'
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                status, _, body = self.request('/api/v2/contents', 'POST', {}, self.cookie, server=server)
+                self.assertEqual(status, 405 if workspace is None else 503, body)
+                self.assertEqual(json.loads(self.request('/api/v2/contents', headers=self.cookie, server=server)[2]), {'items': []})
+                if workspace:
+                    snapshot = json.loads(self.request('/api/v2/snapshot', headers=self.cookie, server=server)[2])
+                    self.assertFalse(snapshot['workspace_writable'])
+                    self.assertTrue(snapshot['warnings'])
+                    self.assertFalse(workspace.exists())
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join()
+        for workspace in (self.source, self.source / 'new', self.source.parent):
+            with self.assertRaises(ValueError):
+                self.module.create_server(source_root=self.source, web_root=APP / 'web', workspace_root=workspace)
+
+
 if __name__ == '__main__':
     unittest.main()
