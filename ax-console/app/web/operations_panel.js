@@ -14,7 +14,11 @@ export function createOperationsApi({fetcher=globalThis.fetch}={}){
 export function createOperationsPanel({api,onChange=()=>{},document=globalThis.document}){
   const roots=Object.fromEntries(['issues','today','accounts'].map(mode=>{const node=document.createElement('section');node.className=`operations-panel operations-${mode}`;return [mode,node];}));
   let account='all',snapshot=null,detail=null,draft=null,dirty=false,busy=false,generation=0,selection=0,message='운영 상태를 불러오세요.',conflict=false,filter='all';
-  const controls=new Map();
+  const controls=new Map(), actionRequests=new Map();
+  let renderedMode;
+  const actionKey=(id,action)=>`${id}:${action}`;
+  function actionBody(action){const id=actionKey(detail.id,action);if(!actionRequests.has(id))actionRequests.set(id,{expected_version:detail.version,request_key:key()});return actionRequests.get(id);}
+  function resetActionRequests(id){for(const action of ['retry','reconcile'])actionRequests.delete(actionKey(id,action));}
   const hasDirty=()=>dirty||[...controls.values()].some(value=>value.reason!=='');
   const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);if(className)n.className=className;return n;};
   function emit(repaint=true){if(repaint)paint();onChange();}
@@ -29,7 +33,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
   function newDraft(){draft={kind:'link_existing',evidence:'{}',note:'',expected_version:detail.version,request_key:key()};dirty=false;conflict=false;}
   async function load(scope='all'){
     if(!scopes.has(scope))throw new Error('계정 범위가 올바르지 않습니다.');
-    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();selection++;}
+    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();actionRequests.clear();selection++;}
     const current=++generation;message='운영 상태를 불러오는 중입니다.';emit();
     try{const result=await api.list(scope);if(current!==generation)return;snapshot=result;message='서버에서 관측한 운영 상태입니다.';}
     catch(error){if(current!==generation)return;if(error.status===401)snapshot=null;feedback(error);}
@@ -44,14 +48,18 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
   }
   async function mutate(action,body){
     if(busy||!allowed(action))return;
+    if(action==='retry'&&dirty){message='작성 중인 복구 입력을 저장하거나 버린 뒤 실행을 재개하세요.';emit();return;}
     const current=generation,id=detail.id;busy=true;emit();
-    try{await api[action](id,body);if(current!==generation)return;dirty=false;conflict=false;detail=null;draft=null;message='조치를 기록했습니다. 최신 상태를 확인하세요.';await load(account);}
+    try{await api[action](id,body);if(current!==generation)return;
+      if(action==='reconcile'){const latest=await api.get(id);if(current!==generation)return;detail=latest;await load(account);message='최신 관측을 확인했습니다. 작성 중인 복구 입력과 기준 버전은 보존했습니다.';}
+      else{dirty=false;conflict=false;detail=null;draft=null;message='조치를 기록했습니다. 최신 상태를 확인하세요.';await load(account);}
+    }
     catch(error){if(current===generation)feedback(error);}
     finally{busy=false;emit();}
   }
   async function rebase(){
     if(busy||!detail)return;busy=true;const current=generation;emit();
-    try{const latest=await api.get(detail.id);if(current!==generation)return;detail=latest;draft.expected_version=latest.version;draft.request_key=key();conflict=false;message='최신 버전을 확인했습니다. 보존한 입력을 검토한 뒤 다시 조치하세요.';}
+    try{const latest=await api.get(detail.id);if(current!==generation)return;detail=latest;draft.expected_version=latest.version;draft.request_key=key();resetActionRequests(detail.id);conflict=false;message='최신 버전을 확인했습니다. 보존한 입력을 검토한 뒤 다시 조치하세요.';}
     catch(error){if(current===generation)feedback(error);}
     finally{busy=false;emit();}
   }
@@ -67,7 +75,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     for(const [label,value] of [['계획 상태',detail.plan_status],['실행 상태',labels[detail.execution_state]||'상태 미확인'],['소유 계정',detail.owner_account_id],['대상 계정',detail.destination_account_id],['연결',detail.connection_id],['플랫폼',detail.platform],['버전',detail.version]])box.append(node('p',`${label}: ${value??'미확인'}`));
     box.append(node('h4','시도 기록'));evidence(box,detail.attempts);box.append(node('h4','확인 근거'));evidence(box,detail.evidence);
     for(const reason of detail.blockers||[])if(typeof reason==='string')box.append(node('p',reason,'operations-warning'));
-    box.append(button('상태 다시 조회',()=>mutate('reconcile',{expected_version:detail.version,request_key:key()}),!allowed('reconcile')),button('동일 실행 재개',()=>mutate('retry',{expected_version:detail.version,request_key:key()}),!allowed('retry')));
+    box.append(button('상태 다시 조회',()=>mutate('reconcile',actionBody('reconcile')),!allowed('reconcile')),button('동일 실행 재개',()=>mutate('retry',actionBody('retry')),!allowed('retry')));
     if(!allowed('reconcile'))box.append(node('p','읽기 전용 조회 어댑터가 허용되지 않아 상태 조회를 실행할 수 없습니다.'));
     if(!allowed('retry'))box.append(node('p','실행 정책 또는 복구 상태 때문에 재개할 수 없습니다.'));
     const form=node('form',undefined,'operations-form');const edit=name=>value=>{draft[name]=value;dirty=true;emit(false);};
@@ -76,7 +84,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     form.append(node('p','로컬 실행 취소는 관리 기록에만 적용됩니다. 원격 게시물 삭제·예약 취소를 수행하지 않습니다.'));
     const submit=node('button','근거와 조치 기록','btn');submit.type='submit';submit.disabled=busy||!allowed('resolve');form.append(submit);
     form.addEventListener('submit',async event=>{event.preventDefault();if(busy||!allowed('resolve'))return;let parsed;try{parsed=JSON.parse(draft.evidence);if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')throw new Error();}catch{message='확인 근거에 JSON 객체를 입력하세요. 입력은 보존했습니다.';emit();return;}if(!draft.note.trim()){message='검토 메모를 입력하세요. 입력은 보존했습니다.';emit();return;}await mutate('resolve',{expected_version:draft.expected_version,request_key:draft.request_key,kind:draft.kind,evidence:parsed,note:draft.note});});
-    box.append(form);if(conflict)box.append(button('내 입력을 유지하고 최신 버전 확인',rebase));box.append(button('미저장 입력 버리기',discard));root.append(box);
+    box.append(form);if(conflict||actionRequests.has(actionKey(detail.id,'retry'))||actionRequests.has(actionKey(detail.id,'reconcile')))box.append(button('내 입력을 유지하고 최신 버전 확인',rebase));box.append(button('미저장 입력 버리기',discard));root.append(box);
   }
   function renderControls(root){
     root.append(node('h3','관리 실행 제어'),node('p','관리 일시중지는 로컬 관리 DB에만 적용됩니다. 기존 자동 작업·launchd에는 적용되지 않습니다. 재개해도 밀린 작업을 새로 등록하지 않습니다.'));
@@ -106,9 +114,9 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
       if(mode==='issues')input(root,'issue-filter','문제 유형',filter,{options:[['all','전체 문제'],['unknown','게시 여부 불확실'],['auth_required','인증 필요'],['needs_review','검토 필요'],['failed','실패'],['retry_wait','재개 대기']],change:value=>{filter=value;emit();}});
       const items=(snapshot?.items||[]).filter(item=>mode==='today'||(filter==='all'?['unknown','auth_required','needs_review','failed','retry_wait'].includes(item.execution_state):item.execution_state===filter));
       if(!items.length)root.append(node('p',snapshot?'해당 실행 기록이 없습니다.':'조회된 실행 기록이 없습니다.'));
-      const list=node('div',undefined,'operations-list');for(const item of items){const row=node('article',undefined,'operations-row');row.append(node('p',`${item.platform} · 소유 ${item.owner_account_id} → 대상 ${item.destination_account_id}`),node('p',`계획 ${item.plan_status} · 실행 ${labels[item.execution_state]||'상태 미확인'}`),button(`상세 · ${item.id}`,()=>open(item.id)));list.append(row);}root.append(list);if(mode==='issues')renderDetail(root);
+      const list=node('div',undefined,'operations-list');for(const item of items){const row=node('article',undefined,'operations-row');row.append(node('p',`${item.platform} · 소유 ${item.owner_account_id} → 대상 ${item.destination_account_id}`),node('p',`계획 ${item.plan_status} · 실행 ${labels[item.execution_state]||'상태 미확인'}`),button(`상세 · ${item.id}`,()=>open(item.id)));list.append(row);}root.append(list);renderDetail(root);
     }
   }
   function discard(){if(busy)return;dirty=false;controls.clear();if(detail)newDraft();message='미저장 입력을 버렸습니다.';emit();}
-  paint();return {load,render:(mode='issues')=>{if(!roots[mode])throw new Error('알 수 없는 운영 화면입니다.');return roots[mode];},isDirty:hasDirty,isBusy:()=>busy,discard,hasUnsavedChanges:hasDirty,discardChanges:discard};
+  paint();return {load,render:(mode='issues')=>{if(!roots[mode])throw new Error('알 수 없는 운영 화면입니다.');if(renderedMode!==mode){renderedMode=mode;paint();}return roots[mode];},isDirty:hasDirty,isBusy:()=>busy,discard,hasUnsavedChanges:hasDirty,discardChanges:discard};
 }
