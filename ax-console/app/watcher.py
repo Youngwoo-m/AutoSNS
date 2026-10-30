@@ -28,12 +28,15 @@ STATE = DIR / 'state.json'
 AGENTS = Path.home() / 'Library' / 'LaunchAgents'
 CATALOG = CONSOLE / 'config' / 'automations.json'
 
-FAIL = re.compile(r'실패|오류|Traceback|Error|예외|SystemExit|No space|찾지 못했|로그인 세션이 만료|비밀번호를 묻|이번 회차를 건너뜀|기다려도 .*비지 않')
+FAIL = re.compile(r'실패|오류|Traceback|Error|예외|SystemExit|No space|찾지 못했|로그인 세션이 만료|비밀번호를 묻|이번 회차를 건너뜀|기다려도 .*비지 않|'
+                  r"You(?:'ve| have) (?:hit|reached) your (?:weekly |daily |usage |monthly spend )?limit|rate[ -]limit exceeded", re.I)
 # 글은 나갔고 일부만 빠진 경우·의도된 건너뜀 → 경고(또는 무시)
 WARN = re.compile(r'글은 정상|없이 진행|유튜브는 정상|네이버는 정상|실패 무시|건너뜀\(|다음 실행에서 다시|^\s*(\[[\d: -]+\]\s*)?\[[^\]]*오류\]\s*https?')
 IGNORE = re.compile(r'^\s*(File "|\^+|Traceback \(most recent call last\):|raise |return |self\.|During handling)|'
-                    r'쓰레드 건너뜀: 아침 회차|오늘 이미 .*건너뜁|DRY|dry_run|미리 보기|실패 0[편건개]?(\D|$)')
-TS = re.compile(r'^\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})\]')
+                    r'쓰레드 건너뜀: 아침 회차|오늘 이미 .*건너뜁|DRY|dry_run|미리 보기|실패 0[편건개]?(\D|$)|'
+                    r'^\s*- 기록과 알림: 작업 기록 한 줄을 남겼고 카카오톡 알림도 보냈습니다\. 실패한 단계는 없습니다\.\s*$')
+TS = re.compile(r'^(?:=+\s*)?\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2})\]')
+EXIT_CODE = re.compile(r'끝\s*\(코드\s*(-?\d+)\b')
 SHOT = re.compile(r'(fail|no_caption_box|no_file_input|not_logged_in|unconfirmed|error)', re.I)
 GRACE_MIN = 40
 
@@ -124,6 +127,10 @@ def plist(job):
 
 def job_logs(pl, job=None):
     files = [pl.get('StandardOutPath'), pl.get('StandardErrorPath')]
+    # 래퍼는 launchd 출력과 별도로 같은 이름의 내부 로그에 본 실행을 기록한다.
+    # Claude 래퍼의 마지막 인자는 스크립트가 아닌 작업명이라 아래 셸 분석으로는 찾지 못한다.
+    files += [re.sub(r'\.launchd\.(?:out|err)\.log$', '.log', f)
+              for f in files if f and re.search(r'\.launchd\.(?:out|err)\.log$', f)]
     files += [str(ROOT / x) for x in catalog().get(job, {}).get('logs', [])]
     script = Path(pl.get('ProgramArguments', [''])[-1])
     try:
@@ -162,10 +169,11 @@ def check_logs(state, first_run):
             continue  # 사용자가 일부러 끈 작업
         for f in job_logs(plist(job), job):
             size = os.path.getsize(f)
+            initial_scan = first_run or f not in offs
             start = offs.get(f, 0)
             if start > size:          # 로그가 새로 시작됨(잘림·교체)
                 start = 0
-            if first_run and f not in offs:
+            if initial_scan and f not in offs:
                 start = max(0, size - 400_000)   # 처음엔 끝부분만 보고 24시간 안 것만
             with open(f, 'rb') as fh:
                 fh.seek(start)
@@ -176,9 +184,11 @@ def check_logs(state, first_run):
                 m = TS.match(ln)
                 if m:
                     ts = m.group(1).replace('T', ' ')
-                if first_run and (not ts or ts < cutoff):
+                if initial_scan and (not ts or ts < cutoff):
                     continue
-                if not FAIL.search(ln) or IGNORE.search(ln):
+                exit_code = EXIT_CODE.search(ln)
+                failed_exit = exit_code is not None and int(exit_code.group(1)) != 0
+                if not (FAIL.search(ln) or failed_exit) or IGNORE.search(ln):
                     continue
                 sev = 'warn' if WARN.search(ln) else 'error'
                 at = (ts or now().isoformat()).replace(' ', 'T')
