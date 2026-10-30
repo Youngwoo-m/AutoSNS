@@ -1,3 +1,4 @@
+import {createOperationsApi,createOperationsPanel} from './operations_panel.js';
 import {createContentEditor} from './content_editor.js';
 import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
 import {createSnapshotLoader,contentApi,refreshWorkspace} from './api.js';
@@ -40,13 +41,18 @@ const views={
   crosspost:['원본을 채널에 맞게','교차 발행','기존 원본 소유 계정·게시 대상·운영 조건의 조회 결과입니다.'],
   accounts:['계정과 게시 대상','채널·계정','설정 등록, 인증 확인, 운영 활성 여부를 별도로 표시합니다.'],
   analytics:['실제 수집 결과 기준','성과','원본 콘텐츠와 대상 채널의 성과 수집은 아직 지원하지 않습니다.'],
-  issues:['필요한 예외에 집중','장애·설정','조치 필요 기록과 대상별 배포 기록을 확인합니다.']
+  issues:['필요한 예외에 집중','문제·복구','조치 필요 기록과 대상별 배포 기록을 확인합니다.']
 };
 const writable=()=>state.snapshot?.workspace_writable===true;
 let editorActive=false,integrationAccount=null;
 const editor=createContentEditor({api:contentApi,writable,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
-function confirmLeave(){return confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),editorActive&&editor.hasUnsavedChanges());}
+const operations=createOperationsPanel({api:createOperationsApi(),onChange:()=>{renderStatus();}});
+function confirmLeave(){
+  if(operations.isBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty());
+  if(accepted&&operations.isDirty())operations.discard();return accepted;
+}
 function pageHead() {
   const [eyebrow,title,description]=views[view];
   return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},title),muted(description)),h('div',{class:'actions'},(['today','planning','library'].includes(view)&&writable())?h('button',{class:'btn btn-primary',onclick:()=>openEditor()},'새 기획'):disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
@@ -58,7 +64,7 @@ function renderStatus() {
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
     state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
-  $('.readonly-bar').textContent=writable()?'3단계 · 원본·로컬 배포 계획·계획 승인 저장 · 실제 예약·발행 미지원':'1단계 · 실제 자료 읽기 전용 · 기획 저장·예약 변경·발행·제어 미지원';
+  $('.readonly-bar').textContent=writable()?'4단계 · 관리 실행 조회·관리 범위 중지 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'4단계 · 실제 자료·실행 조회 · 기존 STOP 읽기 전용';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login'},'로그인으로 이동'));
   box.replaceChildren(line);
@@ -100,7 +106,7 @@ function incidentRows(incidents) {
 function renderToday() {
   const s=state.snapshot,a=aggregate(s),today=dayKey(new Date().toISOString());
   const events=s.schedule.filter(e=>dayKey(e.scheduled_at)===today).sort((a,b)=>String(a.scheduled_at).localeCompare(String(b.scheduled_at)));
-  return h('div',{},stats([['관련 원본 콘텐츠',`${a.contents}건`,'콘텐츠 단위 · 오늘 생성 수와 다름'],['채널별 배포 기록',`${a.deliveries}건`,`${a.pending}건 예약·대기 · 전체 수집 기록`],['공개·내용 확인 완료',`${a.verified}건`,'명시적 검증 근거가 있는 배포만'],['검토·조치 필요',`${a.review} / ${a.incidents}건`,'원본 검토 / 열린 조치 기록']]),h('div',{class:'two-col'},panel(`오늘 일정 · ${today}`,scheduleList(events),h('div',{class:'mini-note'},'정확한 시각이 없는 자동 실행은 캘린더에서 별도로 표시합니다.')),h('div',{},panel('필요한 조치',incidentRows(s.incidents.filter(i=>!['closed','resolved'].includes(i.status)).slice(0,4))),panel('교차 발행 경로',h('div',{class:'panel-body'},muted(s.crosspost_catalog_status==='available'?`등록부 규칙 ${s.crossposts.length}개 · 자동 작업 관측 ${(s.legacy_crosspost_observations||[]).length}개 · 출처별 조회`:`자동 작업 관측 ${(s.crossposts||[]).length}개 · 등록부 조회 상태 미확인`),h('button',{class:'btn btn-small',onclick:()=>setView('crosspost')},'교차 발행 보기'))))));
+  return h('div',{},operations.render('today'),stats([['관련 원본 콘텐츠',`${a.contents}건`,'콘텐츠 단위 · 오늘 생성 수와 다름'],['채널별 배포 기록',`${a.deliveries}건`,`${a.pending}건 예약·대기 · 전체 수집 기록`],['공개·내용 확인 완료',`${a.verified}건`,'명시적 검증 근거가 있는 배포만'],['검토·조치 필요',`${a.review} / ${a.incidents}건`,'원본 검토 / 열린 조치 기록']]),h('div',{class:'two-col'},panel(`오늘 일정 · ${today}`,scheduleList(events),h('div',{class:'mini-note'},'정확한 시각이 없는 자동 실행은 캘린더에서 별도로 표시합니다.')),h('div',{},panel('필요한 조치',incidentRows(s.incidents.filter(i=>!['closed','resolved'].includes(i.status)).slice(0,4))),panel('교차 발행 경로',h('div',{class:'panel-body'},muted(s.crosspost_catalog_status==='available'?`등록부 규칙 ${s.crossposts.length}개 · 자동 작업 관측 ${(s.legacy_crosspost_observations||[]).length}개 · 출처별 조회`:`자동 작업 관측 ${(s.crossposts||[]).length}개 · 등록부 조회 상태 미확인`),h('button',{class:'btn btn-small',onclick:()=>setView('crosspost')},'교차 발행 보기'))))));
 }
 function filterControls() {
   const s=state.snapshot;
@@ -187,7 +193,7 @@ function renderAccounts() {
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
   if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
-  return h('div',{},writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
+  return h('div',{},operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   return h('div',{},stats([['조회 수','미수집','성과 수집 미지원 · 실제 0과 다름'],['저장·공유','미수집','채널 성과 연동 미지원'],['원문 유입','미수집','추적 자료 없음'],['제작비','미수집','원본 소유 계정별 비용 연동 미지원']]),panel('성과 수집 미지원',empty('아직 성과 데이터를 수집하지 않습니다','현재 응답은 metrics.status = unavailable입니다. 조회 수·반응·비용을 0으로 채우거나 예시 차트로 표시하지 않습니다.'),h('div',{class:'panel-body'},muted('향후 원본 제작 성과는 소유 계정으로, 채널 실적은 게시 대상 계정으로 나누어 연결합니다. 현재 배포 기록은 성과 지표가 아닙니다.'))));
@@ -196,9 +202,9 @@ function renderIssues() {
   const s=state.snapshot;let content;
   if(issueTab==='actions') content=panel('확인이 필요한 기록',incidentRows(s.incidents));
   if(issueTab==='runs') content=panel('대상별 배포 기록',h('div',{class:'mini-note'},'준비·검증·후처리 전체 실행 원장은 아직 미지원입니다. 수집된 배포 기록만 표시합니다.'),deliveryTable(s.deliveries));
-  if(issueTab==='policy')content=panel('운영 정책',empty('정책 상세 조회 미지원','승인·예산·발행 한도·STOP 상태를 이번 조회 계약에서 제공하지 않습니다. 실제 운영 정책이 변경되었다고 판단하지 않습니다.'),h('div',{class:'panel-body'},disabled('정책 저장 미지원')));
-  if(issueTab==='settings')content=panel('시스템 설정',h('div',{class:'panel-body'},muted('현재 화면은 로컬 읽기 전용입니다. 연결·인증·스케줄러·알림·정지 상태 조회와 설정 변경은 아직 지원하지 않습니다.'),h('div',{class:'actions'},h('button',{class:'btn btn-small',onclick:()=>setView('accounts')},'채널 설정 기록 보기'),disabled('설정 변경 미지원'))));
-  return h('div',{},tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
+  if(issueTab==='policy')content=panel('운영 정책',empty('관리 실행 정책은 위 운영 패널에서 확인','위 패널은 실행 정책과 원본 STOP 관측을 제공합니다. 예산·발행 한도의 상세 편집은 지원하지 않습니다.'),h('div',{class:'panel-body'},disabled('정책 저장 미지원')));
+  if(issueTab==='settings')content=panel('시스템 설정',h('div',{class:'panel-body'},muted('현재 화면은 로컬 읽기 전용입니다. 연결·인증·스케줄러·알림 설정 변경은 지원하지 않습니다. 관리 실행 중지와 원본 STOP 관측은 계정의 운영 제어에서 확인합니다.'),h('div',{class:'actions'},h('button',{class:'btn btn-small',onclick:()=>setView('accounts')},'채널 설정 기록 보기'),disabled('설정 변경 미지원'))));
+  return h('div',{},operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
 function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});}
@@ -237,7 +243,7 @@ function openContent(id) {
   detailId=id;detailTab='overview';lastFocus=document.activeElement;renderDetail();
   $('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
-function closeDetail() {if(editorActive&&editor.isBusy())return false;if(editorActive&&editor.hasUnsavedChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 닫을까요?'))return false;if($('#detail-dialog').open)$('#detail-dialog').close();editorActive=false;return true;}
+function closeDetail(confirmed=false) {if(editorActive&&editor.isBusy())return false;if(confirmed!==true&&editorActive&&editor.hasUnsavedChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 닫을까요?'))return false;if($('#detail-dialog').open)$('#detail-dialog').close();editorActive=false;return true;}
 $('#drawer-close').addEventListener('click',closeDetail);
 $('#detail-dialog').addEventListener('click',e=>{if(e.target===$('#detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDetail();}});
 $('#detail-dialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
@@ -251,8 +257,9 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 });
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail())return;loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:editorActive&&editor.hasUnsavedChanges(),confirm:message=>globalThis.confirm(message)}));
-window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
+document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);loader.select(button.dataset.scope);}));
+$('#refresh').addEventListener('click',()=>{if(operations.isBusy()||(editorActive&&editor.isBusy()))return;operations.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()){event.preventDefault();event.returnValue='';}});
+operations.load('all');
 loader.select('all');
 setInterval(renderStatus,60000);

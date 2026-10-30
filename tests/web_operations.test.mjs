@@ -81,3 +81,12 @@ test('성공한 reconcile 두 번은 새 키와 최신 버전으로 각각 원�
 for(const failedRead of ['get','list'])test(`POST 성공 후 ${failedRead} 실패는 다음 새 조회 전에 최신 CAS를 확인한다`,async()=>{
  let version=2,fail=false;const sent=[];const panel=await opened(apiFor({list:async()=>{if(fail&&failedRead==='list'){fail=false;throw Object.assign(new Error(),{status:503});}return listing();},get:async()=>{if(fail&&failedRead==='get'){fail=false;throw Object.assign(new Error(),{status:503});}return item('delivery',{version,available_actions:['resolve','reconcile']});},reconcile:async(id,body)=>{sent.push(body);assert.equal(body.expected_version,version);version++;fail=sent.length===1;return {};}}));await fill(panel);await find(panel.render(),'상태 다시 조회').fire('click');assert.match(panel.render().textContent,/조치는 완료.*조회/);await find(panel.render(),'상태 다시 조회').fire('click');assert.equal(sent.length,2);assert.notEqual(sent[0].request_key,sent[1].request_key);assert.equal(sent[1].expected_version,3);assert.equal(field(panel.render(),'note').value,'검토 완료');
 });
+test('서버가 허용한 로컬 취소만 선택하며 조작한 미게시 확인은 전송하지 않는다',async()=>{
+ const sent=[];const panel=await opened(apiFor({get:async()=>item('delivery',{available_resolution_kinds:['cancel_local']}),resolve:async(id,body)=>sent.push(body)}));
+ const select=field(panel.render(),'kind');assert.deepEqual(select.children.map(n=>n.value),['cancel_local']);assert.equal(select.value,'cancel_local');await fill(panel);
+ select.value='confirmed_not_posted';await select.fire('change');await all(panel.render()).find(n=>n.tagName==='form').fire('submit');assert.equal(sent.length,0);assert.equal(panel.isDirty(),true);
+});
+test('원본 제목·대상 채널과 관측 시각·프로세스 근거를 표시한다',async()=>{
+ const row=item('delivery',{title:'안전 측량 원본',target_label:'학과 유튜브',created_at:'2026-10-30T00:00:00+00:00',available_resolution_kinds:['cancel_local'],evidence:[{kind:'recovery',checked_at:'2026-10-30T00:00:00+00:00',process_status:'dead',lock_status:'free',confirmed_not_posted:true}]});
+ const panel=createOperationsPanel({document,api:apiFor({list:async()=>listing([row]),get:async()=>row})});await panel.load();let root=panel.render();assert.match(root.textContent,/안전 측량 원본/);assert.match(root.textContent,/학과 유튜브/);await find(root,'상세 · delivery').fire('click');root=panel.render();assert.match(root.textContent,/2026-10-30T00:00:00/);assert.match(root.textContent,/process_status: dead/);assert.match(root.textContent,/confirmed_not_posted: true/);
+});

@@ -17,6 +17,7 @@ import socket
 import sqlite3
 import sys
 import threading
+from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlsplit, unquote, quote
 
 
@@ -30,6 +31,9 @@ from common.operations.integration_store import IntegrationStore
 from common.operations.ledger import Ledger
 from common.operations.models import ContractError
 from web_deliveries import handle as handle_deliveries
+from web_operations import handle as handle_operations, recognizes as operations_path, OperationsBlocked
+from common.operations.runtime_store import RuntimeStore
+from common.operations.runtime_models import ExecutionPolicy
 from web_content import (CONTENT_ID, ASSET_ID, MEDIA_TYPES, ERROR_STATUS, ERROR_MESSAGES,
                          content_body, review_body, serialize_content)
 from web_integrations import validate_settings_body, settings_response
@@ -45,6 +49,7 @@ _STATIC = {
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
     'integration_settings.js': 'text/javascript; charset=utf-8',
+    'operations_panel.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -269,7 +274,7 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(400, '올바르지 않은 조회 조건입니다')
             return None
-        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings'):
+        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -335,6 +340,12 @@ class _Handler(BaseHTTPRequestHandler):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
             deliveries = path == '/api/v2/connections' or path == '/api/v2/deliveries' or path.startswith('/api/v2/deliveries/')
+            if operations_path(path):
+                if not self._authed():return self._error(401, '로그인이 필요합니다')
+                if method != 'GET' and query:raise StoreError('invalid')
+                result=handle_operations(self.server.runtime_store,method,path,query,lambda:self._read_body(1024*1024,json_body=True),source_root=self.server.source_root,policy=self.server.execution_policy,adapters=self.server.recovery_adapters,process_probe=self.server.process_probe,lock_probe=self.server.lock_probe,registry=self.server.ledger.registry if self.server.ledger is not None else None,now=self.server.operations_clock())
+                if result is None:return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200,result)
             if deliveries:
                 if not self._authed():
                     return self._error(401, '로그인이 필요합니다')
@@ -380,6 +391,8 @@ class _Handler(BaseHTTPRequestHandler):
             if path.startswith('/web/') and path[5:] in _STATIC:
                 return self._static(path[5:])
             return self._error(404, '지원하지 않는 경로입니다')
+        except OperationsBlocked as exc:
+            self._send(409, {'error':'실행 정책 또는 등록된 복구 서비스가 없어 이 조치를 실행할 수 없습니다', 'code':exc.code})
         except ContractError as exc:
             self._error(503 if exc.code == 'invalid_registry' else 400, '등록부를 확인할 수 없습니다' if exc.code == 'invalid_registry' else '올바르지 않은 배포 계획 요청입니다')
         except StoreError as exc:
@@ -545,7 +558,8 @@ class _Handler(BaseHTTPRequestHandler):
 
 def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   web_root: Path, auth_backend=None, snapshot_builder=None,
-                  workspace_root: Path | None = None, operations_registry=None) -> ThreadingHTTPServer:
+                  workspace_root: Path | None = None, operations_registry=None, execution_policy=None,
+                  recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -565,6 +579,12 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.content_store = ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.ledger = Ledger(workspace_root, registry=operations_registry or _APP.parent / 'config' / 'operations.json', content_store=server.content_store) if workspace_root is not None else None
+    server.runtime_store = RuntimeStore(workspace_root, registry=operations_registry, content_store=server.content_store) if workspace_root is not None else None
+    server.execution_policy = execution_policy if execution_policy is not None else ExecutionPolicy()
+    server.recovery_adapters = dict(recovery_adapters or {})
+    server.process_probe = process_probe
+    server.lock_probe = lock_probe
+    server.operations_clock = operations_clock if operations_clock is not None else lambda: datetime.now(timezone.utc)
     server.web_root = web_root
     server.auth_backend = backend
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot
@@ -589,6 +609,7 @@ def main():
             server.content_store.initialize()
             server.integration_store.initialize()
             server.ledger.initialize()
+            server.runtime_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
