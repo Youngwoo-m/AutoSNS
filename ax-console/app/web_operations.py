@@ -161,7 +161,9 @@ def list_response(store, source_root, account, policy, *, connections=(), adapte
         summary[key]+=1
     observed=read_control_state(LockPaths.from_root(source_root))
     controls=store.control_state() if store is not None else []
-    managed=[control_item(r) for r in controls if identifier(r.get('target_id')) and (account=='all' or r['scope']=='managed' or r['scope']=='account' and r['target_id']==account or r['scope']=='connection' and r['target_id'].startswith(account+'.'))]
+    related_connections={c['id'] for c in connections if account in ('all',c.get('account_id'))}
+    related_connections.update(r.get('context',{}).get('connection_id') for r in rows)
+    managed=[control_item(r) for r in controls if identifier(r.get('target_id')) and (r['scope']=='managed' or r['scope']=='account' and account in ('all',r['target_id']) or r['scope']=='connection' and r['target_id'] in related_connections)]
     if not any(r['scope']=='managed' and r['id']=='all' for r in managed):managed.insert(0,control_item(dict(scope='managed',target_id='all')))
     defaults=[('account',a) for a in ('personal','dept') if account in ('all',a)]
     defaults += [('connection',c['id']) for c in connections if account in ('all',c.get('account_id'))]

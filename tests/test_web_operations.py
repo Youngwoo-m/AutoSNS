@@ -119,6 +119,19 @@ class OperationsHTTPTests(unittest.TestCase):
         self.assertEqual(len(fixture.store.list_runs()),1)
 
 
+    def test_cross_account_control_preserves_actual_version_and_resumes(self):
+        store=self.server.runtime_store;store.initialize()
+        for version,action in enumerate(('pause','resume','pause')):
+            store.control('connection','dept.youtube',action,version,'cross-'+str(version),'교차 대상 점검')
+        store.list_operations=lambda account:[dict(id='delivery_'+'c'*32,run_id='run_cross',state='unknown',version=1,context=dict(owner_account_id='personal',destination_account_id='dept',connection_id='dept.youtube'))]
+        status,data=self.request('/api/v2/operations?account=personal');self.assertEqual(status,200)
+        control=next(row for row in data['control']['managed'] if row['id']=='dept.youtube')
+        self.assertEqual((control['state'],control['version'],control['available_actions']),('paused',3,['resume']))
+        status,result=self.request('/api/v2/control','POST',dict(scope='connection',id='dept.youtube',action='resume',expected_version=control['version'],request_key='cross-resume',reason='확인 완료'))
+        self.assertEqual(status,200);self.assertEqual((result['state'],result['version']),('running',4))
+        refreshed=self.request('/api/v2/operations?account=personal')[1]
+        self.assertEqual(next(row['version'] for row in refreshed['control']['managed'] if row['id']=='dept.youtube'),4)
+
 class OperationsBoundaryTests(unittest.TestCase):
     def test_operations_module_provides_strict_handler(self):
         spec=importlib.util.find_spec('web_operations')
@@ -301,5 +314,22 @@ class OperationsSummaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as source:
             summary=list_response(store,Path(source),'all',ExecutionPolicy())['summary']
         self.assertEqual(summary,{'active':0,'completed':0,'partial':1,'waiting':0})
+
+class CrossAccountControlTests(unittest.TestCase):
+    def test_personal_owner_gets_dept_target_saved_pause_not_default(self):
+        from common.operations.runtime_store import RuntimeStore
+        from common.operations.runtime_models import ExecutionPolicy
+        from web_operations import list_response,handle
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);store=RuntimeStore(root/'workspace');store.initialize()
+            for version,action in enumerate(('pause','resume','pause')):store.control('connection','dept.youtube',action,version,'key-'+str(version),'점검')
+            store.list_operations=lambda account:[dict(id='delivery_'+'c'*32,run_id='run_cross',state='unknown',version=1,context=dict(owner_account_id='personal',destination_account_id='dept',connection_id='dept.youtube'))]
+            connections=[dict(id='dept.youtube',account_id='dept',target_label='학과 유튜브')]
+            for account in ('all','personal','dept'):
+                result=list_response(store,root/'source',account,ExecutionPolicy(),connections=connections)
+                control=next(row for row in result['control']['managed'] if row['id']=='dept.youtube')
+                self.assertEqual((control['state'],control['version'],control['available_actions']),('paused',3,['resume']))
+            result=handle(store,'POST','/api/v2/control',{},lambda:dict(scope='connection',id='dept.youtube',action='resume',expected_version=control['version'],request_key='resume-seen',reason='확인 완료'),source_root=root/'source')
+            self.assertEqual((result['state'],result['version']),('running',4))
 
 if __name__=='__main__':unittest.main()
