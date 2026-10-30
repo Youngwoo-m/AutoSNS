@@ -77,7 +77,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     if(s.busy||!canWrite(s)||!api?.importPreview)return;
     if(s.importRequest){s.message='이전 가져오기 요청과 미리보기를 보존했습니다. 같은 요청을 재시도하거나 명시적으로 버리세요.';emit(s);return;}
     s.busy=true;emit(s);
-    try{const result=await api.importPreview();if(destroyed)return;if(typeof result?.preview_digest!=='string')throw new Error();s.preview=result;s.message='가져오기 미리보기입니다. 명시 저장 버튼을 눌러야 저장됩니다.';}
+    try{const result=await api.importPreview();if(destroyed)return;if(typeof result?.preview_digest!=='string')throw new Error();s.preview=result;s.message='전체 계정 과거자료의 저장 전 미리보기입니다. 명시 저장 버튼을 눌러야 저장됩니다.';}
     catch(error){if(!destroyed)s.message=feedback(error);}finally{s.busy=false;emit(s);}
   }
   async function saveImport(s){
@@ -132,7 +132,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
   function renderSupport(s){
     const section=node('section',undefined,'metrics-support');section.append(node('h3','채널 지원 상태'),node('p','구현·권한·수집 상태는 별개입니다. 연결 도구 설치만으로 웹 인증을 확인하지 않습니다.'));
     const supplied=new Map((s.snapshot?.support||[]).map(row=>[row.platform,row]));
-    const implementation={implemented:'구현됨',available:'구현됨',supported:'구현됨',unsupported:'추후 지원',planned:'추후 지원',future:'추후 지원',not_implemented:'미구현',unavailable:'미구현',unknown:'미확인'};
+    const implementation={unregistered:'미등록',implemented:'구현됨',available:'구현됨',supported:'구현됨',unsupported:'추후 지원',planned:'추후 지원',future:'추후 지원',not_implemented:'미구현',unavailable:'미구현',unknown:'미확인'};
     const auth={authenticated:'확인됨',verified:'확인됨',authorized:'확인됨',connected:'확인됨',required:'인증 필요',auth_required:'인증 필요',unauthorized:'인증 필요',expired:'인증 만료',unknown:'미확인',unverified:'미확인'};
     const collection={collected:'수집됨',ok:'수집됨',not_collected:'미수집',uncollected:'미수집',disabled:'미수집',unsupported:'미지원',error:'조회 오류',unknown:'미확인'};
     for(const platform of new Set([...Object.keys(platforms),...supplied.keys()])){const row=supplied.get(platform)||{};section.append(node('p',`${platforms[platform]||row.label||'기타 채널'} · 구현: ${implementation[row.implementation_status]||'미확인'} · 권한: ${auth[row.auth_status]||'미확인'} · 수집: ${collection[row.collection_status]||'미수집'}`));}
@@ -140,7 +140,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
   }
   function renderPreview(s){
     if(!s.preview)return;const box=node('section',undefined,'metrics-preview');const p=s.preview;
-    box.append(node('h3','가져오기 미리보기'),node('p',`파일 행수: ${p.counts?.rows??'미확인'} · 계정 미지정: ${p.counts?.unassigned??'미확인'} · 오류: ${p.counts?.errors??'미확인'}`),node('p','파일 행수와 게시 목록은 조회수가 아닙니다. 과거 보고 자료는 별도 기록합니다.'));
+    box.append(node('h3','가져오기 미리보기'),node('p',`파일 행수: ${p.counts?.rows??'미확인'} · 계정 미지정: ${p.counts?.unassigned??'미확인'} · 오류: ${p.counts?.errors??'미확인'}`),node('p','전체 계정의 과거자료를 가져옵니다. 현재 계정 필터는 가져오기 범위를 바꾸지 않습니다. 저장 전 미리보기이며 파일 행수와 게시 목록은 조회수가 아닙니다.'));
     for(const file of p.files||[])if(typeof file.path==='string')box.append(node('p',`자료 파일: ${file.path}`));
     for(const warning of p.warnings||[])if(typeof warning==='string')box.append(node('p',warning));
     for(const row of unique(p.observations)){box.append(node('p',`${row.title||'제목 미수집'} · ${row.source_kind==='legacy_reported'?'과거 보고 자료':'검증 배포 관측'} · 원본 소유 ${accountName(row.owner_account_id)} · 대상 ${accountName(row.destination_account_id)}`));}
@@ -151,7 +151,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     const heading=focusTarget(node('h2','성과'),'heading');heading.tabIndex=-1;root.append(heading,node('p','검증 배포 관측과 과거 보고 자료를 분리합니다. 서로 다른 정의·기간·채널의 수치는 합산하지 않습니다.'));
     const status=node('p',s.message);status.setAttribute('role','status');status.setAttribute('aria-live','polite');root.append(status);
     if(s.loading)root.append(node('p','성과 기록 조회 중…'));
-    root.append(node('p','자동 수집은 실행하지 않습니다. 관측값이 없으면 0으로 간주하지 않습니다.'),button('성과 다시 조회',()=>load(account),s.loading||s.busy||!api?.list),button('가져오기 미리보기',()=>showPreview(s),s.busy||!canWrite(s)||!api?.importPreview));
+    root.append(node('p','자동 수집은 실행하지 않습니다. 관측값이 없으면 0으로 간주하지 않습니다. 가져오기는 현재 필터와 관계없이 전체 계정의 과거자료를 저장합니다.'),button('성과 다시 조회',()=>load(account),s.loading||s.busy||!api?.list),button('가져오기 미리보기',()=>showPreview(s),s.busy||!canWrite(s)||!api?.importPreview));
     if(!canWrite(s))root.append(node('p','읽기 전용 상태입니다. 성과 저장을 사용할 수 없습니다.'));
     const filters=node('div',undefined,'metrics-filters');const options=[['all','전체'],['personal','개인'],['dept','학과'],['unknown','미확인']];
     for(const [key,label] of [['owner','원본 소유 계정'],['destination','실제 대상 계정']])field(filters,`${key}-filter`,label,s[key],{options,change:value=>{s[key]=value;emit(s);}});root.append(filters);

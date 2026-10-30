@@ -1,3 +1,4 @@
+import {createMetricsApi,createMetricsPanel} from './metrics_panel.js';
 import {createOperationsApi,createOperationsPanel} from './operations_panel.js';
 import {createContentEditor} from './content_editor.js';
 import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
@@ -40,13 +41,14 @@ const views={
   calendar:['채널별 예정 시각','예약 캘린더','로컬 계획과 원격 예약 기록을 구분합니다. 현재 플랫폼 예약 재조회는 지원하지 않습니다.'],
   crosspost:['원본을 채널에 맞게','교차 발행','기존 원본 소유 계정·게시 대상·운영 조건의 조회 결과입니다.'],
   accounts:['계정과 게시 대상','채널·계정','설정 등록, 인증 확인, 운영 활성 여부를 별도로 표시합니다.'],
-  analytics:['실제 수집 결과 기준','성과','원본 콘텐츠와 대상 채널의 성과 수집은 아직 지원하지 않습니다.'],
+  analytics:['관측과 출처 기준','성과','검증 배포 관측과 과거 보고 자료를 구분하고 근거를 별도 기획제안으로 저장합니다.'],
   issues:['필요한 예외에 집중','문제·복구','조치 필요 기록과 대상별 배포 기록을 확인합니다.']
 };
 const writable=()=>state.snapshot?.workspace_writable===true;
 let editorActive=false,integrationAccount=null;
 const editor=createContentEditor({api:contentApi,writable,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
+const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
 const operations=createOperationsPanel({api:createOperationsApi(),onChange:()=>{renderStatus();}});
 function confirmLeave(){
   if(operations.isBusy()||(editorActive&&editor.isBusy()))return false;
@@ -64,7 +66,7 @@ function renderStatus() {
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
     state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
-  $('.readonly-bar').textContent=writable()?'4단계 · 관리 실행 조회·관리 범위 중지 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'4단계 · 실제 자료·실행 조회 · 기존 STOP 읽기 전용';
+  $('.readonly-bar').textContent=writable()?'5단계 · 출처 기반 성과·기획제안 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'5단계 · 실제 자료·성과 조회 · 기존 STOP 읽기 전용';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login'},'로그인으로 이동'));
   box.replaceChildren(line);
@@ -138,6 +140,10 @@ function renderContentResults() {
 function renderContents() {
   const root=h('div',{},filterControls(),muted('관련 계정 기준으로 조회합니다. 위의 원본 소유 계정 필터는 게시 대상 계정과 별개입니다.'),h('div',{id:'content-results'}));
   if(view==='planning') root.append(panel('AI 기획 제안 기록',state.snapshot.proposals.length?h('div',{class:'entry-list'},state.snapshot.proposals.map(p=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(p.owner_account_id),badge(p.status)),h('h3',{},text(p.title)),h('p',{},text(p.summary)),disabled('채택·반려 미지원')))):empty('수집된 제안이 없습니다','기획 제안 자료가 없으면 예시 제안을 만들지 않습니다.')));
+  if(view==='planning') {
+    const proposals=state.snapshot.metric_proposals||[];
+    root.append(panel('성과 근거 기획제안 초안',muted('선택한 관측으로 직접 저장한 별도 제안입니다. 원고 작성은 상단 새 기획에서 시작합니다.'),proposals.length?h('div',{class:'entry-list'},proposals.map(p=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(p.account_id),h('span',{class:'state'},'초안')),h('h3',{},text(p.title)),h('p',{},text(p.note)),h('p',{},`근거 관측: ${(p.observation_ids||[]).join(', ')||'미확인'}`)))):empty('저장된 성과 근거 제안이 없습니다','성과 화면에서 관측을 선택해 기획제안을 저장할 수 있습니다.')));
+  }
   queueMicrotask(renderContentResults);return root;
 }
 function renderCalendar() {
@@ -196,7 +202,7 @@ function renderAccounts() {
   return h('div',{},operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
-  return h('div',{},stats([['조회 수','미수집','성과 수집 미지원 · 실제 0과 다름'],['저장·공유','미수집','채널 성과 연동 미지원'],['원문 유입','미수집','추적 자료 없음'],['제작비','미수집','원본 소유 계정별 비용 연동 미지원']]),panel('성과 수집 미지원',empty('아직 성과 데이터를 수집하지 않습니다','현재 응답은 metrics.status = unavailable입니다. 조회 수·반응·비용을 0으로 채우거나 예시 차트로 표시하지 않습니다.'),h('div',{class:'panel-body'},muted('향후 원본 제작 성과는 소유 계정으로, 채널 실적은 게시 대상 계정으로 나누어 연결합니다. 현재 배포 기록은 성과 지표가 아닙니다.'))));
+  return metrics.render({account:state.account,writable:writable()});
 }
 function renderIssues() {
   const s=state.snapshot;let content;
@@ -207,7 +213,7 @@ function renderIssues() {
   return h('div',{},operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
-function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});}
+function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
 
 function deliveryDetail(d) {
   const url=safeUrl(d.url);
@@ -257,8 +263,8 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 });
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>{if(operations.isBusy()||(editorActive&&editor.isBusy()))return;operations.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
+$('#refresh').addEventListener('click',()=>{if(operations.isBusy()||(editorActive&&editor.isBusy()))return;operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
 window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()){event.preventDefault();event.returnValue='';}});
 operations.load('all');
 loader.select('all');

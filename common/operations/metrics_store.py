@@ -28,6 +28,13 @@ CREATE TABLE IF NOT EXISTS proposals (
     id TEXT PRIMARY KEY, request_key TEXT NOT NULL UNIQUE, account_id TEXT NOT NULL,
     request_payload TEXT NOT NULL, payload TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS import_requests (
+    request_key TEXT PRIMARY KEY, preview_digest TEXT NOT NULL, result TEXT NOT NULL
+);
+CREATE TRIGGER IF NOT EXISTS import_requests_no_update BEFORE UPDATE ON import_requests
+BEGIN SELECT RAISE(ABORT, 'append_only'); END;
+CREATE TRIGGER IF NOT EXISTS import_requests_no_delete BEFORE DELETE ON import_requests
+BEGIN SELECT RAISE(ABORT, 'append_only'); END;
 CREATE TRIGGER IF NOT EXISTS observations_no_update BEFORE UPDATE ON observations
 BEGIN SELECT RAISE(ABORT, 'append_only'); END;
 CREATE TRIGGER IF NOT EXISTS observations_no_delete BEFORE DELETE ON observations
@@ -125,7 +132,27 @@ class MetricsStore:
                 args = (account_id, account_id)
             return [dict(json.loads(r['payload']), id=r['id']) for r in conn.execute(query + ' ORDER BY rowid', args)]
 
-    def import_rows(self, plan):
+    def _import_result(self, conn, preview_digest, request_key):
+        if conn is None:
+            return None
+        # Older schema-1 files are readable before explicit additive initialization.
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='import_requests'").fetchone():
+            return None
+        found = conn.execute('SELECT preview_digest,result FROM import_requests WHERE request_key=?', (request_key,)).fetchone()
+        if found is None:
+            return None
+        if found['preview_digest'] != preview_digest:
+            raise ConflictError()
+        return json.loads(found['result'])
+
+    def get_import_result(self, preview_digest, request_key):
+        """영속 영수증만 읽는다. 원본 재독해나 DB 초기화를 하지 않는다."""
+        _text(preview_digest, limit=1000)
+        _text(request_key, limit=1000)
+        with self._db() as conn:
+            return self._import_result(conn, preview_digest, request_key)
+
+    def import_rows(self, plan, *, request_key=None):
         """{preview_digest, observations:[{observation_key, observation:{...}}]} 원자 저장.
 
         원본 재검증 및 preview_digest 일치 확인은 import 호출자가 담당한다.
@@ -133,8 +160,14 @@ class MetricsStore:
         if not isinstance(plan, dict) or not isinstance(plan.get('observations'), list):
             raise StoreError('invalid')
         _text(plan.get('preview_digest'), limit=1000)
+        if request_key is not None:
+            _text(request_key, limit=1000)
         imported = unchanged = 0
         with self._db(True) as conn:
+            if request_key is not None:
+                previous = self._import_result(conn, plan['preview_digest'], request_key)
+                if previous is not None:
+                    return previous
             for entry in plan['observations']:
                 if not isinstance(entry, dict) or set(entry) != {'observation_key', 'observation'}:
                     raise StoreError('invalid')
@@ -142,7 +175,10 @@ class MetricsStore:
                 _, created = self._append(conn, row, entry['observation_key'])
                 imported += int(created)
                 unchanged += int(not created)
-        return dict(imported=imported, unchanged=unchanged, preview_digest=plan['preview_digest'])
+            result = dict(imported=imported, unchanged=unchanged, preview_digest=plan['preview_digest'])
+            if request_key is not None:
+                conn.execute('INSERT INTO import_requests VALUES(?,?,?)', (request_key, plan['preview_digest'], _json(result)))
+            return result
 
     def save_proposal(self, account_id, observation_ids, title, note, request_key):
         _account(account_id)

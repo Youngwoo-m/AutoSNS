@@ -30,6 +30,10 @@ from common.operations.content_store import ContentStore, StoreError, MAX_ASSET_
 from common.operations.integration_store import IntegrationStore
 from common.operations.ledger import Ledger
 from common.operations.models import ContractError
+from web_metrics import handle as handle_metrics, recognizes as metrics_path
+from common.operations.metrics_store import MetricsStore
+from common.operations.registry import load_registry
+from common.operations.models import Registry
 from web_deliveries import handle as handle_deliveries
 from web_operations import handle as handle_operations, recognizes as operations_path, OperationsBlocked
 from common.operations.runtime_store import RuntimeStore
@@ -50,6 +54,7 @@ _STATIC = {
     'delivery_editor.js': 'text/javascript; charset=utf-8',
     'integration_settings.js': 'text/javascript; charset=utf-8',
     'operations_panel.js': 'text/javascript; charset=utf-8',
+    'metrics_panel.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -274,7 +279,7 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(400, '올바르지 않은 조회 조건입니다')
             return None
-        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations'):
+        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -340,6 +345,13 @@ class _Handler(BaseHTTPRequestHandler):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
             deliveries = path == '/api/v2/connections' or path == '/api/v2/deliveries' or path.startswith('/api/v2/deliveries/')
+            if metrics_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                result = handle_metrics(self.server.metrics_store, method, path, query,
+                                        lambda: self._read_body(1024*1024, json_body=True),
+                                        source_root=self.server.source_root, registry=self.server.metrics_registry())
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200, result)
             if operations_path(path):
                 if not self._authed():return self._error(401, '로그인이 필요합니다')
                 if method != 'GET' and query:raise StoreError('invalid')
@@ -385,6 +397,8 @@ class _Handler(BaseHTTPRequestHandler):
                                                           query.get('account', ['all'])[0], ledger=self.server.ledger)
                     if not getattr(self.server.content_store, '_initialized', False):
                         snapshot['workspace_writable'] = False
+                snapshot['metric_proposals'] = (self.server.metrics_store.list_proposals(query.get('account', ['all'])[0])
+                                                 if self.server.metrics_store is not None else [])
                 return self._send(200, snapshot)
             if path in ('/', '/web/'):
                 return self._static('index.html')
@@ -396,7 +410,12 @@ class _Handler(BaseHTTPRequestHandler):
         except ContractError as exc:
             self._error(503 if exc.code == 'invalid_registry' else 400, '등록부를 확인할 수 없습니다' if exc.code == 'invalid_registry' else '올바르지 않은 배포 계획 요청입니다')
         except StoreError as exc:
-            self._error(ERROR_STATUS.get(exc.code, 503), ERROR_MESSAGES.get(exc.code, ERROR_MESSAGES['storage_error']))
+            status = ERROR_STATUS.get(exc.code, 503)
+            message = ERROR_MESSAGES.get(exc.code, ERROR_MESSAGES['storage_error'])
+            if 'path' in locals() and metrics_path(path):
+                self._send(status, {'error': message, 'code': exc.code})
+            else:
+                self._error(status, message)
         except (BrokenPipeError, ConnectionResetError, TimeoutError):
             self.close_connection = True
         except (OSError, sqlite3.Error):
@@ -579,6 +598,12 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.content_store = ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.ledger = Ledger(workspace_root, registry=operations_registry or _APP.parent / 'config' / 'operations.json', content_store=server.content_store) if workspace_root is not None else None
+    server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
+    registry_source = operations_registry or _APP.parent / 'config' / 'operations.json'
+    def metrics_registry():
+        value = registry_source() if callable(registry_source) else registry_source
+        return value if isinstance(value, Registry) else load_registry(Path(value))
+    server.metrics_registry = metrics_registry
     server.runtime_store = RuntimeStore(workspace_root, registry=operations_registry, content_store=server.content_store) if workspace_root is not None else None
     server.execution_policy = execution_policy if execution_policy is not None else ExecutionPolicy()
     server.recovery_adapters = dict(recovery_adapters or {})
@@ -610,6 +635,7 @@ def main():
             server.integration_store.initialize()
             server.ledger.initialize()
             server.runtime_store.initialize()
+            server.metrics_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
