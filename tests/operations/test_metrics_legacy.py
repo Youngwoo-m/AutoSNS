@@ -83,6 +83,40 @@ class LegacyMetricsTests(unittest.TestCase):
         self.assertEqual(2, len(rows))
         self.assertTrue(all(r['owner_account_id'] is None and r['destination_account_id'] is None for r in rows))
 
+    def test_naver_blog_canonical_and_legacy_alias_match_registered_blog_ids(self):
+        for registered_platform in ('naver_blog', 'naver'):
+            with self.subTest(platform=registered_platform):
+                registry = Registry('naver-fixture', {'personal': {}, 'dept': {}}, {}, {}, {
+                    'dept-naver': Connection('dept-naver', 'dept', registered_platform, target_id='studs23'),
+                    'personal-naver': Connection('personal-naver', 'personal', registered_platform, target_id='safeworking'),
+                }, {}, {}, {})
+                data = {'items': [
+                    {'url': 'https://blog.naver.com/studs23/123', 'views': 0},
+                    {'url': 'https://m.blog.naver.com/safeworking/456', 'views': 3}]}
+                plan = self.synthetic_plan('blog', data, registry)
+                rows = [e['observation'] for e in plan['observations']]
+                self.assertEqual(['dept', 'personal'], [r['destination_account_id'] for r in rows])
+                self.assertEqual(['dept-naver', 'personal-naver'], [r['connection_id'] for r in rows])
+                self.assertEqual(['studs23', 'safeworking'], [r['target_id'] for r in rows])
+                self.assertTrue(all(r['platform'] == 'naver_blog' for r in rows))
+                self.assertTrue(all(r['owner_account_id'] is None for r in rows))
+                self.assertEqual(0, plan['counts']['unassigned'])
+
+    def test_naver_blog_wrong_account_target_and_lookalike_host_stay_unassigned(self):
+        registry = Registry('naver-fixture', {'personal': {}, 'dept': {}}, {}, {}, {
+            'dept-naver': Connection('dept-naver', 'dept', 'naver_blog', target_id='studs23'),
+            'personal-naver': Connection('personal-naver', 'personal', 'naver_blog', target_id='safeworking'),
+        }, {}, {}, {})
+        data = {'items': [
+            {'url': 'https://blog.naver.com/studs23/1', 'connection_id': 'personal-naver', 'target_id': 'safeworking', 'views': 1},
+            {'url': 'https://blog.naver.com/safeworking/2', 'connection_id': 'dept-naver', 'target_id': 'studs23', 'views': 1},
+            {'url': 'https://blog.naver.com/unregistered/3', 'account_id': 'personal', 'views': 1},
+            {'url': 'https://blog.naver.com.evil.example/studs23/4', 'target_id': 'studs23', 'views': 1}]}
+        rows = [e['observation'] for e in self.synthetic_plan('blog', data, registry)['observations']]
+        self.assertEqual(4, len(rows))
+        self.assertTrue(all(r['destination_account_id'] is None and r['connection_id'] is None for r in rows))
+        self.assertTrue(all(r['owner_account_id'] is None for r in rows))
+
     def test_running_is_recovery_pending_and_done_never_verified(self):
         rows = [e['observation'] for e in self.plan()['observations']]
         self.assertTrue(all(r['source_kind'] == 'legacy_reported' for r in rows))
@@ -156,13 +190,13 @@ class LegacyMetricsTests(unittest.TestCase):
         self.assertEqual(2, len(rows))
         self.assertNotEqual(rows[0]['observation_key'], rows[1]['observation_key'])
 
-    def synthetic_plan(self, kind, data):
+    def synthetic_plan(self, kind, data, registry=None):
         snapshot = {'files': [{'path': f'common/analytics/snapshots/parts/{kind}.json',
             'kind': kind, 'label': kind, 'status': 'ok', 'digest': 'synthetic',
             'file_mtime': None, 'row_count': len(data.get('items', [])),
             'missing_rows': 0, 'unsupported': False, 'note': '합성 시험'}],
             'parts': {kind: data}}
-        return build_import_plan(snapshot, None)
+        return build_import_plan(snapshot, registry)
 
     def test_search_query_dimensions_survive_normalization_and_true_duplicates_collapse(self):
         first = {'site': 'https://site.example', 'query': '측량', 'clicks': 1, 'impressions': 5}

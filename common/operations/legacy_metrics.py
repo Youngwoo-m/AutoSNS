@@ -193,7 +193,7 @@ def _platform(url):
           (('threads.net', 'www.threads.net', 'threads.com', 'www.threads.com'), 'threads'),
           (('x.com', 'www.x.com', 'twitter.com', 'www.twitter.com'), 'x'),
           (('youtube.com', 'www.youtube.com', 'youtu.be'), 'youtube'),
-          (('blog.naver.com', 'm.blog.naver.com'), 'naver')):
+          (('blog.naver.com', 'm.blog.naver.com'), 'naver_blog')):
         if host in hosts:
             return platform
     if host.endswith('.tistory.com'):
@@ -201,6 +201,11 @@ def _platform(url):
     if host.endswith('.blogspot.com'):
         return 'blogger'
     return None
+
+
+def _canonical_platform(value):
+    # 기존 importer enum만 명시 alias로 허용하고 운영 등록부의 enum을 출력한다.
+    return 'naver_blog' if value == 'naver' else value
 
 
 def _canonical(value):
@@ -272,8 +277,8 @@ def _identity(kind, data, row):
         pieces = [p for p in path.split('/') if p]
         if platform == 'tistory' or kind in ('searchconsole', 'indexing'):
             targets.add((host, ''))
-        elif platform == 'naver' and pieces:
-            targets.add(('blog.naver.com', '/' + pieces[0]))
+        elif platform == 'naver_blog' and pieces:
+            targets.update((pieces[0], ('blog.naver.com', '/' + pieces[0])))
         elif platform == 'blogger':
             targets.add((host, ''))
         elif platform in ('x', 'threads') and pieces:
@@ -285,12 +290,12 @@ def _identity(kind, data, row):
                 remote = pieces[1]
             elif platform in ('x', 'threads') and len(pieces) >= 3 and pieces[-2] in ('status', 'post'):
                 remote = pieces[-1]
-            elif platform in ('blogger', 'naver') or kind == 'smds':
+            elif platform in ('blogger', 'naver_blog') or kind == 'smds':
                 remote = ('https://' + host + path)[:2000]
     # 출처 profile/channel은 소속의 강한 명시 식별자이며 제목은 사용하지 않는다.
     context = data.get('profile') if kind in ('instagram', 'threads') else data.get('account') if kind == 'x' else data.get('channel') if kind == 'youtube' else data.get('blog') if kind == 'blogger' else None
     # 글 URL 자체에 계정 경로/블로그 host가 있으면 컨테이너의 다른 계정으로 덮지 않는다.
-    url_identifies_target = bool(parsed and targets and platform in ('x', 'threads', 'blogger', 'naver', 'tistory'))
+    url_identifies_target = bool(parsed and targets and platform in ('x', 'threads', 'blogger', 'naver_blog', 'tistory'))
     if isinstance(context, dict) and not url_identifies_target:
         for field in ('uid', 'username', 'handle'):
             value = _text(context.get(field))
@@ -317,7 +322,7 @@ def _assign(registry, platform, targets, row, parsed):
             continue
         target = _canonical(connection.target_id)
         explicit = (row.get('connection_id') == connection.id and _canonical(row.get('target_id')) == target)
-        if connection.platform != platform and not (platform is None and explicit and parsed is None):
+        if _canonical_platform(connection.platform) != platform and not (platform is None and explicit and parsed is None):
             continue
         if target not in targets and not (explicit and parsed is None):
             continue
@@ -327,7 +332,7 @@ def _assign(registry, platform, targets, row, parsed):
         if row.get('target_id') is not None and _canonical(row['target_id']) != target:
             continue
         # 다른 host의 글은 컨테이너 profile의 등록만으로 귀속하지 않는다.
-        if parsed and _platform(parsed) != platform and platform in ('instagram', 'threads', 'x', 'youtube', 'blogger', 'naver', 'tistory'):
+        if parsed and _platform(parsed) != platform and platform in ('instagram', 'threads', 'x', 'youtube', 'blogger', 'naver_blog', 'tistory'):
             continue
         matches.append(connection)
     return matches[0] if len(matches) == 1 else None
@@ -339,7 +344,7 @@ def _observation(kind, section, raw_row, data, file, registry):
     platform, targets, remote, parsed = _identity(kind, data, row)
     connection = _assign(registry, platform, targets, row, parsed)
     if connection is not None:
-        platform = connection.platform
+        platform = _canonical_platform(connection.platform)
     uncertainties = ['legacy_unverified', 'owner_unknown']
     if connection is None:
         uncertainties.append('unassigned')
