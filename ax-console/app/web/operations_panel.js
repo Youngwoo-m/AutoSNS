@@ -19,7 +19,7 @@ export function createOperationsApi({fetcher=globalThis.fetch}={}){
 export function createOperationsPanel({api,onChange=()=>{},document=globalThis.document}){
   const roots=Object.fromEntries(['issues','today','accounts'].map(mode=>{const node=document.createElement('section');node.className=`operations-panel operations-${mode}`;return [mode,node];}));
   let account='all',snapshot=null,detail=null,draft=null,dirty=false,busy=false,generation=0,selection=0,message='운영 상태를 불러오세요.',conflict=false,filter='all';
-  const controls=new Map(), actionRequests=new Map(), actionNeedsRefresh=new Set();
+  const controls=new Map(), confirmedControls=new Map(), actionRequests=new Map(), actionNeedsRefresh=new Set();
   let renderedMode;
   const actionKey=(id,action)=>`${id}:${action}`;
   function actionBody(action){const id=actionKey(detail.id,action);if(!actionRequests.has(id))actionRequests.set(id,{expected_version:detail.version,request_key:key()});return actionRequests.get(id);}
@@ -35,13 +35,23 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     if(options)for(const [value,text] of options){const o=node('option',text);o.value=value;field.append(o);}
     field.value=value;field.disabled=busy;field.addEventListener('input',()=>change?.(field.value));if(options)field.addEventListener('change',()=>change?.(field.value));wrap.append(field);parent.append(wrap);return field;
   }
+  function mergeControlSnapshot(incoming){
+    if(!incoming?.control)return incoming;
+    const rows=[...(incoming.control.managed||[])];
+    for(const [id,confirmed] of confirmedControls){
+      const index=rows.findIndex(row=>`${row.scope}-${row.id}`===id);
+      if(index>=0&&rows[index].version>=confirmed.version){confirmedControls.delete(id);continue;}
+      if(index>=0)rows[index]={...rows[index],...confirmed};else rows.push(confirmed);
+    }
+    return {...incoming,control:{...incoming.control,managed:rows}};
+  }
   const resolutionKinds=()=>Array.isArray(detail?.available_resolution_kinds)?detail.available_resolution_kinds:['link_existing','confirmed_not_posted','cancel_local'];
   function newDraft(){draft={kind:resolutionKinds()[0]||'',evidence:'{}',note:'',expected_version:detail.version,request_key:key()};dirty=false;conflict=false;}
   async function load(scope='all'){
     if(!scopes.has(scope))throw new Error('계정 범위가 올바르지 않습니다.');
-    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();actionRequests.clear();actionNeedsRefresh.clear();selection++;}
+    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();confirmedControls.clear();actionRequests.clear();actionNeedsRefresh.clear();selection++;}
     const current=++generation;message='운영 상태를 불러오는 중입니다.';emit();
-    try{const result=await api.list(scope);if(current!==generation)return;snapshot=result;message='서버에서 관측한 운영 상태입니다.';}
+    try{const result=await api.list(scope);if(current!==generation)return;snapshot=mergeControlSnapshot(result);message='서버에서 관측한 운영 상태입니다.';}
     catch(error){if(current!==generation)return;if(error.status===401)snapshot=null;feedback(error);emit();return false;}
     emit();return true;
   }
@@ -126,20 +136,29 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     form.addEventListener('submit',async event=>{event.preventDefault();if(busy||!allowed('resolve'))return;if(!resolutionKinds().includes(draft.kind)){message='서버가 허용한 조치 종류를 선택하세요. 입력은 보존했습니다.';emit();return;}let parsed;try{parsed=JSON.parse(draft.evidence.trim()||'{}');if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')throw new Error();}catch{message='확인 근거에 JSON 객체를 입력하세요. 입력은 보존했습니다.';emit();return;}if(!draft.note.trim()){message='검토 메모를 입력하세요. 입력은 보존했습니다.';emit();return;}if(draft.kind==='cancel_local'&&Object.keys(parsed).length===0)parsed={reason:draft.note};await mutate('resolve',{expected_version:draft.expected_version,request_key:draft.request_key,kind:draft.kind,evidence:parsed,note:draft.note});});
     box.append(form);if(conflict||actionRequests.has(actionKey(detail.id,'retry'))||actionRequests.has(actionKey(detail.id,'reconcile')))box.append(button('내 입력을 유지하고 최신 버전 확인',rebase));box.append(button('미저장 입력 버리기',discard));root.append(box);
   }
+  const controlName=item=>item.scope==='managed'?'전체 관리 작업':item.scope==='account'?`${accountName(item.id)} 계정`:item.target_label||`${accountName(item.id.split('.')[0])} ${platformName(item.id.split('.')[1])}`;
   function renderControls(root){
     root.append(node('h3','관리 실행 제어'),node('p','관리 일시중지는 로컬 관리 DB에만 적용됩니다. 기존 자동 작업·launchd에는 적용되지 않습니다. 재개해도 밀린 작업을 새로 등록하지 않습니다.'));
     root.append(node('p',`기존 전역 STOP: ${{clear:'해제 관측',stopped:'중지 관측',unknown:'상태 미확인'}[snapshot?.control?.global?.state]||'상태 미확인'} · 읽기 전용`));
     for(const item of snapshot?.control?.managed||[]){if(!['managed','account','connection'].includes(item.scope))continue;const controlKey=`${item.scope}-${item.id}`;let draft=controls.get(controlKey);if(!draft){draft={reason:'',request_key:key(),version:item.version};controls.set(controlKey,draft);}
-      const box=node('section',undefined,'operations-control');box.append(node('h4',`${item.scope} · ${item.id} · ${item.state==='paused'?'일시중지':'상태 '+item.state}`));
+      const box=node('section',undefined,'operations-control');box.append(node('h4',`${controlName(item)} · ${item.state==='paused'?'일시중지':item.state==='running'?'정상':'상태 미확인'}`));
+      const identity=node('details');identity.append(node('summary','내부 제어 식별자'),node('p',`${item.scope} · ${item.id}`));box.append(identity);
       input(box,`reason-${controlKey}`,'변경 사유',draft.reason,{change:value=>{draft.reason=value;emit(false);}});
-      for(const action of ['pause','resume']){const enabled=item.available_actions?.includes(action);box.append(button(`${action==='pause'?'관리 일시중지':'관리 재개'} · ${item.id}`,async()=>{
+      for(const action of ['pause','resume']){const enabled=item.available_actions?.includes(action);box.append(button(`${action==='pause'?'관리 일시중지':'관리 재개'} · ${controlName(item)}`,async()=>{
         if(busy||!enabled)return;if(!draft.reason.trim()){message='변경 사유를 입력하세요. 입력은 보존했습니다.';emit();return;}busy=true;const current=generation;emit();
-        try{await api.control({scope:item.scope,id:item.id,action,expected_version:draft.version,request_key:draft.request_key,reason:draft.reason});if(current!==generation)return;controls.delete(controlKey);await load(account);}
+        try{
+          const result=await api.control({scope:item.scope,id:item.id,action,expected_version:draft.version,request_key:draft.request_key,reason:draft.reason});if(current!==generation)return;
+          if(result?.scope!==item.scope||result?.id!==item.id||!Number.isInteger(result.version)||result.version<=draft.version||!['paused','running'].includes(result.state))throw new Error('제어 응답 형식 오류');
+          const confirmed={...item,...result};confirmedControls.set(controlKey,confirmed);
+          snapshot={...snapshot,control:{...snapshot.control,managed:snapshot.control.managed.map(row=>row.scope===item.scope&&row.id===item.id?confirmed:row)}};
+          controls.set(controlKey,{reason:'',request_key:key(),version:result.version});
+          const loaded=await load(account);if(loaded===false)message='제어 변경은 완료됐지만 후속 조회에 실패했습니다. 저장된 상태와 버전을 보존했습니다.';
+        }
         catch(error){if(current===generation){draft.conflict=error.status===409;feedback(error);}}finally{busy=false;emit();}
       },!enabled));}
-      if(draft.conflict)box.append(button(`제어 최신 버전 확인 · ${item.id}`,async()=>{
+      if(draft.conflict)box.append(button(`제어 최신 버전 확인 · ${controlName(item)}`,async()=>{
         if(busy)return;busy=true;const current=generation;emit();
-        try{const latest=await api.list(account);if(current!==generation)return;const updated=latest.control?.managed?.find(value=>value.scope===item.scope&&value.id===item.id);if(!updated)throw new Error();snapshot=latest;draft.version=updated.version;draft.request_key=key();draft.conflict=false;message='제어 최신 버전을 확인했습니다. 보존한 사유를 검토하세요.';}
+        try{const latest=await api.list(account);if(current!==generation)return;const merged=mergeControlSnapshot(latest);const updated=merged.control?.managed?.find(value=>value.scope===item.scope&&value.id===item.id);if(!updated)throw new Error();snapshot=merged;draft.version=updated.version;draft.request_key=key();draft.conflict=false;message='제어 최신 버전을 확인했습니다. 보존한 사유를 검토하세요.';}
         catch(error){if(current===generation)feedback(error);}finally{busy=false;emit();}
       }));root.append(box);
     }
