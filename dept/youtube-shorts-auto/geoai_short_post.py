@@ -330,6 +330,8 @@ def main():
     k = sub.add_parser("check")
     k.add_argument("--video-id", required=True)
     a = ap.parse_args()
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('personal', 'youtube', 'geoai-short-' + a.cmd))
 
     if os.environ.get("AX_DRY") == "1" and getattr(a, "go", False):
         log("  AX_DRY=1 — 시험 실행이라 --go 를 --dry 로 바꿉니다")

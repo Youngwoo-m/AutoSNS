@@ -19,6 +19,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.getcwd())
 
+from shared.owner_fence import route_legacy_action
+
 AI_NOTE = '이 글은 AI 도움을 받아 초안을 만들고 사람이 검토해 올렸습니다.'
 
 
@@ -65,6 +67,8 @@ def md_to_text(md):
 
 
 def blogger(c, account, text, dry):
+    if account not in ('dept', 'personal'):
+        raise ValueError('unknown_account')
     if account == 'dept':
         import post_blogger as pb
         from common import load_config
@@ -135,9 +139,15 @@ ADAPTERS = {'blogger': blogger, 'naver_blog': naver, 'x': x}
 def main():
     folder, account, channel = sys.argv[1:4]
     dry = '--dry' in sys.argv
-    c = json.load(open(os.path.join(folder, 'meta.json')))
-    text = (c.get('variants') or {}).get(channel) or c.get('original', '')
     try:
+        if account not in ('dept', 'personal'):
+            raise ValueError('unknown_account')
+        route = route_legacy_action((account, channel, 'publish-cli'), services=None)
+        if route.get('route') != 'legacy':
+            print(json.dumps(route, ensure_ascii=False))
+            return
+        c = json.load(open(os.path.join(folder, 'meta.json')))
+        text = (c.get('variants') or {}).get(channel) or c.get('original', '')
         if channel not in ADAPTERS:
             r = {'status': 'skipped', 'detail': '자동 발행 연결이 없는 채널입니다'}
         else:

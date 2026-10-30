@@ -69,3 +69,72 @@ def submit_registered(request: dict, *, caller_id: str, store, registry, policy,
         raise StoreError('executor_phase_forbidden')
     return submit_trigger(store, request, registry, policy,
                           production_policy_resolver=production_policy_resolver)
+
+
+def route_legacy_action(action_key: tuple[str, str, str], *, services=None) -> dict:
+    """등록된 기존 action만 legacy 실행 또는 서버 등록 접수로 분기한다.
+
+    services는 서버/fixture만 주입한다. action key 이외의 클라이언트 값으로
+    caller/job/owner를 선택하지 않는다. 관리 접수 실패는 legacy fallback이 아니다.
+    """
+    from collections.abc import Mapping
+    from .legacy_fences import ACTION_ROUTES, LOCAL_CHANNELS, legacy_services, inventory_allows_managed
+    if not isinstance(action_key, tuple) or len(action_key) != 3 or not all(isinstance(x, str) and x for x in action_key):
+        raise StoreError('invalid_action')
+    account, channel, action = action_key
+    if account not in ('dept', 'personal', 'common'):
+        raise StoreError('unknown_account')
+    if action in ('memo', 'test') and channel in LOCAL_CHANNELS.get(account, ()):
+        return dict(route='legacy', caller_id='legacy.local', job_id=None)
+    services = legacy_services() if services is None else services
+    if not isinstance(services, Mapping):
+        raise StoreError('services_unavailable')
+    routes = services.get('action_routes', ACTION_ROUTES)
+    spec = routes.get(action_key)
+    if spec is None:
+        raise StoreError('unknown_action')
+    registry, catalog = services.get('registry'), services.get('catalog')
+    if not isinstance(registry, Registry):
+        raise StoreError('invalid_registry')
+    if not isinstance(catalog, ExecutionCatalog):
+        raise StoreError('invalid_catalog')
+    caller_id = spec['caller_id']
+    if caller_id not in catalog.callers:
+        raise StoreError('unknown_caller')
+    job_ids = spec['job_ids']
+    resolved = []
+    for job_id in job_ids:
+        if job_id not in registry.jobs:
+            if spec.get('observed_unregistered') is True and job_id in catalog.callers[caller_id]['job_ids']:
+                continue
+            raise StoreError('unknown_job')
+        if registry.jobs[job_id].get('owner_account_id') != account:
+            raise StoreError('owner_mismatch')
+        resolved.append(resolve_entrypoint(caller_id, job_id, registry, catalog))
+    managed = [r for r in resolved if r['route'] == 'managed']
+    if not managed:
+        return dict(route='legacy', caller_id=caller_id, job_id=job_ids[0])
+    # 다중 부수효과 wrapper나 caller 하나라도 미확인인 job은 전체 관리 전환 금지.
+    if len(job_ids) != 1 or not inventory_allows_managed(job_ids[0], action_routes=routes):
+        raise StoreError('entrypoint_inventory_incomplete')
+    request = services.get('request')
+    if not isinstance(request, dict) or request.get('job_id') != job_ids[0]:
+        raise StoreError('managed_request_required')
+    if set(request) != _FIELDS:
+        raise StoreError('invalid_request')
+    if request['source'] != managed[0]['source']:
+        raise StoreError('source_mismatch')
+    if request['phase'] not in catalog.executors[managed[0]['executor_id']].phases:
+        raise StoreError('executor_phase_forbidden')
+    submit = services.get('submit')
+    if callable(submit):
+        result = submit(dict(request), caller_id)
+    else:
+        result = submit_registered(dict(request), caller_id=caller_id, store=services.get('store'),
+            registry=registry, catalog=catalog, policy=services.get('policy'),
+            production_policy_resolver=services.get('production_policy_resolver'))
+    run_id = result.get('run_id') or result.get('id')
+    if not isinstance(run_id, str) or not run_id:
+        raise StoreError('managed_result_invalid')
+    return dict(route='managed', status='queued', state='queued', run_id=run_id,
+                job_id=job_ids[0], caller_id=caller_id)

@@ -13,6 +13,13 @@ import os
 import re
 import sys
 
+# 직접 CLI는 legacy common.py/인증 라이브러리 import 전 주인을 확인한다.
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('dept', 'youtube', 'youtube-upload-cli'))
+    require_legacy_cli(('personal', 'youtube', 'youtube-upload-cli'))
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build

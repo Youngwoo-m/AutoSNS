@@ -26,6 +26,10 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+if __name__ == "__main__":
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('personal', 'tistory', 'tistory-post-cli'))
+
 from common import log  # noqa: E402
 import tistory_crosspost as tc  # noqa: E402
 
@@ -206,6 +210,8 @@ def edit_body(args, body):
 
 
 def main():
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('personal', 'tistory', 'tistory-post-cli'))
     ap = argparse.ArgumentParser(description="티스토리 공용 발행기")
     ap.add_argument("--html", required=True, help="본문 HTML 파일")
     ap.add_argument("--title", required=True)

@@ -1,6 +1,9 @@
 #!/bin/bash
 # AX 오케스트레이터: 잠금·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
 [ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job "claude.$1" -- "$0" "$@"
+# 단일 실행 주인 검사: 실패하면 legacy 본문으로 진행하지 않는다.
+_AX_OWNER_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+/usr/bin/python3 -I "$_AX_OWNER_ROOT/common/operations/legacy_fences.py" personal claude "$1" || exit $?
 # Codex 자동화에서 옮긴 개인 계정 글 작업을 claude -p 로 돌린다 — launchd com.smuds.claude.<작업> 이 호출.
 #   ./run_claude_job.sh nordic            실제 실행(발행됨)
 #   AX_DRY=1 ./run_claude_job.sh nordic   시험 실행(발행기는 발행 직전에 멈추고, 대기열·카톡·상태는 건드리지 않음)
