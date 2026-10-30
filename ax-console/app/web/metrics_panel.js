@@ -25,6 +25,27 @@ export function createMetricsApi({fetcher=globalThis.fetch}={}){
 export function createMetricsPanel({api,onChange=()=>{},document=globalThis.document}={}){
   const root=document.createElement('section');root.className='metrics-panel';
   let account='all',writable=false,destroyed=false;
+  let paintedAccount;
+  const focusKeys=new WeakMap(),focusTargets=new Map();
+  function focusTarget(element,key){focusKeys.set(element,key);focusTargets.set(key,element);return element;}
+  function rememberFocus(){
+    const active=document.activeElement;
+    // Changes in this panel must never steal focus from the account selector or another screen.
+    if(!active||!root.contains(active))return null;
+    const saved={key:paintedAccount===account?focusKeys.get(active):'heading'};
+    if(typeof active.selectionStart==='number'&&typeof active.selectionEnd==='number')saved.selection=[active.selectionStart,active.selectionEnd,active.selectionDirection];
+    return saved;
+  }
+  function restoreFocus(saved){
+    if(!saved)return;
+    const candidate=focusTargets.get(saved.key);
+    // Removed/disabled controls and account changes land on the panel heading, never another account's field.
+    const target=candidate&&!candidate.disabled?candidate:focusTargets.get('heading');
+    target?.focus({preventScroll:true});
+    if(target===candidate&&saved.selection&&typeof target.setSelectionRange==='function'){
+      try{target.setSelectionRange(...saved.selection);}catch{/* Non-text controls cannot hold a text selection. */}
+    }
+  }
   const states=new Map();
   const freshDraft=scope=>({account_id:scope==='all'?'':scope,title:'',note:'',selected:new Set()});
   function state(scope=account){if(!states.has(scope))states.set(scope,{scope,snapshot:null,started:false,loading:false,busy:false,readVersion:0,message:'성과 기록을 불러오세요.',owner:'all',destination:'all',draft:freshDraft(scope),proposalRequest:null,preview:null,importRequest:null});return states.get(scope);}
@@ -33,9 +54,9 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
   const canWrite=s=>writable&&s.snapshot?.writable===true;
   function emit(s){if(destroyed)return;if(s.scope===account)paint();onChange();}
   function feedback(error){return error?.status===401?'인증이 만료되었습니다. 다시 로그인하세요. 입력과 요청키는 보존했습니다.':error?.status===409?'원본이나 저장 상태가 바뀌었습니다. 입력·미리보기·요청키를 보존했습니다. 요청을 버리기 전에는 같은 요청으로 재시도합니다.':'요청을 처리하지 못했습니다. 입력·미리보기·요청키를 보존했습니다.';}
-  function button(text,action,disabled=false){const n=node('button',text,'btn');n.type='button';n.disabled=disabled;n.addEventListener('click',action);return n;}
+  function button(text,action,disabled=false){const n=focusTarget(node('button',text,'btn'),`button:${text}`);n.type='button';n.disabled=disabled;n.addEventListener('click',action);return n;}
   function field(parent,name,label,value,{options,area=false,disabled=false,change}={}){
-    const wrap=node('label',label);const input=node(options?'select':area?'textarea':'input');input.name=name;
+    const wrap=node('label',label);const input=focusTarget(node(options?'select':area?'textarea':'input'),`field:${name}`);input.name=name;
     if(options)for(const [value,text] of options){const option=node('option',text);option.value=value;input.append(option);}
     input.value=value;input.disabled=disabled;input.addEventListener(options?'change':'input',()=>change(input.value));wrap.append(input);parent.append(wrap);return input;
   }
@@ -97,7 +118,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
       }
     }else article.append(node('p',row.status==='error'?'조회 실패로 수치를 확인할 수 없습니다.':row.status==='unsupported'?'이 항목은 조회를 지원하지 않습니다.':'관측값을 수집하지 않았습니다.'));
     article.append(node('p',`비용: ${typeof row.values?.cost==='number'&&Number.isFinite(row.values.cost)?`${row.values.cost.toLocaleString('ko-KR')} · 통화 단위 미확인`:'미확인'}`));
-    const detail=node('details');detail.append(node('summary','관측·출처 상세'));
+    const detail=node('details');detail.append(focusTarget(node('summary','관측·출처 상세'),`summary:${row.id}`));
     for(const [key,label] of [['content_id','원본 식별자'],['delivery_id','배포 식별자'],['connection_id','연결 식별자'],['target_id','대상 식별자'],['remote_id','원격 게시물 식별자']])detail.append(node('p',`${label}: ${row[key]??'미확인'}`));
     detail.append(node('p',`관측 시각: ${time(row.observed_at)}`),node('p',`자료 수집 시각: ${time(row.collected_at)}`),node('p',`파일 수정 시각: ${time(row.file_mtime)} · 관측 시각과 다릅니다.`),node('p',`정의: ${row.definition_id||'미확인'}`));
     detail.append(node('p',row.basis==='lifetime'?'기준: 누적값 · 기간 발생량이 아닙니다.':row.basis==='interval'?'기준: 명시된 기간의 관측값입니다.':'기준: 누적·기간 여부 미확인'));
@@ -106,7 +127,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     if(!source||!['path','kind','label','note'].some(key=>typeof source[key]==='string'))detail.append(node('p','출처: 미확인'));
     for(const text of Array.isArray(row.uncertainties)?row.uncertainties:[])if(typeof text==='string')detail.append(node('p',`불확실성: ${text}`));
     detail.addEventListener('keydown',event=>{if(event.key==='Escape'){detail.open=false;detail.children[0]?.focus?.();}});article.append(detail);
-    const label=node('label','기획제안 근거로 선택');const check=node('input');check.type='checkbox';check.name=`observation-${row.id}`;check.checked=s.draft.selected.has(row.id);check.disabled=s.busy||!!s.proposalRequest||!canWrite(s);check.addEventListener('change',()=>{if(check.checked)s.draft.selected.add(row.id);else s.draft.selected.delete(row.id);});label.append(check);article.append(label);parent.append(article);
+    const label=node('label','기획제안 근거로 선택');const check=focusTarget(node('input'),`observation:${row.id}`);check.type='checkbox';check.name=`observation-${row.id}`;check.checked=s.draft.selected.has(row.id);check.disabled=s.busy||!!s.proposalRequest||!canWrite(s);check.addEventListener('change',()=>{if(check.checked)s.draft.selected.add(row.id);else s.draft.selected.delete(row.id);});label.append(check);article.append(label);parent.append(article);
   }
   function renderSupport(s){
     const section=node('section',undefined,'metrics-support');section.append(node('h3','채널 지원 상태'),node('p','구현·권한·수집 상태는 별개입니다. 연결 도구 설치만으로 웹 인증을 확인하지 않습니다.'));
@@ -126,7 +147,8 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     box.append(button('미리보기 명시 저장',()=>saveImport(s),s.busy||!canWrite(s)||p.writable!==true||!api?.importObservations),button('가져오기 요청 버리기',()=>{if(s.busy)return;s.preview=null;s.importRequest=null;s.message='가져오기 미리보기와 요청을 버렸습니다.';emit(s);},s.busy));root.append(box);
   }
   function paint(){
-    if(destroyed)return;const s=state();root.replaceChildren();root.append(node('h2','성과'),node('p','검증 배포 관측과 과거 보고 자료를 분리합니다. 서로 다른 정의·기간·채널의 수치는 합산하지 않습니다.'));
+    if(destroyed)return;const savedFocus=rememberFocus();focusTargets.clear();const s=state();root.replaceChildren();
+    const heading=focusTarget(node('h2','성과'),'heading');heading.tabIndex=-1;root.append(heading,node('p','검증 배포 관측과 과거 보고 자료를 분리합니다. 서로 다른 정의·기간·채널의 수치는 합산하지 않습니다.'));
     const status=node('p',s.message);status.setAttribute('role','status');status.setAttribute('aria-live','polite');root.append(status);
     if(s.loading)root.append(node('p','성과 기록 조회 중…'));
     root.append(node('p','자동 수집은 실행하지 않습니다. 관측값이 없으면 0으로 간주하지 않습니다.'),button('성과 다시 조회',()=>load(account),s.loading||s.busy||!api?.list),button('가져오기 미리보기',()=>showPreview(s),s.busy||!canWrite(s)||!api?.importPreview));
@@ -142,9 +164,10 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     field(form,'proposal-account','제안 계정',d.account_id,{options:[['','계정 선택'],['personal','개인'],['dept','학과']],disabled:locked,change:value=>{d.account_id=value;}});
     field(form,'proposal-title','제안 제목',d.title,{disabled:locked,change:value=>{d.title=value;}});field(form,'proposal-note','검토 메모',d.note,{area:true,disabled:locked,change:value=>{d.note=value;}});
     if(s.proposalRequest)form.append(node('p','전송한 입력과 요청키를 보존했습니다. 재시도하거나 요청을 버린 뒤 수정하세요.'));
-    const submit=node('button','기획제안 초안 저장','btn');submit.type='submit';submit.disabled=s.busy||!canWrite(s)||!api?.createProposal;form.append(submit);form.addEventListener('submit',event=>{event.preventDefault();return saveProposal(s);});
+    const submit=focusTarget(node('button','기획제안 초안 저장','btn'),'proposal-submit');submit.type='submit';submit.disabled=s.busy||!canWrite(s)||!api?.createProposal;form.append(submit);form.addEventListener('submit',event=>{event.preventDefault();return saveProposal(s);});
     form.append(button('기획제안 입력·요청 버리기',()=>{if(s.busy)return;s.draft=freshDraft(account);s.proposalRequest=null;s.message='기획제안 입력과 요청을 버렸습니다.';emit(s);},s.busy));root.append(form);
     const saved=node('section');saved.append(node('h3','저장된 기획제안 초안'));for(const proposal of s.snapshot?.proposals||[]){const box=node('div');box.append(node('h4',proposal.title||'제목 없음'),node('p',proposal.note||''),node('p',`${accountName(proposal.account_id)} · 초안 · ${time(proposal.created_at)}`));saved.append(box);}if(!s.snapshot?.proposals?.length)saved.append(node('p','저장된 기획제안이 없습니다.'));root.append(saved);renderSupport(s);
+    paintedAccount=account;restoreFocus(savedFocus);
   }
   return {
     render({account:scope='all',writable:allowed=false}={}){if(!scopes.has(scope))throw new Error('계정 범위가 올바르지 않습니다.');account=scope;writable=allowed;const s=state();if(!s.started){s.message='성과 기록을 불러오세요.';void load(scope);}else paint();return root;},

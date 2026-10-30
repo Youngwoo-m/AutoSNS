@@ -5,11 +5,15 @@ import {createMetricsApi,createMetricsPanel} from '../ax-console/app/web/metrics
 class Node {
   constructor(tag){this.tagName=tag;this.children=[];this.listeners={};this.value='';this.disabled=false;this.checked=false;this._text='';}
   set textContent(v){this._text=String(v);this.children=[];} get textContent(){return this._text+this.children.map(x=>x.textContent).join('');}
-  append(...nodes){this.children.push(...nodes);} replaceChildren(...nodes){this._text='';this.children=nodes;}
+  contains(node){return this===node||this.children.some(child=>child.contains(node));}
+  append(...nodes){for(const node of nodes){node.parentElement=this;this.children.push(node);}}
+  replaceChildren(...nodes){if(this.ownerDocument?.activeElement!==this&&this.contains(this.ownerDocument?.activeElement))this.ownerDocument.activeElement=null;for(const child of this.children)child.parentElement=null;this._text='';this.children=[];this.append(...nodes);}
   setAttribute(k,v){this[k]=v;} addEventListener(type,fn){this.listeners[type]=fn;}
+  focus(){if(!this.disabled)this.ownerDocument.activeElement=this;}
+  setSelectionRange(start,end,direction='none'){this.selectionStart=start;this.selectionEnd=end;this.selectionDirection=direction;}
   async fire(type,event={}){if(!this.disabled)return this.listeners[type]?.({preventDefault(){},...event});}
 }
-const document={createElement:tag=>new Node(tag)};
+const document={activeElement:null,createElement:tag=>Object.assign(new Node(tag),{ownerDocument:document})};
 const all=n=>[n,...n.children.flatMap(all)];
 const button=(n,text)=>all(n).find(x=>x.tagName==='button'&&x.textContent===text);
 const field=(n,name)=>all(n).find(x=>x.name===name);
@@ -74,4 +78,27 @@ test('비활성 쓰기·API 부재는 저장을 막고 안전한 안내를 표�
 });
 test('멸실된 패널은 진행 중 조회의 DOM 변경과 후속 알림을 무시한다',async()=>{
   let resolve,changes=0;const panel=createMetricsPanel({document,onChange:()=>changes++,api:apiFor({list:()=>new Promise(done=>resolve=done)})});const n=panel.render({account:'all',writable:true});panel.destroy();const before=changes;resolve(snapshot());await tick();assert.equal(changes,before);assert.doesNotMatch(n.textContent,/조회수: 0/);
+});
+test('키보드 필터 연속 변경과 공개 render는 같은 필터로 포커스를 복원한다',async()=>{
+  const panel=await opened();const n=root(panel);let filter=field(n,'owner-filter');filter.focus();filter.value='personal';await filter.fire('change');
+  assert.equal(document.activeElement,field(n,'owner-filter'));assert.notEqual(document.activeElement,filter);
+  filter=document.activeElement;filter.value='dept';await filter.fire('change');assert.equal(document.activeElement,field(n,'owner-filter'));assert.equal(document.activeElement.value,'dept');
+  panel.render({account:'all',writable:true});assert.equal(document.activeElement,field(n,'owner-filter'));
+});
+for(const name of ['proposal-title','proposal-note'])test(`비동기 GET 완료는 ${name}의 포커스·선택·방향을 보존한다`,async()=>{
+  let finish,reads=0;const panel=await opened(apiFor({list:async()=>++reads===1?snapshot():new Promise(done=>finish=done)}));const n=root(panel);const pending=panel.load('all');
+  const input=field(n,name);input.value='성과 근거 검토를 이어서 입력';await input.fire('input');input.focus();input.setSelectionRange(3,8,'backward');finish(snapshot());await pending;
+  const current=field(n,name);assert.equal(document.activeElement,current);assert.equal(current.value,'성과 근거 검토를 이어서 입력');assert.deepEqual([current.selectionStart,current.selectionEnd,current.selectionDirection],[3,8,'backward']);
+  panel.render({account:'all',writable:true});assert.equal(document.activeElement,field(n,name));assert.deepEqual([document.activeElement.selectionStart,document.activeElement.selectionEnd],[3,8]);
+});
+test('쓰기 비활성화는 활성 입력 대신 성과 제목으로 이동하고 외부 포커스는 보존한다',async()=>{
+  const panel=await opened();const n=root(panel);field(n,'proposal-title').focus();panel.render({account:'all',writable:false});assert.equal(document.activeElement.tagName,'h2');assert.equal(document.activeElement.textContent,'성과');assert.equal(n.contains(document.activeElement),true);
+  const external=document.createElement('button');external.focus();panel.render({account:'all',writable:true});assert.equal(document.activeElement,external);
+});
+test('계정 전환은 이전 계정 입력의 포커스를 새 계정 입력으로 옮기지 않고 제목으로 보낸다',async()=>{
+  const panel=await opened();const n=root(panel);field(n,'proposal-note').focus();panel.render({account:'dept',writable:true});assert.equal(document.activeElement.tagName,'h2');assert.equal(n.contains(document.activeElement),true);await tick();assert.equal(document.activeElement.tagName,'h2');
+});
+test('재조회로 사라진 관측 체크박스는 제목으로 이동하고 상태 변경은 외부 포커스를 빼앗지 않는다',async()=>{
+  let reads=0;const panel=await opened(apiFor({list:async()=>++reads===1?snapshot():snapshot([])}));const n=root(panel);field(n,'observation-zero').focus();await panel.load('all');assert.equal(document.activeElement.tagName,'h2');assert.equal(n.contains(document.activeElement),true);
+  const external=document.createElement('input');external.focus();await panel.load('all');assert.equal(document.activeElement,external);
 });
