@@ -36,7 +36,7 @@ const views={
   today:['운영 개요','오늘 운영','오늘 일정과 기록을 확인하고 필요한 조치를 찾습니다.'],
   planning:['기획에서 제작까지','콘텐츠 기획','기획 원본과 대상별 변환본을 저장하고 단계별로 확인합니다.'],
   library:['원본과 배포 기록','콘텐츠 보관함','원본의 소유 계정과 채널별 게시 대상을 나누어 확인합니다.'],
-  calendar:['채널별 예정 시각','예약 캘린더','로컬 실행 요청과 원격 예약 기록을 구분합니다. 현재 플랫폼 예약 재조회는 지원하지 않습니다.'],
+  calendar:['채널별 예정 시각','예약 캘린더','로컬 계획과 원격 예약 기록을 구분합니다. 현재 플랫폼 예약 재조회는 지원하지 않습니다.'],
   crosspost:['원본을 채널에 맞게','교차 발행','기존 원본 소유 계정·게시 대상·운영 조건의 조회 결과입니다.'],
   accounts:['계정과 게시 대상','채널·계정','설정 등록, 인증 확인, 운영 활성 여부를 별도로 표시합니다.'],
   analytics:['실제 수집 결과 기준','성과','원본 콘텐츠와 대상 채널의 성과 수집은 아직 지원하지 않습니다.'],
@@ -58,7 +58,7 @@ function renderStatus() {
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
     state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
-  $('.readonly-bar').textContent=writable()?'2단계 · 새 관리 원본·수동 검토·도구 선호 저장 · 예약·발행 미지원':'1단계 · 실제 자료 읽기 전용 · 기획 저장·예약 변경·발행·제어 미지원';
+  $('.readonly-bar').textContent=writable()?'3단계 · 원본·로컬 배포 계획·계획 승인 저장 · 실제 예약·발행 미지원':'1단계 · 실제 자료 읽기 전용 · 기획 저장·예약 변경·발행·제어 미지원';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login'},'로그인으로 이동'));
   box.replaceChildren(line);
@@ -84,14 +84,14 @@ function deliveryTable(deliveries) {
   if(!deliveries.length)return empty('배포 기록이 없습니다','선택한 계정과 관련된 채널별 배포 기록이 수집되지 않았습니다.');
   return table(['원본 콘텐츠','원본 소유','게시 대상','기록 상태','시각·확인'],deliveries.map(d=>{
     const c=titleFor(d.content_id);
-    return h('tr',{},td(c?contentButton(c):'원본 미확인'),td(account(d.owner_account_id)),td(account(d.destination_account_id),h('div',{class:'cell-sub'},text(d.channel)),h('div',{class:'cell-sub'},text(d.target_label))),td(badge(d.status)),td(h('div',{},scheduleLabel(d.schedule_kind)),h('div',{class:'cell-sub'},`예정 ${formatDateTime(d.scheduled_at)}`),h('div',{class:'cell-sub'},`확인 ${formatDateTime(d.checked_at)}`)));
+    return h('tr',{},td(c?contentButton(c):'원본 미확인'),td(account(d.owner_account_id)),td(account(d.destination_account_id),h('div',{class:'cell-sub'},text(d.platform||d.channel)),h('div',{class:'cell-sub'},text(d.target_label))),td(badge(d.status)),td(h('div',{},scheduleLabel(d.schedule_kind)),h('div',{class:'cell-sub'},`예정 ${formatDateTime(d.scheduled_at)}`),h('div',{class:'cell-sub'},`확인 ${formatDateTime(d.checked_at)}`)));
   }));
 }
 function scheduleList(events) {
   if(!events.length)return empty('표시할 일정이 없습니다','정확한 예정 시각이 수집되지 않았거나, 선택한 기간에 해당하는 일정이 없습니다.');
   return table(['예정 시각 · 한국시간','원본 콘텐츠','원본 소유','게시 대상','예약 근거·상태'],events.map(e=>{
     const c=titleFor(e.content_id);
-    return h('tr',{},td(formatDateTime(e.scheduled_at)),td(c?contentButton(c):text(e.title)),td(account(e.owner_account_id)),td(account(e.destination_account_id),h('div',{class:'cell-sub'},text(e.channel))),td(badge(e.status),h('div',{class:'cell-sub'},scheduleLabel(e.kind))));
+    return h('tr',{},td(formatDateTime(e.scheduled_at)),td(c?contentButton(c):text(e.title)),td(account(e.owner_account_id)),td(account(e.destination_account_id),h('div',{class:'cell-sub'},text(e.platform||e.channel))),td(badge(e.status),h('div',{class:'cell-sub'},scheduleLabel(e.schedule_kind||e.kind))));
   }));
 }
 function incidentRows(incidents) {
@@ -119,7 +119,7 @@ function renderContentResults() {
   if(view==='library') {
     target.replaceChildren(panel(`원본 ${contents.length}건`,contents.length?table(['원본 콘텐츠','소유 계정','형식·시리즈','게시 대상','원본 상태','버전·최근 활동'],contents.map(c=>{
       const deliveries=state.snapshot.deliveries.filter(d=>d.content_id===c.id);
-      return h('tr',{},td(contentButton(c),h('div',{class:'cell-sub'},c.source==='managed'?'새 관리 원본':'기존 자료 · 읽기 전용'),h('div',{class:'cell-sub'},c.summary?String(c.summary).slice(0,100):'요약 미수집')),td(account(c.owner_account_id)),td(kindLabel(c.kind),h('div',{class:'cell-sub'},c.series||'시리즈 미확인')),td(deliveries.length?deliveries.map(d=>h('div',{class:'pill-row'},account(d.destination_account_id),text(d.channel))):h('div',{},(c.target_accounts||[]).map(id=>account(id)),h('div',{class:'cell-sub'},c.source==='managed'?`목표 채널: ${(c.channels||[]).join(', ')||'미지정'} · 배포 기록 없음`:'배포 기록 없음'))),td(badge(c.status)),td(h('div',{},`버전 ${text(c.revision)}`),h('div',{class:'cell-sub'},formatDateTime(c.updated_at))));
+      return h('tr',{},td(contentButton(c),h('div',{class:'cell-sub'},c.source==='managed'?'새 관리 원본':'기존 자료 · 읽기 전용'),h('div',{class:'cell-sub'},c.summary?String(c.summary).slice(0,100):'요약 미수집')),td(account(c.owner_account_id)),td(kindLabel(c.kind),h('div',{class:'cell-sub'},c.series||'시리즈 미확인')),td(deliveries.length?deliveries.map(d=>h('div',{class:'pill-row'},account(d.destination_account_id),text(d.platform||d.channel))):h('div',{},(c.target_accounts||[]).map(id=>account(id)),h('div',{class:'cell-sub'},c.source==='managed'?`목표 채널: ${(c.channels||[]).join(', ')||'미지정'} · 배포 기록 없음`:'배포 기록 없음'))),td(badge(c.status)),td(h('div',{},`버전 ${text(c.revision)}`),h('div',{class:'cell-sub'},formatDateTime(c.updated_at))));
     })):empty('조건에 맞는 콘텐츠가 없습니다','검색어·소유 계정·형식·시리즈·상태 조건을 확인해 주세요.')));
   } else {
     const stages=[['idea','아이디어'],['drafting','조사·원고'],['production','제작'],['review','검토']];
@@ -142,13 +142,13 @@ function renderCalendar() {
   const controls=h('div',{class:'toolbar'},h('div',{class:'calendar-tools'},button('‹',weekOffset-1,'이전 주'),h('strong',{},`${days[0]} – ${days[6]}`),button('›',weekOffset+1,'다음 주'),button('이번 주',0)),tabs('일정 표시 방식',[['week','주간'],['list','목록']],calendarMode,id=>{calendarMode=id;render();}));
   const week=h('div',{class:'calendar-week'},days.map((day,i)=>h('section',{class:`calendar-day ${day===dayKey(new Date().toISOString())?'is-today':''}`},h('h3',{},`${['월','화','수','목','금','토','일'][i]} · ${day.slice(5)}`),inWeek.filter(e=>dayKey(e.scheduled_at)===day).map(e=>{
     const c=titleFor(e.content_id);
-    return h('article',{class:`calendar-event ${e.destination_account_id==='personal'?'personal-event':''}`},h('b',{},formatDateTime(e.scheduled_at)),h('p',{},c?contentButton(c):text(e.title)),h('p',{},`원본 ${accountLabel(e.owner_account_id,s.accounts)} → 대상 ${accountLabel(e.destination_account_id,s.accounts)} · ${text(e.channel)}`),h('p',{},statusLabel(e.status)),h('p',{},scheduleLabel(e.kind)));
+    return h('article',{class:`calendar-event ${e.destination_account_id==='personal'?'personal-event':''}`},h('b',{},formatDateTime(e.scheduled_at)),h('p',{},c?contentButton(c):text(e.title)),h('p',{},`원본 ${accountLabel(e.owner_account_id,s.accounts)} → 대상 ${accountLabel(e.destination_account_id,s.accounts)} · ${text(e.platform||e.channel)}`),h('p',{},statusLabel(e.status)),h('p',{},scheduleLabel(e.schedule_kind||e.kind)));
   }))));
-  return h('div',{},controls,panel('배포별 예정 기록',calendarMode==='list'?scheduleList(inWeek):week,!inWeek.length?empty('이 주의 예정 기록이 없습니다','다른 주를 선택하거나 아래 시각 미확인 기록을 확인해 주세요.'):null,h('div',{class:'legend'},'한국시간 · 원격 예약 기록은 현재 원격 플랫폼 재조회 결과가 아닙니다.')),panel(`시각 미확인 기록 ${unknown.length}건`,unknown.length?scheduleList(unknown):empty('시각 미확인 기록 없음','수집된 일정 중 정확한 시각이 없는 기록은 없습니다.')));
+  return h('div',{},controls,panel('배포별 예정 기록',calendarMode==='list'?scheduleList(inWeek):week,!inWeek.length?empty('이 주의 예정 기록이 없습니다','다른 주를 선택하거나 아래 시각 미확인 기록을 확인해 주세요.'):null,h('div',{class:'legend'},'한국시간 · 로컬 계획은 실행하지 않습니다. 원격 예약 기록은 현재 플랫폼 재조회 결과가 아닙니다. 일정 변경은 관리 원본 상세에서 미리보기 후 저장합니다.')),panel(`시각 미확인 기록 ${unknown.length}건`,unknown.length?scheduleList(unknown):empty('시각 미확인 기록 없음','수집된 일정 중 정확한 시각이 없는 기록은 없습니다.')));
 }
 function renderCrosspost() {
   const s=state.snapshot,deliveries=s.deliveries.filter(d=>d.owner_account_id!==d.destination_account_id);
-  return h('div',{},tabs('교차 발행 보기',[['rules','기존 규칙'],['deliveries','실제 배포 기록']],crosspostTab,id=>{crosspostTab=id;render();}),h('div',{class:'inline-note'},'원본 또는 게시 대상이 선택 계정에 속한 기존 경로를 표시합니다. 규칙 수정과 활성 변경은 미지원입니다.'),crosspostTab==='deliveries'?panel('계정 간 배포 기록',deliveryTable(deliveries)):panel('조회된 교차 발행 규칙',s.crossposts.length?table(['원본 소유 계정·채널 → 게시 대상','시점·조건','설정 활성 여부','변경'],s.crossposts.map(r=>h('tr',{},td(h('div',{class:'rule-route'},h('div',{},account(r.owner_account_id),h('div',{class:'cell-sub'},text(r.source_channel))),h('span',{'aria-hidden':'true'},'→'),h('div',{},account(r.destination_account_id),h('div',{class:'cell-sub'},text(r.destination_channel)))),h('div',{class:'cell-sub'},text(r.title))),td(r.condition||'조건 미수집'),td(r.enabled===true?'설정상 활성':r.enabled===false?'설정상 중지':'활성 여부 미확인'),td(disabled('수정 미지원'))))):empty('조회된 규칙이 없습니다','교차 발행 등록 자료가 누락되었거나 수집되지 않았습니다. 기존 경로가 없거나 해제되었다고 판정하지 않습니다.')));
+  return h('div',{},tabs('교차 발행 보기',[['rules','기존 규칙'],['deliveries','배포 계획·기록']],crosspostTab,id=>{crosspostTab=id;render();}),h('div',{class:'inline-note'},'원본 또는 게시 대상이 선택 계정에 속한 기존 경로를 표시합니다. 규칙 수정과 활성 변경은 미지원입니다.'),crosspostTab==='deliveries'?panel('계정 간 배포 기록',deliveryTable(deliveries)):panel('조회된 교차 발행 규칙',s.crossposts.length?table(['원본 소유 계정·채널 → 게시 대상','시점·조건','설정 활성 여부','변경'],s.crossposts.map(r=>h('tr',{},td(h('div',{class:'rule-route'},h('div',{},account(r.owner_account_id),h('div',{class:'cell-sub'},text(r.source_channel))),h('span',{'aria-hidden':'true'},'→'),h('div',{},account(r.destination_account_id),h('div',{class:'cell-sub'},text(r.destination_channel)))),h('div',{class:'cell-sub'},text(r.title))),td(r.condition||'조건 미수집'),td(r.enabled===true?'설정상 활성':r.enabled===false?'설정상 중지':'활성 여부 미확인'),td(disabled('수정 미지원'))))):empty('조회된 규칙이 없습니다','교차 발행 등록 자료가 누락되었거나 수집되지 않았습니다. 기존 경로가 없거나 해제되었다고 판정하지 않습니다.')));
 }
 function renderIntegrations() {
   const integrations=Array.isArray(state.snapshot.integrations)?state.snapshot.integrations.filter(item=>item&&typeof item==='object'):[];
@@ -194,7 +194,7 @@ function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('
 
 function deliveryDetail(d) {
   const url=safeUrl(d.url);
-  return h('article',{class:'detail-target'},h('div',{class:'pill-row'},account(d.destination_account_id),h('b',{},text(d.channel)),badge(d.status)),h('dl',{class:'detail-kv'},h('dt',{},'원본 소유'),h('dd',{},account(d.owner_account_id)),h('dt',{},'게시 대상'),h('dd',{},text(d.target_label)),h('dt',{},'예정 시각'),h('dd',{},formatDateTime(d.scheduled_at)),h('dt',{},'예약 출처'),h('dd',{},scheduleLabel(d.schedule_kind)),h('dt',{},'마지막 확인'),h('dd',{},formatDateTime(d.checked_at)),h('dt',{},'확인 근거'),h('dd',{},d.evidence||'미수집 · 공개/내용 확인을 추정하지 않습니다.'),h('dt',{},'공개 주소'),h('dd',{},url?h('a',{class:'safe-link',href:url,target:'_blank',rel:'noopener noreferrer'},url):d.url?'표시할 수 없는 주소 · http/https만 지원':'주소 미수집')),h('p',{},d.owner_account_id!==d.destination_account_id?'계정 간 교차 발행 · 원본 소유권 유지':'원본 소유 계정의 채널 배포'),disabled('대상별 재시도 미지원'));
+  return h('article',{class:'detail-target'},h('div',{class:'pill-row'},account(d.destination_account_id),h('b',{},text(d.platform||d.channel)),badge(d.status)),h('dl',{class:'detail-kv'},h('dt',{},'원본 소유'),h('dd',{},account(d.owner_account_id)),h('dt',{},'게시 대상'),h('dd',{},text(d.target_label)),h('dt',{},'예정 시각'),h('dd',{},formatDateTime(d.scheduled_at)),h('dt',{},'예약 출처'),h('dd',{},scheduleLabel(d.schedule_kind)),h('dt',{},'마지막 확인'),h('dd',{},formatDateTime(d.checked_at)),h('dt',{},'확인 근거'),h('dd',{},d.evidence||'미수집 · 공개/내용 확인을 추정하지 않습니다.'),h('dt',{},'공개 주소'),h('dd',{},url?h('a',{class:'safe-link',href:url,target:'_blank',rel:'noopener noreferrer'},url):d.url?'표시할 수 없는 주소 · http/https만 지원':'주소 미수집')),h('p',{},d.owner_account_id!==d.destination_account_id?'계정 간 교차 발행 · 원본 소유권 유지':'원본 소유 계정의 채널 배포'),disabled('대상별 재시도 미지원'));
 }
 function renderDetail() {
   const c=titleFor(detailId);if(!c)return;
@@ -216,7 +216,7 @@ function openEditor(content=null){
   editorActive=true;lastFocus=document.activeElement;
   $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},content?.source==='managed'?'관리 원본 편집':'새 기획 저장'));
   $('#drawer-content').replaceChildren(editor.element);
-  $('.drawer-foot span').textContent='새 관리 원본 · 수동 검토 기록 · 예약·발행 미지원';
+  $('.drawer-foot span').textContent='관리 원본 · 로컬 계획·계획 승인 · 실제 예약·발행 미지원';
   editor.open(content);if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
 function openContent(id) {

@@ -42,6 +42,16 @@ export function createContentApi({fetcher=globalThis.fetch}={}) {
   const json=(path,method,body)=>request(path,{method,body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
   const item=id=>`/contents/${encodeURIComponent(id)}`;
   return {
+    listConnections:()=>request('/connections'),
+    listDeliveries:(account='all',contentId)=>request(`/deliveries?account=${encodeURIComponent(account)}${contentId?`&content_id=${encodeURIComponent(contentId)}`:''}`),
+    getDelivery:id=>request(`/deliveries/${encodeURIComponent(id)}`),
+    deliveryEvents:id=>request(`/deliveries/${encodeURIComponent(id)}/events`),
+    previewDelivery:body=>json('/deliveries/preview','POST',body),
+    createDelivery:body=>json('/deliveries','POST',body),
+    approveDelivery:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/approvals`,'POST',body),
+    previewDeliverySchedule:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/schedule-preview`,'POST',body),
+    rescheduleDelivery:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/schedule`,'PUT',body),
+    cancelDelivery:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/cancel`,'POST',body),
     getContent:(id,revision)=>request(item(id)+(revision?`?revision=${revision}`:'')),
     createContent:body=>json('/contents','POST',body),
     updateContent:(id,body)=>json(item(id),'PUT',body),

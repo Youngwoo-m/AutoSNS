@@ -2,9 +2,9 @@ const rows = (value) => Array.isArray(value) ? value : [];
 export const accountLabel = (id, accounts=[]) => accounts.find(a=>a.id===id)?.label || ({dept:'학과',personal:'개인',all:'전체 계정'}[id]) || '계정 미확인';
 export const kindLabel = kind => ({article:'글',card:'카드뉴스',short:'숏츠',video:'영상'}[kind] || '형식 미확인');
 export function statusLabel(status) {
-  return ({idea:'아이디어',production:'제작',archived:'보관',drafting:'조사·원고',review:'검토 필요',scheduled:'예약·대기',reported_published:'게시 기록 · 공개 미확인',failed:'실패 · 확인 필요',unknown:'상태 미확인',draft:'초안',queued:'로컬 대기열',scheduled_recorded:'예약 기록 · 현재 미확인',verified:'공개·내용 확인 완료',paused:'사용자 중지',open:'조치 필요',resolved:'해결 기록',closed:'종료 기록',pending:'대기',accepted:'채택 기록',rejected:'반려 기록'}[status] || '상태 미확인');
+  return ({ready:'계획 승인됨 · 실행 안 함',cancelled:'로컬 계획 취소됨',idea:'아이디어',production:'제작',archived:'보관',drafting:'조사·원고',review:'검토 필요',scheduled:'예약·대기',reported_published:'게시 기록 · 공개 미확인',failed:'실패 · 확인 필요',unknown:'상태 미확인',draft:'초안',queued:'로컬 대기열',scheduled_recorded:'예약 기록 · 현재 미확인',verified:'공개·내용 확인 완료',paused:'사용자 중지',open:'조치 필요',resolved:'해결 기록',closed:'종료 기록',pending:'대기',accepted:'채택 기록',rejected:'반려 기록'}[status] || '상태 미확인');
 }
-export const scheduleLabel = kind => ({local_request:'로컬 실행 요청',remote_recorded:'원격 예약 기록 · 현재 재조회 아님'}[kind] || '예약 출처 미확인');
+export const scheduleLabel = kind => ({local_plan:'로컬 계획 · 실행 안 함',local_request:'로컬 실행 요청',remote_recorded:'원격 예약 기록 · 현재 재조회 아님'}[kind] || '예약 출처 미확인');
 export function safeUrl(value) {
   if(typeof value!=='string'||/[\u0000-\u0020\u007f]/.test(value)||!/^https?:\/\//i.test(value)) return null;
   try { const url=new URL(value);return ['http:','https:'].includes(url.protocol)&&!url.username&&!url.password ? url.href : null; } catch { return null; }
