@@ -45,7 +45,7 @@ class Ledger:
         try:
             if write and not self._initialized: raise StoreError('storage_error')
             conn=connect_database(self.root,writable=write)
-            if conn.execute('PRAGMA user_version').fetchone()[0]!=2: raise StoreError('storage_error')
+            if conn.execute('PRAGMA user_version').fetchone()[0] not in (2,3): raise StoreError('storage_error')
             if write: conn.execute('BEGIN IMMEDIATE')
             yield conn
             if write: conn.commit()

@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from common.operations.content_store import ContentStore, StoreError, ConflictError
-from common.operations.database import initialize_database, connect_database
+from common.operations.database import initialize_database, connect_database, SCHEMA_VERSION
 
 PAYLOAD = {'title': '원고', 'kind': 'article', 'original': '초안'}
 PNG = b'\x89PNG\r\n\x1a\n' + b'fixture'
@@ -53,7 +53,7 @@ class StoreTests(unittest.TestCase):
         with connect_database(self.root) as conn:
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             self.assertTrue({'contents', 'revisions', 'reviews', 'events', 'integration_settings', 'integration_events'} <= tables)
-            self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
             self.assertEqual(conn.execute('PRAGMA foreign_keys').fetchone()[0], 1)
             self.assertEqual(conn.execute('PRAGMA busy_timeout').fetchone()[0], 5000)
         conn.close()
