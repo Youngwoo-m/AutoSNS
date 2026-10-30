@@ -44,8 +44,8 @@ def run_once(store,registry,adapters,policy,locks,now):
     def current_time():return utc(now)+timedelta(seconds=time.monotonic()-started)
     # mode/phase 필터를 claim 전에 적용해 dry/shadow에서 adapter 호출 0.
     identity=_identity()
-    eligible={r['id'] for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
-    deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state']=='queued' and d['context']['connection_id'] in adapters]
+    eligible={r['id']:r for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
+    deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state']=='queued' and d['context']['connection_id'] in adapters and eligible[d['run_id']].get('resume_delivery_id') in (None,d['id'])]
     if not deliveries:return None
     delivery=deliveries[0];run=store.get_run(delivery['run_id'])
     store.registry=registry;store.execution_policy=policy;store.locks=locks
@@ -60,6 +60,7 @@ def run_once(store,registry,adapters,policy,locks,now):
     with locks.hold([profile['lock_resource']],job='managed-publication',wait=2400):
         # No SQLite transaction/control gate/lease was held during profile wait.
         run=store.get_run(ctx.run_id)
+        if run.get('resume_delivery_id') not in (None,delivery['id']):return None
         if run['state']=='queued':
             lease=store.claim_run(run['id'],'managed-worker',identity,current_time(),expected_version=run['version'])
         elif run['state']=='running' and run.get('process_identity')==identity:

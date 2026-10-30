@@ -59,6 +59,9 @@ class RuntimeStore:
         r=dict(row);r['process_identity']=json.loads(r['process_identity']) if r['process_identity'] else None
         occurrence=c.execute('SELECT payload FROM runs WHERE id=?',(id,)).fetchone()
         r['occurrence']=json.loads(occurrence[0]) if occurrence else None
+        # 예전 v3 읽기는 이행하지 않는다. 명시 initialize에서만 선택 표를 만든다.
+        selection=c.execute('SELECT delivery_id FROM runtime_resume_targets WHERE run_id=?',(id,)).fetchone() if c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_resume_targets'").fetchone() else None
+        r['resume_delivery_id']=selection[0] if selection else None
         return r
     def _delivery(self,c,id,version=None):
         row=c.execute('SELECT * FROM runtime_deliveries WHERE id=?',(id,)).fetchone()
@@ -494,8 +497,9 @@ class RuntimeStore:
             if not isinstance(process_evidence,dict) or process_evidence.get('status')!='dead' or not all(process_evidence.get(key)==identity.get(key) and identity.get(key) is not None for key in ('host_id','pid','started_at')):raise StoreError('insufficient_evidence')
             if not isinstance(lock_evidence,dict) or lock_evidence.get('status')!='free' or lock_evidence.get('connection_id')!=d['context']['connection_id']:raise StoreError('insufficient_evidence')
             if d['state']!='retry_wait' or d['remote_uncertain']:raise ConflictError()
-            if c.execute('SELECT 1 FROM attempts a JOIN runtime_deliveries d ON d.id=a.delivery_id WHERE d.run_id=? AND a.resolved=0 LIMIT 1',(d['run_id'],)).fetchone():raise ConflictError()
-            if c.execute("SELECT 1 FROM runtime_deliveries WHERE run_id=? AND state IN ('unknown','needs_review','submitting','running') LIMIT 1",(d['run_id'],)).fetchone():raise ConflictError()
+            if c.execute('SELECT 1 FROM attempts WHERE delivery_id=? AND resolved=0 LIMIT 1',(delivery_id,)).fetchone():raise ConflictError()
+            # 다른 대상의 unknown은 보존한다. 아직 raw 실행 중이면 만료 복구부터 요구한다.
+            if c.execute("SELECT 1 FROM runtime_deliveries WHERE run_id=? AND state IN ('submitting','running') LIMIT 1",(d['run_id'],)).fetchone():raise ConflictError()
             attempts=[self._attempt(c,r[0]) for r in c.execute('SELECT id FROM attempts WHERE delivery_id=? ORDER BY ordinal',(delivery_id,))]
             if attempts:
                 last=attempts[-1];result=last['result'] or {}
@@ -507,6 +511,7 @@ class RuntimeStore:
             self._state(c,delivery_id,'queued')
             c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
             c.execute("UPDATE runtime_runs SET state='queued',version=version+1,worker_id=NULL,lease_expires_at=NULL,process_identity=NULL WHERE id=?",(d['run_id'],))
+            c.execute('INSERT INTO runtime_resume_targets(run_id,delivery_id) VALUES(?,?) ON CONFLICT(run_id) DO UPDATE SET delivery_id=excluded.delivery_id',(d['run_id'],delivery_id))
             self._event(c,delivery_id,'retry_queued',dict(process=process_evidence,lock=lock_evidence,checked_at=stamp(now),actor=actor,request_key=request_key))
             result=self._delivery(c,delivery_id)
             c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)))
