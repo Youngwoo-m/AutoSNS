@@ -10,7 +10,7 @@ from decimal import Decimal, InvalidOperation, localcontext
 import json
 from uuid import uuid4
 
-from .models import thaw
+from .models import ContractError, thaw
 from .publication_gate import report_hash
 from .runtime_models import utc
 
@@ -60,6 +60,7 @@ def calculate_registered_inputs(inputs):
 @dataclass(frozen=True)
 class _ProviderExecution:
     # 이 envelope는 서버 adapter만 만든다. 모델 JSON에서 복원하지 않는다.
+    principal_id: str
     execution_id: str
     payload: Mapping
     executed: bool
@@ -71,8 +72,11 @@ class SubscriptionReviewProvider:
     request/policy/model/provider는 서버 등록 자료다. 실제 A4 실행 ID와 모델
     JSON verdict를 분리하며 unavailable 실행을 검토 수행으로 기록하지 않는다.
     """
-    def __init__(self, provider, *, request, policy):
+    def __init__(self, provider, *, request, policy, principal_id):
+        if not isinstance(principal_id, str) or not principal_id or not callable(getattr(provider, 'generate', None)):
+            raise ContractError('invalid_reviewer_registration')
         self.provider, self.request, self.policy = provider, request, policy
+        self.principal_id = principal_id
 
     def __call__(self, *, role, snapshot, evidence, execution_id):
         prompt = ('자료만 검토하고 JSON {"verdict":"pass|fix|unclear","findings":[]}를 반환한다. '
@@ -80,23 +84,30 @@ class SubscriptionReviewProvider:
                   + json.dumps(dict(role=role, snapshot=snapshot, evidence=evidence), ensure_ascii=False, allow_nan=False))
         response = self.provider.generate(self.request, prompt, self.policy)
         if not isinstance(response, Mapping) or response.get('status') != 'completed':
-            return _ProviderExecution(execution_id, {}, False)
+            return _ProviderExecution(self.principal_id, execution_id, {}, False)
         actual = response.get('execution_id')
         if not isinstance(actual, str) or not actual:
-            return _ProviderExecution(execution_id, {}, False)
+            return _ProviderExecution(self.principal_id, execution_id, {}, False)
         try:
             payload = json.loads(response.get('text', ''))
         except (ValueError, TypeError):
             payload = {}
-        return _ProviderExecution(actual, payload, True)
+        return _ProviderExecution(self.principal_id, actual, payload, True)
+
+
+@dataclass(frozen=True)
+class _ReviewExecution:
+    principal_id: str
+    execution_id: str | None
+    verdict: str
+    executed: bool
 
 
 class RegisteredReviewRunner:
-    """provider registry는 principal->callable, tool runner는 서버 소유다.
+    """principal별 서버 adapter와 실제 generate 실행 envelope를 필수로 받는다.
 
-    provider(role=, snapshot=, evidence=, execution_id=)->{verdict, findings?}.
-    제공한 execution_id는 새 실행 구분자이며 응답의 신원 필드는 받지 않는다.
-    각 호출은 새로운 provider 실행이어야 한다. 구독 adapter도 이 경계를 지킨다.
+    bare callable/모델 mapping/커스텀 실행 주장은 reviewer 증거가 아니다.
+    checker와 adapter registry는 서버 DI만 허용한다.
     """
     def __init__(self, providers, *, source_checker=None, calculation_runner=None):
         self.providers = dict(providers)
@@ -104,31 +115,29 @@ class RegisteredReviewRunner:
         self.calculation_runner = calculation_runner
 
     def execute(self, *, role, principal_id, execution_id, snapshot):
+        unavailable = _ReviewExecution(principal_id, None, 'unclear', False)
         provider = self.providers.get(principal_id)
         tool = self.source_checker if role == 'source' else self.calculation_runner
-        if not callable(provider) or not callable(tool):
-            return dict(executed=False, verdict='unclear')
+        if type(provider) is not SubscriptionReviewProvider or provider.principal_id != principal_id or not callable(tool):
+            return unavailable
         try:
             evidence = tool(snapshot)
             if not isinstance(evidence, Mapping) or evidence.get('available') is not True or evidence.get('checked') is not True:
-                return dict(executed=False, verdict='unclear')
-            result = provider(role=role, snapshot=snapshot, evidence=thaw(evidence), execution_id=execution_id)
-            actual_execution = execution_id
-            if isinstance(result, _ProviderExecution):
-                if not result.executed:
-                    return dict(executed=False, verdict='unclear')
-                actual_execution, result = result.execution_id, result.payload
+                return unavailable
+            envelope = provider(role=role, snapshot=snapshot, evidence=thaw(evidence), execution_id=execution_id)
+            if (type(envelope) is not _ProviderExecution or not envelope.executed or envelope.principal_id != principal_id
+                    or not isinstance(envelope.execution_id, str) or not envelope.execution_id):
+                return unavailable
+            actual_execution, result = envelope.execution_id, envelope.payload
             if (not isinstance(result, Mapping) or set(result)-_RESULT_FIELDS
                     or result.get('verdict') not in ('pass', 'fix', 'unclear')):
-                return dict(executed=True, verdict='unclear', execution_id=actual_execution, reason_code='invalid_review_result')
-            # 계산 결과가 불일치하면 모델의 pass가 이를 덮을 수 없다.
+                return _ReviewExecution(principal_id, actual_execution, 'unclear', True)
             verdict = result['verdict']
             if role == 'calc' and any(r.get('matches') is False for r in evidence.get('results', ())):
                 verdict = 'fix'
-            return dict(executed=True, verdict=verdict, execution_id=actual_execution)
+            return _ReviewExecution(principal_id, actual_execution, verdict, True)
         except Exception:
-            # 오류 원문/공급자 stdout을 증거나 로그에 복사하지 않는다.
-            return dict(executed=False, verdict='unclear')
+            return unavailable
 
 
 def _current(snapshot, runtime_store):
@@ -171,6 +180,9 @@ def run_reviews(snapshot: Mapping, *, producer: Mapping, authorities: Mapping, r
             return result
         selected[role] = candidates[0]
         principals.add(candidates[0])
+    if type(runner) is not RegisteredReviewRunner:
+        result.update(reason_code='review_unclear', outcomes={role:'unclear' for role in roles})
+        return result
     try:
         if not _current(snapshot, runtime_store):
             result['reason_code'] = 'content_changed'
@@ -187,14 +199,14 @@ def run_reviews(snapshot: Mapping, *, producer: Mapping, authorities: Mapping, r
             while execution == producer['execution_id'] or any(r['execution_id'] == execution for r in result['reports']):
                 execution = 'review-execution-' + uuid4().hex
             outcome = runner.execute(role=role, principal_id=selected[role], execution_id=execution, snapshot=thaw(safe))
-            verdict = outcome.get('verdict') if isinstance(outcome, Mapping) else None
+            verdict = outcome.verdict if type(outcome) is _ReviewExecution else None
             if verdict not in ('pass', 'fix', 'unclear'):
                 verdict = 'unclear'
             result['outcomes'][role] = verdict
-            if not isinstance(outcome, Mapping) or outcome.get('executed') is not True:
+            if type(outcome) is not _ReviewExecution or not outcome.executed or outcome.principal_id != selected[role]:
                 result['outcomes'][role] = 'unclear'
                 continue
-            actual_execution = outcome.get('execution_id', execution)
+            actual_execution = outcome.execution_id
             if (not isinstance(actual_execution, str) or not actual_execution or actual_execution == producer['execution_id']
                     or any(r['execution_id'] == actual_execution for r in result['reports'])):
                 result['outcomes'][role] = 'unclear'

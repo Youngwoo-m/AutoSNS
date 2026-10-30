@@ -4,6 +4,7 @@
 주입한다. legacy CLI를 import하거나 Voicebox 수명 주기를 제어하지 않는다.
 """
 from collections.abc import Mapping
+from dataclasses import dataclass
 import hashlib
 import json
 import math
@@ -13,7 +14,7 @@ import shutil
 import subprocess
 import tempfile
 
-from .models import ContractError, thaw
+from .models import ContractError, thaw, freeze
 
 MAX_ASSET_BYTES = 100 * 1024 * 1024
 MAX_CONTENT_ASSET_BYTES = 500 * 1024 * 1024
@@ -82,20 +83,90 @@ def probe_media(path):
 
 
 def probe_pdf(path):
-    """고정 pdfinfo 파서. 암호화/JavaScript 문서는 안전 검사를 통과시키지 않는다."""
+    """pdfinfo는 페이지 수 관측기다. 객체 안전성 검사기로 취급하지 않는다.
+
+    현재 배포에는 PDF 객체/name/action을 해석해 검사하는 파서가 등록되어
+    있지 않다. #xx name/ObjStm/비 JS action을 raw token으로 추측하지 않고
+    정상 문서도 safe_parser=False로 둔다. 실제 안전 객체 검사기가 설치·등록되기
+    전 ContentStore ingest와 기본 PDF 렌더 완료는 차단되는 것이 정상이다.
+    """
     result = subprocess.run(['pdfinfo', str(path)], capture_output=True, text=True, timeout=30, shell=False)
     _require(result.returncode == 0, 'pdf_parser_failed')
     fields = dict(line.split(':', 1) for line in result.stdout.splitlines() if ':' in line)
     encrypted = not fields.get('Encrypted', '').strip().startswith('no')
-    javascript = fields.get('JavaScript', '').strip()
-    raw = Path(path).read_bytes()
-    active = any(token in raw for token in (b'/JavaScript', b'/Launch', b'/OpenAction', b'/EmbeddedFile', b'/RichMedia', b'/AA '))
     return dict(page_count=int(fields.get('Pages', '0').strip()), encrypted=encrypted,
-                safe_parser=javascript == 'no' and not encrypted and not active, parser='pdfinfo')
+                safe_parser=False, parser='pdfinfo', reason_code='pdf_object_inspection_unavailable')
 
 
 def _strings(data, fields):
     return all(isinstance(data.get(k), str) and len(data[k]) <= 200000 and '\x00' not in data[k] for k in fields)
+
+
+@dataclass(frozen=True)
+class RegisteredSceneAsset:
+    """서버가 검증·동결한 자산 등록. 모델 JSON/HTTP에서 생성하지 않는다."""
+    asset_id: str
+    path: str
+    sha256: str
+    source: str
+    origin: str
+    provenance: Mapping
+    reuse_request_id: str | None = None
+
+    def __post_init__(self):
+        _require(all(isinstance(v, str) and v for v in (self.asset_id, self.path, self.source))
+                 and Path(self.path).is_absolute() and _hash(self.sha256), 'invalid_scene_registration')
+        _require(self.origin in ('reuse', 'generated') and isinstance(self.provenance, Mapping), 'invalid_scene_registration')
+        if self.origin == 'reuse':
+            _require(isinstance(self.reuse_request_id, str) and bool(self.reuse_request_id)
+                     and set(self.provenance) == {'kind', 'record_id'} and self.provenance.get('kind') == 'reuse'
+                     and isinstance(self.provenance.get('record_id'), str) and bool(self.provenance['record_id']), 'invalid_scene_registration')
+        else:
+            _require(set(self.provenance) == {'kind', 'provider_id', 'execution_id', 'policy_revision', 'request_hash'}
+                     and self.provenance.get('kind') == 'generated'
+                     and all(isinstance(v, str) and v for v in self.provenance.values())
+                     and _hash(self.provenance['request_hash']) and self.reuse_request_id is None, 'invalid_scene_registration')
+        object.__setattr__(self, 'provenance', freeze(thaw(self.provenance)))
+
+    @property
+    def provenance_hash(self):
+        return hashlib.sha256(json.dumps(thaw(self.provenance), sort_keys=True, separators=(',', ':'), ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+
+def _authorize_reuse(manifest, asset, authorize):
+    _require(callable(authorize), 'reuse_not_authorized')
+    auth = authorize(manifest=thaw(manifest), asset=dict(asset))
+    _require(isinstance(auth, Mapping) and auth.get('authorized') is True and auth.get('reviewed') is True
+             and all(auth.get(k) == manifest[k] for k in ('sha256', 'source', 'reuse_request_id')), 'reuse_not_authorized')
+
+
+def _validate_scene_assets(manifest, root, runners):
+    registry = runners.get('scene_assets')
+    _require(isinstance(registry, Mapping), 'scene_asset_unregistered')
+    records = []
+    for scene in manifest['scenes']:
+        asset_id = scene.get('image_asset_id')
+        _require(isinstance(asset_id, str) and bool(asset_id), 'scene_asset_unregistered')
+        registered = registry.get(asset_id)
+        _require(isinstance(registered, RegisteredSceneAsset) and registered.asset_id == asset_id, 'scene_asset_unregistered')
+        path = _path(root, scene['image'])
+        _require(path.resolve() == _path(root, registered.path).resolve(), 'scene_asset_mismatch')
+        mime = 'video/mp4' if scene['kind'] in ('clip', 'dioclip') else {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp'}.get(path.suffix.lower())
+        asset = _asset(root, path, mime)
+        _require(asset['sha256'] == registered.sha256, 'asset_changed')
+        if registered.origin == 'reuse':
+            reuse = dict(path=registered.path, sha256=registered.sha256, source=registered.source, reuse_request_id=registered.reuse_request_id)
+            _authorize_reuse(reuse, asset, runners.get('reuse_authorization'))
+        else:
+            authorize = runners.get('generation_authorization')
+            _require(callable(authorize), 'missing_required_media')
+            proof = authorize(registration=registered, asset=dict(asset))
+            _require(isinstance(proof, Mapping) and proof.get('authorized') is True
+                     and proof.get('sha256') == registered.sha256 and proof.get('provenance_hash') == registered.provenance_hash, 'generation_not_authorized')
+        records.append(dict(asset_id=registered.asset_id, path=registered.path, sha256=registered.sha256,
+                            source=registered.source, origin=registered.origin, provenance=thaw(registered.provenance),
+                            provenance_hash=registered.provenance_hash, reuse_request_id=registered.reuse_request_id))
+    return records
 
 
 def _video_manifest(manifest, root):
@@ -108,7 +179,7 @@ def _video_manifest(manifest, root):
     _require(all(isinstance(s, Mapping) for s in scenes))
     total = 0
     for scene in scenes:
-        _require(not set(scene)-{'title', 'caption', 'image', 'kind', 'audio', 'overlay', 'captionSize', 'seconds'})
+        _require(not set(scene)-{'title', 'caption', 'image', 'kind', 'audio', 'overlay', 'captionSize', 'seconds', 'image_asset_id'})
         _require(_strings(scene, ('title', 'caption', 'image')) and scene['kind'] in ('diorama', 'dioclip', 'diagram', 'clip'))
         _require(_finite_positive(scene.get('seconds')))
         total += scene['seconds']
@@ -145,17 +216,14 @@ def render_registered_media(kind: str, manifest: Mapping, *, artifact_root: Path
             media_type = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp'}.get(path.suffix.lower())
             asset = _asset(root, path, media_type)
             _require(asset['sha256'] == manifest['sha256'], 'asset_changed')
-            authorize = runners.get('reuse_authorization')
-            _require(callable(authorize), 'reuse_not_authorized')
-            auth = authorize(manifest=manifest, asset=dict(asset))
-            _require(isinstance(auth, Mapping) and auth.get('authorized') is True and auth.get('reviewed') is True
-                     and all(auth.get(k) == manifest[k] for k in ('sha256', 'source', 'reuse_request_id')), 'reuse_not_authorized')
+            _authorize_reuse(manifest, asset, runners.get('reuse_authorization'))
             evidence.update(source=manifest['source'], reuse_request_id=manifest['reuse_request_id'], reviewed=True)
         else:
             leaf = runners.get(kind)
             _require(callable(leaf), 'missing_required_media')
             if kind == 'remotion_video':
                 manifest = _video_manifest(manifest, root)
+                evidence['inputs'] = _validate_scene_assets(manifest, root, runners)
             elif kind == 'voicebox_audio':
                 _require(not set(manifest)-{'text', 'seed', 'output'} and _strings(manifest, ('text',)) and manifest['text'].strip())
                 _require(type(manifest.get('seed', 14005)) is int)
@@ -206,7 +274,9 @@ def render_registered_media(kind: str, manifest: Mapping, *, artifact_root: Path
                     _require(isinstance(scenes, (list, tuple)) and len(scenes) == len(manifest['scenes'])
                              and all(isinstance(s, Mapping) and s.get('index') == i and s.get('checked') is True for i, s in enumerate(scenes, 1)), 'video_scenes_unchecked')
                     evidence.update(font_sha256=rendered['font_sha256'], scenes=thaw(scenes), audio_checked=True, font_checked=True, disclosure=manifest['disclosure'])
-        # 검사 도중 산출물 변경도 완료하지 않는다.
+        # 검사 도중 입력/산출물 변경도 완료하지 않는다.
+        for item in evidence.get('inputs', ()):
+            _require(_sha(_path(root, item['path'])) == item['sha256'], 'asset_changed')
         _require(_sha(Path(asset['path'])) == asset['sha256'], 'asset_changed')
         asset['evidence'] = dict(evidence)
         return dict(status='completed', assets=[asset], evidence=evidence)
@@ -258,15 +328,19 @@ def template_hash(root):
 
 class RemotionVideoRunner:
     """기존 SurveyShort leaf 명령. 모델은 props schema 자료만 전달한다."""
-    def __init__(self, template_root, *, template_hash, font_path, spawn=subprocess.run):
+    def __init__(self, template_root, *, template_hash, font_path, spawn=subprocess.run,
+                 scene_assets=None, reuse_authorization=None, generation_authorization=None):
         self.root, self.expected_hash = Path(template_root).absolute(), template_hash
         self.font_path, self.spawn = Path(font_path), spawn
         _require(_hash(template_hash) and self.font_path.is_file(), 'invalid_remotion_registration')
         self.font_hash = _sha(self.font_path)
+        self.scene_registry = {'scene_assets': freeze(dict(scene_assets or {})), 'reuse_authorization': reuse_authorization,
+                               'generation_authorization': generation_authorization}
 
     def __call__(self, *, manifest, artifact_root):
         _require(template_hash(self.root) == self.expected_hash and _sha(self.font_path) == self.font_hash, 'template_changed')
         props = _video_manifest(manifest, artifact_root)
+        inputs = _validate_scene_assets(props, artifact_root, self.scene_registry)
         output = _path(artifact_root, props.pop('output', 'short.mp4'), exists=False)
         _require(not output.exists(), 'artifact_already_exists')
         with tempfile.TemporaryDirectory(prefix='autosns-remotion-') as directory:
@@ -276,10 +350,14 @@ class RemotionVideoRunner:
                 src = _path(artifact_root, props['voice']);name = 'voice'+src.suffix
                 shutil.copyfile(src, public/name);props['voice'] = name
             for index, scene in enumerate(props['scenes'], 1):
+                scene.pop('image_asset_id', None)
                 for key in ('image', 'audio', 'overlay'):
                     if scene.get(key):
                         src = _path(artifact_root, scene[key]);name = f's{index}-{key}{src.suffix}'
-                        shutil.copyfile(src, public/name);scene[key] = name
+                        shutil.copyfile(src, public/name)
+                        if key == 'image':
+                            _require(_sha(public/name) == inputs[index-1]['sha256'], 'asset_changed')
+                        scene[key] = name
             props_path = public/'_props.json'
             props_path.write_text(json.dumps(props, ensure_ascii=False, allow_nan=False))
             args = ['npx', '--no-install', 'remotion', 'render', 'src/survey-short/index.ts', 'SurveyShort', str(output),

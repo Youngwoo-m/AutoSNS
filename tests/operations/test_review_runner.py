@@ -30,10 +30,17 @@ class ReviewTests(unittest.TestCase):
         self.calls=[]
 
     def runner(self, verdict='pass', **extra):
-        def provider(**kwargs):
-            self.calls.append(kwargs)
-            return {'verdict':verdict,**extra}
-        return api('RegisteredReviewRunner')({'calc-principal':provider,'source-principal':provider},source_checker=lambda snapshot:{'available':True,'checked':True,'sources':['https://example.org/original']},calculation_runner=lambda snapshot:{'available':True,'checked':True,'results':[{'actual':3,'expected':3}]})
+        # 서버 adapter 아래 generate 경계의 비모델 fixture. 운영 registry에는 등록하지 않는다.
+        class Provider:
+            def generate(inner, request, prompt, policy):
+                import json
+                from uuid import uuid4
+                self.calls.append(json.loads(prompt.split('\n',1)[1]))
+                return {'status':'completed','execution_id':'fixture-provider-'+uuid4().hex,
+                        'text':json.dumps({'verdict':verdict,**extra})}
+        providers={principal:api('SubscriptionReviewProvider')(Provider(),request='server-request',policy='server-policy',principal_id=principal)
+                   for principal in ('calc-principal','source-principal')}
+        return api('RegisteredReviewRunner')(providers,source_checker=lambda snapshot:{'available':True,'checked':True,'sources':['https://example.org/original']},calculation_runner=lambda snapshot:{'available':True,'checked':True,'results':[{'actual':3,'expected':3}]})
 
     def run_reviews(self, runner=None, authorities=None):
         return api('run_reviews')(self.snapshot,producer=self.producer,authorities=authorities or self.authorities,runner=runner or self.runner(),runtime_store=self.runtime,now=NOW)
@@ -95,7 +102,7 @@ class ReviewTests(unittest.TestCase):
         self.snapshot=dict(self.snapshot,connection_id='secret-target',permit='secret-permit',credential_ref='secret-ref',asset_bytes={'a':b'private'})
         result=self.run_reviews();self.assertEqual(result['status'],'completed')
         for call in self.calls:
-            self.assertEqual(set(call),{'role','snapshot','evidence','execution_id'})
+            self.assertEqual(set(call),{'role','snapshot','evidence'})
             for key in ('permit','connection_id','credential_ref','asset_bytes'):self.assertNotIn(key,call['snapshot'])
 
     def test_unregistered_reviewer_is_unclear_and_is_not_recorded_as_executed(self):
@@ -122,15 +129,14 @@ class ReviewTests(unittest.TestCase):
                 payload=json.loads(prompt.split('\n',1)[1])
                 self.calls.append(payload)
                 return {'status':'completed','execution_id':'server-provider-'+payload['role'], 'text':'{"verdict":"pass"}'}
-        adapter=api('SubscriptionReviewProvider')(Provider(),request='server-request',policy='server-policy')
-        runner=api('RegisteredReviewRunner')({'calc-principal':adapter,'source-principal':adapter},source_checker=lambda snapshot:{'available':True,'checked':True},calculation_runner=lambda snapshot:{'available':True,'checked':True})
+        adapters={p:api('SubscriptionReviewProvider')(Provider(),request='server-request',policy='server-policy',principal_id=p) for p in ('calc-principal','source-principal')}
+        runner=api('RegisteredReviewRunner')(adapters,source_checker=lambda snapshot:{'available':True,'checked':True},calculation_runner=lambda snapshot:{'available':True,'checked':True})
         result=self.run_reviews(runner)
         self.assertEqual(result['status'],'completed')
         self.assertEqual([r['execution_id'] for r in result['reports']],['server-provider-calc','server-provider-source'])
         class ReusedProvider:
             def generate(inner,*args):return {'status':'completed','execution_id':'generation','text':'{"verdict":"pass"}'}
-        repeated=api('SubscriptionReviewProvider')(ReusedProvider(),request='server-request',policy='server-policy')
-        runner.providers={'calc-principal':repeated,'source-principal':repeated}
+        runner.providers={p:api('SubscriptionReviewProvider')(ReusedProvider(),request='server-request',policy='server-policy',principal_id=p) for p in ('calc-principal','source-principal')}
         result=self.run_reviews(runner)
         self.assertEqual(result['status'],'blocked')
         self.assertEqual(result['reports'],[])
@@ -138,8 +144,74 @@ class ReviewTests(unittest.TestCase):
     def test_provider_text_identity_claim_is_rejected_by_actual_adapter(self):
         class Provider:
             def generate(inner,*args):return {'status':'completed','execution_id':'fresh-server-execution','text':'{"verdict":"pass","reviewer_id":"forged"}'}
-        adapter=api('SubscriptionReviewProvider')(Provider(),request='server-request',policy='server-policy')
-        runner=self.runner();runner.providers={'calc-principal':adapter,'source-principal':adapter}
+        runner=self.runner();runner.providers={p:api('SubscriptionReviewProvider')(Provider(),request='server-request',policy='server-policy',principal_id=p) for p in ('calc-principal','source-principal')}
         result=self.run_reviews(runner)
         self.assertEqual(result['status'],'blocked')
         self.assertFalse(any(r['verdict']=='pass' for r in result['reports']))
+
+    def test_bare_pass_callbacks_do_not_become_actual_provider_executions(self):
+        def callback(**kwargs):
+            self.calls.append(kwargs)
+            return {'verdict':'pass'}
+        runner=api('RegisteredReviewRunner')({'calc-principal':callback,'source-principal':callback},
+                source_checker=lambda snapshot:{'available':True,'checked':True},calculation_runner=lambda snapshot:{'available':True,'checked':True})
+        result=self.run_reviews(runner)
+        self.assertEqual(result['status'],'blocked')
+        self.assertEqual(result['reports'],[])
+        rows=self.runtime.read_content_evidence(self.snapshot['id'],1,self.snapshot['manifest_hash'])
+        self.assertFalse(any(row['kind']=='independent_review' for row in rows))
+
+    def test_custom_runner_mapping_cannot_assert_actual_execution(self):
+        class Runner:
+            def execute(inner,**kwargs):return {'executed':True,'verdict':'pass','execution_id':'invented-'+kwargs['role']}
+        result=self.run_reviews(Runner())
+        self.assertEqual(result['status'],'blocked');self.assertEqual(result['reports'],[])
+
+    def test_adapter_principal_registration_must_match_server_authority(self):
+        runner=self.runner()
+        runner.providers['calc-principal']=runner.providers['source-principal']
+        result=self.run_reviews(runner)
+        self.assertEqual(result['outcomes']['calc'],'unclear')
+        self.assertFalse(any(r['role']=='calc' for r in result['reports']))
+
+    def test_registered_a4_provider_executes_two_local_fixture_children(self):
+        # A4 실제 .generate 코드/ID 생성과 자식 프로세스를 연결한다. 모델 CLI는 실행하지 않는다.
+        import json
+        import subprocess
+        import sys
+        from common.operations.production_providers import ClaudeSubscriptionProvider
+        from common.operations.production_models import ProductionRequest, ProviderPolicy
+        observations=Path(self.tmp.name)/'child-observations';observations.mkdir()
+        script='''import json,os,pathlib,sys
+prompt=sys.stdin.read()
+payload=json.loads(prompt.split('\\n',1)[1])
+args=sys.argv[2:]
+assert args[args.index('--tools')+1] == ''
+assert args[args.index('--model')+1] == 'fixture-explicit-model'
+assert args[args.index('--mcp-config')+1] == '{"mcpServers":{}}'
+assert '--no-session-persistence' in args
+record={'pid':os.getpid(),'role':payload['role'],'cwd':os.getcwd(),'snapshot':payload['snapshot']}
+pathlib.Path(sys.argv[1],str(os.getpid())+'.json').write_text(json.dumps(record))
+print(json.dumps({'type':'result','is_error':False,'result':json.dumps({'verdict':'pass','findings':[]})}))
+'''
+        def spawn(args,**kwargs):
+            return subprocess.run([sys.executable,'-c',script,str(observations),*args[1:]],**kwargs)
+        executable=Path('/usr/local/bin/fixture-claude-never-invoked')
+        spawn.capability_evidence={'executable':str(executable),'version':'fixture-only', 'text_only_verified':True,
+                'supported_flags':['-p','--model','--tools','--setting-sources','--strict-mcp-config','--mcp-config','--disable-slash-commands','--no-session-persistence','--output-format','--verbose']}
+        provider=ClaudeSubscriptionProvider(executable,'fixture-explicit-model',spawn=spawn)
+        request=ProductionRequest('review-fixture','personal','review-occurrence',self.snapshot['id'],1,{'task':'review'},('text',))
+        policy=ProviderPolicy('fixture','personal',('review-fixture',),True,('claude-subscription',),('text',),())
+        adapters={p:api('SubscriptionReviewProvider')(provider,request=request,policy=policy,principal_id=p) for p in ('calc-principal','source-principal')}
+        runner=api('RegisteredReviewRunner')(adapters,source_checker=lambda snapshot:{'available':True,'checked':True},
+                calculation_runner=lambda snapshot:api('calculate_registered_inputs')([{'operation':'add','operands':['1','2'],'expected':'3','tolerance':'0','unit':'m'}]))
+        result=self.run_reviews(runner)
+        self.assertEqual(result['status'],'completed')
+        observed=[json.loads(path.read_text()) for path in observations.glob('*.json')]
+        self.assertEqual({o['role'] for o in observed},{'calc','source'})
+        self.assertEqual(len({o['pid'] for o in observed}),2)
+        self.assertEqual(len({r['execution_id'] for r in result['reports']}),2)
+        self.assertTrue(all(r['execution_id'].startswith('production-execution-') for r in result['reports']))
+        for child in observed:
+            self.assertEqual(child['snapshot']['manifest_hash'],self.snapshot['manifest_hash'])
+            self.assertFalse(Path(child['cwd']).exists())
