@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import re
 import stat
-from urllib.parse import urlsplit, unquote
+from urllib.parse import urlsplit, unquote, parse_qs
 
 from .content_store import StoreError
 from .metrics_models import normalize_observation
@@ -208,12 +208,61 @@ def _canonical(value):
     return parsed if parsed else _text(value)
 
 
+def _youtube_video_id(value):
+    """검증한 watch URL의 v 한 개만 사용하며 다른 query 값은 보존하지 않는다."""
+    parsed = _url(value)
+    if parsed is None or parsed[0] not in ('youtube.com', 'www.youtube.com') or parsed[1] != '/watch':
+        return None
+    try:
+        values = parse_qs(urlsplit(value).query, keep_blank_values=True, max_num_fields=64).get('v', [])
+    except ValueError:
+        return None
+    if len(values) == 1 and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', values[0]):
+        return values[0]
+    return None
+
+
+def _source_row_key(kind, section, raw, observation, position):
+    """정규화에서 사라지는 허용 차원을 hash하고 불명 행은 원본 위치로 구별한다.
+
+    검색어 원문과 URL query/비밀 필드는 공개 source나 key 입력에 복사하지 않는다.
+    강한 식별 차원이 없는 동일 내용 행도 같은 항목이라고 추정하지 않는다.
+    """
+    row = raw if isinstance(raw, dict) else {}
+    dimensions = {}
+    if observation['remote_id'] is not None:
+        dimensions['remote_id'] = observation['remote_id']
+    for field in ('site', 'page', 'url'):
+        parsed = _url(row.get(field))
+        if parsed is not None:
+            dimensions[field] = parsed
+    query = _text(row.get('query')) if kind == 'searchconsole' else None
+    if query is not None:
+        dimensions['query_hash'] = _digest(query.encode('utf-8'))
+    if section in ('profile', 'channel', 'totals', 'report'):
+        identified = True  # 각 파일에서 한 번만 생성하는 집계 section
+    elif kind == 'searchconsole':
+        identified = ('remote_id' in dimensions or query is not None or
+                      'page' in dimensions or section == 'per_site' and 'site' in dimensions)
+    elif kind == 'youtube':
+        identified = 'remote_id' in dimensions
+    else:
+        identified = ('remote_id' in dimensions or
+                      any(dimensions.get(field, ('', ''))[1] for field in ('page', 'url')) or
+                      section == 'per_site' and 'site' in dimensions)
+    if not identified:
+        dimensions['source_position'] = position
+    return _digest(_json(dict(kind=kind, section=section, dimensions=dimensions)).encode('utf-8'))
+
+
 def _identity(kind, data, row):
     fixed = kind if kind in ('instagram', 'threads', 'x', 'youtube', 'blogger') else None
     parsed = _url(row.get('url') or row.get('page') or row.get('site'))
     platform = fixed or _platform(parsed)
     targets = set()
     remote = _text(row.get('remote_id')) or _text(row.get('id'))
+    if remote is None and kind == 'youtube':
+        remote = _youtube_video_id(row.get('url'))
     if parsed:
         host, path = parsed
         pieces = [p for p in path.split('/') if p]
@@ -335,8 +384,12 @@ def build_import_plan(snapshot, registry):
             warnings.append(f"{_PARTS[kind]}: {file['status']}")
             continue
         data = snapshot['parts'][kind]
+        positions = {}
         for section, raw in _sections(kind, data):
+            position = positions.get(section, 0)
+            positions[section] = position + 1
             observation = _observation(kind, section, raw, data, file, registry)
+            observation['source']['row_key'] = _source_row_key(kind, section, raw, observation, position)
             row_hash = _digest(_json(observation).encode('utf-8'))
             key = f'legacy:{kind}:{row_hash}'
             if key in seen:

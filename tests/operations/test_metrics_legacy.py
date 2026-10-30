@@ -66,7 +66,7 @@ class LegacyMetricsTests(unittest.TestCase):
         self.assertNotIn('SECRET', public)
         self.assertNotIn('?token', public)
         self.assertNotIn(str(self.root), public)
-        self.assertTrue(all(set(r['source']) <= {'path', 'kind', 'label', 'note', 'section'} for r in rows))
+        self.assertTrue(all(set(r['source']) <= {'path', 'kind', 'label', 'note', 'section', 'row_key'} for r in rows))
 
     def test_mtime_is_not_observed_or_collection_time(self):
         f = self.parts / 'youtube.json'
@@ -155,6 +155,72 @@ class LegacyMetricsTests(unittest.TestCase):
         rows = [e for e in self.plan()['observations'] if e['observation']['source']['kind'] == 'blogger']
         self.assertEqual(2, len(rows))
         self.assertNotEqual(rows[0]['observation_key'], rows[1]['observation_key'])
+
+    def synthetic_plan(self, kind, data):
+        snapshot = {'files': [{'path': f'common/analytics/snapshots/parts/{kind}.json',
+            'kind': kind, 'label': kind, 'status': 'ok', 'digest': 'synthetic',
+            'file_mtime': None, 'row_count': len(data.get('items', [])),
+            'missing_rows': 0, 'unsupported': False, 'note': '합성 시험'}],
+            'parts': {kind: data}}
+        return build_import_plan(snapshot, None)
+
+    def test_search_query_dimensions_survive_normalization_and_true_duplicates_collapse(self):
+        first = {'site': 'https://site.example', 'query': '측량', 'clicks': 1, 'impressions': 5}
+        second = dict(first, query='토목')
+        data = {'items': [first, second, dict(first)]}
+        plan = self.synthetic_plan('searchconsole', data)
+        self.assertEqual(2, len(plan['observations']))
+        self.assertEqual(2, len({e['observation_key'] for e in plan['observations']}))
+        self.assertEqual(2, len({e['observation']['source']['row_key'] for e in plan['observations']}))
+        self.assertEqual(plan, self.synthetic_plan('searchconsole', copy.deepcopy(data)))
+        public = json.dumps(plan, ensure_ascii=False)
+        self.assertNotIn('측량', public)
+        self.assertNotIn('토목', public)
+
+    def test_search_site_page_dimensions_keep_equal_metric_rows_separate(self):
+        data = {'pages': [
+            {'site': 'https://one.example', 'page': 'https://one.example/a', 'clicks': 1},
+            {'site': 'https://one.example', 'page': 'https://one.example/b', 'clicks': 1},
+            {'site': 'https://two.example', 'page': 'https://one.example/a', 'clicks': 1}]}
+        plan = self.synthetic_plan('searchconsole', data)
+        self.assertEqual(3, len(plan['observations']))
+        self.assertEqual(3, len({e['observation_key'] for e in plan['observations']}))
+
+    def test_youtube_watch_v_ids_distinguish_rows_without_copying_other_query_values(self):
+        data = {'items': [
+            {'title': '같은 제목', 'views': 5, 'url': 'https://www.youtube.com/watch?v=videoA&token=SECRET'},
+            {'title': '같은 제목', 'views': 5, 'url': 'https://www.youtube.com/watch?v=videoB&token=SECRET'},
+            {'title': '같은 제목', 'views': 5, 'url': 'https://www.youtube.com/watch?v=videoA&token=OTHER_SECRET'}]}
+        plan = self.synthetic_plan('youtube', data)
+        self.assertEqual(2, len(plan['observations']))
+        self.assertEqual({'videoA', 'videoB'}, {e['observation']['remote_id'] for e in plan['observations']})
+        self.assertEqual(2, len({e['observation_key'] for e in plan['observations']}))
+        self.assertNotIn('SECRET', json.dumps(plan))
+        self.assertNotIn('token=', json.dumps(plan))
+        self.assertEqual(plan, self.synthetic_plan('youtube', copy.deepcopy(data)))
+
+    def test_youtube_v_extraction_rejects_wrong_host_duplicate_and_invalid_ids(self):
+        urls = ['https://youtube.com.evil.example/watch?v=videoA',
+                'https://www.youtube.com/watch?v=videoA&v=videoB',
+                'https://www.youtube.com/watch?v=bad%2Fid',
+                'https://www.youtube.com/other?v=videoA',
+                'https://www.youtube.com/watch?access_token=SECRET']
+        plan = self.synthetic_plan('youtube', {'items': [{'url': url, 'views': 1} for url in urls]})
+        self.assertEqual(len(urls), len(plan['observations']))
+        self.assertTrue(all(e['observation']['remote_id'] is None for e in plan['observations']))
+        self.assertNotIn('SECRET', json.dumps(plan))
+
+    def test_unidentified_equal_rows_keep_separate_stable_source_positions(self):
+        data = {'items': [{'title': '식별 불명', 'views': 1}, {'title': '식별 불명', 'views': 1}]}
+        plan = self.synthetic_plan('blog', data)
+        self.assertEqual(2, len(plan['observations']))
+        self.assertNotEqual(plan['observations'][0]['observation_key'], plan['observations'][1]['observation_key'])
+        self.assertEqual(plan, self.synthetic_plan('blog', copy.deepcopy(data)))
+
+    def test_true_duplicate_with_strong_remote_identity_is_still_deduplicated(self):
+        row = {'title': '중복', 'url': 'https://mine.tistory.com/7', 'views': 1}
+        plan = self.synthetic_plan('blog', {'items': [row, dict(row)]})
+        self.assertEqual(1, len(plan['observations']))
 
     def test_conflicting_import_rolls_back_earlier_new_row(self):
         plan = self.plan()
