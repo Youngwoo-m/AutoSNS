@@ -11,7 +11,7 @@ def _records(value, name):
             raise ContractError('invalid_registry', name)
         if any('id' in row and row['id'] != key for key, row in value.items()):
             raise ContractError('invalid_registry', name)
-        return value
+        return {key: dict(row, id=key) for key, row in value.items()}
     if isinstance(value, list):
         result = {}
         for row in value:

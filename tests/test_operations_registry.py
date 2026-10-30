@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from dataclasses import replace
 
-from common.operations.models import ContractError, ExecutionRequest
+from common.operations.models import ContractError, ExecutionRequest, Connection, ExecutionContext
 from common.operations.registry import load_registry
 from common.operations.context import resolve_context
 from common.operations.target_guard import validate_observed_target
@@ -143,6 +143,49 @@ class RegistryTests(unittest.TestCase):
         self.assertIsNone(registry.jobs['legacy.fixture']['schedule_owner'])
         self.error('planning_disabled', lambda: resolve_context(request(job_id='legacy.fixture'), registry, 'personal'))
         data['jobs']['legacy.fixture']['planning_enabled'] = True
+        self.error('invalid_registry', lambda: self.load(data))
+
+    def test_connection_scalar_types_rejected_from_file_and_direct_models(self):
+        invalid = {'id': [], 'account_id': {}, 'platform': [], 'target_id': {},
+            'credential_ref': [], 'profile_ref': {}, 'enabled': 1, 'auth_checked_at': [],
+            'last_success_at': {}, 'expected_login_subject': {'subject': []},
+            'target_label': {'labels': []}, 'auth_status': [], 'planning_enabled': 1,
+            'capabilities': ['plan', {}], 'target_evidence': {}, 'warnings': {}}
+        for name, value in invalid.items():
+            with self.subTest(name=name, construction='direct'):
+                kwargs = dict(id='fixture', account_id='personal', platform='youtube')
+                kwargs[name] = value
+                self.error('invalid_registry', lambda: Connection(**kwargs))
+            with self.subTest(name=name, construction='file'):
+                data = fixture()
+                data['connections'][0][name] = value
+                with self.assertRaises(ContractError):
+                    self.load(data)
+        for name in ('expected_login_subject', 'target_id'):
+            with self.subTest(context=name):
+                self.error('invalid_request', lambda: ExecutionContext(**request().to_dict(), **{name: {'nested': []}}))
+
+    def test_direct_models_freeze_nested_collections(self):
+        evidence = [{'source': ['fixture']}]
+        connection = Connection(id='fixture', account_id='personal', platform='youtube', target_evidence=evidence)
+        evidence[0]['source'].append('changed')
+        self.assertEqual(connection.target_evidence[0]['source'], ('fixture',))
+        with self.assertRaises(TypeError):
+            connection.target_evidence[0]['source'] = []
+        self.error('invalid_request', lambda: ExecutionContext(**dict(request().to_dict(), run_id={'mutable': []})))
+        self.error('invalid_registry', lambda: Connection(id='fixture', account_id='personal', platform='youtube', target_evidence=[{'mutable': set()}]))
+
+    def test_mapping_crosspost_id_normalized_for_real_preview(self):
+        from common.operations.crossposts import preview_crossposts
+        data = fixture()
+        data['crossposts'] = {'mapping-rule': dict(owner_account_id='personal',
+            source_connection_id='personal.youtube', destination_connection_id='personal.youtube',
+            enabled=False, delivery_owner='legacy')}
+        registry = self.load(data)
+        rows = preview_crossposts(dict(owner_account_id='personal', source_connection_id='personal.youtube'), registry)
+        self.assertEqual(rows[0]['rule_id'], 'mapping-rule')
+        self.assertEqual(rows[0]['status'], 'disabled')
+        data['crossposts']['mapping-rule']['id'] = 'wrong-id'
         self.error('invalid_registry', lambda: self.load(data))
 
     def test_shipped_registry(self):
