@@ -14,7 +14,7 @@ export function createOperationsApi({fetcher=globalThis.fetch}={}){
 export function createOperationsPanel({api,onChange=()=>{},document=globalThis.document}){
   const roots=Object.fromEntries(['issues','today','accounts'].map(mode=>{const node=document.createElement('section');node.className=`operations-panel operations-${mode}`;return [mode,node];}));
   let account='all',snapshot=null,detail=null,draft=null,dirty=false,busy=false,generation=0,selection=0,message='운영 상태를 불러오세요.',conflict=false,filter='all';
-  const controls=new Map(), actionRequests=new Map();
+  const controls=new Map(), actionRequests=new Map(), actionNeedsRefresh=new Set();
   let renderedMode;
   const actionKey=(id,action)=>`${id}:${action}`;
   function actionBody(action){const id=actionKey(detail.id,action);if(!actionRequests.has(id))actionRequests.set(id,{expected_version:detail.version,request_key:key()});return actionRequests.get(id);}
@@ -33,11 +33,11 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
   function newDraft(){draft={kind:'link_existing',evidence:'{}',note:'',expected_version:detail.version,request_key:key()};dirty=false;conflict=false;}
   async function load(scope='all'){
     if(!scopes.has(scope))throw new Error('계정 범위가 올바르지 않습니다.');
-    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();actionRequests.clear();selection++;}
+    if(scope!==account){account=scope;snapshot=null;detail=null;draft=null;dirty=false;controls.clear();actionRequests.clear();actionNeedsRefresh.clear();selection++;}
     const current=++generation;message='운영 상태를 불러오는 중입니다.';emit();
     try{const result=await api.list(scope);if(current!==generation)return;snapshot=result;message='서버에서 관측한 운영 상태입니다.';}
-    catch(error){if(current!==generation)return;if(error.status===401)snapshot=null;feedback(error);}
-    emit();
+    catch(error){if(current!==generation)return;if(error.status===401)snapshot=null;feedback(error);emit();return false;}
+    emit();return true;
   }
   async function open(id){
     if(busy||hasDirty()){message='입력한 근거를 저장하거나 버린 뒤 다른 실행을 선택하세요.';emit();return;}
@@ -46,20 +46,37 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     catch(error){if(current!==generation||selected!==selection)return;feedback(error);}
     emit();
   }
+  async function runAction(action){
+    if(busy||!allowed(action))return;
+    const id=detail.id,requestId=actionKey(id,action),current=generation;
+    if(actionNeedsRefresh.has(requestId)){
+      busy=true;emit();
+      try{const latest=await api.get(id);if(current!==generation)return;detail=latest;actionNeedsRefresh.delete(requestId);}
+      catch{if(current===generation)message='이전 조치는 완료됐지만 최신 상세 조회에 실패했습니다. 입력은 보존했고 새 조치는 전송하지 않았습니다.';return;}
+      finally{busy=false;emit();}
+    }
+    return mutate(action,actionBody(action));
+  }
   async function mutate(action,body){
     if(busy||!allowed(action))return;
     if(action==='retry'&&dirty){message='작성 중인 복구 입력을 저장하거나 버린 뒤 실행을 재개하세요.';emit();return;}
-    const current=generation,id=detail.id;busy=true;emit();
-    try{await api[action](id,body);if(current!==generation)return;
-      if(action==='reconcile'){const latest=await api.get(id);if(current!==generation)return;detail=latest;await load(account);message='최신 관측을 확인했습니다. 작성 중인 복구 입력과 기준 버전은 보존했습니다.';}
-      else{dirty=false;conflict=false;detail=null;draft=null;message='조치를 기록했습니다. 최신 상태를 확인하세요.';await load(account);}
+    const current=generation,id=detail.id,requestId=actionKey(id,action);let postConfirmed=false;busy=true;emit();
+    try{
+      await api[action](id,body);if(current!==generation)return;postConfirmed=true;
+      actionRequests.delete(requestId);
+      if(action==='reconcile'){
+        actionNeedsRefresh.add(requestId);
+        const latest=await api.get(id);if(current!==generation)return;detail=latest;actionNeedsRefresh.delete(requestId);
+        const loaded=await load(account);if(loaded===undefined)return;
+        message=loaded?'최신 관측을 확인했습니다. 작성 중인 복구 입력과 기준 버전은 보존했습니다.':'조치는 완료됐지만 후속 목록 조회에 실패했습니다. 작성 중인 복구 입력과 기준 버전은 보존했습니다.';
+      }else{dirty=false;conflict=false;detail=null;draft=null;message='조치를 기록했습니다. 최신 상태를 확인하세요.';const loaded=await load(account);if(loaded===false)message='조치는 완료됐지만 후속 목록 조회에 실패했습니다.';}
     }
-    catch(error){if(current===generation)feedback(error);}
+    catch(error){if(current===generation){if(postConfirmed)message='조치는 완료됐지만 후속 상세 조회에 실패했습니다. 입력은 보존했습니다.';else feedback(error);}}
     finally{busy=false;emit();}
   }
   async function rebase(){
     if(busy||!detail)return;busy=true;const current=generation;emit();
-    try{const latest=await api.get(detail.id);if(current!==generation)return;detail=latest;draft.expected_version=latest.version;draft.request_key=key();resetActionRequests(detail.id);conflict=false;message='최신 버전을 확인했습니다. 보존한 입력을 검토한 뒤 다시 조치하세요.';}
+    try{const latest=await api.get(detail.id);if(current!==generation)return;detail=latest;draft.expected_version=latest.version;draft.request_key=key();resetActionRequests(detail.id);for(const action of ['retry','reconcile'])actionNeedsRefresh.delete(actionKey(detail.id,action));conflict=false;message='최신 버전을 확인했습니다. 보존한 입력을 검토한 뒤 다시 조치하세요.';}
     catch(error){if(current===generation)feedback(error);}
     finally{busy=false;emit();}
   }
@@ -75,7 +92,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     for(const [label,value] of [['계획 상태',detail.plan_status],['실행 상태',labels[detail.execution_state]||'상태 미확인'],['소유 계정',detail.owner_account_id],['대상 계정',detail.destination_account_id],['연결',detail.connection_id],['플랫폼',detail.platform],['버전',detail.version]])box.append(node('p',`${label}: ${value??'미확인'}`));
     box.append(node('h4','시도 기록'));evidence(box,detail.attempts);box.append(node('h4','확인 근거'));evidence(box,detail.evidence);
     for(const reason of detail.blockers||[])if(typeof reason==='string')box.append(node('p',reason,'operations-warning'));
-    box.append(button('상태 다시 조회',()=>mutate('reconcile',actionBody('reconcile')),!allowed('reconcile')),button('동일 실행 재개',()=>mutate('retry',actionBody('retry')),!allowed('retry')));
+    box.append(button('상태 다시 조회',()=>runAction('reconcile'),!allowed('reconcile')),button('동일 실행 재개',()=>runAction('retry'),!allowed('retry')));
     if(!allowed('reconcile'))box.append(node('p','읽기 전용 조회 어댑터가 허용되지 않아 상태 조회를 실행할 수 없습니다.'));
     if(!allowed('retry'))box.append(node('p','실행 정책 또는 복구 상태 때문에 재개할 수 없습니다.'));
     const form=node('form',undefined,'operations-form');const edit=name=>value=>{draft[name]=value;dirty=true;emit(false);};
