@@ -20,3 +20,14 @@
 근거 문서: `2026-10-30-web-phase1-acceptance.md`, `2026-10-30-web-phase2-acceptance.md`, `2026-10-30-web-phase3-acceptance.md`, `2026-10-30-web-phase4-readiness.md`, `2026-10-30-web-phase4-acceptance.md`. 이전 단계의 137개 Python·38개 Node 시험 결과는 해당 시점 코드의 근거이며 향후 변경의 통과를 뜻하지 않는다.
 
 현재 원본 서버의 관측 자료 수·로그의 published·로컬 ready·플러그인 선호 enabled는 오늘 실제 공개 실적 또는 자동 운영 완료 근거로 사용하지 않는다. 전체 목표는 모든 행의 추가 증거가 확보될 때까지 진행 상태로 유지한다.
+
+## 후속 운영 적용의 정적 점검 근거
+
+4단계 수락 후 병렬 읽기 전용 조사로 다음 차이를 확인했다. 이는 운영 적용 완료가 아니라 실제 수정·검증 대상으로 확정한 근거다.
+
+- [기존 실행 진입점](2026-10-30-live-entrypoint-readiness.md): 주요 legacy 소스8개의 원본/worktree 해시가 같고 원본에는 새 runtime/등록부가 없다. 기존 운영은 새 permit/owner와 미연결이다. 재난 ensure_public은 조회뿐 아니라 공개 변경도 하므로 inspect로 재사용하지 않는다.23개 교차 경로의 조건·TikTok 대기/시도/정렬 보존 시험을 명시했다.
+- [제작·구독 경계](2026-10-30-production-subscription-readiness.md): 기존 생성 진입점은 업로드·발행·댓글·공개 자산 업로드와 결합돼 있다. 내부 LLM/매체 공급자의 우회 경로 때문에 최상위 구독 성공만으로 개인 구독 전용 정책을 증명할 수 없다. 제작 권한 격리·계정별 공급자 정책·실제 독립 검토의 산출물 hash 결합이 필요하다.
+- [플러그인 runtime](2026-10-30-plugin-runtime-readiness.md): 계정별 preference 저장은 구현돼 있으나 공식 인증·기능 점검·실어댑터 등록은 미연결이다. 미등록 개인 소셜 계정이나 학과 Facebook을 임의 생성하지 않는다.
+- [외부 접속](2026-10-30-remote-access-readiness.md): 현재는 loopback/로컬 Host/HTTP Origin 전용이다. 외부 HTTPS 출처·Secure 쿠키·신뢰 전송·내부키 경계를 설계하고 실제 Mac/휴대폰 경로로 수락해야 한다.
+
+위 조사는 서비스 호출·제작·발행·로그인·운영 설정 변경을 수행하지 않았다.5단계 계획의 검토 대기와 독립적으로 후속 필수 작업의 수정 파일·수락 증거를 구체화한 것이다.
