@@ -55,7 +55,8 @@ def run_once(store,registry,adapters,policy,locks,now):
     connection=registry.connections[ctx.connection_id]
     job=registry.jobs.get(run['occurrence']['job_id'])
     if not job or job.get('enabled') is not True or job.get('execution_owner')!='managed':raise ContractError('job_disabled')
-    check_policy(policy,connection,registry.policies[ctx.policy_revision])
+    check_policy(policy,connection,registry.policies[ctx.policy_revision],
+                 job=dict(job,id=run['occurrence']['job_id']),catalog=policy.provider_policy.get('catalog',{}))
     # Profile refs are server-owned symbols; never accept a path or executor from a request.
     resource=connection.profile_ref
     profile=registry.profiles.get(resource) if resource else None

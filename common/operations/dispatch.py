@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 from collections.abc import Mapping
 from .content_store import StoreError, ConflictError
 from .runtime_models import ExecutionPolicy, RunLease, utc
-from .models import Registry
+from .models import Registry, ContractError
+from .provider_policy import resolve_job_provider_policy
 
 _PROCESS_STARTED_AT = datetime.now(timezone.utc).isoformat()
 _FIELDS = {'job_id', 'scheduled_at_utc', 'phase', 'source', 'request_kind', 'mode'}
@@ -35,6 +36,7 @@ def submit_trigger(store, request, registry, policy, *, production_policy_resolv
     job = registry.jobs.get(request['job_id'])
     if not job:
         raise StoreError('unknown_job')
+    job = dict(job, id=request['job_id'])
     if job.get('execution_owner') != 'managed' or job.get('schedule_owner') not in ('launchd', 'console'):
         raise StoreError('legacy_owner')
     # 회차의 source는 현재 schedule owner로 고정한다. caller source 검증은
@@ -91,8 +93,11 @@ def submit_trigger(store, request, registry, policy, *, production_policy_resolv
             raise StoreError('cutover_required')
         if any(id not in policy.allowed_connection_ids for id in ids):
             raise StoreError('connection_not_allowed')
-        if policy.provider_policy.get('subscription_only') is True and job_policy.get('subscription_only') is not True:
-            raise StoreError('provider_policy_violation')
+        if not production:
+            try:
+                resolve_job_provider_policy(job,registry,policy)
+            except ContractError as exc:
+                raise StoreError(exc.code) from None
     if request['mode'] == 'shadow':
         return dict(normalized, state='shadow')
     if request['request_kind'] == 'resume':

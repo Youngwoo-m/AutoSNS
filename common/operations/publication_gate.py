@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from datetime import timedelta
 from .models import ContractError, thaw
 from .content_store import StoreError
+from .provider_policy import resolve_provider_policy, _merge_job_policy
 from .runtime_models import PublicationContext, ExecutionPolicy, RunLease, utc
 from common.shared.axlock import read_control_state
 
@@ -42,13 +43,22 @@ def validate_reviews(evidence, policy, ctx, persisted, now):
     return tuple(sorted(hashes))
 
 
-def check_policy(policy, connection, job_policy):
+def check_policy(policy, connection, job_policy, *, job=None, catalog=None):
     if not isinstance(policy,ExecutionPolicy) or not policy.enabled:raise ContractError('execution_disabled')
     if not connection.enabled:raise ContractError('connection_disabled')
     if connection.id not in policy.allowed_connection_ids:raise ContractError('connection_not_allowed')
     if not policy.cutover_revision:raise ContractError('cutover_required')
-    if policy.provider_policy.get('subscription_only') is not True or job_policy.get('subscription_only') is not True:
-        raise ContractError('provider_policy_violation')
+    if not isinstance(job_policy,Mapping):raise ContractError('provider_policy_violation')
+    if job is None:
+        # 이전 3인자 호출은 명시 구독 전용 fixture만 유지한다. 대상 계정을
+        # 원본 계정으로 추정해 신규 학과 정책을 승인하지 않는다.
+        if policy.provider_policy.get('subscription_only') is not True or job_policy.get('subscription_only') is not True:
+            raise ContractError('provider_policy_violation')
+        return None
+    if not isinstance(job,Mapping):raise ContractError('provider_policy_violation')
+    production_job=_merge_job_policy(job,job_policy)
+    if catalog is None:catalog=policy.provider_policy.get('catalog',{})
+    return resolve_provider_policy(production_job,policy,catalog)
 
 
 def _snapshot(store, content_id, revision, manifest_hash):
@@ -81,7 +91,7 @@ def build_publication_context(store,delivery_id,observed_target,review_evidence,
     if not connection or connection.id not in job_ids:raise ContractError('connection_mismatch')
     job_policy=registry.policies.get(job.get('policy_revision'))
     if not job_policy:raise ContractError('unknown_policy')
-    check_policy(policy,connection,job_policy)
+    check_policy(policy,connection,job_policy,job=dict(job,id=occurrence['job_id']))
     owner=plan['owner_account_id']
     if job.get('owner_account_id')!=owner:raise ContractError('owner_mismatch')
     if connection.account_id!=owner:
