@@ -74,6 +74,7 @@ function renderStatus() {
   $('#refresh').textContent=state.phase==='loading'?'다시 갱신':'새로고침';
 }
 function render() {
+  const preserveTitleFocus=document.activeElement?.id==='page-title';
   renderStatus();
   document.querySelectorAll('[data-scope]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scope===state.account)));
   document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
@@ -81,9 +82,11 @@ function render() {
   const head=pageHead();
   if(!state.snapshot) {
     $('#screen-root').replaceChildren(head,empty(state.phase==='loading'?'조회 중':state.phase==='unauthorized'?'로그인 후 조회할 수 있습니다':'조회 자료가 없습니다',state.phase==='loading'?'선택한 관련 계정의 실제 기록을 불러옵니다.':state.phase==='unauthorized'?'상단 로그인 링크에서 인증 후 새로고침해 주세요.':'데이터를 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.'));
+    if(preserveTitleFocus)$('#page-title')?.focus({preventScroll:true});
     return;
   }
   $('#screen-root').replaceChildren(head,renderers[view]());
+  if(preserveTitleFocus)$('#page-title')?.focus({preventScroll:true});
 }
 function stats(items) {
   return h('div',{class:'stats'},items.map(([title,value,note])=>h('div',{class:'stat'},h('div',{class:'stat-top'},title),h('strong',{},value),h('p',{class:'stat-note'},note))));
