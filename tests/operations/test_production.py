@@ -295,4 +295,30 @@ class ProductionTests(unittest.TestCase):
         self.assertEqual(len(evidence),3)
         self.assertFalse(any(word in calls[0][2] for word in ('credential_ref','profile_ref','permit_nonce')))
 
+    def test_current_owner_limit_rejects_stale_larger_bucket_before_provider(self):
+        store=self.store();self.bind(store);runtime=self.runtime();provider=self.provider()
+        # 관측 당시 capacity=10이었고 이후 현재 정책 limit만 1로 축소됐다.
+        owner_policy=runtime.registry.policies['p1']['quota_requirements'][-1]
+        owner_policy['limit']=10
+        owner_bucket=runtime.quota_buckets()[0]['id']
+        runtime.observe_bucket(owner_bucket,10,1,NOW,NOW+timedelta(hours=1))
+        owner_policy['limit']=1
+        before_buckets=runtime.quota_buckets()
+        self.assertEqual(owner_policy['limit'],1)
+        result=self.produce(store,runtime,provider)
+        self.assertEqual('blocked',result['status'])
+        self.assertEqual('quota_observation_required',result['reason_code'])
+        self.assertEqual(provider.calls,[])
+        self.assertEqual(runtime.list_productions(),[])
+        self.assertEqual(runtime.quota_buckets(),before_buckets)
+        self.assertEqual(self.content.get(self.snapshot['id'])['revision'],1)
+
+    def test_current_owner_limit_matching_observation_still_allows_production(self):
+        store=self.store();self.bind(store);runtime=self.runtime();provider=self.provider()
+        result=self.produce(store,runtime,provider)
+        self.assertEqual('completed',result['status'])
+        self.assertEqual(len(provider.calls),1)
+        self.assertEqual(len(runtime.list_productions()),1)
+        self.assertEqual(runtime.quota_buckets()[0]['reserved'],1)
+
 if __name__ == '__main__': unittest.main()

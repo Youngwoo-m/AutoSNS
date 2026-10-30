@@ -456,11 +456,33 @@ class RuntimeStore:
             if attempt['state']!='running':raise ConflictError()
             current=c.execute('SELECT current_revision FROM contents WHERE id=?',(binding['content_id'],)).fetchone()
             if not current or current[0]!=binding['content_revision']:raise ConflictError()
+            # 현재 서버 정책과 관측 capacity의 정합성을 hold 생성과 같은
+            # 트랜잭션에서 확인한다. 오래된 큰 capacity를 현재 한도로 쓰지 않는다.
+            from collections.abc import Mapping
+            from .quota import bucket_id, quota_window
+            policy=getattr(self.registry,'policies',{}).get(binding['policy_revision'])
+            rows=policy.get('quota_requirements') if isinstance(policy,Mapping) else None
+            if not isinstance(rows,(tuple,list)):raise StoreError('quota_policy_required')
+            current_requirements=[];limits={}
+            for row in serial(rows):
+                if not isinstance(row,dict):raise StoreError('invalid_quota_policy')
+                if row.get('scope_kind')!='owner':continue
+                if row.get('scope_id')!=binding['owner_account_id']:raise StoreError('quota_scope_mismatch')
+                limit,amount=row.get('limit'),row.get('amount')
+                if any(type(v) not in (int,float) or not math.isfinite(v) or v<=0 for v in (limit,amount)):raise StoreError('invalid_quota_policy')
+                start,end=quota_window(row,now)
+                if not start<=utc(now)<end:raise StoreError('quota_window_expired')
+                policy_bucket=bucket_id('owner',row['scope_id'],row.get('metric'),start,end)
+                if policy_bucket in limits:raise StoreError('invalid_quota_policy')
+                limits[policy_bucket]=limit
+                current_requirements.append({'bucket_id':policy_bucket,'amount':amount})
+            if current_requirements!=requirements:raise StoreError('invalid_quota_policy')
             buckets=self._buckets(c)
             for req in requirements:
                 bucket=buckets.get(req['bucket_id'])
-                if not bucket or utc(bucket['expires_at'])<=utc(now) or utc(bucket['observed_at'])>utc(now):raise StoreError('quota_observation_required')
-                if bucket['observed_usage']+bucket['reserved']+req['amount']>bucket['capacity']:raise StoreError('quota_exceeded')
+                limit=limits[req['bucket_id']]
+                if not bucket or bucket['capacity']!=limit or utc(bucket['expires_at'])<=utc(now) or utc(bucket['observed_at'])>utc(now):raise StoreError('quota_observation_required')
+                if bucket['observed_usage']+bucket['reserved']+req['amount']>limit:raise StoreError('quota_exceeded')
             c.execute("INSERT INTO quota_productions VALUES(?,?,'held',?,NULL)",(unit_id,_json(requirements),stamp(now)))
             return dict(c.execute('SELECT * FROM quota_productions WHERE id=?',(unit_id,)).fetchone(),requirements=requirements)
 

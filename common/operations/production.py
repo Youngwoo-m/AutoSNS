@@ -85,6 +85,10 @@ def _requirements(runtime_store,binding,now):
     for row in rows:
         if row.get('scope_kind')!='owner': continue
         if row.get('scope_id')!=binding['owner_account_id']: raise StoreError('quota_scope_mismatch')
+        if any(type(v) not in (int,float) or not math.isfinite(v) or v<=0 for v in (row.get('limit'),row.get('amount'))):
+            raise StoreError('invalid_quota_policy')
+        # reserve_production_unit도 현재 서버 정책을 다시 읽고 limit/capacity와
+        # requirements를 한 트랜잭션 안에서 대조한다. limit은 요청으로 받지 않는다.
         start,end=quota_window(row,now)
         if not start<=now<end: raise StoreError('quota_window_expired')
         result.append(dict(bucket_id=bucket_id('owner',row['scope_id'],row['metric'],start,end),amount=row['amount']))
