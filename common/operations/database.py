@@ -73,6 +73,9 @@ def initialize_database(root: Path) -> None:
 
 # 이행은 initialize_database의 단일 트랜잭션에서만 실행한다.
 OPERATIONS_DDL = (
+    'CREATE TABLE IF NOT EXISTS production_bindings(binding_id TEXT PRIMARY KEY, base_job_id TEXT NOT NULL, execution_job_id TEXT UNIQUE NOT NULL, content_id TEXT NOT NULL, content_revision INTEGER NOT NULL, manifest_hash TEXT NOT NULL, owner_account_id TEXT NOT NULL, policy_revision TEXT NOT NULL, registry_revision TEXT NOT NULL, input_payload TEXT NOT NULL, FOREIGN KEY(content_id,content_revision) REFERENCES revisions(content_id,revision))',
+    'CREATE TABLE IF NOT EXISTS production_attempts(unit_id TEXT PRIMARY KEY, request_hash TEXT NOT NULL, state TEXT NOT NULL, version INTEGER NOT NULL, provenance TEXT NOT NULL, result TEXT)',
+    'CREATE TABLE IF NOT EXISTS production_output_links(content_id TEXT NOT NULL, revision INTEGER NOT NULL, manifest_hash TEXT NOT NULL, production_id TEXT NOT NULL REFERENCES quota_productions(id), PRIMARY KEY(content_id,revision,manifest_hash), UNIQUE(production_id), FOREIGN KEY(content_id,revision) REFERENCES revisions(content_id,revision))',
     'CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, payload TEXT NOT NULL)',
     'CREATE TABLE IF NOT EXISTS triggers(id TEXT PRIMARY KEY, job_id TEXT NOT NULL, payload TEXT NOT NULL)',
     'CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, job_id TEXT NOT NULL, scheduled_at_utc TEXT NOT NULL, phase TEXT NOT NULL, request_hash TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(job_id,scheduled_at_utc,phase))',

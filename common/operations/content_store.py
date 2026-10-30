@@ -199,6 +199,20 @@ class ContentStore:
         elif media_type=='video/mp4': valid=suffix=='.mp4' and len(data)>=12 and data[4:8]==b'ftyp' and int.from_bytes(data[:4],'big')>=12
         elif media_type=='audio/mpeg': valid=suffix=='.mp3' and (data.startswith(b'ID3') or (len(data)>=2 and data[0]==255 and data[1]&224==224))
         elif media_type=='audio/wav': valid=suffix=='.wav' and data[:4]==b'RIFF' and data[8:12]==b'WAVE'
+        elif media_type=='application/pdf':
+            valid=suffix=='.pdf' and data.startswith(b'%PDF-') and b'%%EOF' in data[-2048:]
+            if valid:
+                # 파서는 서버 코드가 고정한다. 요청이 safe/page_count를 주장할 수 없다.
+                import tempfile
+                from .production_media import probe_pdf
+                try:
+                    with tempfile.TemporaryDirectory(prefix='autosns-pdf-ingest-') as scratch:
+                        path=Path(scratch)/'input.pdf'; path.write_bytes(data)
+                        parsed=probe_pdf(path)
+                    valid=(parsed.get('safe_parser') is True and parsed.get('encrypted') is False
+                           and type(parsed.get('page_count')) is int and 1<=parsed['page_count']<=10000)
+                except Exception:
+                    valid=False
         if not valid: raise StoreError('unsupported_media')
         with self._db() as conn:
             found=self._snapshot(conn,content_id)

@@ -60,6 +60,9 @@ def reserve_quota(store, ctx, observed_usage, now, *, reservation_id=None):
         raise StoreError('quota_policy_required')
     if not isinstance(observed_usage, Mapping):
         raise StoreError('invalid')
+    managed = store.get_production_for_output(context.content_id, context.content_revision, context.manifest_hash)
+    if managed is not None and managed['owner_account_id'] != context.owner_account_id:
+        raise StoreError('quota_scope_mismatch')
     requirements, productions, observations, kinds = [], {}, [], set()
     for row in rows:
         if not isinstance(row, Mapping):
@@ -73,6 +76,11 @@ def reserve_quota(store, ctx, observed_usage, now, *, reservation_id=None):
             raise StoreError('invalid_quota_policy')
         if (kind == 'target' and scope != context.target_id) or (kind == 'owner' and scope != context.owner_account_id):
             raise StoreError('quota_scope_mismatch')
+        if kind == 'owner' and managed is not None:
+            # 완성 제작의 최초 기간/금액을 보존한다. 다음날 owner observation도 새로 요구하지 않는다.
+            kinds.add(kind)
+            productions[managed['production_id']] = {'production_id': managed['production_id'], 'requirements': managed['requirements']}
+            continue
         start, end = quota_window(row, now)
         id = bucket_id(kind, scope, metric, start, end)
         if not start <= now < end:

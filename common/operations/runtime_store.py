@@ -410,7 +410,7 @@ class RuntimeStore:
             for req in json.loads(row[0]):
                 if req['bucket_id'] in result:
                     b=result[req['bucket_id']]
-                    if row['state']=='held' or not row['settled_at'] or utc(row['settled_at'])>utc(b['observed_at']):b['reserved']+=req['amount']
+                    if row['state']=='held' or not row['settled_at'] or utc(row['settled_at'])>=utc(b['observed_at']):b['reserved']+=req['amount']
         return result
     def quota_buckets(self):
         with self._db() as c:return list(self._buckets(c).values()) if self._v3(c) else []
@@ -434,6 +434,93 @@ class RuntimeStore:
             except StoreError as e:
                 if e.code=='not_found':return None
                 raise
+    def reserve_production_unit(self,unit_id,requirements,now):
+        """제작 호출 전 기존 quota_productions에 단일 unit hold를 만든다."""
+        if not isinstance(requirements,(tuple,list)) or not requirements:raise StoreError('invalid')
+        requirements=serial(requirements);seen=set()
+        for req in requirements:
+            if not isinstance(req,dict) or set(req)!={'bucket_id','amount'} or not isinstance(req['bucket_id'],str) or not req['bucket_id'] or req['bucket_id'] in seen:raise StoreError('invalid')
+            positive(req['amount']);seen.add(req['bucket_id'])
+        with self._db(True) as c:
+            attempt=c.execute('SELECT state,provenance FROM production_attempts WHERE unit_id=?',(unit_id,)).fetchone()
+            if not attempt:raise StoreError('production_attempt_required')
+            provenance=json.loads(attempt['provenance'])
+            binding=c.execute('SELECT * FROM production_bindings WHERE binding_id=?',(provenance.get('binding_id'),)).fetchone()
+            if not binding:raise ConflictError()
+            request=provenance.get('request',{})
+            if any(request.get(k)!=binding[v] for k,v in (('job_id','base_job_id'),('owner_account_id','owner_account_id'),('content_id','content_id'),('expected_revision','content_revision'))):raise ConflictError()
+            old=c.execute('SELECT * FROM quota_productions WHERE id=?',(unit_id,)).fetchone()
+            if old:
+                if json.loads(old['requirements'])!=requirements or old['state']=='released':raise ConflictError()
+                return dict(old,requirements=json.loads(old['requirements']))
+            if attempt['state']!='running':raise ConflictError()
+            current=c.execute('SELECT current_revision FROM contents WHERE id=?',(binding['content_id'],)).fetchone()
+            if not current or current[0]!=binding['content_revision']:raise ConflictError()
+            buckets=self._buckets(c)
+            for req in requirements:
+                bucket=buckets.get(req['bucket_id'])
+                if not bucket or utc(bucket['expires_at'])<=utc(now) or utc(bucket['observed_at'])>utc(now):raise StoreError('quota_observation_required')
+                if bucket['observed_usage']+bucket['reserved']+req['amount']>bucket['capacity']:raise StoreError('quota_exceeded')
+            c.execute("INSERT INTO quota_productions VALUES(?,?,'held',?,NULL)",(unit_id,_json(requirements),stamp(now)))
+            return dict(c.execute('SELECT * FROM quota_productions WHERE id=?',(unit_id,)).fetchone(),requirements=requirements)
+
+    def _validated_production_output(self,c,unit_id,content_id,revision,manifest_hash,expected_version=None):
+        """서버 attempt·binding·provenance·최종 파일을 같은 journal에서 대조한다."""
+        from .production_models import ProductionRequest
+        from .content_store import ContentStore
+        row=c.execute('SELECT * FROM production_attempts WHERE unit_id=?',(unit_id,)).fetchone()
+        quota=c.execute('SELECT * FROM quota_productions WHERE id=?',(unit_id,)).fetchone()
+        if not row or row['state']!='completed' or not quota or quota['state']=='released':raise ConflictError()
+        if expected_version is not None and (type(expected_version) is not int or row['version']!=expected_version):raise ConflictError()
+        provenance=json.loads(row['provenance']);result=json.loads(row['result']);request=provenance.get('request',{})
+        try:parsed=ProductionRequest(**request)
+        except (ValueError,TypeError) as exc:raise ConflictError() from exc
+        if parsed.production_unit_id!=unit_id:raise ConflictError()
+        binding=c.execute('SELECT * FROM production_bindings WHERE binding_id=?',(provenance.get('binding_id'),)).fetchone()
+        if not binding or digest(json.loads(binding['input_payload']))!=binding['binding_id']:raise ConflictError()
+        if (request['content_id']!=content_id or binding['content_id']!=content_id or request['owner_account_id']!=binding['owner_account_id']
+                or request['job_id']!=binding['base_job_id'] or request['expected_revision']!=binding['content_revision']
+                or result.get('status')!='completed' or result.get('content_id')!=content_id or result.get('revision')!=revision
+                or result.get('manifest_hash')!=manifest_hash):raise ConflictError()
+        producer=provenance.get('producer')
+        if (not isinstance(producer,dict) or set(producer)!={'principal_id','execution_id'} or producer!=result.get('producer')
+                or not all(isinstance(v,str) and v for v in producer.values())):raise ConflictError()
+        evidence=c.execute("SELECT report FROM content_evidence WHERE content_id=? AND revision=? AND manifest_hash=? AND kind='production_provenance' AND report_hash=?",(content_id,revision,manifest_hash,digest(producer))).fetchone()
+        if not evidence or json.loads(evidence[0])!=producer:raise ConflictError()
+        content=self.content_store or ContentStore(self.root)
+        snapshot=content.get(content_id)
+        if (not snapshot or snapshot['revision']!=revision or snapshot['manifest_hash']!=manifest_hash
+                or snapshot['owner_account_id']!=binding['owner_account_id']
+                or provenance.get('output')!=dict(content_id=content_id,revision=revision,manifest_hash=manifest_hash,assets=snapshot['assets'])):raise ConflictError()
+        for asset in snapshot['assets']:content.read_asset(content_id,revision,asset['id'])
+        return dict(quota,requirements=json.loads(quota['requirements']),production_id=unit_id,owner_account_id=binding['owner_account_id'])
+
+    def bind_production_output(self,unit_id,content_id,revision,manifest_hash,*,expected_production_version):
+        expected(expected_production_version)
+        with self._db(True) as c:
+            result=self._validated_production_output(c,unit_id,content_id,revision,manifest_hash,expected_production_version)
+            existing=c.execute('SELECT * FROM production_output_links WHERE (content_id=? AND revision=?) OR production_id=?',(content_id,revision,unit_id)).fetchall()
+            link=dict(content_id=content_id,revision=revision,manifest_hash=manifest_hash,production_id=unit_id)
+            if existing:
+                if len(existing)!=1 or dict(existing[0])!=link:raise ConflictError()
+            else:c.execute('INSERT INTO production_output_links VALUES(?,?,?,?)',(content_id,revision,manifest_hash,unit_id))
+            return result
+
+    def get_production_for_output(self,content_id,revision,manifest_hash):
+        expected(revision)
+        with self._db() as c:
+            if not self._v3(c):return None
+            if not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='production_output_links'").fetchone():
+                if c.execute("SELECT 1 FROM content_evidence WHERE content_id=? AND kind='production_provenance'",(content_id,)).fetchone():raise StoreError('production_output_unlinked')
+                return None
+            row=c.execute('SELECT * FROM production_output_links WHERE content_id=? AND revision=?',(content_id,revision)).fetchone()
+            if row:
+                if row['manifest_hash']!=manifest_hash:raise ConflictError()
+                return self._validated_production_output(c,row['production_id'],content_id,revision,manifest_hash)
+            # managed 제작 증거가 있으면 legacy hash 예약으로 우회하지 않는다.
+            if c.execute("SELECT 1 FROM content_evidence WHERE content_id=? AND kind='production_provenance'",(content_id,)).fetchone():raise StoreError('production_output_unlinked')
+            return None
+
     def reserve_quota(self,delivery_id,requirements,now,*,reservation_id=None,production_requirements=()):
         if not isinstance(requirements,(tuple,list)) or not requirements:raise StoreError('invalid')
         requirements=serial(requirements);seen=set()
@@ -453,7 +540,7 @@ class RuntimeStore:
                 positive(req['amount']);seen.add(req['bucket_id'])
             production_ids.add(item['production_id'])
         with self._db(True) as c:
-            self._delivery(c,delivery_id);id=reservation_id or ident('reservation')
+            delivery=self._delivery(c,delivery_id);id=reservation_id or ident('reservation')
             old=c.execute('SELECT id FROM quota_reservations WHERE id=?',(id,)).fetchone()
             if old:
                 old=self._reservation(c,id)
@@ -461,6 +548,14 @@ class RuntimeStore:
                 return old
             new_productions=[]
             for item in production_requirements:
+                managed=c.execute('SELECT 1 FROM production_attempts WHERE unit_id=?',(item['production_id'],)).fetchone()
+                if managed or item['production_id'].startswith('production-'):
+                    ctx=delivery['context']
+                    link=c.execute('SELECT production_id FROM production_output_links WHERE content_id=? AND revision=? AND manifest_hash=?',
+                                   (ctx['content_id'],ctx['content_revision'],ctx['manifest_hash'])).fetchone()
+                    if not link or link[0]!=item['production_id']:raise ConflictError()
+                    validated=self._validated_production_output(c,item['production_id'],ctx['content_id'],ctx['content_revision'],ctx['manifest_hash'])
+                    if validated['owner_account_id']!=ctx['owner_account_id'] or validated['requirements']!=item['requirements']:raise ConflictError()
                 prior=c.execute('SELECT * FROM quota_productions WHERE id=?',(item['production_id'],)).fetchone()
                 if prior:
                     if {r['amount'] for r in json.loads(prior['requirements'])}!={r['amount'] for r in item['requirements']}:raise ConflictError()
