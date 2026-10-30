@@ -26,7 +26,7 @@ MAX_JSONL_ROWS = 100
 ACCOUNTS = {'dept': '학과', 'personal': '개인'}
 LABELS = {'youtube': '유튜브', 'tiktok': '틱톡', 'instagram': '인스타그램',
           'naver_blog': '네이버 블로그', 'tistory': '티스토리', 'blogger': '블로거',
-          'threads': '스레드', 'x': 'X', 'homepage': '홈페이지', 'kakao': '카카오'}
+          'threads': '스레드', 'x': 'X', 'facebook': '페이스북', 'homepage': '홈페이지', 'kakao': '카카오'}
 CHANNEL_ALIASES = {'naver': 'naver_blog', 'yt': 'youtube', 'insta': 'instagram'}
 CONTENT_STATUSES = {'idea', 'drafting', 'review', 'scheduled', 'reported_published', 'failed', 'unknown'}
 DELIVERY_STATUSES = {'draft', 'queued', 'scheduled_recorded', 'reported_published', 'failed', 'unknown', 'paused'}
@@ -96,6 +96,23 @@ def _status(value, *, content=False):
 def _id(prefix, *parts):
     raw = json.dumps(parts, ensure_ascii=False, sort_keys=True, default=str).encode()
     return prefix + '_' + hashlib.sha256(raw).hexdigest()[:20]
+
+
+def _integration_catalog(local_platforms):
+    """연동 후보 목록이다. 설치·인증·실행 상태를 검사하거나 추정하지 않는다."""
+    candidates = [
+        ('metricool', 'Metricool', 'external_plugin', ('instagram', 'threads', 'x', 'facebook'),
+         '외부 채널 관리 연동 후보. 계정 연결과 웹 실행 권한을 별도로 확인해야 합니다.'),
+        ('vidiq', 'vidIQ', 'external_plugin', ('youtube', 'tiktok', 'instagram'),
+         '콘텐츠 분석·기획 보조 연동 후보. 발행 연결과 별개입니다.')]
+    if local_platforms:
+        candidates.append(('local_publishers', '기존 발행기', 'local_adapter', sorted(local_platforms),
+                           '자동 작업 설정에 선언된 채널 목록입니다. 실제 연결·실행 가능 여부는 별도 확인이 필요합니다.'))
+    return [{'id': key, 'label': label, 'kind': kind,
+             'platforms': [{'id': platform, 'label': LABELS.get(platform, platform)} for platform in platforms],
+             'availability': 'unknown', 'connection_status': 'unknown', 'execution_status': 'not_connected',
+             'description': description}
+            for key, label, kind, platforms, description in candidates]
 
 
 class _Reader:
@@ -352,6 +369,7 @@ def build_snapshot(source_root: Path, account: str = 'all', *, now: datetime | N
             jobs[job_key] = None
         else:
             jobs[job_key] = job
+    local_platforms = set()
     for job_key, job in jobs.items():
         if job is None:
             continue
@@ -359,6 +377,7 @@ def build_snapshot(source_root: Path, account: str = 'all', *, now: datetime | N
         targets = job.get('channels', [])
         targets = [(p[0], _channel(p[1])) for p in targets if isinstance(p, list) and len(p) == 2
                    and _account(p[0]) and _channel(p[1])] if isinstance(targets, list) else []
+        local_platforms.update(channel for _, channel in targets)
         source = next((channel for acc, channel in targets if acc == owner), None)
         for dest, channel in targets:
             if dest == owner and channel == source:
@@ -368,6 +387,7 @@ def build_snapshot(source_root: Path, account: str = 'all', *, now: datetime | N
                 'destination_channel': channel, 'title': _text(job.get('name')) or '자동 작업 대상 경로',
                 'condition': '자동 작업 대상 목록에서 확인 · 트리거·변환·간격은 미등록',
                 'enabled': job.get('enabled') if isinstance(job.get('enabled'), bool) else None})
+    snapshot['integrations'] = _integration_catalog(local_platforms)
 
     raw_contents = defaultdict(list)
     task_links = defaultdict(list)

@@ -79,3 +79,17 @@ test('갱신 실패는 이전 데이터와 실패를 구분하고 계정 전환�
   const switched=loader.select('dept');assert.equal(latest.snapshot,null);await switched;
   assert.equal(latest.phase,'error');assert.equal(latest.account,'dept');
 });
+
+test('연동 카탈로그의 후보와 제공 여부를 설치·계정 연결·실행 가능으로 승격하지 않는다',async()=>{
+  const {integrationSummary}=await import('../ax-console/app/web/view_helpers.js');
+  const candidate={id:'sns',label:'SNS 연동',kind:'external_plugin',platforms:[{id:'instagram',label:'Instagram'},{id:'threads',label:'Threads'},{id:'x',label:'X'},{id:'tistory',label:'Tistory'},{id:'facebook',label:'Facebook'}],availability:'unknown',connection_status:'unknown',execution_status:'not_connected',description:'도구 카탈로그 후보'};
+  assert.deepEqual(integrationSummary(candidate),{kind:'외부 플러그인',platforms:['Instagram','Threads','X','Tistory','Facebook'],availability:'카탈로그 후보 · 제공 여부 미확인',connection:'계정 연결 미확인',execution:'웹 실행 미연결'});
+  const provided=integrationSummary({...candidate,availability:'provided'});
+  assert.equal(provided.availability,'도구 제공됨 · 설치·연결 미확인');
+  assert.equal(provided.connection,'계정 연결 미확인');
+  assert.equal(provided.execution,'웹 실행 미연결');
+});
+test('연동 자료의 누락·예상 밖 상태도 연결 성공이나 활성 실행으로 표시하지 않는다',async()=>{
+  const {integrationSummary}=await import('../ax-console/app/web/view_helpers.js');
+  assert.deepEqual(integrationSummary({kind:'local_adapter',platforms:null,availability:'installed',connection_status:'connected',execution_status:'enabled'}),{kind:'로컬 어댑터',platforms:[],availability:'카탈로그 후보 · 제공 여부 미확인',connection:'계정 연결 미확인',execution:'웹 실행 상태 미확인'});
+});

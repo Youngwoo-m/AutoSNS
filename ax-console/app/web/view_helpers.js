@@ -43,3 +43,13 @@ export function weekDays(value=new Date().toISOString(),offset=0) {
   date.setUTCDate(date.getUTCDate()-((date.getUTCDay()+6)%7)+offset*7);
   return Array.from({length:7},(_,i)=>{const d=new Date(date);d.setUTCDate(date.getUTCDate()+i);return d.toISOString().slice(0,10);});
 }
+
+export function integrationSummary(item={}) {
+  return {
+    kind:({external_plugin:'외부 플러그인',local_adapter:'로컬 어댑터'}[item.kind] || '연동 유형 미확인'),
+    platforms:rows(item.platforms).filter(p=>p&&typeof p.label==='string'&&p.label.trim()).map(p=>p.label),
+    availability:item.availability==='provided'?'도구 제공됨 · 설치·연결 미확인':'카탈로그 후보 · 제공 여부 미확인',
+    connection:'계정 연결 미확인',
+    execution:item.execution_status==='not_connected'?'웹 실행 미연결':'웹 실행 상태 미확인'
+  };
+}

@@ -96,6 +96,38 @@ class ReadModelTests(unittest.TestCase):
         self.assertNotIn('HIDDEN_TOKEN', json.dumps(s))
         self.assertNotIn('secrets', json.dumps(s))
 
+    def test_integration_catalog_does_not_claim_installation_connection_or_registration(self):
+        self.config()
+        s = self.snapshot()
+        catalog = {item['id']: item for item in s['integrations']}
+        self.assertEqual(set(catalog), {'metricool', 'vidiq', 'local_publishers'})
+        self.assertEqual({p['id'] for p in catalog['metricool']['platforms']},
+                         {'instagram', 'threads', 'x', 'facebook'})
+        self.assertEqual({p['id'] for p in catalog['local_publishers']['platforms']},
+                         {'youtube', 'tiktok'})
+        self.assertFalse(any(c['platform'] == 'facebook' for c in s['channels']))
+        for item in catalog.values():
+            self.assertEqual(item['availability'], 'unknown')
+            self.assertEqual(item['connection_status'], 'unknown')
+            self.assertEqual(item['execution_status'], 'not_connected')
+        self.assertEqual(s['integrations'], self.snapshot('dept')['integrations'])
+        self.assertEqual(s['integrations'], self.snapshot('personal')['integrations'])
+        missing = self.root / 'ax-console/config/automations.json'
+        missing.unlink()
+        self.assertNotIn('local_publishers', {x['id'] for x in self.snapshot()['integrations']})
+
+    def test_local_catalog_uses_only_valid_declared_automation_platforms(self):
+        self.config()
+        self.put('ax-console/config/automations.json', {'jobs': [{
+            'job': 'blog', 'account': 'personal', 'channels': [
+                ['personal', 'tistory'], ['dept', 'facebook'], ['bad', 'instagram'],
+                ['personal', '<unsafe>'], ['dept', 'facebook']]}]})
+        s = self.snapshot()
+        local = next(x for x in s['integrations'] if x['id'] == 'local_publishers')
+        self.assertEqual(local['platforms'], [
+            {'id': 'facebook', 'label': '페이스북'}, {'id': 'tistory', 'label': '티스토리'}])
+        self.assertNotIn('페이스북', {c['label'] for c in s['channels']})
+
     def test_corrupt_jsonl_line_keeps_other_records_and_does_not_verify(self):
         self.config()
         p = self.root / 'personal/claude-jobs/state/survey-daily.jsonl'

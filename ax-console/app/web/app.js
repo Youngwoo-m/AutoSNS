@@ -1,5 +1,5 @@
 import {createSnapshotLoader} from './api.js';
-import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays} from './view_helpers.js';
+import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
 const $=selector=>document.querySelector(selector);
 const h=(tag,attrs={},...children)=>{
@@ -142,13 +142,32 @@ function renderCrosspost() {
   const s=state.snapshot,deliveries=s.deliveries.filter(d=>d.owner_account_id!==d.destination_account_id);
   return h('div',{},tabs('교차 발행 보기',[['rules','기존 규칙'],['deliveries','실제 배포 기록']],crosspostTab,id=>{crosspostTab=id;render();}),h('div',{class:'inline-note'},'원본 또는 게시 대상이 선택 계정에 속한 기존 경로를 표시합니다. 규칙 수정과 활성 변경은 미지원입니다.'),crosspostTab==='deliveries'?panel('계정 간 배포 기록',deliveryTable(deliveries)):panel('조회된 교차 발행 규칙',s.crossposts.length?table(['원본 소유 계정·채널 → 게시 대상','시점·조건','설정 활성 여부','변경'],s.crossposts.map(r=>h('tr',{},td(h('div',{class:'rule-route'},h('div',{},account(r.owner_account_id),h('div',{class:'cell-sub'},text(r.source_channel))),h('span',{'aria-hidden':'true'},'→'),h('div',{},account(r.destination_account_id),h('div',{class:'cell-sub'},text(r.destination_channel)))),h('div',{class:'cell-sub'},text(r.title))),td(r.condition||'조건 미수집'),td(r.enabled===true?'설정상 활성':r.enabled===false?'설정상 중지':'활성 여부 미확인'),td(disabled('수정 미지원'))))):empty('조회된 규칙이 없습니다','교차 발행 등록 자료가 누락되었거나 수집되지 않았습니다. 기존 경로가 없거나 해제되었다고 판정하지 않습니다.')));
 }
+function renderIntegrations() {
+  const integrations=Array.isArray(state.snapshot.integrations)?state.snapshot.integrations.filter(item=>item&&typeof item==='object'):[];
+  return panel('연동·플러그인',
+    h('div',{class:'panel-body'},
+      muted('계정 조회 필터와 독립적인 도구 카탈로그입니다. Instagram·Threads·X·Tistory·Facebook 연동 후보와 지원 정보를 확인합니다.'),
+      h('p',{class:'unsupported'},'1단계는 지원 기능 조회만 제공합니다. 카탈로그 등록·도구 제공은 설치나 로그인 확인, 웹 실행 가능을 뜻하지 않습니다. 실제 연결과 사용 설정 변경은 후속 단계에서 지원합니다.')),
+    integrations.length?integrations.map(item=>{
+      const summary=integrationSummary(item);
+      return h('article',{class:'record-row'},
+        h('div',{class:'pill-row'},h('span',{class:'label neutral'},summary.kind),h('strong',{},text(item.label))),
+        h('div',{class:'pill-row integration-platforms'},summary.platforms.length?summary.platforms.map(label=>h('span',{class:'channel-chip'},label)):h('span',{class:'sub'},'플랫폼 정보 미수집')),
+        h('p',{},item.description||'연동 설명 미수집'),
+        h('dl',{class:'detail-kv'},
+          h('dt',{},'도구 제공 여부'),h('dd',{},summary.availability),
+          h('dt',{},'계정 연결'),h('dd',{},summary.connection),
+          h('dt',{},'웹 실행'),h('dd',{},summary.execution)),
+        disabled('연결·사용 설정 변경 미지원'));
+    }):empty('연동 카탈로그 미수집','플러그인·로컬 어댑터 목록이 아직 조회되지 않았습니다. 도구 미설치나 사용 불가로 단정하지 않습니다.'));
+}
 function renderAccounts() {
   const s=state.snapshot;
-  if(!s.channels.length)return panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
-  return h('div',{},h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),h('div',{class:'channel-card-grid'},['dept','personal'].filter(id=>state.account==='all'||state.account===id).map(id=>{
-    const channels=s.channels.filter(c=>c.account_id===id);
-    return panel(`${accountLabel(id,s.accounts)} 채널`,channels.length?channels.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
-  })));
+  const channels=s.channels.length?h('div',{class:'channel-card-grid'},['dept','personal'].filter(id=>state.account==='all'||state.account===id).map(id=>{
+    const items=s.channels.filter(c=>c.account_id===id);
+    return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
+  })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
+  return h('div',{},h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   return h('div',{},stats([['조회 수','미수집','성과 수집 미지원 · 실제 0과 다름'],['저장·공유','미수집','채널 성과 연동 미지원'],['원문 유입','미수집','추적 자료 없음'],['제작비','미수집','원본 소유 계정별 비용 연동 미지원']]),panel('성과 수집 미지원',empty('아직 성과 데이터를 수집하지 않습니다','현재 응답은 metrics.status = unavailable입니다. 조회 수·반응·비용을 0으로 채우거나 예시 차트로 표시하지 않습니다.'),h('div',{class:'panel-body'},muted('향후 원본 제작 성과는 소유 계정으로, 채널 실적은 게시 대상 계정으로 나누어 연결합니다. 현재 배포 기록은 성과 지표가 아닙니다.'))));
