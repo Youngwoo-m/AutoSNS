@@ -1,4 +1,6 @@
-import {createSnapshotLoader} from './api.js';
+import {createContentEditor} from './content_editor.js';
+import {createIntegrationSettings} from './integration_settings.js';
+import {createSnapshotLoader,contentApi} from './api.js';
 import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
 const $=selector=>document.querySelector(selector);
@@ -32,7 +34,7 @@ let view='today',weekOffset=0,calendarMode='week',crosspostTab='rules',issueTab=
 const filters={query:'',kind:'all',series:'all',status:'all',owner:'all'};
 const views={
   today:['운영 개요','오늘 운영','오늘 일정과 기록을 확인하고 필요한 조치를 찾습니다.'],
-  planning:['기획에서 제작까지','콘텐츠 기획','기획 단계와 AI 제안 기록을 확인합니다. 기획 저장은 다음 단계에서 지원합니다.'],
+  planning:['기획에서 제작까지','콘텐츠 기획','기획 원본과 대상별 변환본을 저장하고 단계별로 확인합니다.'],
   library:['원본과 배포 기록','콘텐츠 보관함','원본의 소유 계정과 채널별 게시 대상을 나누어 확인합니다.'],
   calendar:['채널별 예정 시각','예약 캘린더','로컬 실행 요청과 원격 예약 기록을 구분합니다. 현재 플랫폼 예약 재조회는 지원하지 않습니다.'],
   crosspost:['원본을 채널에 맞게','교차 발행','기존 원본 소유 계정·게시 대상·운영 조건의 조회 결과입니다.'],
@@ -40,9 +42,14 @@ const views={
   analytics:['실제 수집 결과 기준','성과','원본 콘텐츠와 대상 채널의 성과 수집은 아직 지원하지 않습니다.'],
   issues:['필요한 예외에 집중','장애·설정','조치 필요 기록과 대상별 배포 기록을 확인합니다.']
 };
+const writable=()=>state.snapshot?.workspace_writable===true;
+let editorActive=false,integrationAccount=null;
+const editor=createContentEditor({api:contentApi,writable,onSaved:()=>loader.refresh()});
+const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
+function confirmLeave(){return !(editorActive&&editor.hasUnsavedChanges()||integrationSettings.hasUnsavedChanges())||globalThis.confirm('저장하지 않은 변경을 버리고 이동할까요?');}
 function pageHead() {
   const [eyebrow,title,description]=views[view];
-  return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},title),muted(description)),h('div',{class:'actions'},disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
+  return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},title),muted(description)),h('div',{class:'actions'},(['today','planning','library'].includes(view)&&writable())?h('button',{class:'btn btn-primary',onclick:()=>openEditor()},'새 기획'):disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
 }
 function renderStatus() {
   const box=$('#load-status');box.classList.toggle('error',['error','unauthorized'].includes(state.phase));
@@ -50,7 +57,8 @@ function renderStatus() {
   let message=state.phase==='loading'?(state.snapshot?'갱신 중 · 이전 조회 자료를 표시합니다.':'자료를 불러오는 중입니다.'):
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
     state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
-    stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':'실제 자료 조회 완료 · 읽기 전용';
+    stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
+  $('.readonly-bar').textContent=writable()?'2단계 · 새 관리 원본·수동 검토·도구 선호 저장 · 예약·발행 미지원':'1단계 · 실제 자료 읽기 전용 · 기획 저장·예약 변경·발행·제어 미지원';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login'},'로그인으로 이동'));
   box.replaceChildren(line);
@@ -103,7 +111,7 @@ function filterControls() {
   const input=h('input',{id:'content-search',type:'search',placeholder:'제목·요약·채널 검색',value:filters.query,oninput:e=>{filters.query=e.target.value;renderContentResults();}});
   const series=[...new Set(s.contents.map(c=>c.series).filter(Boolean))].sort();
   if(filters.series!=='all'&&filters.series!=='__none'&&!series.includes(filters.series))filters.series='all';
-  return h('div',{class:'filters'},h('label',{class:'filter-field search-field',for:'content-search'},'콘텐츠 검색',input),selectField('원본 소유 계정','owner',[['all','모든 소유 계정'],['dept','학과'],['personal','개인']]),selectField('형식','kind',[['all','모든 형식'],['article','글'],['card','카드뉴스'],['short','숏츠'],['video','영상'],['unknown','미확인']]),selectField('시리즈','series',[['all','모든 시리즈'],...series.map(v=>[v,v]),['__none','시리즈 미확인']]),selectField('원본 또는 배포 상태','status',[['all','모든 상태'],...['idea','drafting','review','scheduled','scheduled_recorded','queued','reported_published','verified','failed','paused','unknown'].map(v=>[v,statusLabel(v)])]));
+  return h('div',{class:'filters'},h('label',{class:'filter-field search-field',for:'content-search'},'콘텐츠 검색',input),selectField('원본 소유 계정','owner',[['all','모든 소유 계정'],['dept','학과'],['personal','개인']]),selectField('형식','kind',[['all','모든 형식'],['article','글'],['card','카드뉴스'],['short','숏츠'],['video','영상'],['unknown','미확인']]),selectField('시리즈','series',[['all','모든 시리즈'],...series.map(v=>[v,v]),['__none','시리즈 미확인']]),selectField('원본 또는 배포 상태','status',[['all','모든 상태'],...['idea','drafting','production','review','archived','scheduled','scheduled_recorded','queued','reported_published','verified','failed','paused','unknown'].map(v=>[v,statusLabel(v)])]));
 }
 function renderContentResults() {
   const target=$('#content-results');if(!target)return;
@@ -111,14 +119,14 @@ function renderContentResults() {
   if(view==='library') {
     target.replaceChildren(panel(`원본 ${contents.length}건`,contents.length?table(['원본 콘텐츠','소유 계정','형식·시리즈','게시 대상','원본 상태','버전·최근 활동'],contents.map(c=>{
       const deliveries=state.snapshot.deliveries.filter(d=>d.content_id===c.id);
-      return h('tr',{},td(contentButton(c),h('div',{class:'cell-sub'},c.summary?String(c.summary).slice(0,100):'요약 미수집')),td(account(c.owner_account_id)),td(kindLabel(c.kind),h('div',{class:'cell-sub'},c.series||'시리즈 미확인')),td(deliveries.length?deliveries.map(d=>h('div',{class:'pill-row'},account(d.destination_account_id),text(d.channel))):h('span',{class:'sub'},'배포 기록 없음')),td(badge(c.status)),td(h('div',{},`버전 ${text(c.revision)}`),h('div',{class:'cell-sub'},formatDateTime(c.updated_at))));
+      return h('tr',{},td(contentButton(c),h('div',{class:'cell-sub'},c.source==='managed'?'새 관리 원본':'기존 자료 · 읽기 전용'),h('div',{class:'cell-sub'},c.summary?String(c.summary).slice(0,100):'요약 미수집')),td(account(c.owner_account_id)),td(kindLabel(c.kind),h('div',{class:'cell-sub'},c.series||'시리즈 미확인')),td(deliveries.length?deliveries.map(d=>h('div',{class:'pill-row'},account(d.destination_account_id),text(d.channel))):h('div',{},(c.target_accounts||[]).map(id=>account(id)),h('div',{class:'cell-sub'},c.source==='managed'?`목표 채널: ${(c.channels||[]).join(', ')||'미지정'} · 배포 기록 없음`:'배포 기록 없음'))),td(badge(c.status)),td(h('div',{},`버전 ${text(c.revision)}`),h('div',{class:'cell-sub'},formatDateTime(c.updated_at))));
     })):empty('조건에 맞는 콘텐츠가 없습니다','검색어·소유 계정·형식·시리즈·상태 조건을 확인해 주세요.')));
   } else {
     const stages=[['idea','아이디어'],['drafting','조사·원고'],['production','제작'],['review','검토']];
     target.replaceChildren(h('div',{class:'kanban'},stages.map(([id,title])=>{
       const items=contents.filter(c=>c.status===id);
       return h('section',{class:'kanban-col'},h('div',{class:'kanban-title'},title,h('span',{},items.length)),items.length?items.map(c=>h('button',{class:'content-card','data-content':c.id,onclick:()=>openContent(c.id)},account(c.owner_account_id),h('h3',{},text(c.title)),h('p',{class:'summary-line'},`${kindLabel(c.kind)} · ${c.series||'시리즈 미확인'}`),h('div',{class:'card-foot'},`원본 버전 ${text(c.revision)}`))):empty('표시할 원본 없음',id==='production'?'조회 자료에 별도 제작 단계가 없어 추정하지 않습니다.':'현재 조건에서 이 단계의 원본이 없습니다.'));
-    })),muted(`검색 결과 ${contents.length}건 중 기획·원고·검토 단계만 보드에 표시합니다. 예약·게시 기록 등 ${contents.filter(c=>!['idea','drafting','review'].includes(c.status)).length}건은 보관함에서 확인할 수 있습니다.`));
+    })),muted(`검색 결과 ${contents.length}건 중 기획·원고·제작·검토 단계만 보드에 표시합니다. 보관·예약·게시 기록 등 ${contents.filter(c=>!['idea','drafting','production','review'].includes(c.status)).length}건은 보관함에서 확인할 수 있습니다.`));
   }
 }
 function renderContents() {
@@ -147,7 +155,7 @@ function renderIntegrations() {
   return panel('연동·플러그인',
     h('div',{class:'panel-body'},
       muted('계정 조회 필터와 독립적인 도구 카탈로그입니다. Instagram·Threads·X·Tistory·Facebook 연동 후보와 지원 정보를 확인합니다.'),
-      h('p',{class:'unsupported'},'1단계는 지원 기능 조회만 제공합니다. 카탈로그 등록·도구 제공은 설치나 로그인 확인, 웹 실행 가능을 뜻하지 않습니다. 실제 연결과 사용 설정 변경은 후속 단계에서 지원합니다.')),
+      h('p',{class:'unsupported'},'카탈로그 등록·도구 제공은 설치나 로그인 확인, 웹 실행 가능을 뜻하지 않습니다. 별도 저장 공간을 설정하면 계정별 도구 선호만 저장할 수 있습니다.')),
     integrations.length?integrations.map(item=>{
       const summary=integrationSummary(item);
       return h('article',{class:'record-row'},
@@ -158,7 +166,7 @@ function renderIntegrations() {
           h('dt',{},'도구 제공 여부'),h('dd',{},summary.availability),
           h('dt',{},'계정 연결'),h('dd',{},summary.connection),
           h('dt',{},'웹 실행'),h('dd',{},summary.execution)),
-        disabled('연결·사용 설정 변경 미지원'));
+        disabled('외부 연결 실행 미지원'));
     }):empty('연동 카탈로그 미수집','플러그인·로컬 어댑터 목록이 아직 조회되지 않았습니다. 도구 미설치나 사용 불가로 단정하지 않습니다.'));
 }
 function renderAccounts() {
@@ -167,7 +175,8 @@ function renderAccounts() {
     const items=s.channels.filter(c=>c.account_id===id);
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
-  return h('div',{},h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
+  if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
+  return h('div',{},writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   return h('div',{},stats([['조회 수','미수집','성과 수집 미지원 · 실제 0과 다름'],['저장·공유','미수집','채널 성과 연동 미지원'],['원문 유입','미수집','추적 자료 없음'],['제작비','미수집','원본 소유 계정별 비용 연동 미지원']]),panel('성과 수집 미지원',empty('아직 성과 데이터를 수집하지 않습니다','현재 응답은 metrics.status = unavailable입니다. 조회 수·반응·비용을 0으로 채우거나 예시 차트로 표시하지 않습니다.'),h('div',{class:'panel-body'},muted('향후 원본 제작 성과는 소유 계정으로, 채널 실적은 게시 대상 계정으로 나누어 연결합니다. 현재 배포 기록은 성과 지표가 아닙니다.'))));
@@ -181,7 +190,7 @@ function renderIssues() {
   return h('div',{},tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
-function setView(id) {if(!views[id])return;view=id;render();$('#page-title')?.focus({preventScroll:true});}
+function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});}
 
 function deliveryDetail(d) {
   const url=safeUrl(d.url);
@@ -199,14 +208,25 @@ function renderDetail() {
   if(detailTab==='media')body=empty('미디어 자산 조회 미지원','이미지·영상 자산 정보가 조회 계약에 없습니다. 썸네일이나 파일의 존재를 추정하지 않습니다.');
   if(detailTab==='review')body=empty('검토·출처 자료 미수집','출처와 승인 이력을 조회 계약에서 제공하지 않습니다. 배포 확인 근거는 채널별 배포에서 확인할 수 있습니다.');
   if(detailTab==='history')body=h('section',{class:'detail-section'},h('h3',{},'배포 결과 기록'),muted('전체 실행 이력은 미지원입니다. 현재 스냅샷의 대상별 결과만 표시합니다.'),deliveries.length?deliveries.map(deliveryDetail):empty('실행 기록 미수집','이 원본에 연결된 배포 결과가 없습니다.'));
-  $('#drawer-content').replaceChildren(tabbar,body);
+  $('#drawer-content').replaceChildren(tabbar,body,...(writable()?[h('div',{class:'detail-section'},muted('기존 자료는 직접 편집할 수 없습니다. 새 초안에는 수집 요약만 복사합니다.'),h('button',{class:'btn btn-small',onclick:()=>openEditor(c)},'수집 요약을 새 관리 초안으로 복사'))]:[]));
+}
+function openEditor(content=null){
+  if(!writable()&&content?.source!=='managed')return;
+  if(!confirmLeave())return;
+  editorActive=true;lastFocus=document.activeElement;
+  $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},content?.source==='managed'?'관리 원본 편집':'새 기획 저장'));
+  $('#drawer-content').replaceChildren(editor.element);
+  $('.drawer-foot span').textContent='새 관리 원본 · 수동 검토 기록 · 예약·발행 미지원';
+  editor.open(content);if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
 function openContent(id) {
   if(!titleFor(id))return;
+  if(titleFor(id).source==='managed'){openEditor(titleFor(id));return;}
+  editorActive=false;$('.drawer-foot span').textContent='기존 자료 읽기 전용 · 원문 편집 및 배포 변경 미지원';
   detailId=id;detailTab='overview';lastFocus=document.activeElement;renderDetail();
   $('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
-function closeDetail() {if($('#detail-dialog').open)$('#detail-dialog').close();}
+function closeDetail() {if(editorActive&&editor.isBusy())return false;if(editorActive&&editor.hasUnsavedChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 닫을까요?'))return false;if($('#detail-dialog').open)$('#detail-dialog').close();editorActive=false;return true;}
 $('#drawer-close').addEventListener('click',closeDetail);
 $('#detail-dialog').addEventListener('click',e=>{if(e.target===$('#detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDetail();}});
 $('#detail-dialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
@@ -218,9 +238,10 @@ $('#detail-dialog').addEventListener('keydown',e=>{
   if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
-const loader=createSnapshotLoader(next=>{if($('#detail-dialog').open)closeDetail();state=next;render();});
+const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>loader.select(button.dataset.scope)));
-$('#refresh').addEventListener('click',()=>loader.refresh());
+document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail())return;loader.select(button.dataset.scope);}));
+$('#refresh').addEventListener('click',()=>{if(confirmLeave())loader.refresh();});
+window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
 loader.select('all');
 setInterval(renderStatus,60000);

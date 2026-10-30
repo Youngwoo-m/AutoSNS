@@ -22,3 +22,27 @@ export function createSnapshotLoader(onChange,{request=fetchSnapshot}={}) {
   }
   return {select,refresh:()=>select(state.account)};
 }
+
+export function createContentApi({fetcher=globalThis.fetch}={}) {
+  async function request(path,{method='GET',body,headers={}}={}) {
+    const response=await fetcher(`/api/v2${path}`,{method,credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...headers},...(body===undefined?{}:{body})});
+    if(!response.ok) {
+      const message=({401:'로그인이 필요합니다. 입력 내용은 유지됩니다.',409:'다른 창에서 새 버전을 저장했습니다. 입력을 복사한 뒤 최신 버전을 다시 열어 주세요.',413:'저장 가능한 용량을 초과했습니다.',415:'지원하지 않는 파일 형식입니다.',503:'저장하지 못했습니다. 입력 내용을 유지합니다.'})[response.status]||'요청을 처리하지 못했습니다. 입력값과 서버 상태를 확인해 주세요.';
+      throw Object.assign(new Error(message),{status:response.status});
+    }
+    return response.json();
+  }
+  const json=(path,method,body)=>request(path,{method,body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
+  const item=id=>`/contents/${encodeURIComponent(id)}`;
+  return {
+    getContent:(id,revision)=>request(item(id)+(revision?`?revision=${revision}`:'')),
+    createContent:body=>json('/contents','POST',body),
+    updateContent:(id,body)=>json(item(id),'PUT',body),
+    listRevisions:id=>request(`${item(id)}/revisions`),
+    uploadAsset:(id,revision,file)=>request(`${item(id)}/assets`,{method:'POST',body:file,headers:{'Content-Type':file.type||'application/octet-stream','X-AX-Filename':encodeURIComponent(file.name),'X-AX-Expected-Revision':String(revision)}}),
+    recordReview:(id,body)=>json(`${item(id)}/reviews`,'POST',body),
+    listIntegrationSettings:account=>request(`/integrations/settings?account=${encodeURIComponent(account)}`),
+    putIntegrationSettings:body=>json('/integrations/settings','PUT',body)
+  };
+}
+export const contentApi=createContentApi();
