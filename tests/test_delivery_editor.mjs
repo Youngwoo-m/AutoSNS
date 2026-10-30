@@ -39,3 +39,53 @@ test('저장 UTC 일정은 선택 지역의 offset을 포함한 편집값으로 
  assert.equal(delivery.zonedScheduleValue('2026-11-01T01:00:00+00:00','Asia/Seoul'),'2026-11-01T10:00:00+09:00');
  assert.equal(delivery.scheduleImpactLabel({approval_retained:true}),'계획 승인 유지');
 });
+
+// Small DOM surface for exercising the production listeners without a browser dependency.
+class TestElement {
+ constructor(tag='',text=''){this.tagName=tag;this.children=[];this.attrs={};this.listeners={};this._text=text;this.disabled=false;this.value='';}
+ append(...nodes){this.children.push(...nodes);}
+ replaceChildren(...nodes){this.children=[...nodes];}
+ setAttribute(key,value){this.attrs[key]=value;}
+ getAttribute(key){return this.attrs[key];}
+ set textContent(value){this._text=value;this.children=[];}
+ addEventListener(name,fn){this.listeners[name]=fn;}
+ get textContent(){return this._text+this.children.map(node=>node.textContent||'').join('');}
+ querySelectorAll(selector){const match=node=>selector.startsWith('[')?Object.hasOwn(node.attrs,selector.slice(1,-1)):node.tagName===selector;return this.children.flatMap(node=>node instanceof TestElement?[...(match(node)?[node]:[]),...node.querySelectorAll(selector)]:[]);}
+ querySelector(selector){return this.querySelectorAll(selector)[0]||null;}
+}
+const useTestDocument=()=>{const old=globalThis.document;globalThis.document={createElement:tag=>new TestElement(tag),createTextNode:text=>new TestElement('',text)};return ()=>{globalThis.document=old;};};
+const tick=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
+const findButton=(root,label)=>root.querySelectorAll('button').find(node=>node.textContent===label);
+const findInput=(root,label)=>root.querySelectorAll('label').find(node=>node.children[0]?.textContent===label)?.children.at(-1);
+const fullContent={...content,source:'managed',title:'제목',kind:'article',series:'',status:'drafting',original:'원문',variants:[],sources:[],assets:[],reviews:[]};
+const stubApi=extra=>({listConnections:async()=>({items:[]}),listDeliveries:async()=>({items:[{...plan,platform:'youtube'}]}),getContent:async()=>fullContent,listRevisions:async()=>({items:[{revision:4}]}),...extra});
+test('렌더 뒤 입력한 슬롯은 기존 새 계획·선택 버튼의 실제 핸들러에서도 보존한다',async()=>{
+ const restore=useTestDocument();try{
+  let reads=0;const editor=delivery.createDeliveryEditor({api:stubApi({getDelivery:async()=>{reads++;return plan;}}),writable:()=>true});await editor.open(fullContent);
+  const oldNew=findButton(editor.element,'새 계획 작성'),oldSelect=editor.element.querySelectorAll('button').find(node=>node.textContent.includes('버전 4'));
+  const slot=findInput(editor.element,'일정 슬롯 (계획 생성 후 고정)');slot.value='unsaved';slot.listeners.input({target:slot});
+  await oldNew.listeners.click();await oldSelect.listeners.click();
+  assert.equal(findInput(editor.element,'일정 슬롯 (계획 생성 후 고정)').value,'unsaved');assert.equal(editor.hasUnsavedChanges(),true);assert.equal(reads,0);assert.equal(oldNew.disabled,true);
+  const discard=findButton(editor.element,'입력 버리고 계획 다시 불러오기');assert.equal(discard.hidden,false);await discard.listeners.click();await tick();assert.equal(editor.hasUnsavedChanges(),false);
+ }finally{restore();}
+});
+test('부모 원본 저장·자산 업로드 실제 핸들러는 자식 초안과 처리 중 요청을 보존한다',async()=>{
+ const restore=useTestDocument();try{
+  const {createContentEditor}=await import('../ax-console/app/web/content_editor.js');let writes=0,uploads=0,finish;
+  const api=stubApi({updateContent:async()=>{writes++;return {...fullContent,revision:5};},uploadAsset:async()=>{uploads++;return {...fullContent,revision:5};},getDelivery:()=>new Promise(resolve=>finish=resolve),deliveryEvents:async()=>({items:[]})});
+  const editor=createContentEditor({api,writable:()=>true});await editor.open(fullContent);await tick();
+  const form=editor.element.querySelector('form'),upload=editor.element.querySelectorAll('input').find(node=>node.attrs.type==='file');
+  const slot=findInput(editor.element,'일정 슬롯 (계획 생성 후 고정)');slot.value='keep';slot.listeners.input({target:slot});
+  await form.listeners.submit({preventDefault(){}});await upload.listeners.change({target:{files:[{name:'a.png'}]}});
+  assert.equal(writes,0);assert.equal(uploads,0);assert.equal(findButton(editor.element,'원본 저장').disabled,true);assert.equal(upload.disabled,true);assert.equal(findInput(editor.element,'일정 슬롯 (계획 생성 후 고정)').value,'keep');
+  await findButton(editor.element,'입력 버리고 계획 다시 불러오기').listeners.click();await tick();
+  // A clean child selection is busy without any dirty draft; the busy guard is independent.
+  const pending=editor.element.querySelectorAll('button').find(node=>node.textContent.includes('버전 4')&&node.textContent.includes('youtube')).listeners.click();await tick();
+  assert.equal(editor.isBusy(),true);assert.equal(findButton(editor.element,'원본 저장').disabled,true);
+  await form.listeners.submit({preventDefault(){}});await upload.listeners.change({target:{files:[{}]}});assert.equal(writes,0);assert.equal(uploads,0);
+  finish({...plan,scheduled_at:'2026-11-01T01:00:00+00:00',timezone:'Asia/Seoul'});await pending;
+  assert.equal(editor.isBusy(),false);
+  // The explicit discard path releases the parent, rather than leaving both editors locked.
+  await editor.element.querySelector('form').listeners.submit({preventDefault(){}});assert.equal(writes,1);
+ }finally{restore();}
+});

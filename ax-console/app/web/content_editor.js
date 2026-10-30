@@ -37,16 +37,19 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
   const button=(label,fn,disabled=false)=>el('button',{type:'button',class:'btn btn-small',disabled,onclick:fn},label);
   const canWrite=()=>writable()===true&&!historical&&!busy&&!loadFailed;
   let deliveryKey='';
-  const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved});
+  const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved,onStateChange:()=>updateRevisionControls()});
+  const childBlocksRevision=()=>delivery.hasUnsavedChanges()||delivery.isBusy();
+  function updateRevisionControls(){const blocked=childBlocksRevision();root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;const notice=root.querySelector('[data-child-block]');if(notice)notice.textContent=blocked?(delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.'):'';}
   const hasChanges=()=>delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength}={}) {
     const input=el(type,{...(maxLength?{maxlength:maxLength}:{}),disabled:!canWrite(),oninput:e=>{onChange(e.target.value);updateNotice();}});
     if(options)for(const [id,text] of options)input.append(el('option',{value:id},text));
     input.value=value;return el('label',{class:'editor-field'},el('span',{},label),input);
   }
-  function updateNotice(){delivery.refreshControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty());}
+  function updateNotice(){delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
   function notice(){return el('p',{class:'editor-message',role:'status','aria-live':'polite'},session.error||message|| (session.phase==='saved'?'저장했습니다.':busy?'처리 중입니다.':''));}
   async function action(task) {
+    if(delivery.isBusy())return;
     busy=true;message='';session.error='';render();
     try {await task();}catch(error){session.error=error.message;session.phase=error.status===401?'unauthorized':error.status===409?'conflict':'error';}
     finally {busy=false;render();}
@@ -54,11 +57,12 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
   async function refreshVersions(){if(session.content){const data=await api.listRevisions(session.content.id);revisions=data.items||[];}}
   function render() {
     const c=session.content,d=session.draft;
-    const form=el('form',{onsubmit:async event=>{event.preventDefault();if(!canWrite())return;await action(async()=>{const saved=await session.save(payload=>c?api.updateContent(c.id,payload):api.createContent(payload));if(saved){await refreshVersions();onSaved(saved);}});}});
-    form.append(el('p',{class:'inline-note'},historical?'과거 버전 · 읽기 전용':c?'새 관리 원본 · 소유 계정 고정':'새 관리 원본 · 조회 필터와 별도로 소유 계정을 선택하세요.'),notice());
+    const form=el('form',{onsubmit:async event=>{event.preventDefault();if(!canWrite()||childBlocksRevision())return;await action(async()=>{const saved=await session.save(payload=>c?api.updateContent(c.id,payload):api.createContent(payload));if(saved){await refreshVersions();onSaved(saved);}});}});
+    form.append(el('p',{'data-child-block':'',role:'status'}),el('p',{class:'inline-note'},historical?'과거 버전 · 읽기 전용':c?'새 관리 원본 · 소유 계정 고정':'새 관리 원본 · 조회 필터와 별도로 소유 계정을 선택하세요.'),notice());
     if(session.phase==='unauthorized')form.append(el('a',{href:'/login',target:'_blank',rel:'noopener'},'다른 탭에서 로그인 후 다시 시도'));
     if(c){
-      const select=el('select',{'aria-label':'원본 버전 선택',disabled:busy,onchange:async event=>{
+      const select=el('select',{'aria-label':'원본 버전 선택','data-parent-switch':'',disabled:busy||childBlocksRevision(),onchange:async event=>{
+        if(childBlocksRevision()){event.target.value=String(c.revision);return;}
         if(hasChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 버전을 전환할까요?')){event.target.value=String(c.revision);return;}
         const revision=Number(event.target.value);await action(async()=>{const next=await api.getContent(c.id,revision);historical=revision!==Math.max(...revisions.map(r=>r.revision),c.revision);session=createEditSession(next);reviewDraft={kind:'general',decision:'pass',notes:''};});
       }});
@@ -74,11 +78,11 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
     const sources=el('section',{class:'editor-section'},el('h3',{},'출처'));
     d.sources.forEach((source,i)=>sources.append(el('div',{class:'editor-row'},field('출처 주소 (http/https)',source.url,v=>source.url=v),field('출처 메모',source.note,v=>source.note=v,{type:'textarea',maxLength:2000}),safeUrl(source.url)?el('a',{href:safeUrl(source.url),target:'_blank',rel:'noopener noreferrer'},'출처 열기'):null,button('출처 삭제',()=>{d.sources.splice(i,1);render();},!canWrite()))));
     sources.append(button('출처 추가',()=>{d.sources.push({url:'',note:''});render();},!canWrite()||d.sources.length>=100));form.append(sources);
-    form.append(el('div',{class:'editor-actions'},el('button',{type:'submit',class:'btn btn-primary',disabled:!canWrite()},busy?'저장 중…':'원본 저장'),el('span',{'data-dirty':'',role:'status'},session.dirty()?'미저장 변경 있음':'')));
+    form.append(el('div',{class:'editor-actions'},el('button',{type:'submit','data-revision-write':'',class:'btn btn-primary',disabled:!canWrite()||childBlocksRevision()},busy?'저장 중…':'원본 저장'),el('span',{'data-dirty':'',role:'status'},session.dirty()?'미저장 변경 있음':'')));
     if(c){
       const assets=el('section',{class:'editor-section'},el('h3',{},'이미지·영상·음성 자산'));
       for(const asset of c.assets||[]){const expected=`/api/v2/contents/${encodeURIComponent(c.id)}/revisions/${c.revision}/assets/${encodeURIComponent(asset.id)}`;assets.append(el('p',{},el('a',{href:expected,target:'_blank',rel:'noopener'},asset.filename),` · ${asset.media_type} · ${asset.size} bytes`));}
-      const upload=el('input',{'data-needs-clean':'',type:'file',accept:'.jpg,.jpeg,.png,.webp,.mp4,.mp3,.wav',disabled:!canWrite()||session.dirty(),onchange:async event=>{const file=event.target.files[0];if(!file)return;await action(async()=>{const next=await api.uploadAsset(c.id,c.revision,file);session=createEditSession(next);await refreshVersions();onSaved(next);});}});
+      const upload=el('input',{'data-needs-clean':'','data-revision-write':'',type:'file',accept:'.jpg,.jpeg,.png,.webp,.mp4,.mp3,.wav',disabled:!canWrite()||session.dirty(),onchange:async event=>{const file=event.target.files[0];if(!file||!canWrite()||session.dirty()||childBlocksRevision())return;await action(async()=>{const next=await api.uploadAsset(c.id,c.revision,file);session=createEditSession(next);await refreshVersions();onSaved(next);});}});
       assets.append(el('label',{class:'editor-field'},'자산 등록 (먼저 원본 변경을 저장하세요)',upload),el('p',{class:'sub'},'JPEG·PNG·WebP·MP4·MP3·WAV, 파일당 100MiB. 등록 시 새 버전을 만듭니다.'));form.append(assets);
       const reviews=el('section',{class:'editor-section'},el('h3',{},'사람의 수동 검토 기록'),el('p',{class:'sub'},'아래 기록은 독립 검산·출처 검토 도구를 실행한 결과가 아닙니다. 승인·예약·발행 상태를 바꾸지 않습니다.'));
       for(const review of c.reviews||[])reviews.append(el('article',{class:'editor-row'},el('strong',{},reviewLabel(review)),el('p',{},review.notes||'메모 없음'),el('p',{class:'sub'},`해시 ${review.manifest_hash} · ${formatDateTime(review.created_at)}`)));
@@ -91,6 +95,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
     const reviewButton=[...form.querySelectorAll('button')].find(node=>node.textContent==='이 버전의 수동 검토 기록 저장');if(reviewButton)reviewButton.setAttribute('data-needs-clean','');
     root.replaceChildren(form);
     if(c&&!historical){root.append(delivery.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==deliveryKey){deliveryKey=key;delivery.open(c);}else delivery.refreshControls();}
+    updateRevisionControls();
   }
   async function open(content=null) {
     const token=++generation;deliveryKey='';delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];session=createEditSession();busy=true;render();

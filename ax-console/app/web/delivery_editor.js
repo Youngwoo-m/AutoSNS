@@ -28,29 +28,31 @@ export function createDeliverySession() {
   };
 }
 const defaultDraft=()=>({connection_id:'',publication_purpose:'initial',schedule_slot:'main',scheduled_at:'',timezone:'Asia/Seoul',condition_kind:'fixed',window_from:'',window_to:'',visibility:'',title_override:'',description_override:'',crosspost_rule_id:''});
-export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{}}) {
+export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onStateChange=()=>{}}) {
   const root=document.createElement('section');root.className='editor-section delivery-editor';
   let content=null,connections=[],state=createDeliverySession(),busy=false,generation=0,events=[],dirty=false,loadFailed=false,scheduleDraft={scheduled_at:'',timezone:'Asia/Seoul'},notes='';
   const el=(tag,attrs={},...children)=>{const node=document.createElement(tag);for(const [key,value]of Object.entries(attrs))if(key.startsWith('on'))node.addEventListener(key.slice(2),value);else if(key==='disabled')node.disabled=Boolean(value);else node.setAttribute(key,String(value));for(const child of children.flat(Infinity))if(child!=null)node.append(typeof child==='object'?child:document.createTextNode(String(child)));return node;};
   const blocked=()=>busy||loadFailed||!writable();
   const button=(label,fn,disabled=false)=>el('button',{type:'button',class:'btn btn-small',disabled:blocked()||disabled,onclick:fn},label);
-  function field(label,value,change,options=null){const input=el(options?'select':'input',{disabled:blocked(),oninput:e=>{change(e.target.value);dirty=true;}});if(options)for(const [id,text]of options)input.append(el('option',{value:id},text));input.value=value||'';return el('label',{class:'editor-field'},el('span',{},label),input);}
+  function syncDraftControls(){root.querySelectorAll('[data-plan-navigation]').forEach(node=>node.disabled=blocked()||dirty);const discard=root.querySelector('[data-discard-plan]');if(discard){discard.hidden=!dirty&&state.phase!=='conflict';discard.disabled=busy;}const notice=root.querySelector('[data-plan-dirty]');if(notice)notice.textContent=dirty?'배포 계획에 미저장 입력이 있습니다. 저장하거나 입력을 버린 뒤 원본을 변경하세요.':'';onStateChange();}
+  function navigation(label,fn){const node=button(label,()=>{if(dirty||blocked())return;return fn();},dirty);node.setAttribute('data-plan-navigation','');return node;}
+  function field(label,value,change,options=null){const input=el(options?'select':'input',{disabled:blocked(),oninput:e=>{if(blocked())return;dirty=true;change(e.target.value);syncDraftControls();}});if(options)for(const [id,text]of options)input.append(el('option',{value:id},text));input.value=value||'';return el('label',{class:'editor-field'},el('span',{},label),input);}
   const output=value=>el('pre',{class:'delivery-json'},JSON.stringify(value,null,2));
   async function act(task){if(blocked())return;const token=generation;busy=true;state.error='';render();try{await task();}catch(error){if(token===generation){state.error=error.message;state.phase=error.status===409?'conflict':'error';}}finally{if(token===generation){busy=false;render();}}}
   async function history(){if(state.plan){const response=await api.deliveryEvents(state.plan.id);events=response.items||[];}}
   async function save(request){const next=await state.write(request);if(next){dirty=false;notes='';scheduleDraft={scheduled_at:zonedScheduleValue(next.scheduled_at,next.timezone),timezone:next.timezone};await history();await reloadList();onSaved(next);}}
   async function reloadList(){const response=await api.listDeliveries('all',content.id);state.items=response.items||[];}
-  async function select(plan){await act(async()=>{state.plan=await api.getDelivery(plan.id);state.preview=null;scheduleDraft={scheduled_at:zonedScheduleValue(state.plan.scheduled_at,state.plan.timezone),timezone:state.plan.timezone};dirty=false;await history();});}
+  async function select(plan){if(dirty||blocked())return;await act(async()=>{state.plan=await api.getDelivery(plan.id);state.preview=null;scheduleDraft={scheduled_at:zonedScheduleValue(state.plan.scheduled_at,state.plan.timezone),timezone:state.plan.timezone};dirty=false;await history();});}
   function render(){
     root.replaceChildren(el('h3',{},'배포 계획·계획 승인'),el('p',{class:'inline-note'},'로컬 계획만 저장합니다. 계획 승인은 실제 발행 승인이 아닙니다. 원격 예약·게시·로그인 검사는 실행하지 않습니다.'),el('p',{role:'status','aria-live':'polite',class:'editor-message'},state.error||(busy?'불러오는 중…':'')));
     if(state.phase==='unauthorized')root.append(el('a',{href:'/login',target:'_blank',rel:'noopener'},'다른 탭에서 로그인'));
-    if(loadFailed){root.append(button('계획 다시 불러오기',()=>open(content),false));root.lastChild.disabled=busy;return;}
-    if(!content)return;
+    if(loadFailed){onStateChange();root.append(button('계획 다시 불러오기',()=>open(content),false));root.lastChild.disabled=busy;return;}
+    if(!content){onStateChange();return;}
     root.append(el('p',{},`고정 원본: ${accountLabel(content.owner_account_id)} · 버전 ${content.revision} · ${content.manifest_hash}`));
-    const list=el('div',{class:'delivery-plan-list'});for(const item of state.items)list.append(button(`${item.target_label||item.platform} · 버전 ${item.revision} · ${statusLabel(item.status)}`,()=>select(item),dirty));
+    const list=el('div',{class:'delivery-plan-list'});for(const item of state.items)list.append(navigation(`${item.target_label||item.platform} · 버전 ${item.revision} · ${statusLabel(item.status)}`,()=>select(item)));
     root.append(list);if(!state.items.length)root.append(el('p',{class:'sub'},'저장된 로컬 배포 계획이 없습니다.'));
-    if(dirty||state.phase==='conflict')root.append(button('입력 버리고 계획 다시 불러오기',()=>open(content)));
-    root.append(button('새 계획 작성',()=>{state.plan=null;state.preview=null;state.draft=defaultDraft();events=[];dirty=false;render();},dirty));
+    const discard=el('button',{type:'button',class:'btn btn-small','data-discard-plan':'',onclick:()=>{if(!busy)return open(content);}},'입력 버리고 계획 다시 불러오기');root.append(el('p',{'data-plan-dirty':'',role:'status'}),discard);
+    root.append(navigation('새 계획 작성',()=>{state.plan=null;state.preview=null;state.draft=defaultDraft();events=[];dirty=false;render();}));
     if(!state.plan){
       const d=state.draft,selectedConnection=connections.find(item=>item.id===state.draft.connection_id),visibilityOptions=[['','기본값'],...['public','unlisted','private'].filter(value=>(selectedConnection?.capabilities||[]).includes(`visibility:${value}`)).map(value=>[value,({public:'공개',unlisted:'일부 공개',private:'비공개'})[value]])],change=key=>value=>{state.change(key,value);const saveButton=root.querySelector('[data-save-plan]');if(saveButton)saveButton.disabled=true;if(key==='connection_id'){d.visibility='';render();}};
       root.append(field('실제 등록 연결 (도구 선호와 별개)',d.connection_id,change('connection_id'),[['','연결 선택'],...connections.filter(c=>c.planning_enabled).map(c=>[c.id,`${accountLabel(c.account_id)} · ${c.platform} · ${c.target_label||'대상 미확인'} · ${c.target_status==='verified'?'대상 ID 확인':'대상 미확인 · 승인 불가'} · 인증 ${c.auth_status}`])]),field('발행 목적',d.publication_purpose,change('publication_purpose'),[['initial','최초 계획'],['followup','후속'],['republication','재발행']]),field('일정 슬롯 (계획 생성 후 고정)',d.schedule_slot,change('schedule_slot')),field('예정 시각 (예: 2026-11-01T10:00:00+09:00)',d.scheduled_at,change('scheduled_at')),field('IANA 시간대',d.timezone,change('timezone')),field('허용 일정 조건',d.condition_kind,v=>{change('condition_kind')(v);render();},[['fixed','고정 시각'],['window','허용 범위 (시작 포함·끝 제외)']]));
@@ -70,6 +72,7 @@ export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{}}) {
       }
       root.append(el('h4',{},'계획 이력'),events.length?el('ul',{},events.map(event=>el('li',{},`버전 ${event.version} · ${event.summary} · ${formatDateTime(event.created_at)}`))):el('p',{class:'sub'},'계획 이력이 없습니다.'));
     }
+    syncDraftControls();
   }
   async function open(next){const token=++generation;content=next;state=createDeliverySession();state.draft=defaultDraft();connections=[];events=[];dirty=false;loadFailed=false;notes='';busy=true;render();if(!content){busy=false;render();return;}
     try{const [registered,list]=await Promise.all([api.listConnections(),api.listDeliveries('all',content.id)]);if(token!==generation)return;connections=registered.items||[];state.items=list.items||[];}catch(error){if(token===generation){loadFailed=true;state.error=error.message;}}finally{if(token===generation){busy=false;render();}}}
