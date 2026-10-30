@@ -89,3 +89,50 @@ test('부모 원본 저장·자산 업로드 실제 핸들러는 자식 초안�
   await editor.element.querySelector('form').listeners.submit({preventDefault(){}});assert.equal(writes,1);
  }finally{restore();}
 });
+
+const selectedPlan={...plan,platform:'youtube',owner_account_id:'personal',destination_account_id:'dept',scheduled_at:'2026-11-01T01:00:00+00:00',timezone:'Asia/Seoul'};
+async function selectedEditor(extra={}){
+ const api=stubApi({getDelivery:async()=>selectedPlan,deliveryEvents:async()=>({items:[]}),approveDelivery:async()=>({...selectedPlan,version:4,status:'ready'}),previewDeliverySchedule:async()=>({preview_hash:'impact',approval_retained:true}),rescheduleDelivery:async(_id,body)=>({...selectedPlan,...body,version:4}),...extra});
+ const editor=delivery.createDeliveryEditor({api,writable:()=>true});await editor.open(fullContent);await editor.element.querySelectorAll('button').find(node=>node.textContent.includes('버전 4')&&node.textContent.includes('youtube')).listeners.click();return editor;
+}
+function inputValue(editor,label,value){const input=findInput(editor.element,label);input.value=value;input.listeners.input({target:input});}
+test('승인 저장은 일정 초안·dirty를 보존하며 이전 버전 일정 미리보기를 폐기한다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=await selectedEditor();inputValue(editor,'변경할 ISO 시각','2026-11-02T10:00:00+09:00');
+  await findButton(editor.element,'일정 영향 미리보기').listeners.click();inputValue(editor,'계획 승인 메모','승인 저장');
+  await findButton(editor.element,'이 버전 계획 승인').listeners.click();editor.refreshControls();
+  assert.equal(findInput(editor.element,'변경할 ISO 시각').value,'2026-11-02T10:00:00+09:00');assert.equal(findInput(editor.element,'계획 승인 메모').value,'');assert.equal(editor.hasUnsavedChanges(),true);assert.equal(findButton(editor.element,'일정 변경 저장').disabled,true);
+  await findButton(editor.element,'새 계획 작성').listeners.click();assert.ok(findInput(editor.element,'변경할 ISO 시각'));
+  inputValue(editor,'변경할 ISO 시각','2026-11-01T10:00:00+09:00');assert.equal(editor.hasUnsavedChanges(),false);
+ }finally{restore();}
+});
+test('일정 저장은 승인 메모·dirty를 보존하고 명시적 폐기만 남은 입력을 지운다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=await selectedEditor();inputValue(editor,'계획 승인 메모','다음 검토 메모');inputValue(editor,'변경할 ISO 시각','2026-11-03T10:00:00+09:00');
+  await findButton(editor.element,'일정 영향 미리보기').listeners.click();await findButton(editor.element,'일정 변경 저장').listeners.click();editor.refreshControls();
+  assert.equal(findInput(editor.element,'계획 승인 메모').value,'다음 검토 메모');assert.equal(editor.hasUnsavedChanges(),true);assert.equal(findButton(editor.element,'새 계획 작성').disabled,true);
+  inputValue(editor,'계획 승인 메모','');assert.equal(editor.hasUnsavedChanges(),false);inputValue(editor,'계획 승인 메모','폐기');await findButton(editor.element,'입력 버리고 계획 다시 불러오기').listeners.click();assert.equal(editor.hasUnsavedChanges(),false);
+ }finally{restore();}
+});
+test('미리보기는 대상 ID·인증·지역 시각·승인과 교차 제외 이유를 한국어로 요약한다',()=>{
+ const summary=delivery.deliveryPreviewSummary({...selectedPlan,target_status:'verified',crossposts:[{owner_account_id:'personal',destination_account_id:'dept',platform:'tiktok',status:'ineligible',delivery_owner:'legacy',delay_owner:'legacy_queue_add',delay_seconds:1800,min_gap_seconds:10800,not_before:'2026-11-01T01:30:00+00:00',reasons:['conditions_not_met','slot_not_allowed']}]});
+ assert.match(summary.join(' '),/개인 → 학과/);assert.match(summary.join(' '),/대상 ID 확인.*인증 미확인/);assert.match(summary.join(' '),/2026-11-01T10:00:00\+09:00.*Asia\/Seoul/);assert.match(summary.join(' '),/기존 실행기.*조건 불충족.*허용 슬롯 아님/);assert.match(summary.join(' '),/30분.*180분/);
+ assert.match(delivery.deliveryPreviewSummary({target_status:'unverified',approval_retained:false}).join(' '),/대상 미확인.*재검토/);
+ assert.match(delivery.deliveryPreviewSummary({approval_retained:true}).join(' '),/승인 유지/);
+});
+
+test('일정 미리보기 실제 화면은 한국어 요약을 먼저 보이고 JSON은 접힌 기술 정보에 둔다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=await selectedEditor({previewDeliverySchedule:async()=>({...selectedPlan,preview_hash:'impact',approval_retained:true})});
+  await findButton(editor.element,'일정 영향 미리보기').listeners.click();
+  assert.match(editor.element.textContent,/대상 ID 확인 · 인증 미확인/);assert.match(editor.element.textContent,/로컬 예정 시각:/);
+  const details=editor.element.querySelector('details');assert.ok(details);assert.equal(details.attrs.open,undefined);assert.ok(details.querySelector('pre'));
+ }finally{restore();}
+});
+test('과거 승인 기록은 현재 승인·재검토·취소 상태를 구분해 한국어로 표시한다',()=>{
+ const approval={decision:'approved',scope:'plan',subject_hash:'old',content_revision:4,recorded_at:'2026-11-01T01:00:00Z'};
+ assert.match(delivery.approvalRecordLabel({...selectedPlan,approval}),/이전 계획 승인 기록 · 현재 조건은 재검토 필요/);
+ assert.match(delivery.approvalRecordLabel({...selectedPlan,status:'ready',approval:{...approval,subject_hash:'subject'}}),/현재 계획 승인 기록 · 승인/);
+ assert.match(delivery.approvalRecordLabel({...selectedPlan,status:'cancelled',approval}),/취소 전 기록/);
+ assert.match(delivery.approvalRecordLabel({...selectedPlan,approval:{...approval,decision:'rejected'}}),/반려/);
+});
