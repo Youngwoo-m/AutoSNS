@@ -113,10 +113,24 @@ class RuntimeStore:
         if state!='queued':raise StoreError('invalid')
         with self._db(True) as c:
             c.execute('INSERT INTO runtime_runs(id,state,version) VALUES(?,?,1)',(run_id,state));return self._run(c,run_id)
-    def create_delivery(self,delivery_id,run_id,context,*,required=True):
+    def create_delivery(self,delivery_id,run_id,context,*,required=True,planned_version=None,observation_id=None):
         if not isinstance(context,PublicationContext) or type(required) is not bool:raise StoreError('invalid')
         with self._db(True) as c:
+            observation=None
+            if planned_version is not None:
+                plan=c.execute('SELECT payload FROM deliveries WHERE id=?',(delivery_id,)).fetchone()
+                obs=c.execute('SELECT * FROM admission_observations WHERE id=?',(observation_id,)).fetchone()
+                if (not plan or json.loads(plan[0]).get('version',1)!=planned_version or not obs
+                    or obs['planned_delivery_id']!=delivery_id or obs['run_id']!=run_id or obs['plan_version']!=planned_version
+                    or obs['registry_revision']!=context.registry_revision):raise ConflictError()
+                observation=json.loads(obs['observation'])
+                prior=c.execute('SELECT id FROM runtime_deliveries WHERE id=?',(delivery_id,)).fetchone()
+                if prior:
+                    current=self._delivery(c,delivery_id)
+                    if current['run_id']!=run_id or current['context_hash']!=context.context_hash:raise ConflictError()
+                    return current
             c.execute('INSERT INTO runtime_deliveries(id,run_id,context,context_hash,state,version,required) VALUES(?,?,?,?,?,1,?)',(delivery_id,run_id,_json(context.to_dict()),context.context_hash,'queued',int(required)))
+            if observation is not None:self._event(c,delivery_id,'target_observation',observation)
             return self._delivery(c,delivery_id)
     def claim_run(self,run_id,worker_id,process_identity,now,lease_seconds=60,expected_version=None):
         positive(lease_seconds);now=utc(now)
@@ -180,16 +194,27 @@ class RuntimeStore:
         guard=getattr(locks,'publication_guard',None)
         if callable(guard):return guard(job='publication-approval',wait=10)
         return locks.hold(['control:publish-gate'],job='publication-approval',wait=10)
-    def record_publication_approval(self,delivery_id,expected_version,context_hash,approval_hash,report_hashes,*,actor='console_user',decision='approved'):
+    def record_publication_approval(self,delivery_id,expected_version,context_hash,approval_hash,report_hashes,*,actor='console_user',decision='approved',request_key=None):
         if decision not in ('approved','rejected','revoked') or not isinstance(approval_hash,str) or not approval_hash or not isinstance(report_hashes,(list,tuple)) or len(set(report_hashes))<1 or not all(isinstance(x,str) and x for x in report_hashes):raise StoreError('invalid')
+        request_hash=digest(dict(version=expected_version,context_hash=context_hash,approval_hash=approval_hash,report_hashes=report_hashes,actor=actor,decision=decision))
+        if request_key is not None and (not isinstance(request_key,str) or not request_key):raise StoreError('invalid')
         with self._publication_guard():
             with self._db(True) as c:
+                if request_key is not None:
+                    prior=c.execute('SELECT request_hash,result FROM publication_approval_requests WHERE delivery_id=? AND request_key=?',(delivery_id,request_key)).fetchone()
+                    if prior:
+                        if prior['request_hash']!=request_hash:raise ConflictError()
+                        return json.loads(prior['result'])
                 r=self._delivery(c,delivery_id,expected_version)
                 if r['context_hash']!=context_hash or tuple(r['context']['review_report_hashes'])!=tuple(report_hashes):raise ConflictError()
                 c.execute('INSERT INTO publication_approvals(delivery_id,context_hash,approval_hash,report_hashes,actor,decision,created_at) VALUES(?,?,?,?,?,?,?)',(delivery_id,context_hash,approval_hash,_json(list(report_hashes)),actor,decision,stamp()))
                 c.execute('UPDATE runtime_deliveries SET version=version+1 WHERE id=?',(delivery_id,))
                 if decision!='approved':c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
-                return self._approval(c,delivery_id)
+                result=self._approval(c,delivery_id)
+                if request_key is not None:
+                    result=dict(result,version=r['version']+1,state=r['state'])
+                    c.execute('INSERT INTO publication_approval_requests VALUES(?,?,?,?)',(delivery_id,request_key,request_hash,_json(result)))
+                return result
     def get_publication_approval(self,delivery_id):
         with self._db() as c:return self._approval(c,delivery_id) if self._v3(c) else None
     def refresh_auth_proof(self,delivery_id,expected_version,context,observation,now):
@@ -765,3 +790,60 @@ class RuntimeStore:
             if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='content_evidence'").fetchone():return []
             rows=c.execute('SELECT * FROM content_evidence WHERE content_id=? AND revision=? AND manifest_hash=? ORDER BY id',(content_id,revision,manifest_hash))
             return [dict(r,report=json.loads(r['report'])) for r in rows]
+
+    def record_admission_observation(self,planned_delivery_id,run_id,plan_version,registry_revision,observation,now):
+        from collections.abc import Mapping
+        keys=('platform','target_id','authenticated','login_subject','verification_method','checked_at','expires_at')
+        if (not isinstance(observation,Mapping) or any(key not in observation for key in keys)
+            or type(plan_version) is not int or plan_version<1
+            or registry_revision!=getattr(self.registry,'revision',None)):raise StoreError('invalid_observation')
+        clean={key:serial(observation[key]) for key in keys}
+        if not utc(clean['checked_at'])<=utc(now)<utc(clean['expires_at']):raise StoreError('invalid_observation')
+        result=dict(id=ident('observation'),planned_delivery_id=planned_delivery_id,run_id=run_id,plan_version=plan_version,
+                    registry_revision=registry_revision,observation=clean,checked_at=stamp(now))
+        with self._db(True) as c:
+            row=c.execute('SELECT payload FROM deliveries WHERE id=?',(planned_delivery_id,)).fetchone()
+            if not row or json.loads(row[0]).get('version',1)!=plan_version:raise ConflictError()
+            self._run(c,run_id)
+            c.execute('INSERT INTO admission_observations VALUES(?,?,?,?,?,?,?)',
+                (result['id'],planned_delivery_id,run_id,plan_version,registry_revision,_json(clean),result['checked_at']))
+        return result
+
+    def get_admission_observation(self,id):
+        with self._db() as c:
+            if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='admission_observations'").fetchone():return None
+            row=c.execute('SELECT * FROM admission_observations WHERE id=?',(id,)).fetchone()
+            return dict(row,observation=json.loads(row['observation'])) if row else None
+
+    def finish_service_run(self,run_id,expected_version,result):
+        state={'completed':'completed','blocked':'failed','unknown':'waiting'}.get(result.get('status'))
+        if state is None:raise StoreError('invalid')
+        if state=='completed' and result.get('review',{}).get('status','completed')!='completed':state='waiting'
+        with self._db(True) as c:
+            current=self._run(c,run_id)
+            if current['version']!=expected_version:raise ConflictError()
+            c.execute('INSERT OR REPLACE INTO service_run_results VALUES(?,?)',(run_id,_json(serial(result))))
+            c.execute('UPDATE runtime_runs SET state=?,version=version+1,lease_expires_at=NULL WHERE id=?',(state,run_id))
+            return self._run(c,run_id)
+
+    def get_service_run_result(self,run_id):
+        with self._db() as c:
+            if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='service_run_results'").fetchone():return None
+            row=c.execute('SELECT result FROM service_run_results WHERE run_id=?',(run_id,)).fetchone()
+            return json.loads(row[0]) if row else None
+
+    def get_publication_approval_replay(self,delivery_id,request_key,expected_version,context_hash,actor):
+        with self._db() as c:
+            if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='publication_approval_requests'").fetchone():return None
+            prior=c.execute('SELECT request_hash,result FROM publication_approval_requests WHERE delivery_id=? AND request_key=?',(delivery_id,request_key)).fetchone()
+            if not prior:return None
+            result=json.loads(prior['result'])
+            approval_hash=digest(dict(delivery_id=delivery_id,version=expected_version,context_hash=context_hash,request_key=request_key,actor=actor))
+            request_hash=digest(dict(version=expected_version,context_hash=context_hash,approval_hash=approval_hash,report_hashes=result['report_hashes'],actor=actor,decision='approved'))
+            if request_hash!=prior['request_hash']:raise ConflictError()
+            return result
+
+    def record_service_progress(self,lease,result,now):
+        with self._db(True) as c:
+            self._lease(c,lease,now)
+            c.execute('INSERT OR REPLACE INTO service_run_results VALUES(?,?)',(lease.run_id,_json(serial(result))))

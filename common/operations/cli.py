@@ -112,5 +112,11 @@ def main(argv: list[str] | None = None, *, services=None) -> int:
         return 1
 
 
+def build_cli_services(service, *, caller_ids):
+    """신뢰된 startup이 선택한 서비스/호출자를 CLI 형태로 연결한다."""
+    from .bootstrap_config import cli_services
+    return cli_services(service, caller_ids=caller_ids)
+
+
 if __name__ == '__main__':
     raise SystemExit(main())

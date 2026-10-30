@@ -385,10 +385,12 @@ class YoutubeTests(unittest.TestCase):
         self.assertFalse(result.evidence['schedule_confirmed'])
 
     def test_registered_project_environment_never_falls_back_to_server_python(self):
+        from common.operations.bootstrap_config import default_bootstrap_config
+        source_root=default_bootstrap_config().source_root
         catalog = self.runtime.build_youtube_catalog(self.reg)
         for spec in catalog.executors.values():
-            self.assertEqual(spec.cwd, ROOT / 'dept/youtube-shorts-auto')
-            self.assertEqual(spec.interpreter, str(ROOT / 'dept/youtube-shorts-auto/.venv/bin/python'))
+            self.assertEqual(spec.cwd, source_root / 'dept/youtube-shorts-auto')
+            self.assertEqual(spec.interpreter, str(source_root / 'dept/youtube-shorts-auto/.venv/bin/python'))
 
     def test_remote_id_survives_malformed_status_without_further_io(self):
         self.google['dept.youtube'].response = {'id': 'remote', 'status': 'malformed'}

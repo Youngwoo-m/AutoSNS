@@ -3,7 +3,7 @@ from collections.abc import Mapping
 from datetime import datetime, timezone
 
 from common.operations.models import ContractError
-from common.operations.runtime_models import SubmissionResult, LookupResult, VerificationResult, utc
+from common.operations.runtime_models import PublicationContext, SubmissionResult, LookupResult, VerificationResult, utc
 from common.operations.verification import snapshot_fingerprints, strong_identity
 from .blog_payloads import build_blog_payload
 
@@ -28,10 +28,12 @@ class BlogAdapter:
         return self.bridge.read(executor, 'inspect_target', ctx, {})
 
     def prepare(self, ctx, snapshot: Mapping):
+        if not isinstance(ctx,PublicationContext):raise ContractError('publication_context_required')
         self._binding(ctx)
         return build_blog_payload(self.platform, snapshot, ctx)
 
     def submit(self, ctx, prepared: Mapping, permit):
+        if not isinstance(ctx,PublicationContext):raise ContractError('publication_context_required')
         executor = self._binding(ctx)
         for name in ('platform', 'target_id', 'connection_id', 'owner_account_id', 'destination_account_id'):
             if prepared.get(name) != getattr(ctx, name):

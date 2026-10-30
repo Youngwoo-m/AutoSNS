@@ -2,7 +2,7 @@
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from common.operations.models import ContractError
-from common.operations.runtime_models import SubmissionResult, LookupResult, VerificationResult, utc
+from common.operations.runtime_models import PublicationContext, SubmissionResult, LookupResult, VerificationResult, utc
 from .youtube_payloads import build_youtube_payload
 
 
@@ -27,10 +27,12 @@ class YoutubeAdapter:
         return self.bridge.read(self._binding(ctx), 'inspect_target', ctx, {})
 
     def prepare(self, ctx, snapshot):
+        if not isinstance(ctx,PublicationContext):raise ContractError('publication_context_required')
         self._binding(ctx)
         return build_youtube_payload(snapshot, ctx, ctx.options.get('youtube_config', {}))
 
     def submit(self, ctx, prepared, permit):
+        if not isinstance(ctx,PublicationContext):raise ContractError('publication_context_required')
         executor = self._binding(ctx)
         for name in ('connection_id', 'target_id', 'platform', 'owner_account_id', 'destination_account_id', 'content_id', 'content_revision', 'manifest_hash'):
             if prepared.get(name) != getattr(ctx, name): raise ContractError('youtube_prepared_mismatch')

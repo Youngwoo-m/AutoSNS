@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import sys
 
+from common.operations.admission_context import decode_bridge_context
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext, SubmissionPermit, utc
 from common.operations.publication_gate import fresh_lease, require_publication_approval, _time_valid
@@ -49,7 +50,7 @@ class BridgeHost:
             raise ContractError('bridge_action_unregistered')
         handler=self.handlers.get((executor_id,action))
         if not callable(handler):raise ContractError('bridge_unavailable')
-        ctx=PublicationContext(**request['context'])
+        ctx=decode_bridge_context(request['context'],action)
         _connection(self.registry,ctx.to_dict())
         validate_job_binding(self.registry,self.store,spec,ctx.to_dict())
         check_parent_evidence(self.registry,self.locks,ctx.to_dict(),request['parent'],parent_pid=parent_pid)

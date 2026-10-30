@@ -409,4 +409,10 @@ if __name__=='__main__':"""
 
     def test_default_host_is_unavailable(self):
         from common.publishers.bridge_host import main
-        self.assertNotEqual(main([]),0)
+        from contextlib import redirect_stderr, redirect_stdout
+        from io import StringIO
+        error,output=StringIO(),StringIO()
+        with redirect_stderr(error),redirect_stdout(output):
+            self.assertEqual(main([]),2)
+        self.assertEqual(error.getvalue(),'bridge_child_failed\n')
+        self.assertEqual(output.getvalue(),'')

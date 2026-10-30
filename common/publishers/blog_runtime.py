@@ -2,6 +2,7 @@
 from datetime import datetime, timezone, timedelta
 from types import MappingProxyType
 
+from common.operations.admission_context import decode_bridge_context
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext, utc
 from common.operations.execution_catalog import ExecutionCatalog, ExecutorSpec
@@ -32,7 +33,8 @@ def build_blog_catalog(registry, *, interpreter=None, cwd=None):
                      and job.get('execution_owner') == 'managed'
                      and connection_id in (job.get('connection_ids') or (job.get('connection_id'),)))
         if jobs:
-            project = ROOT / ('personal/naver-blog-auto' if connection_id == 'personal.tistory' else 'dept/naver-blog-auto')
+            from common.operations.bootstrap_config import default_bootstrap_config
+            project = default_bootstrap_config().source_root / ('personal/naver-blog-auto' if connection_id == 'personal.tistory' else 'dept/naver-blog-auto')
             executors[binding['executor_id']] = ExecutorSpec(binding['executor_id'], jobs, ('submit', 'verify'),
                 interpreter or str(project / '.venv/bin/python'), cwd or project, binding['module'], ('publish',), ('LANG', 'LC_ALL', 'TZ', 'PATH'))
     return ExecutionCatalog(executors)
@@ -69,7 +71,7 @@ def build_blog_handlers(registry, *, services_factory=None, content_store=None, 
     for key, binding in BLOG_BINDINGS.items():
         if key not in registry.connections: continue
         def handler(context, payload, credentials, *, connection_id=key, action='inspect_target'):
-            ctx = PublicationContext(**context)
+            ctx = decode_bridge_context(context, action)
             connection = registry.connections[connection_id]
             if (ctx.connection_id != connection_id or ctx.platform != connection.platform or
                 ctx.destination_account_id != connection.account_id or ctx.target_id != connection.target_id or
@@ -120,22 +122,13 @@ def build_blog_host(registry, catalog, store, locks, *, services_factory=None,
 def bridge_bootstrap(platform):
     """고정 운영 파일만 읽는다. 현재 비활성 등록부는 DB/프로필 접근 전에 거절된다."""
     from common.operations.registry import load_registry
-    registry = load_registry(ROOT / 'ax-console/config/operations.json')
-    catalog = build_blog_catalog(registry)
-    executors = {key: spec for key, spec in catalog.executors.items()
-                 if spec.module == 'common.publishers.' + ('naver' if platform == 'naver_blog' else platform)}
-    if not executors: raise ContractError('bridge_unavailable')
-    catalog = ExecutionCatalog(executors)
-    from common.operations.runtime_store import RuntimeStore
-    from common.operations.content_store import ContentStore
-    from common.shared.axlock import AxLock, LockPaths
-    # 관리 저장소 위치 변경은 서버 코드/배포 설정 검토 대상이다. 요청/env override가 없다.
-    root = ROOT / 'ax-console/data/managed-workspace'
-    if not (root / 'operations.sqlite3').is_file(): raise ContractError('bridge_unavailable')
-    store = RuntimeStore(root, registry, ContentStore(root))
-    # DDL 이행을 실행하지 않는다. 이미 초기화된 v3 저장소만 사용한다.
-    from common.operations.database import connect_database
-    with connect_database(root, writable=False) as db:
-        if db.execute('PRAGMA user_version').fetchone()[0] != 3: raise ContractError('bridge_unavailable')
-    store._initialized = True
-    return build_blog_host(registry, catalog, store, AxLock(LockPaths.from_root(ROOT)))
+    from common.operations.bootstrap_config import default_bootstrap_config, child_store
+    config=default_bootstrap_config()
+    registry=load_registry(config.registry_path)
+    catalog=build_blog_catalog(registry)
+    executors={key:spec for key,spec in catalog.executors.items()
+               if spec.module=='common.publishers.'+('naver' if platform=='naver_blog' else platform)}
+    if not executors:raise ContractError('bridge_unavailable')
+    catalog=ExecutionCatalog(executors)
+    store,locks=child_store(registry,config)
+    return build_blog_host(registry,catalog,store,locks)

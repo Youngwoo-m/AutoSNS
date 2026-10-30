@@ -8,11 +8,13 @@ import hashlib
 import tempfile
 
 from .blog_legacy import ROOT
+from common.operations.bootstrap_config import default_bootstrap_config
+_PROFILE_ROOT=default_bootstrap_config().source_root
 
 PROFILES = {
-    'dept.naver_blog': ROOT / 'dept/naver-blog-auto/chrome-profile',
-    'personal.naver_blog': ROOT / 'dept/naver-blog-auto/chrome-profile-safeworking',
-    'personal.tistory': ROOT / 'personal/naver-blog-auto/chrome-profile-tistory',
+    'dept.naver_blog': _PROFILE_ROOT / 'dept/naver-blog-auto/chrome-profile',
+    'personal.naver_blog': _PROFILE_ROOT / 'dept/naver-blog-auto/chrome-profile-safeworking',
+    'personal.tistory': _PROFILE_ROOT / 'personal/naver-blog-auto/chrome-profile-tistory',
 }
 
 

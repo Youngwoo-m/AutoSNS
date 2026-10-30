@@ -38,11 +38,14 @@ def _abandon_unstarted(store,delivery_id,reservation,now):
         store.transition_delivery(delivery_id,delivery['version'],'needs_review',evidence={'reason':'submission_gate_blocked'})
 
 
-def run_once(store,registry,adapters,policy,locks,now):
+def run_once(store,registry,adapters,policy,locks,now,*,lease_observer=None):
     """adapters/policy/locks는 서버 시작 시 주입하며 HTTP 입력을 받지 않는다."""
     if not policy.enabled:return None
     started=time.monotonic()
-    def current_time():return utc(now)+timedelta(seconds=time.monotonic()-started)
+    def current_time():return utc(lease_observer.clock()) if lease_observer is not None and hasattr(lease_observer,'clock') else utc(now)+timedelta(seconds=time.monotonic()-started)
+    def check_worker():
+        if lease_observer is not None and hasattr(lease_observer,'check'):lease_observer.check()
+    check_worker()
     # mode/phase 필터를 claim 전에 적용해 dry/shadow에서 adapter 호출 0.
     identity=_identity()
     eligible={r['id']:r for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and run_is_due(r,current_time()) and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
@@ -62,7 +65,9 @@ def run_once(store,registry,adapters,policy,locks,now):
     profile=registry.profiles.get(resource) if resource else None
     if not profile or profile.get('account_id')!=connection.account_id or profile.get('lock_resource') not in ('profile:naver','profile:insta','profile:tiktok','profile:youtube-dept','profile:insta-manual','profile:safeworking','profile:tistory','profile:youtube-personal'):
         raise ContractError('profile_lock_required')
-    with locks.hold([profile['lock_resource']],job='managed-publication',wait=2400):
+    hold=lease_observer.hold_profile if lease_observer is not None and hasattr(lease_observer,'hold_profile') else locks.hold
+    with hold([profile['lock_resource']],job='managed-publication',wait=2400):
+        check_worker()
         # No SQLite transaction/control gate/lease was held during profile wait.
         run=store.get_run(ctx.run_id)
         if not run_is_due(run,current_time()):return None
@@ -73,38 +78,46 @@ def run_once(store,registry,adapters,policy,locks,now):
             lease=fresh_lease(store,ctx.run_id,current_time())
         else:return None
         try:
-            _clear(store)
-            observed=adapter.inspect_target(ctx)  # read-only, under the server profile lock
-            ctx=refresh_auth_observation(store,delivery['id'],observed,current_time(),expected_version=delivery['version'])
-            delivery=store.get_delivery(delivery['id'])
-            _inputs(store,ctx,current_time())
-            lease=fresh_lease(store,ctx.run_id,current_time())
-            snapshot=_snapshot(store,ctx.content_id,ctx.content_revision,ctx.manifest_hash)
-            approval=require_publication_approval(store,delivery['id'],ctx)
-            prepared=adapter.prepare(ctx,snapshot)  # contractual pure local work
-        except BaseException:
-            try:store.fail_preflight(delivery['id'],delivery['version'],lease,current_time())
-            except Exception:pass  # queued crash/DB failure is covered by expired-run recovery.
-            raise
-        # Auth-only proof refresh does not allocate another hold; explicit resume has a new generation.
-        logical=f"{delivery['id']}:{ctx.run_id}:{ctx.intent_hash}:{lease.generation}:{len(store.attempts(delivery['id']))+1}"
-        reservation='worker_reservation_'+hashlib.sha256(logical.encode()).hexdigest()
-        try:
-            reserve_quota(store,{'delivery_id':delivery['id'],'context':ctx},{},current_time(),reservation_id=reservation)
-            permit=authorize_submission(store,ctx,snapshot,approval,lease,reservation,current_time())
-            consume_permit(store,permit,ctx,current_time())
-        except BaseException:
-            try:_abandon_unstarted(store,delivery['id'],reservation,current_time())
-            except Exception:pass  # Unknown DB outcome keeps the bounded reservation held.
-            raise
-        try:
-            result=adapter.submit(ctx,prepared,permit)
-            if not isinstance(result,SubmissionResult):raise ContractError('invalid_submission_result')
-        except BaseException:
-            # Once consumed, every exception is uncertain, including process interruption.
-            # If DB is unavailable the durable request_started marker remains for recovery.
-            store.finish_attempt(permit.attempt_id,'unknown',evidence={'reason':'submission_interrupted'},now=now)
-            raise ContractError('submission_uncertain') from None
-        store.finish_attempt(permit.attempt_id,result.outcome,remote_id=_redact(result.remote_id,permit.nonce),url=_redact(result.url,permit.nonce),scheduled_at=result.scheduled_at,evidence=_redact(thaw(result.evidence),permit.nonce),now=current_time())
-        if result.outcome in ('submitted','scheduled'):settle_quota(store,reservation,result.outcome)
-        return delivery['id']
+            if lease_observer is not None:lease_observer(lease)
+            try:
+                _clear(store)
+                observed=adapter.inspect_target(ctx)  # read-only, under the server profile lock
+                ctx=refresh_auth_observation(store,delivery['id'],observed,current_time(),expected_version=delivery['version'])
+                delivery=store.get_delivery(delivery['id'])
+                _inputs(store,ctx,current_time())
+                lease=fresh_lease(store,ctx.run_id,current_time())
+                snapshot=_snapshot(store,ctx.content_id,ctx.content_revision,ctx.manifest_hash)
+                approval=require_publication_approval(store,delivery['id'],ctx)
+                prepared=adapter.prepare(ctx,snapshot)  # contractual pure local work
+            except BaseException:
+                try:store.fail_preflight(delivery['id'],delivery['version'],lease,current_time())
+                except Exception:pass  # queued crash/DB failure is covered by expired-run recovery.
+                raise
+            # Auth-only proof refresh does not allocate another hold; explicit resume has a new generation.
+            logical=f"{delivery['id']}:{ctx.run_id}:{ctx.intent_hash}:{lease.generation}:{len(store.attempts(delivery['id']))+1}"
+            reservation='worker_reservation_'+hashlib.sha256(logical.encode()).hexdigest()
+            try:
+                check_worker()
+                reserve_quota(store,{'delivery_id':delivery['id'],'context':ctx},{},current_time(),reservation_id=reservation)
+                lease=fresh_lease(store,ctx.run_id,current_time())
+                permit=authorize_submission(store,ctx,snapshot,approval,lease,reservation,current_time())
+                check_worker()
+                consume_permit(store,permit,ctx,current_time())
+            except BaseException:
+                try:_abandon_unstarted(store,delivery['id'],reservation,current_time())
+                except Exception:pass  # Unknown DB outcome keeps the bounded reservation held.
+                raise
+            try:
+                check_worker()
+                result=adapter.submit(ctx,prepared,permit)
+                if not isinstance(result,SubmissionResult):raise ContractError('invalid_submission_result')
+            except BaseException:
+                # Once consumed, every exception is uncertain, including process interruption.
+                # If DB is unavailable the durable request_started marker remains for recovery.
+                store.finish_attempt(permit.attempt_id,'unknown',evidence={'reason':'submission_interrupted'},now=now)
+                raise ContractError('submission_uncertain') from None
+            store.finish_attempt(permit.attempt_id,result.outcome,remote_id=_redact(result.remote_id,permit.nonce),url=_redact(result.url,permit.nonce),scheduled_at=result.scheduled_at,evidence=_redact(thaw(result.evidence),permit.nonce),now=current_time())
+            if result.outcome in ('submitted','scheduled'):settle_quota(store,reservation,result.outcome)
+            return delivery['id']
+        finally:
+            if lease_observer is not None:lease_observer(None)

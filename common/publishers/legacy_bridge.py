@@ -10,6 +10,7 @@ import signal
 import subprocess
 import time
 
+from common.operations.admission_context import AdmissionReadContext, validate_admission_read
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext, SubmissionPermit, serial, utc
 from common.shared.axlock import _canon, read_control_state
@@ -163,6 +164,7 @@ def check_parent_evidence(registry,locks,context,evidence,*,parent_pid):
 
 
 def validate_job_binding(registry,store,spec,context):
+    if context.get('scope')=='admission_read':validate_admission_read(store,registry,AdmissionReadContext(**context))
     run=store.get_run(context.get('run_id'))
     occurrence=(run or {}).get('occurrence') or {}
     job=registry.jobs.get(occurrence.get('job_id'))
@@ -181,16 +183,20 @@ def _clear(locks):
 
 
 class LegacyBridge:
-    def __init__(self,registry,catalog,store,locks,*,spawn=subprocess.Popen,clock=None,module_root=None):
+    def __init__(self,registry,catalog,store,locks,*,spawn=None,clock=None,module_root=None):
         self.registry=registry;self.catalog=catalog;self.store=store;self.locks=locks
         self.module_root=module_root
-        self.spawn=spawn;self.clock=clock or (lambda:datetime.now(timezone.utc));self.timeout=60
+        self.spawn=subprocess.Popen if spawn is None else spawn;self.clock=clock or (lambda:datetime.now(timezone.utc));self.timeout=60
 
     def read(self,executor_id,action,context,payload):
         if action not in READ_ACTIONS:raise ContractError('bridge_read_action_required')
         spec=_registered_spec(self.catalog,executor_id,module_root=self.module_root)
         if not set(spec.phases)&{'submit','verify'}:raise ContractError('bridge_action_unregistered')
+        if isinstance(context,AdmissionReadContext):
+            if action!='inspect_target':raise ContractError('bridge_read_action_required')
+            context=context.to_dict()
         if isinstance(context,PublicationContext):context=context.to_dict()
+        if isinstance(context,Mapping) and context.get('scope')=='admission_read' and action!='inspect_target':raise ContractError('bridge_read_action_required')
         if not isinstance(payload,Mapping):raise ContractError('bridge_invalid_payload')
         if not isinstance(context,Mapping):raise ContractError('publication_context_required')
         validate_job_binding(self.registry,self.store,spec,context)

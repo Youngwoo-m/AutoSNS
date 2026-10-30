@@ -75,7 +75,7 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
             result = VerificationResult('pending', now, {'reason': 'insufficient_publication_evidence'})
     safe_keys = ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256', 'visibility')
     safe_evidence = {k: serial(result.evidence[k]) for k in safe_keys if k in result.evidence}
-    if result.evidence.get('reason') in ('adapter_error', 'invalid_adapter_result', 'insufficient_publication_evidence'):
+    if result.evidence.get('reason') in ('adapter_error', 'invalid_adapter_result', 'insufficient_publication_evidence', 'media_evidence_required', 'remote_processing_failed', 'remote_identity_mismatch', 'remote_observation_unavailable', 'youtube_verification_error', 'blog_verification_error'):
         safe_evidence['reason'] = result.evidence['reason']
     result = VerificationResult(result.outcome, result.checked_at, safe_evidence)
     store.record_evidence(delivery_id, 'verification', result.to_dict(), attempt_id=attempt['id'] if attempt else None)

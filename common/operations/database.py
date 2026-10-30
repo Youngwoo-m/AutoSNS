@@ -86,6 +86,9 @@ OPERATIONS_DDL = (
 
 
 RUNTIME_DDL = (
+    "CREATE TABLE IF NOT EXISTS admission_observations(id TEXT PRIMARY KEY, planned_delivery_id TEXT NOT NULL REFERENCES deliveries(id), run_id TEXT NOT NULL REFERENCES runtime_runs(id), plan_version INTEGER NOT NULL, registry_revision TEXT NOT NULL, observation TEXT NOT NULL, checked_at TEXT NOT NULL)",
+    "CREATE TABLE IF NOT EXISTS publication_approval_requests(delivery_id TEXT NOT NULL REFERENCES runtime_deliveries(id), request_key TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(delivery_id,request_key))",
+    "CREATE TABLE IF NOT EXISTS service_run_results(run_id TEXT PRIMARY KEY REFERENCES runtime_runs(id), result TEXT NOT NULL)",
     "CREATE TABLE IF NOT EXISTS content_evidence(id INTEGER PRIMARY KEY, content_id TEXT NOT NULL, revision INTEGER NOT NULL, manifest_hash TEXT NOT NULL, kind TEXT NOT NULL, report_hash TEXT NOT NULL, report TEXT NOT NULL, recorded_at TEXT NOT NULL, UNIQUE(content_id,revision,manifest_hash,kind,report_hash), FOREIGN KEY(content_id,revision) REFERENCES revisions(content_id,revision))",
     "CREATE TABLE IF NOT EXISTS runtime_runs(id TEXT PRIMARY KEY REFERENCES runs(id), state TEXT NOT NULL, version INTEGER NOT NULL, worker_id TEXT, generation INTEGER NOT NULL DEFAULT 0, lease_expires_at TEXT, process_identity TEXT)",
     "CREATE TABLE IF NOT EXISTS runtime_deliveries(id TEXT PRIMARY KEY REFERENCES deliveries(id), run_id TEXT NOT NULL REFERENCES runtime_runs(id), context TEXT NOT NULL, context_hash TEXT NOT NULL, state TEXT NOT NULL, version INTEGER NOT NULL, required INTEGER NOT NULL, remote_id TEXT, url TEXT, scheduled_at TEXT)",

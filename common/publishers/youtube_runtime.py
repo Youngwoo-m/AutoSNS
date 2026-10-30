@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import os
 from types import MappingProxyType
+from common.operations.admission_context import decode_bridge_context
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext, utc
 from common.operations.execution_catalog import ExecutionCatalog, ExecutorSpec
@@ -27,8 +28,10 @@ def build_youtube_catalog(registry, *, interpreter=None, cwd=None):
                      and job.get('execution_owner') == 'managed' and job.get('managed_eligible') is True
                      and key in (job.get('connection_ids') or (job.get('connection_id'),)))
         if jobs:
-            executors[executor] = ExecutorSpec(executor, jobs, ('submit', 'verify'), interpreter or ROOT / 'dept/youtube-shorts-auto/.venv/bin/python',
-                cwd or ROOT / 'dept/youtube-shorts-auto', 'common.publishers.youtube', ('publish',), ('LANG', 'LC_ALL', 'TZ', 'PATH'))
+            from common.operations.bootstrap_config import default_bootstrap_config
+            source_root=default_bootstrap_config().source_root
+            executors[executor] = ExecutorSpec(executor, jobs, ('submit', 'verify'), interpreter or source_root / 'dept/youtube-shorts-auto/.venv/bin/python',
+                cwd or source_root / 'dept/youtube-shorts-auto', 'common.publishers.youtube', ('publish',), ('LANG', 'LC_ALL', 'TZ', 'PATH'))
     return ExecutionCatalog(executors)
 
 
@@ -64,7 +67,7 @@ def build_youtube_handlers(registry, *, services_factory=None, media_loader=None
     for key, executor in YOUTUBE_BINDINGS.items():
         if key not in registry.connections: continue
         def handler(context, payload, credentials, *, connection_id=key, action='inspect_target'):
-            ctx = PublicationContext(**context)
+            ctx = decode_bridge_context(context, action)
             connection = registry.connections[connection_id]
             if (ctx.connection_id != connection_id or ctx.platform != 'youtube' or connection.platform != 'youtube' or
                 ctx.destination_account_id != connection.account_id or ctx.target_id != connection.target_id or
@@ -104,20 +107,12 @@ def build_youtube_host(registry, catalog, store, locks, *, services_factory=None
 
 def bridge_bootstrap():
     from common.operations.registry import load_registry
-    registry = load_registry(ROOT / 'ax-console/config/operations.json')
-    catalog = build_youtube_catalog(registry)
-    if not catalog.executors: raise ContractError('bridge_unavailable')
-    if any(not Path(spec.interpreter).is_file() or not os.access(spec.interpreter, os.X_OK)
-           for spec in catalog.executors.values()):
-        raise ContractError('environment_unavailable')
-    root = ROOT / 'ax-console/data/managed'
-    if not (root / 'operations.sqlite3').is_file(): raise ContractError('bridge_unavailable')
-    from common.operations.database import connect_database
-    with connect_database(root, writable=False) as db:
-        if db.execute('PRAGMA user_version').fetchone()[0] != 3: raise ContractError('bridge_unavailable')
-    from common.operations.runtime_store import RuntimeStore
-    from common.operations.content_store import ContentStore
-    from common.shared.axlock import AxLock, LockPaths
-    store = RuntimeStore(root, registry, ContentStore(root))
-    store._initialized = True  # DDL 이행은 실행하지 않는다.
-    return build_youtube_host(registry, catalog, store, AxLock(LockPaths.from_root(ROOT)))
+    from common.operations.bootstrap_config import default_bootstrap_config, child_store
+    config=default_bootstrap_config()
+    registry=load_registry(config.registry_path)
+    catalog=build_youtube_catalog(registry)
+    if not catalog.executors:raise ContractError('bridge_unavailable')
+    if any(not Path(spec.interpreter).is_file() or not os.access(spec.interpreter,os.X_OK)
+           for spec in catalog.executors.values()):raise ContractError('environment_unavailable')
+    store,locks=child_store(registry,config)
+    return build_youtube_host(registry,catalog,store,locks)
