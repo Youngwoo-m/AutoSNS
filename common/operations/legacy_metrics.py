@@ -232,10 +232,14 @@ def _source_row_key(kind, section, raw, observation, position):
     dimensions = {}
     if observation['remote_id'] is not None:
         dimensions['remote_id'] = observation['remote_id']
+    lossy_page_identity = False
     for field in ('site', 'page', 'url'):
         parsed = _url(row.get(field))
         if parsed is not None:
             dimensions[field] = parsed
+            # 검색 페이지의 query를 버렸다면 같은 host/path만으로 중복을 확정하지 않는다.
+            if kind == 'searchconsole' and urlsplit(row[field]).query:
+                lossy_page_identity = True
     query = _text(row.get('query')) if kind == 'searchconsole' else None
     if query is not None:
         dimensions['query_hash'] = _digest(query.encode('utf-8'))
@@ -250,7 +254,7 @@ def _source_row_key(kind, section, raw, observation, position):
         identified = ('remote_id' in dimensions or
                       any(dimensions.get(field, ('', ''))[1] for field in ('page', 'url')) or
                       section == 'per_site' and 'site' in dimensions)
-    if not identified:
+    if not identified or lossy_page_identity:
         dimensions['source_position'] = position
     return _digest(_json(dict(kind=kind, section=section, dimensions=dimensions)).encode('utf-8'))
 

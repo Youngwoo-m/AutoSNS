@@ -186,6 +186,22 @@ class LegacyMetricsTests(unittest.TestCase):
         self.assertEqual(3, len(plan['observations']))
         self.assertEqual(3, len({e['observation_key'] for e in plan['observations']}))
 
+    def test_query_based_search_pages_keep_positions_while_identical_static_rows_deduplicate(self):
+        data = {'pages': [
+            {'site': 'https://site.example', 'page': 'https://site.example/article?p=1&token=SECRET', 'clicks': 1},
+            {'site': 'https://site.example', 'page': 'https://site.example/article?p=2&token=SECRET', 'clicks': 1},
+            {'site': 'https://site.example', 'page': 'https://site.example/static', 'clicks': 1},
+            {'site': 'https://site.example', 'page': 'https://site.example/static', 'clicks': 1}]}
+        plan = self.synthetic_plan('searchconsole', data)
+        self.assertEqual(3, len(plan['observations']))
+        self.assertEqual(3, len({e['observation_key'] for e in plan['observations']}))
+        self.assertEqual(3, len({e['observation']['source']['row_key'] for e in plan['observations']}))
+        self.assertEqual(plan, self.synthetic_plan('searchconsole', copy.deepcopy(data)))
+        public = json.dumps(plan)
+        self.assertNotIn('SECRET', public)
+        self.assertNotIn('token=', public)
+        self.assertNotIn('?p=', public)
+
     def test_youtube_watch_v_ids_distinguish_rows_without_copying_other_query_values(self):
         data = {'items': [
             {'title': '같은 제목', 'views': 5, 'url': 'https://www.youtube.com/watch?v=videoA&token=SECRET'},
