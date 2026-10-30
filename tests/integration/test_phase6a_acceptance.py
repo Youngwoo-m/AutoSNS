@@ -213,13 +213,15 @@ class LegacyCrosspostAcceptanceTests(unittest.TestCase):
 
     def test_all_3_failure_policies_execute_without_upload_or_queue_save(self):
         for case in _fixture()['tiktok_failure_cases']:
-            names = case.get('exceptions', [case.get('exception')])
+            inputs = [(name, 'fixture neutral infrastructure message', 'exception_name')
+                      for name in case.get('exceptions', ())]
             if 'message_substring' in case:
-                names = names + ['RuntimeError']
-            for name in names:
-                with self.subTest(case=case['id'], exception=name):
+                inputs.append(('RuntimeError', case['message_substring'], 'message_substring'))
+            if not inputs:
+                inputs.append((case['exception'], case['message'], 'screen_error'))
+            for name, message, branch in inputs:
+                with self.subTest(case=case['id'], exception=name, branch=branch):
                     error_type = type(name, (Exception,), {})
-                    message = case.get('message', case.get('message_substring', 'fixture infrastructure'))
                     entry = dict(video='fixture.mp4', tries=case['tries_before'],
                                  fail_streak=case.get('fail_streak_before', 0), last_fail=case.get('last_fail'))
                     saved = _legacy_failure(entry, error_type(message), dt.datetime.fromisoformat(case.get('now', '2026-10-30T12:00:00')))
@@ -423,17 +425,72 @@ class RuntimeAcceptanceTests(unittest.TestCase):
         self.assertEqual('settled', self.store.get_production(self.made['unit_id'])['state'])
 
     def test_next_day_delivery_reuses_one_production_charge(self):
-        self.now += dt.timedelta(days=1)
+        service = self.service()
+        first_day = [self.plan(service, 'personal.blogger', 'first-day-blog'),
+                     self.plan(service, 'dept.youtube', 'first-day-youtube')]
+        for delivery in first_day:
+            self.approve(service, delivery)
+        self.observe_budgets()
+        self.tick(service)
+        self.tick(service)
+        self.now += dt.timedelta(seconds=2)
+        for delivery in first_day:
+            current = self.store.get_delivery(delivery['id'])
+            self.assertEqual('uploaded', current['state'])
+            service.verify(current['id'], expected_version=current['version'])
+            self.assertEqual('verified', self.store.get_delivery(current['id'])['state'])
+            self.assertEqual('completed', self.store.get_run(current['run_id'])['state'])
+        self.assertEqual(1, len(self.remotes['personal.blogger'].submissions))
+        self.assertEqual(1, len(self.remotes['dept.youtube'].submissions))
+
+        self.now = NOW + dt.timedelta(days=1)
         service = self.service(reopen=True)
         delivery = self.plan(service, 'dept.youtube', 'next-day-youtube')
         self.approve(service, delivery)
         self.observe_budgets()
         self.tick(service)
+        self.now += dt.timedelta(seconds=2)
+        current = self.store.get_delivery(delivery['id'])
+        self.assertEqual('uploaded', current['state'])
+        service.verify(current['id'], expected_version=current['version'])
+        self.assertEqual('verified', self.store.get_delivery(delivery['id'])['state'])
+        self.assertEqual('completed', self.store.get_run(current['run_id'])['state'])
+        self.assertEqual(1, len(self.remotes['personal.blogger'].submissions))
+        self.assertEqual(2, len(self.remotes['dept.youtube'].submissions))
+        self.assertEqual(3, sum(len(remote.submissions) for remote in self.remotes.values()))
+        self.assertEqual(2, len(self.model_requests))  # 같은 제작 1회 + 독립 검토 1회
         self.assertEqual(1, len(self.store.list_productions()))
-        self.assertEqual(1, len(self.remotes['dept.youtube'].submissions))
-        owner_buckets = [row for row in self.store.quota_buckets() if row['id'] in [req['bucket_id'] for req in self.store.get_production(self.made['unit_id'])['requirements']]]
+
+        production = self.store.get_production(self.made['unit_id'])
+        owner_bucket_ids = {requirement['bucket_id'] for requirement in production['requirements']}
+        buckets = self.store.quota_buckets()
+        owner_buckets = [row for row in buckets if row['id'] in owner_bucket_ids]
+        self.assertEqual('settled', production['state'])
         self.assertEqual(1, len(owner_buckets))
         self.assertEqual(1, owner_buckets[0]['reserved'])
+        # 최초 제작은 첫날 owner 기간에만 남고, target/API는 세 배포마다 각각 1이다.
+        ids_by_kind = {'target': set(), 'api': set()}
+        for day in (NOW, NOW + dt.timedelta(days=1)):
+            for policy in self.registry.policies.values():
+                for requirement in policy['quota_requirements']:
+                    kind = requirement['scope_kind']
+                    if kind in ids_by_kind:
+                        start, end = quota_window(requirement, day)
+                        ids_by_kind[kind].add(bucket_id(kind, requirement['scope_id'], requirement['metric'], start, end))
+        reservations = []
+        for item in first_day + [delivery]:
+            attempt = self.store.attempts(item['id'])
+            self.assertEqual(1, len(attempt))
+            reservation = self.store.get_reservation(attempt[0]['reservation_id'])
+            self.assertEqual('settled', reservation['state'])
+            self.assertEqual([self.made['unit_id']], reservation['production_ids'])
+            reservations.append(reservation)
+        # reserved는 최신 외부 관측 이후의 capacity 점유다. 누적 비용은 정산 원장으로 센다.
+        for kind, identifiers in ids_by_kind.items():
+            with self.subTest(quota_kind=kind):
+                self.assertEqual(3, sum(requirement['amount'] for reservation in reservations
+                    for requirement in reservation['requirements'] if requirement['bucket_id'] in identifiers))
+        self.assertEqual(1, sum(requirement['amount'] for requirement in production['requirements']))
 
     def test_remote_success_lost_response_reopen_no_duplicate(self):
         service = self.service()
