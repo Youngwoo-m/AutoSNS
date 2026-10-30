@@ -173,6 +173,26 @@ class ReadModelTests(unittest.TestCase):
         self.assertNotIn('/private/raw', json.dumps(all_s))
         self.assertIsNone(next(c for c in all_s['contents'] if c['title'] == '실패 기록')['owner_account_id'])
 
+    def test_career_publisher_queue_keeps_department_ownership_and_destination(self):
+        self.config()
+        # publish_career.py supplies this source to tiktok_queue.add().
+        self.put('dept/youtube-shorts-auto/posts/tiktok_queue.json', [{
+            'video': '/private/raw/career.mp4', 'title': '학과 진로 숏츠',
+            'description': '진로 소개', 'hashtags': ['재난안전학과'],
+            'ai_generated': False, 'not_before': '2026-10-30T19:30:00',
+            'source': 'publish_career', 'backfill': False, 'notice': '', 'ai_voice': False,
+            'added': '2026-10-30T13:00:00', 'posted': None, 'tries': 0}])
+        snapshot = self.snapshot('dept')
+        self.assertEqual(len(snapshot['contents']), 1)
+        self.assertEqual(snapshot['contents'][0]['owner_account_id'], 'dept')
+        self.assertEqual(len(snapshot['deliveries']), 1)
+        delivery = snapshot['deliveries'][0]
+        self.assertEqual(delivery['owner_account_id'], 'dept')
+        self.assertEqual(delivery['destination_account_id'], 'dept')
+        self.assertEqual(delivery['status'], 'queued')
+        self.assertFalse(any('소유 계정은 미확인' in w for w in snapshot['warnings']))
+        self.assertEqual(self.snapshot('personal')['contents'], [])
+
     def test_repeated_source_keys_do_not_merge_distinct_content(self):
         self.config()
         for key, account in [('a', 'dept'), ('b', 'personal')]:

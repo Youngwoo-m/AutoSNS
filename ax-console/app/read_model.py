@@ -487,7 +487,7 @@ def build_snapshot(source_root: Path, account: str = 'all', *, now: datetime | N
         source = row.get('source')
         if owner is None:
             owner = {'geoai': 'personal', 'geoai_short': 'personal', 'shorts-disaster': 'dept',
-                     'youtube_upload': 'dept', 'career': 'dept'}.get(source) if isinstance(source, str) else None
+                     'youtube_upload': 'dept', 'career': 'dept', 'publish_career': 'dept'}.get(source) if isinstance(source, str) else None
         if owner is None:
             reader.warn('틱톡 대기열: 일부 원본 소유 계정은 미확인입니다.')
         # Video identity is hashed only: paths are never read or returned.
