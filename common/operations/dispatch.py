@@ -88,6 +88,10 @@ def claim_next_run(store, worker_id, now, lease_seconds):
         raise StoreError('invalid')
     identity = {'host_id': socket.gethostname(), 'pid': os.getpid(), 'started_at': _PROCESS_STARTED_AT}
     for run in store.list_runs(state='queued'):
+        occurrence = run.get('occurrence') or {}
+        scheduled = occurrence.get('scheduled_at_utc')
+        if scheduled is None or utc(scheduled) > now:
+            continue
         try:
             return store.claim_run(run['id'], worker_id, identity, now, lease_seconds,
                                    expected_version=run['version'])

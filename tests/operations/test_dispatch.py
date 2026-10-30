@@ -75,3 +75,10 @@ class DispatchTests(unittest.TestCase):
         self.registry.jobs['j']['schedule_owner']='console'
         with self.assertRaises(StoreError):self.submit(source='manual')
         self.assertEqual(self.store.list_runs(),[])
+    def test_future_queued_is_skipped_and_due_behind_it_claimed(self):
+        future=self.submit(scheduled_at_utc=(NOW+timedelta(days=1)).isoformat())
+        self.assertIsNone(claim_next_run(self.store,'w',NOW,60))
+        due=self.submit()
+        lease=claim_next_run(self.store,'w',NOW,60)
+        self.assertEqual(lease.run_id,due['id'])
+        self.assertEqual(self.store.get_run(future['id'])['state'],'queued')

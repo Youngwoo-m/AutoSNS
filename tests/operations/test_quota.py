@@ -117,3 +117,88 @@ class QuotaTests(unittest.TestCase):
         obs[next(iter(obs))]['amount']=0
         with self.assertRaises(StoreError):reserve_quota(s,ctx,obs,NOW)
         self.assertEqual(s.quota_buckets(),[])
+    def second_delivery(self,s,original):
+        from dataclasses import replace
+        import sqlite3,json
+        other=replace(original,target_id='t2',connection_id='y',policy_revision='p2')
+        c=sqlite3.connect(s.root/'operations.sqlite3')
+        c.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2','c',1,'y','initial','s','hash',json.dumps({'status':'ready'})))
+        c.commit();c.close();s.create_delivery('d2','r',other)
+        reqs=requirements()
+        for r in reqs:
+            if r['scope_kind']=='target':r['scope_id']='t2';r['limit']=10
+            elif r['scope_kind']=='api':r['limit']=10
+        s.registry.policies['p2']={'quota_requirements':reqs}
+        return {'delivery_id':'d2','context':other},reqs
+    def test_same_original_two_channels_charge_owner_once(self):
+        s,ctx,reqs=self.setup_quota()
+        for r in reqs:
+            if r['scope_kind']!='owner':r['limit']=10
+        two,other=self.second_delivery(s,ctx['context'])
+        one_id=reserve_quota(s,ctx,observed(reqs),NOW)
+        two_id=reserve_quota(s,two,observed(other),NOW)
+        self.assertNotEqual(one_id,two_id)
+        owner=bucket_id('owner','personal','posts',NOW,NOW+timedelta(days=1))
+        self.assertEqual(next(b for b in s.quota_buckets() if b['id']==owner)['reserved'],1)
+        self.assertEqual(s.get_reservation(one_id)['production_ids'],s.get_reservation(two_id)['production_ids'])
+        api=bucket_id('api','shared','posts',NOW,NOW+timedelta(days=1))
+        self.assertEqual(next(b for b in s.quota_buckets() if b['id']==api)['reserved'],2)
+        self.assertEqual(sum(b['reserved'] for b in s.quota_buckets() if b['id'] not in (owner,api)),2)
+    def test_separate_production_needs_additional_owner_budget(self):
+        s,ctx,reqs=self.setup_quota()
+        for r in reqs:
+            if r['scope_kind']!='owner':r['limit']=10
+        two,other=self.second_delivery(s,ctx['context'])
+        other[-1]['production_id']='separate-render'
+        reserve_quota(s,ctx,observed(reqs),NOW)
+        with self.assertRaises(StoreError):reserve_quota(s,two,observed(other),NOW)
+        self.assertEqual(s.list_productions().__len__(),1)
+        other[-1]['limit']=2
+        reserve_quota(s,two,observed(other),NOW)
+        self.assertEqual(len(s.list_productions()),2)
+    def test_production_lifecycle_separate_from_delivery_release(self):
+        s,ctx,reqs=self.setup_quota();rid=reserve_quota(s,ctx,observed(reqs),NOW)
+        production=s.get_reservation(rid)['production_ids'][0]
+        settle_quota(s,rid,'confirmed_not_submitted')
+        self.assertEqual(s.get_production(production)['state'],'held')
+        s.settle_production(production,now=NOW)
+        self.assertEqual(s.get_production(production)['state'],'settled')
+        self.assertEqual(s.get_reservation(rid)['state'],'released')
+    def test_production_unknown_shared_hold_cannot_be_released(self):
+        s,ctx,reqs=self.setup_quota()
+        for r in reqs:
+            if r['scope_kind']!='owner':r['limit']=10
+        two,other=self.second_delivery(s,ctx['context'])
+        one=reserve_quota(s,ctx,observed(reqs),NOW)
+        second=reserve_quota(s,two,observed(other),NOW)
+        production=s.get_reservation(one)['production_ids'][0]
+        settle_quota(s,one,'confirmed_not_submitted');settle_quota(s,second,'unknown')
+        with self.assertRaises(StoreError):s.settle_production(production,release=True,now=NOW)
+        self.assertEqual(s.get_production(production)['state'],'held')
+        settle_quota(s,second,'submitted')
+        self.assertEqual(s.get_production(production)['state'],'settled')
+    def test_repost_next_period_keeps_original_production_charge(self):
+        s,ctx,reqs=self.setup_quota();one=reserve_quota(s,ctx,observed(reqs),NOW)
+        settle_quota(s,one,'submitted')
+        later=NOW+timedelta(days=1);new=requirements(later)
+        s.registry.policies['p']['quota_requirements']=new
+        owner=bucket_id('owner','personal','posts',later,later+timedelta(days=1))
+        obs=observed(new);obs.pop(owner)
+        two=reserve_quota(s,ctx,obs,later)
+        self.assertEqual(s.get_reservation(one)['production_ids'],s.get_reservation(two)['production_ids'])
+        self.assertEqual(len(s.list_productions()),1)
+        self.assertFalse(any(b['id']==owner for b in s.quota_buckets()))
+    def test_started_unknown_keeps_all_usage_then_real_result_settles(self):
+        s,ctx,reqs=self.setup_quota();rid=reserve_quota(s,ctx,observed(reqs),NOW)
+        from common.operations.runtime_models import RunLease
+        run=s.get_run('r')
+        lease=RunLease('r',run['worker_id'],run['generation'],run['lease_expires_at'])
+        attempt=s.create_attempt('d',s.get_delivery('d')['version'],lease,ctx['context'].context_hash,'approval',reservation_id=rid,now=NOW)
+        permit=s.issue_permit(attempt['id'],lease,ctx['context'].context_hash,'approval',NOW)
+        s.consume_permit(permit,lease,NOW)
+        with self.assertRaises(StoreError):settle_quota(s,rid,'confirmed_not_posted')
+        self.assertEqual(s.get_production(s.get_reservation(rid)['production_ids'][0])['state'],'held')
+        s.finish_attempt(attempt['id'],'submitted',remote_id='remote-exact',now=NOW)
+        settle_quota(s,rid,'submitted')
+        self.assertEqual(s.get_reservation(rid)['state'],'settled')
+        self.assertEqual(s.get_production(s.get_reservation(rid)['production_ids'][0])['state'],'settled')

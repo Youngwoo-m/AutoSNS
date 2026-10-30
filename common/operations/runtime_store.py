@@ -266,7 +266,7 @@ class RuntimeStore:
             c.execute('INSERT INTO quota_buckets VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET capacity=excluded.capacity,observed_usage=excluded.observed_usage,observed_at=excluded.observed_at,expires_at=excluded.expires_at',(bucket_id,limit,observed_usage,stamp(observed_at),stamp(expires_at)));return self._buckets(c)[bucket_id]
     def _buckets(self,c):
         result={r['id']:dict(r,reserved=0.0) for r in c.execute('SELECT * FROM quota_buckets')}
-        for row in c.execute("SELECT requirements,state,settled_at FROM quota_reservations WHERE state IN ('held','settled')"):
+        for row in c.execute("SELECT requirements,state,settled_at FROM quota_reservations WHERE state IN ('held','settled') UNION ALL SELECT requirements,state,settled_at FROM quota_productions WHERE state IN ('held','settled')"):
             for req in json.loads(row[0]):
                 if req['bucket_id'] in result:
                     b=result[req['bucket_id']]
@@ -277,7 +277,18 @@ class RuntimeStore:
     def _reservation(self,c,id):
         r=c.execute('SELECT * FROM quota_reservations WHERE id=?',(id,)).fetchone()
         if not r:raise StoreError('not_found')
-        return dict(r,requirements=json.loads(r['requirements']))
+        return dict(r,requirements=json.loads(r['requirements']),production_ids=[x[0] for x in c.execute('SELECT production_id FROM quota_production_links WHERE reservation_id=? ORDER BY production_id',(id,))])
+    def get_production(self,id):
+        with self._db() as c:
+            if not self._v3(c):return None
+            row=c.execute('SELECT * FROM quota_productions WHERE id=?',(id,)).fetchone()
+            return dict(row,requirements=json.loads(row['requirements'])) if row else None
+
+    def list_productions(self):
+        with self._db() as c:
+            if not self._v3(c):return []
+            return [dict(r,requirements=json.loads(r['requirements'])) for r in c.execute('SELECT * FROM quota_productions ORDER BY id')]
+
     def get_reservation(self,id):
         with self._db() as c:
             if not self._v3(c):return None
@@ -285,25 +296,60 @@ class RuntimeStore:
             except StoreError as e:
                 if e.code=='not_found':return None
                 raise
-    def reserve_quota(self,delivery_id,requirements,now,*,reservation_id=None):
+    def reserve_quota(self,delivery_id,requirements,now,*,reservation_id=None,production_requirements=()):
         if not isinstance(requirements,(tuple,list)) or not requirements:raise StoreError('invalid')
         requirements=serial(requirements);seen=set()
         for req in requirements:
             if not isinstance(req,dict) or set(req)!={'bucket_id','amount'} or not isinstance(req['bucket_id'],str) or req['bucket_id'] in seen:raise StoreError('invalid')
             positive(req['amount']);seen.add(req['bucket_id'])
+        if not isinstance(production_requirements,(tuple,list)):raise StoreError('invalid')
+        production_requirements=serial(production_requirements);production_ids=set()
+        for item in production_requirements:
+            if not isinstance(item,dict) or set(item)!={'production_id','requirement'} or not isinstance(item['production_id'],str) or not item['production_id'] or item['production_id'] in production_ids:raise StoreError('invalid')
+            req=item['requirement']
+            if not isinstance(req,dict) or set(req)!={'bucket_id','amount'} or not isinstance(req['bucket_id'],str) or req['bucket_id'] in seen:raise StoreError('invalid')
+            positive(req['amount']);seen.add(req['bucket_id']);production_ids.add(item['production_id'])
         with self._db(True) as c:
             self._delivery(c,delivery_id);id=reservation_id or ident('reservation')
             old=c.execute('SELECT id FROM quota_reservations WHERE id=?',(id,)).fetchone()
             if old:
                 old=self._reservation(c,id)
-                if old['delivery_id']!=delivery_id or old['requirements']!=requirements or old['state']!='held':raise ConflictError()
+                if old['delivery_id']!=delivery_id or old['requirements']!=requirements or old['state']!='held' or set(old['production_ids'])!=production_ids:raise ConflictError()
                 return old
+            new_productions=[]
+            for item in production_requirements:
+                prior=c.execute('SELECT * FROM quota_productions WHERE id=?',(item['production_id'],)).fetchone()
+                if prior:
+                    if json.loads(prior['requirements'])[0]['amount']!=item['requirement']['amount']:raise ConflictError()
+                    if prior['state']!='released':continue
+                    # Explicitly confirmed unproduced work may be reserved again.
+                new_productions.append(item)
             buckets=self._buckets(c)
-            for req in requirements:
+            for req in requirements+[p['requirement'] for p in new_productions]:
                 b=buckets.get(req['bucket_id'])
                 if not b or utc(b['expires_at'])<=utc(now) or utc(b['observed_at'])>utc(now):raise StoreError('quota_observation_required')
                 if b['observed_usage']+b['reserved']+req['amount']>b['capacity']:raise StoreError('quota_exceeded')
-            c.execute("INSERT INTO quota_reservations(id,delivery_id,requirements,state,created_at) VALUES(?,?,?,'held',?)",(id,delivery_id,_json(requirements),stamp(now)));return self._reservation(c,id)
+            c.execute("INSERT INTO quota_reservations(id,delivery_id,requirements,state,created_at) VALUES(?,?,?,'held',?)",(id,delivery_id,_json(requirements),stamp(now)))
+            for item in new_productions:
+                c.execute("INSERT INTO quota_productions VALUES(?,?,'held',?,NULL) ON CONFLICT(id) DO UPDATE SET requirements=excluded.requirements,state='held',created_at=excluded.created_at,settled_at=NULL",(item['production_id'],_json([item['requirement']]),stamp(now)))
+            for production_id in production_ids:
+                c.execute('INSERT INTO quota_production_links VALUES(?,?)',(id,production_id))
+            return self._reservation(c,id)
+    def settle_production(self,production_id,*,release=False,now=None):
+        if type(release) is not bool:raise StoreError('invalid')
+        with self._db(True) as c:
+            production=c.execute('SELECT * FROM quota_productions WHERE id=?',(production_id,)).fetchone()
+            if production is None:raise StoreError('not_found')
+            state='released' if release else 'settled'
+            if production['state']==state:return dict(production)
+            if production['state']!='held':raise ConflictError()
+            if release:
+                # Local delivery failure does not prove that creation never ran.
+                if c.execute("SELECT 1 FROM quota_production_links l JOIN quota_reservations r ON r.id=l.reservation_id WHERE l.production_id=? AND r.state!='released' LIMIT 1",(production_id,)).fetchone():raise ConflictError()
+                if c.execute('SELECT 1 FROM attempts a JOIN quota_production_links l ON l.reservation_id=a.reservation_id WHERE l.production_id=? AND a.request_started=1 AND a.resolved=0 LIMIT 1',(production_id,)).fetchone():raise ConflictError()
+            c.execute('UPDATE quota_productions SET state=?,settled_at=? WHERE id=?',(state,stamp(now),production_id))
+            return dict(c.execute('SELECT * FROM quota_productions WHERE id=?',(production_id,)).fetchone())
+
     def settle_reservation(self,reservation_id,*,release=False,now=None):
         if type(release) is not bool:raise StoreError('invalid')
         with self._db(True) as c:
@@ -321,6 +367,8 @@ class RuntimeStore:
             if r['state']==state:return r
             if r['state']!='held':raise ConflictError()
             c.execute('UPDATE quota_reservations SET state=?,settled_at=? WHERE id=?',(state,stamp(now),reservation_id))
+            if not release:
+                c.execute("UPDATE quota_productions SET state='settled',settled_at=? WHERE state='held' AND id IN (SELECT production_id FROM quota_production_links WHERE reservation_id=?)",(stamp(now),reservation_id))
             c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE reservation_id=?)',(reservation_id,))
             return self._reservation(c,reservation_id)
     def record_evidence(self,delivery_id,kind,evidence,*,attempt_id=None):
