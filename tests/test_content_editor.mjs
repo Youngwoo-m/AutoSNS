@@ -42,3 +42,19 @@ test('API는 CAS JSON 및 raw 자산 헤더, 과거 버전 경로와 인증 오�
  await api.getContent(doc.id,2);assert.match(calls[2].url,/revision=2$/);
  const fail=createContentApi({fetcher:async()=>({ok:false,status:401,json:async()=>({})})});await assert.rejects(fail.createContent({}),e=>e.status===401);
 });
+
+test('계정 이동을 취소하면 설정 초안·dirty·조회 범위를 유지하고 승인하면 초기화한다',async()=>{
+ const {createIntegrationDraftState,confirmSettingsNavigation}=await import('../ax-console/app/web/integration_settings.js');
+ const state=createIntegrationDraftState();
+ state.account='personal';state.draft={account_id:'personal',provider_id:'local',connection_id:'main',platform:'youtube',target_label:'미저장 개인 채널',enabled_preference:true,notes:'취소 시 보존',revision:4};state.dirty=true;
+ const before=JSON.stringify(state.draft);
+ function navigate(account,confirmed){if(!confirmSettingsNavigation(state,()=>confirmed))return false;state.account=account;return true;}
+ assert.equal(navigate('dept',false),false);assert.equal(state.account,'personal');assert.equal(JSON.stringify(state.draft),before);assert.equal(state.hasUnsavedChanges(),true);
+ assert.equal(navigate('dept',true),true);assert.equal(state.account,'dept');assert.equal(state.draft.account_id,'');assert.equal(state.draft.notes,'');assert.equal(state.draft.revision,0);assert.equal(state.hasUnsavedChanges(),false);
+});
+test('저장 완료한 설정은 확인 없이 이동하며 성공 응답 초안을 초기화하지 않는다',async()=>{
+ const {createIntegrationDraftState,confirmSettingsNavigation}=await import('../ax-console/app/web/integration_settings.js');
+ const state=createIntegrationDraftState();state.draft={account_id:'personal',revision:5,notes:'저장 완료'};
+ assert.equal(confirmSettingsNavigation(state,()=>{throw new Error('저장 완료 상태는 확인하지 않음');}),true);
+ assert.equal(state.draft.revision,5);assert.equal(state.draft.notes,'저장 완료');
+});

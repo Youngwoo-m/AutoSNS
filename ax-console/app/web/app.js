@@ -1,5 +1,5 @@
 import {createContentEditor} from './content_editor.js';
-import {createIntegrationSettings} from './integration_settings.js';
+import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
 import {createSnapshotLoader,contentApi} from './api.js';
 import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
@@ -46,7 +46,7 @@ const writable=()=>state.snapshot?.workspace_writable===true;
 let editorActive=false,integrationAccount=null;
 const editor=createContentEditor({api:contentApi,writable,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
-function confirmLeave(){return !(editorActive&&editor.hasUnsavedChanges()||integrationSettings.hasUnsavedChanges())||globalThis.confirm('저장하지 않은 변경을 버리고 이동할까요?');}
+function confirmLeave(){return confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),editorActive&&editor.hasUnsavedChanges());}
 function pageHead() {
   const [eyebrow,title,description]=views[view];
   return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},title),muted(description)),h('div',{class:'actions'},(['today','planning','library'].includes(view)&&writable())?h('button',{class:'btn btn-primary',onclick:()=>openEditor()},'새 기획'):disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
