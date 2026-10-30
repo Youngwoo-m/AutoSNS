@@ -263,7 +263,7 @@ class RuntimeStore:
             dead=dead and all(process_evidence.get(k)==identity.get(k) and identity.get(k) is not None for k in ('host_id','pid','started_at'))
             rows=[self._delivery(c,r[0]) for r in c.execute('SELECT id FROM runtime_deliveries WHERE run_id=?',(run_id,))]
             for d in rows:
-                if d['state'] not in ('running','submitting'):continue
+                if d['state'] not in ('running','submitting','retry_wait'):continue
                 lock=lock_evidence.get(d['id'],{}) if isinstance(lock_evidence,dict) else {}
                 free=lock.get('status')=='free' and lock.get('connection_id')==d['context']['connection_id']
                 evidence=dict(process=process_evidence,lock=lock,checked_at=stamp(now))
@@ -282,7 +282,7 @@ class RuntimeStore:
                         result=dict(outcome='failed',evidence=proof,recorded_at=stamp(now),resolution=dict(kind='confirmed_not_posted',evidence=proof,note='expired before request with dead worker and free lock',actor='recovery_service',recorded_at=stamp(now)))
                         c.execute("UPDATE attempts SET outcome='failed',resolved=1,result=? WHERE id=?",(_json(result),a['id']))
                         self._state(c,d['id'],'retry_wait')
-                if not attempts and dead and free:self._state(c,d['id'],'retry_wait')
+                if not attempts and dead and free and d['state']!='retry_wait':self._state(c,d['id'],'retry_wait')
             return self._run(c,run_id)
 
     def submit_occurrence(self,request,request_hash=None):
@@ -465,12 +465,49 @@ class RuntimeStore:
                 # Local cancellation cannot turn uncertainty about a started request into certainty.
                 if kind=='cancel_local' and attempt['request_started']:continue
                 result=json.loads(attempt['result']) if attempt['result'] else {}
-                result['resolution']=dict(kind=kind,evidence=serial(evidence),note=note,actor=actor,recorded_at=stamp())
+                result['resolution']=dict(kind=kind,evidence=serial(evidence),note=note,actor=actor,request_key=request_key,recorded_at=stamp())
                 c.execute('UPDATE attempts SET resolved=1,result=? WHERE id=?',(_json(result),attempt['id']))
             c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
             self._aggregate(c,d['run_id'])
             self._event(c,delivery_id,'resolved_'+kind,dict(evidence=evidence,note=note,actor=actor));result=self._delivery(c,delivery_id)
             c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)));return result
+    def requeue_delivery(self,delivery_id,expected_version,request_key,actor,*,expected_run_version,process_evidence,lock_evidence,now):
+        """서버 재개 전용. 대상/회차 CAS와 이전 lease 무효화를 한 번에 기록한다."""
+        expected(expected_version);expected(expected_run_version);now=utc(now)
+        if not all(isinstance(value,str) and value for value in (request_key,actor)):raise StoreError('invalid')
+        command=digest(dict(delivery_id=delivery_id,expected_version=expected_version,kind='retry',evidence={},note='resume existing delivery',actor=actor))
+        with self._db(True) as c:
+            old=c.execute('SELECT * FROM runtime_requests WHERE request_key=?',(request_key,)).fetchone()
+            if old:
+                if old['command_hash']!=command:raise ConflictError()
+                return json.loads(old['result'])
+            d=self._delivery(c,delivery_id,expected_version);run=self._run(c,d['run_id'])
+            if run['version']!=expected_run_version or run['state'] not in ('running','partial','failed','waiting'):raise ConflictError()
+            occurrence=run.get('occurrence') or {}
+            if occurrence.get('mode')!='live' or occurrence.get('phase')!='submit':raise ConflictError()
+            if not run['lease_expires_at'] or utc(run['lease_expires_at'])>now:raise ConflictError()
+            identity=run.get('process_identity') or {}
+            if not isinstance(process_evidence,dict) or process_evidence.get('status')!='dead' or not all(process_evidence.get(key)==identity.get(key) and identity.get(key) is not None for key in ('host_id','pid','started_at')):raise StoreError('insufficient_evidence')
+            if not isinstance(lock_evidence,dict) or lock_evidence.get('status')!='free' or lock_evidence.get('connection_id')!=d['context']['connection_id']:raise StoreError('insufficient_evidence')
+            if d['state']!='retry_wait' or d['remote_uncertain']:raise ConflictError()
+            if c.execute('SELECT 1 FROM attempts a JOIN runtime_deliveries d ON d.id=a.delivery_id WHERE d.run_id=? AND a.resolved=0 LIMIT 1',(d['run_id'],)).fetchone():raise ConflictError()
+            if c.execute("SELECT 1 FROM runtime_deliveries WHERE run_id=? AND state IN ('unknown','needs_review','submitting','running') LIMIT 1",(d['run_id'],)).fetchone():raise ConflictError()
+            attempts=[self._attempt(c,r[0]) for r in c.execute('SELECT id FROM attempts WHERE delivery_id=? ORDER BY ordinal',(delivery_id,))]
+            if attempts:
+                last=attempts[-1];result=last['result'] or {}
+                safe=(not last['request_started'] and last['outcome']=='failed' and result.get('evidence',{}).get('confirmed_not_submitted') is True) or result.get('resolution',{}).get('kind')=='confirmed_not_posted'
+                if not safe:raise ConflictError()
+            approval=self._approval(c,delivery_id)
+            if not approval:raise ConflictError()
+            self._check_approval(c,d,d['context_hash'],approval['approval_hash'],now)
+            self._state(c,delivery_id,'queued')
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
+            c.execute("UPDATE runtime_runs SET state='queued',version=version+1,worker_id=NULL,lease_expires_at=NULL,process_identity=NULL WHERE id=?",(d['run_id'],))
+            self._event(c,delivery_id,'retry_queued',dict(process=process_evidence,lock=lock_evidence,checked_at=stamp(now),actor=actor,request_key=request_key))
+            result=self._delivery(c,delivery_id)
+            c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)))
+            return result
+
     def control(self,scope,id,action,expected_version,request_key,reason,actor='console_user'):
         expected(expected_version)
         if scope not in ('managed','account','connection') or action not in ('pause','resume') or not all(isinstance(x,str) and x for x in (id,request_key,reason,actor)):raise StoreError('invalid')

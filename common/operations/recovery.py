@@ -2,7 +2,7 @@
 from collections.abc import Mapping
 from datetime import datetime, timezone
 from .content_store import StoreError, ConflictError
-from .runtime_models import PublicationContext, LookupResult, utc, serial
+from .runtime_models import PublicationContext, LookupResult, ExecutionPolicy, utc, serial
 from .verification import strong_identity
 
 
@@ -56,14 +56,14 @@ def recover_expired_runs(store, now, process_probe, *, lock_probe=None):
         if not run.get('lease_expires_at') or utc(run['lease_expires_at']) > now:
             continue
         deliveries = [d for d in store.list_operations() if d['run_id'] == run['id']]
-        if not any(d['state'] in ('running', 'submitting') for d in deliveries):
+        if not any(d['state'] in ('running', 'submitting', 'retry_wait') for d in deliveries):
             continue
         process = _process_evidence(run.get('process_identity'), process_probe)
         locks = {d['id']: _lock_evidence(d['context'], lock_probe) for d in deliveries}
         results.append(store.recover_expired_run(run['id'], run['version'], now, process, locks))
         for delivery in deliveries:
             if store.get_delivery(delivery['id'])['state'] == 'retry_wait':
-                _settle_attempts(store, delivery['id'], release=True, now=now)
+                _settle_attempts(store, delivery['id'], now=now)
     return results
 
 
@@ -94,9 +94,22 @@ def _lookup(store, delivery, adapter, now):
     return evidence, attempt
 
 
-def _settle_attempts(store, delivery_id, *, release, now):
+def _settle_attempts(store, delivery_id, *, now, request_key=None):
     for attempt in store.attempts(delivery_id):
-        if attempt.get('reservation_id') and attempt['resolved']:
+        result = attempt.get('result') or {}
+        resolution = result.get('resolution', {})
+        if not attempt.get('reservation_id') or not attempt['resolved']:
+            continue
+        if request_key is not None and resolution.get('request_key') != request_key:
+            continue
+        reservation = store.get_reservation(attempt['reservation_id'])
+        if reservation is None or reservation['state'] != 'held':
+            continue
+        release = resolution.get('kind') == 'confirmed_not_posted'
+        release = release or (not attempt['request_started'] and attempt['outcome'] == 'failed'
+                              and result.get('evidence', {}).get('confirmed_not_submitted') is True)
+        used = resolution.get('kind') == 'link_existing' or attempt['outcome'] in ('submitted', 'scheduled')
+        if release or used:
             store.settle_reservation(attempt['reservation_id'], release=release, now=now)
 
 
@@ -106,7 +119,7 @@ def reconcile_delivery(store, delivery_id, adapter, now, *, expected_version, re
     note = 'server adapter matched remote identity'
     replay = store.get_resolution_result(delivery_id, expected_version, request_key, 'link_existing', request_evidence, note, actor)
     if replay is not None:
-        _settle_attempts(store, delivery_id, release=False, now=utc(now))
+        _settle_attempts(store, delivery_id, request_key=request_key, now=utc(now))
         return replay
     delivery = _delivery(store, delivery_id, expected_version)
     if delivery['state'] not in ('unknown', 'needs_review', 'failed', 'retry_wait') and not (delivery['state'] == 'cancelled' and delivery['remote_uncertain']):
@@ -116,7 +129,7 @@ def reconcile_delivery(store, delivery_id, adapter, now, *, expected_version, re
     if evidence is None:
         return store.record_resolution_observation(delivery_id, expected_version, request_key, 'link_existing', request_evidence, note, actor)
     result = store.resolve_delivery(delivery_id, expected_version, request_key, 'link_existing', evidence, note, actor, request_evidence=request_evidence)
-    _settle_attempts(store, delivery_id, release=False, now=now)
+    _settle_attempts(store, delivery_id, request_key=request_key, now=now)
     return result
 
 
@@ -133,7 +146,7 @@ def resolve_unknown(store, delivery_id, decision, actor, *, process_probe=None, 
     replay = store.get_resolution_result(delivery_id, decision['expected_version'], decision['request_key'], kind, request_evidence, decision['note'], actor)
     if replay is not None:
         if kind != 'cancel_local':
-            _settle_attempts(store, delivery_id, release=kind == 'confirmed_not_posted', now=now)
+            _settle_attempts(store, delivery_id, request_key=decision['request_key'], now=now)
         return replay
     delivery = _delivery(store, delivery_id, decision['expected_version'])
     if kind == 'link_existing':
@@ -154,7 +167,7 @@ def resolve_unknown(store, delivery_id, decision, actor, *, process_probe=None, 
         raise StoreError('invalid')
     result = store.resolve_delivery(delivery_id, decision['expected_version'], decision['request_key'], kind, evidence, decision['note'], actor, request_evidence=request_evidence)
     if kind != 'cancel_local':
-        _settle_attempts(store, delivery_id, release=kind == 'confirmed_not_posted', now=now)
+        _settle_attempts(store, delivery_id, request_key=decision['request_key'], now=now)
     return result
 
 
@@ -170,16 +183,66 @@ def retryable_delivery_ids(store, run_id):
         if any(not a['resolved'] for a in attempts):
             continue
         if run.get('process_identity'):
+            proof = None
             if attempts:
                 evidence = (attempts[-1].get('result') or {}).get('resolution', {}).get('evidence', {})
-                if evidence.get('old_process_terminated') is not True or evidence.get('profile_lock_released') is not True:
-                    continue
-            else:
+                if evidence.get('old_process_terminated') is True and evidence.get('profile_lock_released') is True:
+                    proof = evidence
+            if proof is None:
                 observations = [e['evidence'] for e in store.events(delivery['id']) if e['kind'] == 'recovery_observation']
                 if not observations:
                     continue
-                observed = observations[-1]
-                if observed.get('process', {}).get('status') != 'dead' or observed.get('lock', {}).get('status') != 'free':
-                    continue
+                proof = observations[-1]
+            process = _process_evidence(run['process_identity'], lambda identity: proof.get('process'))
+            lock = _lock_evidence(delivery['context'], lambda context: proof.get('lock'))
+            if process['status'] != 'dead' or lock['status'] != 'free':
+                continue
         result.append(delivery['id'])
     return result
+
+
+def retry_delivery(store, delivery_id, decision, actor, *, policy=None, registry=None,
+                   process_probe=None, lock_probe=None, now=None):
+    """서버 전용 재개. 외부 제출 없이 같은 delivery와 run만 다시 큐에 넣는다."""
+    if not isinstance(policy, ExecutionPolicy) or not policy.enabled:
+        raise StoreError('execution_disabled')
+    if not isinstance(decision, dict) or set(decision) != {'expected_version', 'request_key'} or not isinstance(actor, str) or not actor:
+        raise StoreError('invalid')
+    _request_key(decision['request_key'])
+    replay = store.get_resolution_result(delivery_id, decision['expected_version'], decision['request_key'], 'retry', {}, 'resume existing delivery', actor)
+    if replay is not None:
+        return replay
+    delivery = _delivery(store, delivery_id, decision['expected_version'])
+    run = store.get_run(delivery['run_id'])
+    occurrence = (run or {}).get('occurrence') or {}
+    if occurrence.get('mode') != 'live' or occurrence.get('phase') != 'submit' or registry is None:
+        raise StoreError('invalid_resume')
+    from .dispatch import submit_trigger
+    request = {key: occurrence.get(key) for key in ('job_id', 'scheduled_at_utc', 'phase', 'mode')}
+    request.update(source='console', request_kind='resume')
+    resumed = submit_trigger(store, request, registry, policy)
+    if resumed['id'] != delivery['run_id']:
+        raise ConflictError()
+    context = delivery['context']
+    job = registry.jobs[occurrence['job_id']]
+    connection_ids = job.get('connection_ids', [job.get('connection_id')])
+    connection = registry.connections.get(context['connection_id'])
+    if context['connection_id'] not in policy.allowed_connection_ids:
+        raise StoreError('connection_not_allowed')
+    if (context['connection_id'] not in connection_ids or connection is None
+        or job.get('owner_account_id') != context['owner_account_id']
+        or job.get('policy_revision') != context['policy_revision']
+        or connection.account_id != context['destination_account_id']
+        or connection.target_id != context['target_id']
+        or (context.get('platform') and connection.platform != context['platform'])):
+        raise StoreError('context_changed')
+    now = utc(now if now is not None else datetime.now(timezone.utc))
+    if not run.get('lease_expires_at') or utc(run['lease_expires_at']) > now:
+        raise StoreError('worker_active')
+    process = _process_evidence(run.get('process_identity'), process_probe)
+    lock = _lock_evidence(delivery['context'], lock_probe)
+    if process['status'] != 'dead' or lock['status'] != 'free':
+        raise StoreError('insufficient_evidence')
+    return store.requeue_delivery(delivery_id, decision['expected_version'], decision['request_key'], actor,
+                                  expected_run_version=run['version'], process_evidence=process,
+                                  lock_evidence=lock, now=now)
