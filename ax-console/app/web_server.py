@@ -3,6 +3,7 @@
 import/factory는 파일을 쓰거나 운영 작업을 시작하지 않는다. 인증 세션의
 생성·갱신·삭제만 기존 auth.py가 담당하며 운영 서버는 import하지 않는다.
 """
+import fcntl
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
@@ -33,19 +34,51 @@ _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 기존 콘솔에서 인증을 설정한 뒤 같은 인증 자료로 조회 서버를 실행하세요.</p></html>'''.encode()
 
 
+class _SessionLock:
+    """새 웹 세션 저장만 스레드·프로세스 사이에서 직렬화한다."""
+
+    def __init__(self, directory):
+        self.directory = directory
+        self.thread_lock = threading.Lock()
+        self.fd = None
+
+    def __enter__(self):
+        self.thread_lock.acquire()
+        try:
+            self.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            self.fd = os.open(self.directory / 'sessions.lock', os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+            fcntl.flock(self.fd, fcntl.LOCK_EX)
+        except BaseException:
+            if self.fd is not None:
+                os.close(self.fd)
+                self.fd = None
+            self.thread_lock.release()
+            raise
+        return self
+
+    def __exit__(self, *_args):
+        try:
+            os.close(self.fd)  # 닫을 때 flock도 해제된다. 잠금 파일은 유지한다.
+            self.fd = None
+        finally:
+            self.thread_lock.release()
+
+
 def _load_auth(source_root):
-    """전역 DIR를 공유하지 않는 기존 인증 모듈 인스턴스."""
+    """기존 비밀번호·내부키를 읽고 새 웹의 세션·쿠키만 별도로 저장한다."""
     spec = importlib.util.spec_from_file_location('_ax_web_auth', _APP / 'auth.py')
     backend = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(backend)
     directory = Path(os.environ.get('AX_AUTH_DIR') or
                      source_root / 'ax-console' / 'data' / 'auth').resolve()
-    backend.DIR = directory
+    session_directory = directory / 'web-v2'
+    backend.DIR = session_directory
     backend.AUTH = directory / 'auth.json'
-    backend.SESSIONS = directory / 'sessions.json'
+    backend.SESSIONS = session_directory / 'sessions.json'
+    backend.COOKIE = 'ax_web_session'
     backend.KEYFILE = directory / 'internal.key'
     with _AUTH_LOCKS_LOCK:
-        backend._lock = _AUTH_LOCKS.setdefault(directory, threading.Lock())
+        backend._lock = _AUTH_LOCKS.setdefault(session_directory, _SessionLock(session_directory))
     return backend
 
 
@@ -201,13 +234,17 @@ class _Handler(BaseHTTPRequestHandler):
                                         'setup_supported': False, 'read_only': True})
             if path == '/login':
                 data = (_APP / 'login.html').read_bytes() if auth.is_setup() else _SETUP_NOTICE
+                # 원본 로그인 파일은 유지하고 이 응답에서만 시스템 글꼴을 쓴다.
+                data = re.sub(rb'@font-face\s*\{[^}]*\}', b'', data)
                 return self._send(200, body=data, content_type='text/html; charset=utf-8')
             if not self._authed():
                 if path in ('/', '/web/', '/web/index.html'):
                     return self._send(302, body=b'', headers={'Location': '/login'})
                 return self._send(401, {'error': '로그인이 필요합니다', 'login': True})
             if path == '/api/v2/snapshot':
-                snapshot = self.server.snapshot_builder(self.server.source_root, query.get('account', ['all'])[0])
+                kwargs = ({'launchagents_dir': self.server.launchagents_dir}
+                          if self.server.launchagents_dir is not None else {})
+                snapshot = self.server.snapshot_builder(self.server.source_root, query.get('account', ['all'])[0], **kwargs)
                 return self._send(200, snapshot)
             if path in ('/', '/web/'):
                 return self._static('index.html')
@@ -274,6 +311,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.web_root = web_root
     server.auth_backend = backend
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot
+    explicit_agents = os.environ.get('AX_LAUNCHAGENTS_DIR')
+    server.launchagents_dir = Path(explicit_agents).resolve() if explicit_agents else None
     bound_host = f'[{address}]' if address.version == 6 else str(address)
     server.allowed_hosts = {f'{bound_host}:{server.server_port}', f'localhost:{server.server_port}'}
     return server

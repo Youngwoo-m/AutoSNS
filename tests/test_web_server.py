@@ -1,9 +1,14 @@
 """임시 원본·인증과 loopback HTTP만 사용하는 조회 서버 회귀 시험."""
+import fcntl
 import http.client
 import importlib.util
 import json
 import os
 from pathlib import Path
+import plistlib
+import select
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -180,6 +185,19 @@ class WebServerTests(unittest.TestCase):
         return {str(p.relative_to(root)): (p.read_bytes(), p.stat().st_mtime_ns)
                 for p in root.rglob('*') if p.is_file()}
 
+    @staticmethod
+    def seed_auth(directory):
+        """새 웹 생성 전, 임시 기존 콘솔의 인증 파일만 준비한다."""
+        spec = importlib.util.spec_from_file_location('fixture_legacy_auth', APP / 'auth.py')
+        backend = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(backend)
+        backend.DIR = directory
+        backend.AUTH = directory / 'auth.json'
+        backend.SESSIONS = directory / 'sessions.json'
+        backend.KEYFILE = directory / 'internal.key'
+        backend.setup('fixture-password')
+        return backend
+
     def test_errors_do_not_expose_paths_or_traceback(self):
         def failed(*args, **kwargs):
             raise RuntimeError(str(self.source) + '/secret password=hidden')
@@ -204,6 +222,8 @@ class WebServerTests(unittest.TestCase):
 
     def test_real_auth_instances_isolated_factory_has_no_file_writes(self):
         other_source = Path(self.tmp.name) / 'other-source'
+        self.seed_auth(self.source / 'ax-console' / 'data' / 'auth')
+        before = self.file_state(self.source)
         servers = []
         with patch.dict(os.environ, {}, clear=True), patch('threading.Thread.start', side_effect=AssertionError('background')):
             for root in (self.source, other_source):
@@ -211,34 +231,114 @@ class WebServerTests(unittest.TestCase):
                                                    snapshot_builder=self.snapshot)
                 servers.append(server)
                 self.addCleanup(server.server_close)
-                self.assertFalse((root / 'ax-console' / 'data' / 'auth').exists())
+                self.assertFalse((root / 'ax-console' / 'data' / 'auth' / 'web-v2').exists())
         first, second = (s.auth_backend for s in servers)
-        first.setup('fixture-password')
         self.assertTrue(first.is_setup())
         self.assertFalse(second.is_setup())
         self.assertNotEqual(first.AUTH, second.AUTH)
         self.assertFalse(first.KEYFILE.exists())
         self.assertFalse(second.KEYFILE.exists())
+        self.assertEqual(self.file_state(self.source), before)
 
     def test_real_auth_over_http_and_explicit_auth_directory(self):
         auth_dir = Path(self.tmp.name) / 'explicit-auth'
+        legacy = self.seed_auth(auth_dir)
+        legacy_token = legacy.new_session('original-console')
+        legacy_before = self.file_state(auth_dir)
         with patch.dict(os.environ, {'AX_AUTH_DIR': str(auth_dir)}):
             server = self.module.create_server(source_root=self.source, web_root=self.web,
                                                snapshot_builder=self.snapshot)
         self.addCleanup(server.server_close)
-        self.assertFalse(auth_dir.exists())
-        server.auth_backend.setup('fixture-password')
+        self.assertEqual(self.file_state(auth_dir), legacy_before)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         self.addCleanup(lambda: (server.shutdown(), thread.join()))
         status, headers, _ = self.request('/api/auth/login', 'POST', {'password': 'fixture-password'}, server=server)
         self.assertEqual(status, 200)
+        self.assertTrue(headers['Set-Cookie'].startswith('ax_web_session='))
+        self.assertEqual(server.auth_backend.SESSIONS, auth_dir.resolve() / 'web-v2' / 'sessions.json')
         cookie = {'Cookie': headers['Set-Cookie'].split(';')[0]}
+        old_cookie = {'Cookie': 'ax_session=' + legacy_token}
+        self.assertEqual(self.request('/api/v2/snapshot', headers=old_cookie, server=server)[0], 401)
         self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 200)
         self.assertEqual(self.request('/api/auth/logout', 'POST', {}, cookie, server=server)[0], 200)
         self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
         self.assertFalse((auth_dir / 'internal.key').exists())
         self.assertFalse((self.source / 'ax-console' / 'data' / 'auth').exists())
+        self.assertEqual({name: self.file_state(auth_dir)[name] for name in legacy_before}, legacy_before)
+        self.assertTrue(legacy.check(legacy_token))
+        self.assertEqual(legacy.COOKIE, 'ax_session')
+
+    def test_web_session_lock_serializes_other_processes(self):
+        auth_dir = Path(self.tmp.name) / 'lock-auth'
+        self.seed_auth(auth_dir)
+        session_dir = auth_dir / 'web-v2'
+        session_dir.mkdir()
+        lock_file = session_dir / 'sessions.lock'
+        script = '''import importlib.util, os, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('child_web_server', sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+backend = module._load_auth(Path(sys.argv[2]))
+print('ready', flush=True)
+sys.stdin.readline()
+token = backend.new_session('second-process')
+print(token, flush=True)
+'''
+        with lock_file.open('w') as held:
+            fcntl.flock(held, fcntl.LOCK_EX)
+            child = subprocess.Popen([sys.executable, '-u', '-c', script, str(APP / 'web_server.py'), str(self.source)],
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                     env={**os.environ, 'AX_AUTH_DIR': str(auth_dir)})
+            def close_child():
+                if child.poll() is None:
+                    child.kill()
+                child.communicate()
+            self.addCleanup(close_child)
+            self.assertEqual(child.stdout.readline(), b'ready\n')
+            child.stdin.write(b'go\n')
+            child.stdin.flush()
+            try:
+                readable, _, _ = select.select([child.stdout], [], [], 0.2)
+                self.assertEqual(readable, [], '다른 프로세스가 보유한 세션 잠금을 기다려야 합니다')
+            finally:
+                fcntl.flock(held, fcntl.LOCK_UN)
+            output, error = child.communicate(timeout=5)
+            self.assertEqual(child.returncode, 0, error.decode())
+            self.assertTrue(output.strip())
+        stored = json.loads((session_dir / 'sessions.json').read_text())
+        self.assertEqual(len(stored), 1)
+
+    def test_login_uses_system_font_without_missing_font_request(self):
+        original = (APP / 'login.html').read_bytes()
+        status, _, body = self.request('/login')
+        self.assertEqual(status, 200)
+        self.assertNotIn(b'url(/fonts/', body)
+        self.assertIn(b'-apple-system,sans-serif', body)
+        self.assertEqual((APP / 'login.html').read_bytes(), original)
+
+    def test_default_builder_reads_only_explicit_launchagents_directory(self):
+        agents = Path(self.tmp.name) / 'explicit-launchagents'
+        agents.mkdir()
+        (agents / 'com.smuds.fixture.plist').write_bytes(plistlib.dumps({
+            'Label': 'com.smuds.fixture', 'StartCalendarInterval': {'Hour': 19, 'Minute': 0}}))
+        before_source, before_agents = self.file_state(self.source), self.file_state(agents)
+        with patch.dict(os.environ, {'AX_LAUNCHAGENTS_DIR': str(agents)}):
+            server = self.module.create_server(source_root=self.source, web_root=self.web, auth_backend=self.auth)
+        self.addCleanup(server.server_close)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(lambda: (server.shutdown(), thread.join()))
+        cookie = self.login()
+        status, _, body = self.request('/api/v2/snapshot', headers=cookie, server=server)
+        self.assertEqual(status, 200)
+        snapshot = json.loads(body)
+        self.assertEqual(len(snapshot['schedule']), 1)
+        self.assertEqual(snapshot['schedule'][0]['kind'], 'local_request')
+        self.assertIsNotNone(snapshot['schedule'][0]['scheduled_at'])
+        self.assertEqual(self.file_state(self.source), before_source)
+        self.assertEqual(self.file_state(agents), before_agents)
 
     def test_internal_key_only_if_existing_and_not_exposed(self):
         keyfile = self.source / 'internal.key'
