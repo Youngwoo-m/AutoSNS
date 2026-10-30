@@ -166,3 +166,41 @@ test('조회 중 외부로 이동한 포커스는 정상 완료에도 그대로 
   let finish;const {root,document}=opened(fixture(),{getRun:id=>new Promise(resolve=>finish=()=>resolve({run_id:id,state:'completed'}))});
   action(root,'refresh').focus();const pending=action(root,'refresh').fire('click');const outside=document.createElement('input');outside.focus();finish();await pending;assert.equal(document.activeElement,outside);
 });
+
+for(const [old,next] of [[{state:'queued'},{status:'completed'}],[{status:'queued'},{state:'needs_auth'}]])test(`I1 실행 상태 별칭 전환 ${Object.keys(old)[0]}→${Object.keys(next)[0]}은 최신 상태 하나만 표시한다`,async()=>{
+  const state=fixture({run:{run_id:'run-1',...old},delivery:null});const {root}=opened(state,{getRun:async()=>({run_id:'run-1',...next})});
+  await action(root,'refresh').fire('click');assert.equal(state.run.state,Object.values(next)[0]);assert.equal(state.run.status,undefined);
+  assert.match(root.textContent,new RegExp(Object.values(next)[0]==='completed'?'실행 완료':'로그인 필요'));assert.doesNotMatch(root.textContent,/접수 대기/);
+});
+
+for(const [old,next] of [[{execution_state:'queued'},{state:'published'}],[{state:'queued'},{execution_state:'unknown'}]])test(`I1 승인 결과 별칭 전환 ${Object.keys(old)[0]}→${Object.keys(next)[0]}은 이전 배포 상태를 남기지 않는다`,async()=>{
+  const state=fixture();delete state.delivery.state;Object.assign(state.delivery,old);const {root}=opened(state,{approve:async id=>({id,version:3,...next})});
+  const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');await action(root,'approve').fire('click');
+  assert.equal(state.delivery.state,Object.values(next)[0]);assert.equal(state.delivery.execution_state,undefined);assert.equal(state.error,null);
+  const delivery=all(root).find(node=>node.tagName==='p'&&node.textContent.startsWith('배포: '));assert.match(delivery.textContent,new RegExp(Object.values(next)[0]==='published'?'공개 게시 확인':'게시 여부 불확실'));assert.doesNotMatch(delivery.textContent,/접수 대기/);
+});
+
+for(const response of [{id:'delivery-1',version:3},{id:'delivery-1',version:3,context_hash:''},{id:'delivery-1',version:3,context_hash:null},{id:'delivery-1',version:-1,context_hash:'new-context'}])test(`I2 잘못된 admit 응답 ${JSON.stringify(response)}는 기존 승인 문맥과 pending을 보존한다`,async()=>{
+  const state=fixture();const sent=[];const {root}=opened(state,{admit:async(id,body)=>{sent.push({id,...body});return response;}});
+  const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');const previousDelivery=structuredClone(state.delivery),previousDraft=structuredClone(state.draft);
+  await action(root,'admit').fire('click');assert.deepEqual(state.delivery,previousDelivery);assert.deepEqual(state.draft,previousDraft);assert.ok(state.pending.admit);assert.equal(state.error?.status,503);assert.match(root.textContent,/서비스를 사용할 수 없.*보존/);
+  await action(root,'admit').fire('click');assert.deepEqual(sent[1],sent[0]);assert.deepEqual(state.delivery,previousDelivery);
+});
+
+for(const response of [{id:'delivery-1',version:3},{id:'delivery-1',version:3,state:''},{id:'delivery-1',version:3,execution_state:null},{id:'delivery-1',version:3,state:'queued',execution_state:'published'},{id:'delivery-1',version:-1,state:'published'}])test(`I2 잘못된 approve 응답 ${JSON.stringify(response)}는 확인 입력과 동일 요청키를 보존한다`,async()=>{
+  const state=fixture();const sent=[];const {root}=opened(state,{approve:async(id,body)=>{sent.push({id,...body});return response;}});
+  const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');const previousDelivery=structuredClone(state.delivery),previousDraft=structuredClone(state.draft);
+  await action(root,'approve').fire('click');assert.deepEqual(state.delivery,previousDelivery);assert.deepEqual(state.draft,previousDraft);assert.ok(state.pending.approve);assert.equal(state.error?.status,503);assert.equal(field(root,'publication_confirmed').checked,true);
+  await action(root,'approve').fire('click');assert.deepEqual(sent[1],sent[0]);assert.equal(state.pending.approve.body.context_hash,'context-1');assert.equal(state.pending.approve.body.expected_version,2);
+});
+
+for(const response of [{run_id:'run-1'},{run_id:'run-1',status:''},{run_id:'run-1',state:null},{run_id:'run-1',state:'queued',status:'completed'}])test(`I2 잘못된 refresh 응답 ${JSON.stringify(response)}는 기존 상태를 그대로 보존한다`,async()=>{
+  const state=fixture();const previousRun=structuredClone(state.run);const {root}=opened(state,{getRun:async()=>response});
+  await action(root,'refresh').fire('click');assert.deepEqual(state.run,previousRun);assert.equal(state.error?.status,503);assert.match(root.textContent,/서비스를 사용할 수 없/);
+});
+
+test('I2 유효한 admit 최소 응답은 새 context hash와 CAS만 반영하고 새 승인에는 다시 확인을 요구한다',async()=>{
+  const state=fixture();const {root}=opened(state,{admit:async id=>({id,version:3,context_hash:'new-context'}),approve:async id=>({id,version:4,state:'queued'})});
+  const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');await action(root,'admit').fire('click');
+  assert.equal(state.delivery.context_hash,'new-context');assert.equal(state.delivery.version,3);assert.equal(state.pending.admit,undefined);assert.equal(state.error,null);assert.equal(action(root,'approve').disabled,true);
+});

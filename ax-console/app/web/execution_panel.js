@@ -5,8 +5,8 @@ const bound = new WeakMap();
 const actions = ['request','refresh','observe','admit','approve'];
 const triggerFields = ['job_id','scheduled_at_utc','phase','source','request_kind','mode'];
 const frozenFields = ['binding_id','content_id','content_revision','manifest_hash'];
-const runFields = ['run_id','state','status',...frozenFields,'base_job_id','execution_job_id'];
-const deliveryFields = ['id','version','run_id','context_hash','observation_id','state','execution_state','reason'];
+const runFields = ['run_id','state',...frozenFields,'base_job_id','execution_job_id'];
+const deliveryFields = ['id','version','run_id','context_hash','observation_id','state','reason'];
 const labels = {queued:'접수 대기 · 아직 게시되지 않음',running:'실행 중',completed:'실행 완료 · 게시 상태는 배포에서 확인',succeeded:'실행 완료 · 게시 상태는 배포에서 확인',published:'공개 게시 확인',verified:'공개·내용 확인 완료',scheduled:'예약 대기 · 현재 공개 미확인',awaiting_approval:'별도 발행 승인 대기',needs_auth:'로그인 필요',needs_review:'검토 필요',quota_exceeded:'한도 초과',quota_blocked:'한도 초과',unsupported:'미지원',unavailable:'서비스 사용 불가',disabled:'운영 비활성',failed:'실행 실패',unknown:'게시 여부 불확실',cancelled:'로컬 취소',paused:'사용자 중지'};
 const reasonNames = {disabled:'운영 실행이 꺼져 있습니다.',execution_disabled:'운영 실행이 꺼져 있습니다.',job_disabled:'등록된 작업이 비활성입니다.',unavailable:'서비스를 사용할 수 없습니다.',unsupported:'이 작업은 미지원입니다.',needs_auth:'로그인 확인이 필요합니다.',auth_required:'로그인 확인이 필요합니다.',quota_exceeded:'사용 한도를 초과했습니다.',media_evidence_required:'매체 게시 근거 확인이 필요합니다.',needs_review:'독립 검토가 필요합니다.'};
 const text = value => typeof value==='string'||typeof value==='number' ? String(value) : '미확인';
@@ -14,6 +14,14 @@ const id = value => typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}
 const revision = value => Number.isSafeInteger(value)&&value>0;
 const pick = (value,keys) => Object.fromEntries(keys.filter(key=>value?.[key]!==undefined).map(key=>[key,value[key]]));
 const copy = value => JSON.parse(JSON.stringify(value));
+const nonempty = value => typeof value==='string'&&value.length>0&&value.trim()===value;
+const invalidResponse = () => Object.assign(new Error('invalid_response'),{status:503});
+// A newly received alias replaces the previous spelling. Conflicting aliases are not trusted.
+function normalizedState(result,aliases,required=false) {
+  const values=aliases.filter(key=>Object.hasOwn(result,key)).map(key=>result[key]);
+  if((required&&!values.length)||values.some(value=>!nonempty(value))||values.some(value=>value!==values[0]))throw invalidResponse();
+  return values.length?{state:values[0]}:{};
+}
 const stateLabel = value => labels[value]||'상태 미확인';
 const reasonLabel = value => reasonNames[value]||text(value);
 const runId = state => state.run?.run_id;
@@ -153,21 +161,28 @@ export function bindExecutionPanel(root,controller={}) {
     return {id:state.delivery.id,body:{expected_version:state.delivery.version,context_hash:state.delivery.context_hash,request_key:globalThis.crypto.randomUUID()}};
   }
   function receive(name,result) {
-    if(!result||typeof result!=='object'||Array.isArray(result))throw new Error('invalid_response');
+    if(!result||typeof result!=='object'||Array.isArray(result))throw invalidResponse();
     if(name==='request') {
-      if(!id(result.run_id))throw new Error('invalid_response');
+      if(!id(result.run_id))throw invalidResponse();
       const sent=state.pending.request.body;
-      if(sent.trigger.phase==='prepare'&&(!id(result.binding_id)||result.content_id!==sent.content_id||result.content_revision!==sent.expected_revision||typeof result.manifest_hash!=='string'||!result.manifest_hash))throw new Error('invalid_response');
-      state.run=pick(result,runFields);state.delivery=null;state.draft.publication_confirmed=false;
+      if(sent.trigger.phase==='prepare'&&(!id(result.binding_id)||result.content_id!==sent.content_id||result.content_revision!==sent.expected_revision||typeof result.manifest_hash!=='string'||!result.manifest_hash))throw invalidResponse();
+      const status=normalizedState(result,['state','status']);
+      state.run={...pick(result,runFields),...status};state.delivery=null;state.draft.publication_confirmed=false;
     } else if(name==='refresh') {
-      if(result.run_id!==runId(state))throw new Error('invalid_response');
-      const previous=state.run;state.run={...previous,...pick(result,runFields),...pick(previous,frozenFields)};
+      if(result.run_id!==runId(state))throw invalidResponse();
+      const status=normalizedState(result,['state','status'],true);
+      const previous=state.run;const next={...previous,...pick(result,runFields),...status,...pick(previous,frozenFields)};
+      delete next.status;state.run=next;
     } else if(name==='observe') {
-      if(!id(result.observation_id))throw new Error('invalid_response');
+      if(!id(result.observation_id))throw invalidResponse();
       state.delivery={...state.delivery,observation_id:result.observation_id};
     } else {
-      if(result.id!==state.delivery.id||!Number.isSafeInteger(result.version))throw new Error('invalid_response');
-      state.delivery={...state.delivery,...pick(result,deliveryFields)};
+      if(result.id!==state.delivery.id||!Number.isSafeInteger(result.version)||result.version<0)throw invalidResponse();
+      if(name==='admit'&&!nonempty(result.context_hash))throw invalidResponse();
+      const status=normalizedState(result,['state','execution_state'],name==='approve');
+      const next={...state.delivery,...pick(result,deliveryFields),...status};
+      if(!Object.hasOwn(status,'state')&&next.execution_state)next.state=next.execution_state;
+      delete next.execution_state;state.delivery=next;
       if(name==='approve')state.draft.publication_confirmed=false;
     }
   }
