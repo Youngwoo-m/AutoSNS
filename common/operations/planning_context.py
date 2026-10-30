@@ -13,19 +13,34 @@ def _key(row):
 
 
 def _projection(rows, account):
-    groups = {}
-    for row in rows:
+    groups, physical_failures, order = {}, {}, {}
+    for index, row in enumerate(rows):
         if row['source_kind'] == 'verified_delivery':
-            groups.setdefault(_key(row), []).append(row)
+            key = _key(row)
+            groups.setdefault(key, []).append(row)
+            order[row['id']] = (row['collected_at'] or '', index)
+            # 정의를 알 수 없는 예외·미등록은 특정 지표 결과가 아닌 게시 단위 실패다.
+            if (row['status'] in ('error', 'unsupported')
+                    and row['definition_id'] in ('collection.error', 'collection.unsupported')
+                    and row['basis'] == 'unknown' and row['period'] is None):
+                physical_failures.setdefault(key[:4], []).append(row)
     evidence, buckets = [], {}
-    for history in groups.values():
+    for key, metric_history in groups.items():
+        metric_history.sort(key=lambda row: order[row['id']])
+        latest_metric = metric_history[-1]
+        linked = {row['id']: row for row in metric_history}
+        for row in physical_failures.get(key[:4], ()):
+            linked[row['id']] = row
         # 같은 시각은 append 순서로 정한다. 최신 실패와 이전 성공을 함께 보존한다.
-        history.sort(key=lambda r: r['collected_at'] or '')
+        history = sorted(linked.values(), key=lambda row: order[row['id']])
         latest = history[-1]
-        success = next((r for r in reversed(history) if r['status'] == 'ok'), None)
-        evidence.append(dict(delivery_id=latest['delivery_id'], definition_id=latest['definition_id'],
-                             basis=latest['basis'], period=latest['period'], latest_observation_id=latest['id'],
-                             latest_status=latest['status'], previous_success_observation_id=success['id'] if success else None,
+        success = next((r for r in reversed(metric_history) if r['status'] == 'ok'), None)
+        scope = 'physical_post' if latest in physical_failures.get(key[:4], ()) else 'metric'
+        evidence.append(dict(delivery_id=latest_metric['delivery_id'], definition_id=latest_metric['definition_id'],
+                             basis=latest_metric['basis'], period=latest_metric['period'], latest_observation_id=latest['id'],
+                             latest_status=latest['status'], latest_scope=scope,
+                             latest_metric_observation_id=latest_metric['id'],
+                             previous_success_observation_id=success['id'] if success else None,
                              observation_ids=[r['id'] for r in history]))
         if success is None or (account != 'all' and success['destination_account_id'] != account):
             continue

@@ -49,3 +49,44 @@ class PlanningContextTests(fixtures.MetricsFixture):
         from common.operations.metrics import record_metrics
         record_metrics(self.store,'copy-delivery',self.result(values={'views':12}),runtime_store=self.runtime,registry=self.runtime.registry)
         self.assertEqual(12,self.context('dept')['destination_metrics'][0]['values']['views'])
+
+    def test_actual_collector_exception_links_previous_success_to_latest_failure(self):
+        self._assert_actual_collection_failure_linked(lambda *_: 1/0, 'error')
+
+    def test_actual_missing_collector_links_previous_success_to_unsupported(self):
+        self._assert_actual_collection_failure_linked(None, 'unsupported')
+
+    def _assert_actual_collection_failure_linked(self, collector, status):
+        fixed=build_metrics_context(self.runtime,'d',self.runtime.registry)
+        success=self.record(collect_delivery_metrics(fixed,'video',lambda *_:self.result(values={'views':8})))
+        failure=self.record(collect_delivery_metrics(fixed,'video',collector))
+        context=self.context('dept')
+        metric=next(row for row in context['metric_evidence'] if row['definition_id']=='youtube.views')
+        self.assertEqual(status,metric['latest_status'])
+        self.assertEqual(failure['id'],metric['latest_observation_id'])
+        self.assertEqual('physical_post',metric['latest_scope'])
+        self.assertEqual(success['id'],metric['latest_metric_observation_id'])
+        self.assertEqual(success['id'],metric['previous_success_observation_id'])
+        self.assertEqual('lifetime',metric['basis']);self.assertIsNone(metric['period'])
+        self.assertIn(failure['id'],metric['observation_ids'])
+        self.assertEqual(8,context['destination_metrics'][0]['values']['views'])
+        self.assertEqual([],context['interval_metrics'])
+        self.assertTrue(any(row['observation_id']==failure['id'] and row['status']==status for row in context['missing']))
+
+    def test_success_after_physical_collection_failure_is_current_again(self):
+        fixed=build_metrics_context(self.runtime,'d',self.runtime.registry)
+        self.record(collect_delivery_metrics(fixed,'video',None))
+        success=self.record(collect_delivery_metrics(fixed,'video',lambda *_:self.result(values={'views':9})))
+        metric=next(row for row in self.context('dept')['metric_evidence'] if row['definition_id']=='youtube.views')
+        self.assertEqual('ok',metric['latest_status']);self.assertEqual(success['id'],metric['latest_observation_id'])
+        self.assertEqual('metric',metric['latest_scope'])
+
+    def test_physical_failure_does_not_change_another_posts_success(self):
+        self.record(self.result(values={'views':8}))
+        self.runtime.rows[0]['remote_id']='other-video'
+        self.runtime.events=lambda _:[dict(kind='verification',evidence=dict(outcome='verified',checked_at=NOW,evidence=dict(remote_id='other-video',target_id='channel',destination_account_id='dept',visibility='public')))]
+        fixed=build_metrics_context(self.runtime,'d',self.runtime.registry)
+        self.record(collect_delivery_metrics(fixed,'other-video',None))
+        metric=next(row for row in self.context('dept')['metric_evidence'] if row['definition_id']=='youtube.views')
+        self.assertEqual('ok',metric['latest_status'])
+        self.assertEqual('metric',metric['latest_scope'])
