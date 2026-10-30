@@ -56,7 +56,10 @@ class RuntimeStore:
     def _run(self,c,id):
         row=c.execute('SELECT * FROM runtime_runs WHERE id=?',(id,)).fetchone()
         if row is None:raise StoreError('not_found')
-        r=dict(row);r['process_identity']=json.loads(r['process_identity']) if r['process_identity'] else None;return r
+        r=dict(row);r['process_identity']=json.loads(r['process_identity']) if r['process_identity'] else None
+        occurrence=c.execute('SELECT payload FROM runs WHERE id=?',(id,)).fetchone()
+        r['occurrence']=json.loads(occurrence[0]) if occurrence else None
+        return r
     def _delivery(self,c,id,version=None):
         row=c.execute('SELECT * FROM runtime_deliveries WHERE id=?',(id,)).fetchone()
         if row is None:raise StoreError('not_found')
