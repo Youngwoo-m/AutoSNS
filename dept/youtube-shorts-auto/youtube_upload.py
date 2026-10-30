@@ -251,6 +251,21 @@ def _preflight(title, description, keywords):
             raise ValueError(f"{name}에 유튜브가 거부하는 문자 {bad} 가 남아 있습니다 — 업로드 중단")
 
 
+def managed_upload(prepared, target, services):
+    """관리 관문이 허가한 영상 insert만 수행한다. 후속 변경은 별도 intent다."""
+    return services.submit(prepared, target)
+
+
+def managed_read_target(target, services):
+    """등록 credential의 불변 채널 ID를 관측한다. legacy 기본 토큰은 쓰지 않는다."""
+    return services.inspect(target)
+
+
+def managed_read_video(target, remote_id, services):
+    """읽기 전용 원격 video/status 조회. 로컬 해시는 원격 증거가 아니다."""
+    return services.read_video(target, remote_id)
+
+
 def upload(data, dry_run=None, privacy=None, token_path=None):
     cfg = load_config()
     ycfg = cfg.get("youtube", {})

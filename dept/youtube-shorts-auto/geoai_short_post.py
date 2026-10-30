@@ -104,6 +104,21 @@ def own_comments(yt, video_id):
     return found
 
 
+def managed_upload(prepared, target, services):
+    """관리 관문이 허가한 영상 insert만 수행한다. 후속 변경은 별도 intent다."""
+    return services.submit(prepared, target)
+
+
+def managed_read_target(target, services):
+    """등록 credential의 불변 채널 ID를 관측한다. legacy 기본 토큰은 쓰지 않는다."""
+    return services.inspect(target)
+
+
+def managed_read_video(target, remote_id, services):
+    """읽기 전용 원격 video/status 조회. 로컬 해시는 원격 증거가 아니다."""
+    return services.read_video(target, remote_id)
+
+
 def video_info(yt, video_id):
     r = yt.videos().list(part="snippet,status,contentDetails", id=video_id).execute().get("items", [])
     if not r:
