@@ -386,11 +386,11 @@ class AxLock:
                     try:
                         if check_stop:
                             self._check_control(resources)
+                        if said:
+                            self.log(f'{job}: 기다린 끝에 잡음 {resources} ({int(time.monotonic() - t0)}초)')
                     except BaseException:
                         self._release(got)
                         raise
-                    if said:
-                        self.log(f'{job}: 기다린 끝에 잡음 {resources} ({int(time.monotonic() - t0)}초)')
                     return got
                 self._release(got)
                 if not said:

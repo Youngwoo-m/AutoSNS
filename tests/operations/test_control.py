@@ -177,3 +177,31 @@ class ControlTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 self.assertEqual(axlock.main(['run', '--job', 'fixture', '--wait', '0', '--', *cmd]), 0)
             self.assertFalse(marker.exists())
+
+    def test_gate_released_when_only_acquisition_complete_log_fails(self):
+        paths = self.paths()
+        blocker = axlock.AxLock(paths, process_probe=lambda res: False)
+        waiter = axlock.AxLock(paths, process_probe=lambda res: False)
+        held = blocker.acquire(['control:publish-gate'], job='blocker', wait=0)
+        self.addCleanup(lambda: blocker._release(held))
+        original_log = waiter.log
+        messages = []
+
+        def fail_only_complete_log(message):
+            messages.append(message)
+            if len(messages) == 1:
+                original_log(message)
+                blocker._release(held)
+                held.clear()
+            else:
+                raise OSError('fixture log disk full')
+
+        with patch.object(waiter, 'log', side_effect=fail_only_complete_log):
+            with self.assertRaisesRegex(OSError, 'fixture log disk full'):
+                with waiter.hold(['control:publish-gate'], job='waiter', wait=1):
+                    self.fail('failed log must precede fd handoff')
+        self.assertEqual(len(messages), 2)
+        self.assertIn('기다림', messages[0])
+        self.assertIn('기다린 끝에 잡음', messages[1])
+        with blocker.hold(['control:publish-gate'], job='after-log-failure', wait=0):
+            pass
