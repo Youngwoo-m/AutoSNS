@@ -89,7 +89,6 @@ class RuntimeStore:
             if not self._v3(c):return None
             row=c.execute('SELECT payload FROM deliveries WHERE id=?',(id,)).fetchone()
             return json.loads(row[0]) if row else None
-
     def get_delivery(self,id):
         with self._db() as c:
             if not self._v3(c):return None
@@ -244,12 +243,48 @@ class RuntimeStore:
         evidence=evidence or {}
         with self._db(True) as c:
             a=self._attempt(c,attempt_id)
-            if a['resolved'] or a['outcome'] is not None:raise ConflictError()
+            current=self._delivery(c,a['delivery_id']);run=self._run(c,current['run_id'])
+            if a['resolved'] or a['outcome'] is not None or a['generation']!=run['generation']:
+                self._event(c,a['delivery_id'],'late_attempt_result',dict(outcome=outcome,remote_id=remote_id,url=url,scheduled_at=stamp(scheduled_at) if scheduled_at else None,evidence=serial(evidence),recorded_at=stamp(now)),attempt_id)
+                return a
             if outcome in ('submitted','scheduled','unknown') and not a['request_started']:raise ConflictError()
             safe=outcome=='failed' and not a['request_started'] and evidence.get('confirmed_not_submitted') is True
             state={'submitted':'uploaded','scheduled':'scheduled','unknown':'unknown','failed':'retry_wait' if safe else 'unknown'}[outcome]
             result=dict(outcome=outcome,remote_id=remote_id,url=url,scheduled_at=stamp(scheduled_at) if scheduled_at else None,evidence=serial(evidence),recorded_at=stamp(now))
             c.execute('UPDATE attempts SET outcome=?,result=?,resolved=? WHERE id=?',(outcome,_json(result),int(state!='unknown'),attempt_id));c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id=?',(attempt_id,));self._state(c,a['delivery_id'],state,remote_id=remote_id,url=url,scheduled_at=result['scheduled_at']);self._event(c,a['delivery_id'],state,evidence,attempt_id);return self._attempt(c,attempt_id)
+    def recover_expired_run(self,run_id,expected_version,now,process_evidence,lock_evidence):
+        """서버 복구기가 확인한 신원을 CAS lease와 다시 결합한다. I/O 없음."""
+        expected(expected_version);now=utc(now)
+        with self._db(True) as c:
+            run=self._run(c,run_id)
+            if run['version']!=expected_version or not run['lease_expires_at'] or utc(run['lease_expires_at'])>now:raise ConflictError()
+            identity=run.get('process_identity') or {}
+            dead=isinstance(process_evidence,dict) and process_evidence.get('status')=='dead'
+            dead=dead and all(process_evidence.get(k)==identity.get(k) and identity.get(k) is not None for k in ('host_id','pid','started_at'))
+            rows=[self._delivery(c,r[0]) for r in c.execute('SELECT id FROM runtime_deliveries WHERE run_id=?',(run_id,))]
+            for d in rows:
+                if d['state'] not in ('running','submitting'):continue
+                lock=lock_evidence.get(d['id'],{}) if isinstance(lock_evidence,dict) else {}
+                free=lock.get('status')=='free' and lock.get('connection_id')==d['context']['connection_id']
+                evidence=dict(process=process_evidence,lock=lock,checked_at=stamp(now))
+                self._event(c,d['id'],'recovery_observation',evidence)
+                attempts=[self._attempt(c,r[0]) for r in c.execute('SELECT id FROM attempts WHERE delivery_id=? AND resolved=0',(d['id'],))]
+                for a in attempts:
+                    if not a['request_started'] and (not dead or not free):continue
+                    c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id=?',(a['id'],))
+                    if a['request_started']:
+                        if a['outcome'] is None:
+                            result=dict(outcome='unknown',evidence=evidence,recorded_at=stamp(now))
+                            c.execute("UPDATE attempts SET outcome='unknown',result=? WHERE id=?",(_json(result),a['id']))
+                        self._state(c,d['id'],'unknown')
+                    else:
+                        proof=dict(evidence,confirmed_not_posted=True,confirmed_not_submitted=True,old_process_terminated=True,profile_lock_released=True)
+                        result=dict(outcome='failed',evidence=proof,recorded_at=stamp(now),resolution=dict(kind='confirmed_not_posted',evidence=proof,note='expired before request with dead worker and free lock',actor='recovery_service',recorded_at=stamp(now)))
+                        c.execute("UPDATE attempts SET outcome='failed',resolved=1,result=? WHERE id=?",(_json(result),a['id']))
+                        self._state(c,d['id'],'retry_wait')
+                if not attempts and dead and free:self._state(c,d['id'],'retry_wait')
+            return self._run(c,run_id)
+
     def submit_occurrence(self,request,request_hash=None):
         required={'job_id','scheduled_at_utc','phase','source','request_kind','mode'}
         if not isinstance(request,dict) or set(request)!=required or request['mode'] not in ('live','dry'):raise StoreError('invalid')
@@ -290,12 +325,10 @@ class RuntimeStore:
             if not self._v3(c):return None
             row=c.execute('SELECT * FROM quota_productions WHERE id=?',(id,)).fetchone()
             return dict(row,requirements=json.loads(row['requirements'])) if row else None
-
     def list_productions(self):
         with self._db() as c:
             if not self._v3(c):return []
             return [dict(r,requirements=json.loads(r['requirements'])) for r in c.execute('SELECT * FROM quota_productions ORDER BY id')]
-
     def get_reservation(self,id):
         with self._db() as c:
             if not self._v3(c):return None
@@ -356,7 +389,6 @@ class RuntimeStore:
                 if c.execute('SELECT 1 FROM attempts a JOIN quota_production_links l ON l.reservation_id=a.reservation_id WHERE l.production_id=? AND a.request_started=1 AND a.resolved=0 LIMIT 1',(production_id,)).fetchone():raise ConflictError()
             c.execute('UPDATE quota_productions SET state=?,settled_at=? WHERE id=?',(state,stamp(now),production_id))
             return dict(c.execute('SELECT * FROM quota_productions WHERE id=?',(production_id,)).fetchone())
-
     def settle_reservation(self,reservation_id,*,release=False,now=None):
         if type(release) is not bool:raise StoreError('invalid')
         with self._db(True) as c:
@@ -383,9 +415,32 @@ class RuntimeStore:
             self._delivery(c,delivery_id)
             if attempt_id and self._attempt(c,attempt_id)['delivery_id']!=delivery_id:raise ConflictError()
             id=self._event(c,delivery_id,kind,evidence,attempt_id);return dict(id=id,delivery_id=delivery_id,kind=kind,evidence=serial(evidence))
-    def resolve_delivery(self,delivery_id,expected_version,request_key,kind,evidence,note,actor):
-        if kind not in ('link_existing','confirmed_not_posted','cancel_local') or not isinstance(evidence,dict) or not evidence or not isinstance(note,str) or not note or not isinstance(actor,str) or not actor or not isinstance(request_key,str) or not request_key:raise StoreError('invalid')
+    def get_resolution_result(self,delivery_id,expected_version,request_key,kind,evidence,note,actor):
+        """동일 명령 재요청은 외부 조회/관측 없이 저장 결과를 반환한다."""
+        expected(expected_version)
         command=digest(dict(delivery_id=delivery_id,expected_version=expected_version,kind=kind,evidence=evidence,note=note,actor=actor))
+        with self._db() as c:
+            if not self._v3(c):return None
+            old=c.execute('SELECT * FROM runtime_requests WHERE request_key=?',(request_key,)).fetchone()
+            if not old:return None
+            if old['command_hash']!=command:raise ConflictError()
+            return json.loads(old['result'])
+
+    def record_resolution_observation(self,delivery_id,expected_version,request_key,kind,evidence,note,actor):
+        """조회 결과가 불충분한 명령도 동일 request key로 다시 외부 조회하지 않는다."""
+        command=digest(dict(delivery_id=delivery_id,expected_version=expected_version,kind=kind,evidence=evidence,note=note,actor=actor))
+        with self._db(True) as c:
+            old=c.execute('SELECT * FROM runtime_requests WHERE request_key=?',(request_key,)).fetchone()
+            if old:
+                if old['command_hash']!=command:raise ConflictError()
+                return json.loads(old['result'])
+            result=self._delivery(c,delivery_id,expected_version)
+            c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)))
+            return result
+
+    def resolve_delivery(self,delivery_id,expected_version,request_key,kind,evidence,note,actor,*,request_evidence=None):
+        if kind not in ('link_existing','confirmed_not_posted','cancel_local') or not isinstance(evidence,dict) or not evidence or not isinstance(note,str) or not note or not isinstance(actor,str) or not actor or not isinstance(request_key,str) or not request_key:raise StoreError('invalid')
+        command=digest(dict(delivery_id=delivery_id,expected_version=expected_version,kind=kind,evidence=evidence if request_evidence is None else request_evidence,note=note,actor=actor))
         with self._db(True) as c:
             old=c.execute('SELECT * FROM runtime_requests WHERE request_key=?',(request_key,)).fetchone()
             if old:
@@ -450,4 +505,3 @@ class RuntimeStore:
             if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='content_evidence'").fetchone():return []
             rows=c.execute('SELECT * FROM content_evidence WHERE content_id=? AND revision=? AND manifest_hash=? ORDER BY id',(content_id,revision,manifest_hash))
             return [dict(r,report=json.loads(r['report'])) for r in rows]
-
