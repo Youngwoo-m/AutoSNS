@@ -149,6 +149,8 @@ class MetricObservation(_Model):
             _invalid()
         if self.source_kind == 'legacy_reported' and self.status == 'ok':
             _invalid()
+        if self.source_kind == 'verified_delivery' and self.status == 'ok' and self.observed_at is None:
+            _invalid()
         identities = ('owner_account_id', 'destination_account_id', 'platform', 'connection_id',
                       'target_id', 'remote_id', 'delivery_id', 'content_id')
         for name in identities:

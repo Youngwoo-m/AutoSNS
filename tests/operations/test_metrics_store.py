@@ -58,6 +58,42 @@ class MetricsStoreTests(unittest.TestCase):
             self.assertEqual(saved['values'], {})
             self.assertEqual(saved['status'], status)
 
+    def test_verified_ok_model_rejects_missing_observed_at(self):
+        from common.operations.metrics_models import MetricObservation
+        with self.assertRaises(StoreError) as caught:
+            MetricObservation(**observation(observed_at=None))
+        self.assertEqual(caught.exception.code, 'invalid')
+
+    def test_verified_ok_append_rejects_missing_observed_at_without_write(self):
+        store = self.store(); store.initialize()
+        with self.assertRaises(StoreError) as caught:
+            store.append_observation(observation(observed_at=None), 'missing-observed-at')
+        self.assertEqual(caught.exception.code, 'invalid')
+        self.assertEqual(store.list_observations(), [])
+
+    def test_import_missing_success_observed_at_rolls_back_preceding_row(self):
+        store = self.store(); store.initialize()
+        existing = store.append_observation(observation(), 'existing')
+        plan = {'preview_digest': 'missing-observed-at', 'observations': [
+            {'observation_key': 'preceding', 'observation': observation(values={'views': 1})},
+            {'observation_key': 'missing-observed-at', 'observation': observation(observed_at=None)},
+        ]}
+        with self.assertRaises(StoreError) as caught:
+            store.import_rows(plan)
+        self.assertEqual(caught.exception.code, 'invalid')
+        self.assertEqual(self.store().list_observations(), [existing])
+
+    def test_error_unsupported_and_legacy_keep_nullable_observed_at(self):
+        from common.operations.metrics_models import MetricObservation
+        store = self.store(); store.initialize()
+        for status in ('error', 'unsupported', 'legacy_reported'):
+            source_kind = 'legacy_reported' if status == 'legacy_reported' else 'verified_delivery'
+            row = observation(source_kind=source_kind, status=status, observed_at=None)
+            with self.subTest(status=status):
+                self.assertIsNone(MetricObservation(**row).observed_at)
+                saved = store.append_observation(row, status + '-null-time')
+                self.assertIsNone(saved['observed_at'])
+
     def test_large_finite_integer_is_not_coerced_to_float(self):
         store = self.store(); store.initialize()
         integer = 10 ** 400
