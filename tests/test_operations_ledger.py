@@ -139,4 +139,54 @@ class LedgerTests(unittest.TestCase):
         self.error('conflict',ledger.record_approval,r['id'],1,r['subject_hash'],'approved','')
         self.error('conflict',ledger.reschedule,r['id'],1,'2026-11-01T11:00:00+09:00','Asia/Seoul',p['preview_hash'])
 
+    def local_registry(self):
+        source=Path(self.tmp.name)/'registry.json'
+        source.write_bytes(REGISTRY.read_bytes())
+        rules=source.parent/'crossposts.json'
+        rules.write_bytes(REGISTRY.with_name('crossposts.json').read_bytes())
+        ledger=Ledger(self.root,source,self.store);ledger.initialize()
+        return ledger,source,rules
+
+    def test_preview_binds_policy_body_without_revision_change(self):
+        body=self.setup_content();ledger,source,_=self.local_registry()
+        r=ledger.create_or_get_delivery(body)
+        p=ledger.preview_schedule(r['id'],1,'2026-11-01T11:00:00+09:00','Asia/Seoul')
+        data=json.loads(source.read_text());data['policies']['plan-1']['required_review']='new-rule'
+        source.write_text(json.dumps(data))
+        self.error('conflict',ledger.reschedule,r['id'],1,'2026-11-01T11:00:00+09:00','Asia/Seoul',p['preview_hash'])
+        self.assertEqual(ledger.get_delivery(r['id'])['version'],1)
+
+    def test_preview_binds_crosspost_semantics_without_revision_change(self):
+        body=self.setup_content();ledger,_,rules=self.local_registry()
+        r=ledger.create_or_get_delivery(body)
+        p=ledger.preview_schedule(r['id'],1,'2026-11-01T11:00:00+09:00','Asia/Seoul')
+        data=json.loads(rules.read_text());data['rules'][0]['delay_seconds']+=600
+        rules.write_text(json.dumps(data))
+        self.error('conflict',ledger.reschedule,r['id'],1,'2026-11-01T11:00:00+09:00','Asia/Seoul',p['preview_hash'])
+        self.assertEqual(ledger.get_delivery(r['id'])['version'],1)
+
+    def test_current_target_binding_projects_get_and_mutation_without_read_writes(self):
+        body=self.setup_content();body['connection_id']='personal.tistory'
+        ledger,source,_=self.local_registry();r=ledger.create_or_get_delivery(body)
+        self.assertEqual(r['target_status'],'unverified')
+        data=json.loads(source.read_text());connection=data['connections']['personal.tistory']
+        connection.update(target_id='fixture-confirmed',target_label='확인된 대상',target_evidence=[{'kind':'fixture'}])
+        source.write_text(json.dumps(data));before=(self.root/'operations.sqlite3').read_bytes()
+        current=ledger.get_delivery(r['id'])
+        self.assertEqual(current['target_status'],'verified');self.assertEqual(current['target_label'],'확인된 대상')
+        self.assertTrue(current['subject_hash']);self.assertEqual(current['blockers'],[])
+        self.assertEqual(before,(self.root/'operations.sqlite3').read_bytes())
+        approved=ledger.record_approval(r['id'],1,current['subject_hash'],'approved','')
+        self.assertEqual((approved['status'],approved['target_status']),('ready','verified'))
+        self.assertEqual(approved['target_label'],'확인된 대상')
+        connection.update(target_id=None,target_label='확인 해제된 대상',target_evidence=[])
+        source.write_text(json.dumps(data));before=(self.root/'operations.sqlite3').read_bytes()
+        current=ledger.get_delivery(r['id'])
+        self.assertEqual((current['status'],current['target_status']),('pending','unverified'))
+        self.assertIsNone(current['subject_hash']);self.assertTrue(current['blockers'])
+        self.assertEqual(before,(self.root/'operations.sqlite3').read_bytes())
+        cancelled=ledger.cancel(r['id'],2)
+        self.assertEqual((cancelled['status'],cancelled['target_status']),('cancelled','unverified'))
+        self.assertEqual(cancelled['target_label'],'확인 해제된 대상')
+
 if __name__=='__main__':unittest.main()

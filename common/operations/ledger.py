@@ -96,7 +96,10 @@ class Ledger:
                 if blocked: result.append({'code':code,'reason':'기존 교차 경로는 관측용이며 실행 주인을 변경하지 않습니다.'})
         return result
 
-    def _public(self,record):
+    def _public(self,record,registry=None):
+        registry=registry or self.registry()
+        connection=registry.connections.get(record['connection_id'])
+        record=dict(record,target_status=connection.target_status if connection else 'unverified',target_label=connection.target_label if connection else '')
         keys=('id','content_id','revision','manifest_hash','owner_account_id','destination_account_id','connection_id','platform','target_label','target_status','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','status','version','subject_hash','approval','blockers','created_at','updated_at')
         approval=record.get('approval')
         return {**{k:record.get(k) for k in keys},'approval':None if approval is None else {k:approval[k] for k in ('id','scope','decision','subject_hash','content_revision','source','recorded_at')},'source':'managed','schedule_kind':'local_plan','remote_state':'unavailable','execution_enabled':False}
@@ -114,7 +117,7 @@ class Ledger:
             r.update(subject_hash=None,blockers=[{'code':'context_changed','reason':'현재 등록부에서 계획 대상을 다시 확인해야 합니다.'}])
             current=False
         if r['status']=='ready' and not current: r['status']='pending'
-        return self._public(r)
+        return self._public(r,registry)
 
     def _prepare(self,body):
         allowed={'content_id','revision','manifest_hash','connection_id','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','options','crosspost_rule_id'}
@@ -244,7 +247,8 @@ class Ledger:
         context=dict(current,schedule_condition=condition)
         kept=not self._blockers(current,registry) and is_approval_current(r['approval'],snapshot,context)
         payload=dict(delivery_id=r['id'],expected_version=r['version'],scheduled_at=at,timezone=timezone,schedule_condition=condition,approval_retained=kept,registry_revision=registry.revision,policy_revision=current['policy_revision'],current_condition=r['schedule_condition'])
-        payload.update(preview_hash=digest(payload),reasons=[] if kept else ['계획 승인이 필요합니다.'],crossposts=preview_crossposts(dict(content_id=r['content_id'],revision=r['revision'],owner_account_id=r['owner_account_id'],schedule_slot=r['schedule_slot'],source_connection_id=r['connection_id'],source_public_at=at,visibility=r['options'].get('visibility'),title=snapshot.get('title'),description=snapshot.get('original')),registry),source='managed',schedule_kind='local_plan',remote_state='unavailable',execution_enabled=False)
+        payload.update(reasons=[] if kept else ['계획 승인이 필요합니다.'],crossposts=preview_crossposts(dict(content_id=r['content_id'],revision=r['revision'],owner_account_id=r['owner_account_id'],schedule_slot=r['schedule_slot'],source_connection_id=r['connection_id'],source_public_at=at,visibility=r['options'].get('visibility'),title=snapshot.get('title'),description=snapshot.get('original')),registry),source='managed',schedule_kind='local_plan',remote_state='unavailable',execution_enabled=False)
+        payload['preview_hash']=digest({'preview':payload,'context':context,'subject_hash':self._subject(snapshot,context)})
         return payload,context,snapshot
 
     def preview_schedule(self,delivery_id,expected_version,proposed_time,timezone):
