@@ -1,6 +1,6 @@
 import {createContentEditor} from './content_editor.js';
 import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
-import {createSnapshotLoader,contentApi} from './api.js';
+import {createSnapshotLoader,contentApi,refreshWorkspace} from './api.js';
 import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
 const $=selector=>document.querySelector(selector);
@@ -241,7 +241,7 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
 document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail())return;loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>{if(confirmLeave())loader.refresh();});
+$('#refresh').addEventListener('click',()=>refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:editorActive&&editor.hasUnsavedChanges(),confirm:message=>globalThis.confirm(message)}));
 window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()){event.preventDefault();event.returnValue='';}});
 loader.select('all');
 setInterval(renderStatus,60000);

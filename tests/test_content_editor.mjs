@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as editor from '../ax-console/app/web/content_editor.js';
 import {relatedContents,statusLabel} from '../ax-console/app/web/view_helpers.js';
 import * as apiModule from '../ax-console/app/web/api.js';
+import {refreshWorkspace} from '../ax-console/app/web/api.js';
 const createContentApi=(...args)=>apiModule.createContentApi(...args);
 const doc={id:'managed_x',source:'managed',owner_account_id:'personal',revision:3,manifest_hash:'abc',title:'<제목>',kind:'article',series:'연습',status:'drafting',original:'원문',variants:[{destination_account_id:'dept',platform:'tiktok',text:'학과 변환'}],sources:[{url:'https://example.org',note:'근거'}],assets:[{id:'a'}],reviews:[]};
 test('새 원본은 조회 필터와 별도로 소유자를 명시해야 한다',()=>{
@@ -57,4 +58,29 @@ test('저장 완료한 설정은 확인 없이 이동하며 성공 응답 초안
  const state=createIntegrationDraftState();state.draft={account_id:'personal',revision:5,notes:'저장 완료'};
  assert.equal(confirmSettingsNavigation(state,()=>{throw new Error('저장 완료 상태는 확인하지 않음');}),true);
  assert.equal(state.draft.revision,5);assert.equal(state.draft.notes,'저장 완료');
+});
+
+test('명시적 새로고침은 같은 계정의 설정도 다시 읽고 미저장 초안과 CAS 버전을 보존한다',async()=>{
+ const {createIntegrationDraftState}=await import('../ax-console/app/web/integration_settings.js');
+ const settings=createIntegrationDraftState();
+ settings.draft={account_id:'personal',revision:4,notes:'미저장 입력'};settings.dirty=true;
+ const before=structuredClone(settings.draft),calls=[];
+ settings.load=async account=>{calls.push(['settings',account]);};
+ settings.discardChanges=()=>assert.fail('새로고침은 설정 초안을 버리지 않는다');
+ const loader={refresh:async()=>{calls.push(['snapshot']);}};
+ const args={loader,integrationSettings:settings,account:'personal',writable:true,confirm:()=>assert.fail('설정 초안만 있을 때 확인하지 않는다')};
+ assert.equal(await refreshWorkspace(args),true);
+ assert.equal(await refreshWorkspace(args),true);
+ assert.deepEqual(calls,[['snapshot'],['settings','personal'],['snapshot'],['settings','personal']]);
+ assert.deepEqual(settings.draft,before);assert.equal(settings.hasUnsavedChanges(),true);
+});
+test('명시적 새로고침은 읽기 전용에서 설정을 조회하지 않으며 편집기 이탈 취소를 따른다',async()=>{
+ const calls=[];
+ const args={loader:{refresh:async()=>calls.push('snapshot')},integrationSettings:{load:async()=>calls.push('settings')},account:'dept',writable:false};
+ assert.equal(await refreshWorkspace(args),true);assert.deepEqual(calls,['snapshot']);
+ calls.length=0;
+ assert.equal(await refreshWorkspace({...args,writable:true,editorDirty:true,confirm:()=>false}),false);
+ assert.deepEqual(calls,[]);
+ assert.equal(await refreshWorkspace({...args,writable:true,editorDirty:true,confirm:()=>true}),true);
+ assert.deepEqual(calls,['snapshot','settings']);
 });

@@ -23,6 +23,13 @@ export function createSnapshotLoader(onChange,{request=fetchSnapshot}={}) {
   return {select,refresh:()=>select(state.account)};
 }
 
+export async function refreshWorkspace({loader,integrationSettings,account,writable,editorDirty=false,confirm}) {
+  if(editorDirty&&!confirm('저장하지 않은 변경을 버리고 이동할까요?'))return false;
+  // Settings.load refreshes only the list; the draft and its CAS revision stay intact.
+  await Promise.all([loader.refresh(),writable?integrationSettings.load(account):undefined]);
+  return true;
+}
+
 export function createContentApi({fetcher=globalThis.fetch}={}) {
   async function request(path,{method='GET',body,headers={}}={}) {
     const response=await fetcher(`/api/v2${path}`,{method,credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...headers},...(body===undefined?{}:{body})});
