@@ -63,7 +63,10 @@ class BlogAdapter:
                 return LookupResult('unsupported', candidates, {'reason': 'approved_snapshot_unavailable'})
             snapshot = content_store.get(ctx.content_id, ctx.content_revision)
             now = raw['checked_at']
-            matched = [item for item in candidates if strong_identity(ctx.to_dict(), snapshot, item, attempt, now)]
+            prior_result = attempt.get('result')
+            expected_id = attempt.get('remote_id') or (prior_result.get('remote_id') if isinstance(prior_result, Mapping) else None)
+            matched = [item for item in candidates
+                       if strong_identity(ctx.to_dict(), snapshot, item, attempt, now, remote_id=expected_id)]
             if len(matched) == 1 and len(candidates) == 1:
                 return LookupResult('matched', matched)
             if candidates:

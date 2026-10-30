@@ -9,10 +9,14 @@ from .blog_legacy import ROOT, load_blog_leaf
 from .blog_observations import normalize_blog_observation
 
 
-BLOG_BINDINGS = MappingProxyType({key: MappingProxyType(dict(executor_id='blog.' + key, module='common.publishers.' + module))
-    for key, module in (('dept.blogger', 'blogger'), ('personal.blogger', 'blogger'),
-                        ('dept.naver_blog', 'naver'), ('personal.naver_blog', 'naver'),
-                        ('personal.tistory', 'tistory'))})
+# 승인 constraints의 connection→executor 계약. connection 문자열에서 이름을 유도하지 않는다.
+BLOG_BINDINGS = MappingProxyType({key: MappingProxyType(dict(executor_id=executor, module='common.publishers.' + module))
+    for key, executor, module in (('dept.blogger', 'blogger.dept', 'blogger'),
+                                  ('personal.blogger', 'blogger.personal', 'blogger'),
+                                  ('dept.naver_blog', 'naver.dept', 'naver'),
+                                  ('personal.naver_blog', 'naver.personal', 'naver'),
+                                  ('personal.tistory', 'tistory.personal', 'tistory'))})
+
 CREDENTIAL_CATALOG = MappingProxyType({key + '.credential': MappingProxyType(dict(
     credential_ref=key + '.credential', account_id=key.split('.')[0], platform=key.split('.')[1])) for key in BLOG_BINDINGS})
 

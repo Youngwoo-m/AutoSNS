@@ -15,8 +15,8 @@ from datetime import datetime
 
 def _legacy_dependencies():
     global webdriver, Options, ActionChains, By, Keys, WebDriverWait, EC
-    global LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
-    global make_banner, make_gamma_image, MOD_KEY
+    global LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, start_chrome
+    global make_banner, make_gamma_image
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.action_chains import ActionChains
@@ -25,14 +25,20 @@ def _legacy_dependencies():
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
 
-    from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
+    from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, start_chrome
     from make_banner import make_banner
     from gamma_image import make_gamma_image
-    MOD_KEY = Keys.COMMAND if IS_MAC else Keys.CONTROL
 
 IS_MAC = sys.platform == "darwin"
 # 맥은 붙여넣기/문서끝 이동이 Command 키. 윈도우는 Control.
-MOD_KEY = None
+# W3C WebDriver 키 코드. from-import 호출자도 Selenium 지연 로드 전부터 유효하다.
+MOD_KEY = "\ue03d" if IS_MAC else "\ue009"
+
+
+def log(*args, **kwargs):
+    """기존 공개 log 이름은 유지하되 legacy common은 실제 로그 호출 때만 읽는다."""
+    from common import log as implementation
+    return implementation(*args, **kwargs)
 
 
 def build_driver(headless):

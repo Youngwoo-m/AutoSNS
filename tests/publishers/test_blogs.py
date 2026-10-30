@@ -1,5 +1,6 @@
 """다섯 연결의 실제 managed leaf를 fake Google/DOM까지 실행한다. 운영 접근 없음."""
 import importlib
+import ast
 import importlib.util
 import copy
 import hashlib
@@ -16,6 +17,14 @@ from tests.publishers.test_blog_payloads import context, snapshot, NOW
 
 
 CONNECTIONS = ('dept.blogger', 'personal.blogger', 'dept.naver_blog', 'personal.naver_blog', 'personal.tistory')
+# 승인 constraints의 리터럴 계약. 제품 BLOG_BINDINGS에서 기대값을 계산하지 않는다.
+APPROVED_EXECUTORS = {
+    'dept.blogger': 'blogger.dept',
+    'personal.blogger': 'blogger.personal',
+    'dept.naver_blog': 'naver.dept',
+    'personal.naver_blog': 'naver.personal',
+    'personal.tistory': 'tistory.personal',
+}
 
 
 def registry():
@@ -31,7 +40,7 @@ def registry():
         connections[key] = Connection(key, account, platform, target_id='target-' + key,
                                      credential_ref=ref, profile_ref=account,
                                      expected_login_subject='subject-' + account, enabled=True)
-        jobs['job-' + key] = dict(executor_id='blog.' + key, connection_id=key,
+        jobs['job-' + key] = dict(executor_id=APPROVED_EXECUTORS[key], connection_id=key,
                                   owner_account_id=account, enabled=True, execution_owner='managed',
                                   policy_revision='policy', schedule_owner='console')
     return Registry('registry', {'dept': {}, 'personal': {}}, credentials, profiles, connections, jobs, {'policy': {}}, {})
@@ -111,8 +120,11 @@ class FakeDriver:
 
 class InlineBridge:
     """프로세스 보안관문은 A2 시험, 여기서는 실 handler→leaf→lowest fake를 검사한다."""
-    def __init__(self, handlers, credentials): self.handlers, self.credentials = handlers, credentials
+    def __init__(self, handlers, credentials):
+        self.handlers, self.credentials = handlers, credentials
+        self.calls = []
     def read(self, executor, action, context, payload):
+        self.calls.append((executor, action))
         values = context.to_dict() if hasattr(context, 'to_dict') else context
         return self.handlers[(executor, action)](values, payload, self.credentials[values['connection_id']])
     def submit(self, executor, context, prepared, permit):
@@ -319,10 +331,10 @@ class BlogTests(unittest.TestCase):
         actual = load_registry(Path(__file__).resolve().parents[2] / 'ax-console/config/operations.json')
         self.assertEqual(dict(build_blog_catalog(actual).executors), {})
         catalog = build_blog_catalog(self.registry)
-        self.assertEqual(set(catalog.executors), {'blog.' + key for key in CONNECTIONS})
+        self.assertEqual(set(catalog.executors), {'blogger.dept', 'blogger.personal', 'naver.dept', 'naver.personal', 'tistory.personal'})
         self.assertTrue(all(spec.mutation_actions == ('publish',) for spec in catalog.executors.values()))
         for key in CONNECTIONS:
-            spec = catalog.executors['blog.' + key]
+            spec = catalog.executors[APPROVED_EXECUTORS[key]]
             project = 'personal/naver-blog-auto' if key == 'personal.tistory' else 'dept/naver-blog-auto'
             self.assertTrue(str(spec.cwd).endswith(project))
             self.assertEqual(spec.interpreter, str(spec.cwd / '.venv/bin/python'))
@@ -515,6 +527,117 @@ return result"""
         events = json.loads(fixture.marker.read_text())
         self.assertEqual(sum(event[0]=='script' and 'AX_BLOG_FINAL_PUBLISH' in event[1] for event in events), 1)
         self.assertTrue(any(event[0] == 'input' for event in events))
+
+    def test_approved_literal_executor_ids_connect_catalog_handler_and_adapter(self):
+        from common.publishers.blog_runtime import build_blog_catalog
+        adapters = self.components()
+        catalog = build_blog_catalog(self.registry)
+        bridge = next(iter(adapters.values())).bridge
+        self.assertEqual(set(catalog.executors), {'blogger.dept', 'blogger.personal', 'naver.dept', 'naver.personal', 'tistory.personal'})
+        for connection, expected in (('dept.blogger', 'blogger.dept'),
+                                     ('personal.blogger', 'blogger.personal'),
+                                     ('dept.naver_blog', 'naver.dept'),
+                                     ('personal.naver_blog', 'naver.personal'),
+                                     ('personal.tistory', 'tistory.personal')):
+            with self.subTest(connection=connection):
+                self.assertEqual(catalog.executors[expected].id, expected)
+                for action in ('inspect_target', 'lookup', 'verify', 'publish'):
+                    self.assertIn((expected, action), bridge.handlers)
+                adapters[connection].inspect_target(ctx(connection))
+                self.assertEqual(bridge.calls[-1], (expected, 'inspect_target'))
+
+    def test_lookup_existing_remote_id_never_matches_another_id(self):
+        from types import SimpleNamespace
+        adapters = self.components()
+        data = {**snapshot(), 'variants': [], 'sources': [], 'assets': []}
+        bridge = next(iter(adapters.values())).bridge
+        bridge.store = SimpleNamespace(content_store=SimpleNamespace(get=lambda *args: data))
+        for key, adapter in adapters.items():
+            if key in self.google: self.google[key].remote['id'] = 'WRONG-ID'
+            else: self.drivers[key].remote['remote_id'] = 'WRONG-ID'
+            expected = '123' if key.endswith('tistory') else 'EXPECTED-ID'
+            for identity in ({'remote_id': expected}, {'result': {'remote_id': expected}}):
+                with self.subTest(connection=key, identity=identity):
+                    result = adapter.lookup(ctx(key), {'created_at': NOW.isoformat(), **identity})
+                    self.assertEqual(result.outcome, 'ambiguous')
+
+    def test_existing_naver_callers_keep_lazy_log_and_imported_modifier_key(self):
+        from common.publishers.blog_legacy import load_blog_leaf
+        from types import ModuleType, SimpleNamespace
+        sys.modules.pop('_autosns_managed_dept_naver_blog', None)
+        leaf = load_blog_leaf('dept.naver_blog')
+        root = Path(__file__).resolve().parents[2] / 'dept/naver-blog-auto'
+        expected_key = '\ue03d' if sys.platform == 'darwin' else '\ue009'
+        import_time_key = leaf.MOD_KEY
+        class ReachedDriver(Exception): pass
+        class ReachedModifier(Exception): pass
+        observed = []
+        owner = self
+        class Actions:
+            def __init__(self, driver): pass
+            def __getattr__(self, name): return lambda *args, **kwargs: self
+            def key_down(self, value):
+                owner.assertEqual(value, expected_key)
+                observed.append(value)
+                raise ReachedModifier()
+        element = SimpleNamespace(rect={'width': 100, 'height': 20}, text='title')
+        driver = SimpleNamespace(current_url='https://blog.naver.com/fixture', get=lambda *args: None,
+                                 execute_script=lambda *args: None, quit=lambda: None,
+                                 find_element=lambda *args: element,
+                                 switch_to=SimpleNamespace(alert=SimpleNamespace(accept=lambda: None)))
+        class Wait:
+            def __init__(self, *args): pass
+            def until(self, condition): return element
+        by = SimpleNamespace(CSS_SELECTOR='css selector', ID='id', XPATH='xpath')
+        keys = SimpleNamespace(ARROW_LEFT='left', ARROW_RIGHT='right', SHIFT='shift')
+        conditions = SimpleNamespace(frame_to_be_available_and_switch_to_it=lambda *args: None,
+                                     presence_of_element_located=lambda *args: None)
+        modules = {}
+        for name, attribute, value in (
+            ('selenium.webdriver.common.action_chains', 'ActionChains', Actions),
+            ('selenium.webdriver.common.by', 'By', by),
+            ('selenium.webdriver.common.keys', 'Keys', keys),
+            ('selenium.webdriver.support.ui', 'WebDriverWait', Wait)):
+            module = ModuleType(name); setattr(module, attribute, value); modules[name] = module
+        support = ModuleType('selenium.webdriver.support'); support.expected_conditions = conditions
+        modules['selenium.webdriver.support'] = support
+        modules['publish_naver'] = leaf
+        modules['naver_paste'] = ModuleType('naver_paste')
+        def compiled_function(filename, function, namespace, *, top_imports=False):
+            tree = ast.parse((root / filename).read_text())
+            nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == function]
+            if top_imports:
+                nodes = [node for node in tree.body if isinstance(node, ast.ImportFrom) and node.module == 'publish_naver'] + nodes
+            exec(compile(ast.Module(body=nodes, type_ignores=[]), str(root / filename), 'exec'), namespace)
+            return namespace[function]
+        with patch.dict(sys.modules, modules):
+            # 실제 renew 함수의 import를 통과해 driver 호출까지 도달해야 한다.
+            renew = compiled_function('naver_renew_personal.py', 'renew', {})
+            with self.subTest(caller='naver_renew_personal.py'), patch.object(leaf, 'build_driver', side_effect=ReachedDriver):
+                with self.assertRaises(ReachedDriver): renew('1', {}, False)
+            # builder가 모듈 전역을 나중에 바꾸어도 이미 from-import한 키는 올바르다.
+            def build_driver(*args):
+                leaf.MOD_KEY = expected_key
+                return driver
+            with patch.object(leaf, 'build_driver', side_effect=build_driver), \
+                 patch.object(leaf, 'click_if_present', return_value=False):
+                for filename, function in (('jobs_work24.py', 'rewrite'), ('naver_add_video.py', 'add_video')):
+                    leaf.MOD_KEY = import_time_key
+                    namespace = dict(load_config=lambda: {}, time=SimpleNamespace(sleep=lambda *args: None),
+                                     ActionChains=Actions, By=by, Keys=keys, WebDriverWait=Wait, EC=conditions,
+                                     BLOG_ID='fixture', _has_video=lambda *args: False,
+                                     _faq_paragraph=lambda *args: element)
+                    call = compiled_function(filename, function, namespace, top_imports=True)
+                    with self.subTest(caller=filename), self.assertRaises(ReachedModifier):
+                        call('1', {'title': 'title'} if function == 'rewrite' else 'https://example.org/video')
+                    # 다음 caller도 import 초기 값을 사용하도록 재로딩한다.
+                    leaf.MOD_KEY = expected_key
+        self.assertEqual(observed, [expected_key, expected_key])
+        messages = []
+        fake_common = ModuleType('common'); fake_common.log = messages.append
+        with patch.dict(sys.modules, {'common': fake_common}):
+            leaf.log('fixture log')
+        self.assertEqual(messages, ['fixture log'])
 
     def test_unconfirmed_target_never_opens_editor(self):
         adapters = self.components()
