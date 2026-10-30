@@ -50,8 +50,22 @@ class FixtureSpawn:
         if self.failure:
             raise self.failure
         payload = '\n'.join(json.dumps(e, ensure_ascii=False) for e in self.events)
-        child = subprocess.run([sys.executable, '-I', '-c', 'import sys; print(sys.stdin.read())'],
-                               input=payload, capture_output=True, text=True, timeout=5)
+        script = '''import argparse, json, os, pathlib, sys
+parser = argparse.ArgumentParser(allow_abbrev=False)
+parser.add_argument('-p', action='store_true')
+for option in ('--model', '--tools', '--setting-sources', '--mcp-config', '--output-format'):
+    parser.add_argument(option)
+for option in ('--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence', '--verbose'):
+    parser.add_argument(option, action='store_true')
+options = vars(parser.parse_args())
+observation = dict(options=options, input=sys.stdin.read(), cwd=os.getcwd(),
+                   entries=sorted(p.name for p in pathlib.Path.cwd().iterdir()), env=dict(os.environ))
+print(json.dumps(dict(type='system', fixture_observation=observation), ensure_ascii=False))
+'''
+        script += 'print(' + repr(payload) + ')\n'
+        child = subprocess.run([sys.executable, '-I', '-c', script, *args[1:]], **kwargs)
+        if child.returncode == 0:
+            self.child_observation = json.loads(child.stdout.splitlines()[0])['fixture_observation']
         return child
 
 
@@ -88,6 +102,25 @@ class ProductionProviderTests(unittest.TestCase):
         self.assertIn(attack, kw['input'])
         self.assertFalse(kw.get('shell', False))
         self.assertFalse(Path(kw['cwd']).exists())  # scratch 정리
+
+    def test_fixture_child_consumes_provider_options_input_environment_and_cwd(self):
+        spawn = FixtureSpawn()
+        result = self.provider(spawn).generate(request(), 'fixture stdin 데이터', policy())
+        self.assertEqual(result['status'], 'completed')
+        observed = getattr(spawn, 'child_observation', None)
+        self.assertIsNotNone(observed, 'fixture 자식의 실행 관측이 없다')
+        self.assertEqual(observed['input'], 'fixture stdin 데이터')
+        self.assertEqual(observed['entries'], [])
+        self.assertEqual(Path(observed['cwd']), Path(spawn.calls[0][1]['cwd']).resolve())
+        self.assertEqual(observed['env']['PATH'], '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin')
+        self.assertFalse({'HOME', 'ANTHROPIC_API_KEY', 'CLAUDE_CONFIG_DIR', 'NODE_OPTIONS'} & set(observed['env']))
+        self.assertEqual(observed['options']['model'], 'opus')
+        self.assertEqual(observed['options']['tools'], '')
+        self.assertEqual(observed['options']['setting_sources'], '')
+        self.assertEqual(json.loads(observed['options']['mcp_config']), {'mcpServers': {}})
+        self.assertTrue(observed['options']['strict_mcp_config'])
+        self.assertTrue(observed['options']['disable_slash_commands'])
+        self.assertTrue(observed['options']['no_session_persistence'])
 
     def test_key_bearing_env_and_cfg_never_reach_cli(self):
         source = {'LANG': 'ko_KR.UTF-8', 'ANTHROPIC_API_KEY': 'secret', 'OPENAI_API_KEY': 'secret',
@@ -220,6 +253,29 @@ class ProductionProviderTests(unittest.TestCase):
             registry.jobs['j'] = dict(base, **change)
             with self.assertRaises(ContractError):
                 resolve_job_provider_policy(binding, registry, execution)
+
+    def test_current_dept_base_subscription_cannot_be_removed_by_stale_binding(self):
+        from dataclasses import asdict
+        from types import SimpleNamespace
+        from common.operations.provider_policy import resolve_job_provider_policy
+        paid = policy('dept', id='dept-paid', allowed_provider_ids=('anthropic',))
+        execution = ExecutionPolicy(True, (), 'cutover',
+                                    {'catalog': {'dept-paid': asdict(paid)}})
+        base = {'id': 'j', 'owner_account_id': 'dept', 'policy_revision': 'p',
+                'provider_policy_id': 'dept-paid', 'subscription_only': False, 'kind': 'production',
+                'execution_owner': 'managed', 'schedule_owner': 'console', 'enabled': True}
+        registry = SimpleNamespace(policies={'p': {'subscription_only': False}}, jobs={'j': base})
+        binding = dict(base, id='bound', base_job_id='j', binding_id='binding-fixture')
+        self.assertEqual(resolve_job_provider_policy(binding, registry, execution).allowed_provider_ids,
+                         ('anthropic',))
+        # 다른 정책 식별자를 바꾸지 않고 현재 base의 제한만 강화한다.
+        registry.jobs['j'] = dict(base, subscription_only=True)
+        with self.assertRaisesRegex(ContractError, 'provider_policy_violation'):
+            resolve_job_provider_policy(registry.jobs['j'], registry, execution)
+        for stale in (binding, {k:v for k,v in binding.items() if k != 'subscription_only'}):
+            with self.subTest(stale_subscription=stale.get('subscription_only')):
+                with self.assertRaises(ContractError):
+                    resolve_job_provider_policy(stale, registry, execution)
 
     def test_gate_dept_registered_policy_and_personal_crosspost_scope(self):
         from common.operations.models import Connection

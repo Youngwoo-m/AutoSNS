@@ -61,6 +61,7 @@ def resolve_job_provider_policy(job, registry, execution_policy) -> ProviderPoli
     policies = getattr(registry, 'policies', None)
     if not isinstance(job, Mapping) or not isinstance(policies, Mapping):
         raise ContractError('provider_policy_violation')
+    policy_job = job
     base_id = job.get('base_job_id')
     if base_id is not None:
         jobs = getattr(registry, 'jobs', {})
@@ -74,11 +75,13 @@ def resolve_job_provider_policy(job, registry, execution_policy) -> ProviderPoli
         if base.get('enabled') is not True:
             raise ContractError('job_disabled')
         for field in ('owner_account_id','executor_id','schedule_owner','execution_owner',
-                      'enabled','policy_revision','kind','provider_policy_id'):
+                      'enabled','policy_revision','kind','provider_policy_id','subscription_only'):
             if job.get(field) != base.get(field):
                 raise ContractError('invalid_binding')
-    job_policy = policies.get(job.get('policy_revision'))
+        # binding은 콘텐츠/회차 연결이다. 현재 base가 정책 권한의 원본이다.
+        policy_job = dict(base, id=base_id)
+    job_policy = policies.get(policy_job.get('policy_revision'))
     if not isinstance(job_policy, Mapping):
         raise ContractError('unknown_policy')
     catalog = getattr(execution_policy, 'provider_policy', {}).get('catalog', {})
-    return resolve_provider_policy(_merge_job_policy(job, job_policy), execution_policy, catalog)
+    return resolve_provider_policy(_merge_job_policy(policy_job, job_policy), execution_policy, catalog)
