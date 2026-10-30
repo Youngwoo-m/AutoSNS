@@ -76,13 +76,26 @@ class RecoveryTests(RecoveryFixture):
         from tests.operations.test_runtime_store import context
         from common.operations.dispatch import submit_trigger
         from common.operations.runtime_models import ExecutionPolicy
-        self.fixture();s=self.store();s.initialize();reg=registry();policy=ExecutionPolicy(True,('x',),'cutover')
+        self.fixture();s=self.store();s.initialize();reg=registry();policy=ExecutionPolicy(True,('x',),'cutover',{'subscription_only':True})
         run=submit_trigger(s,request(),reg,policy);ctx=replace(context(),run_id=run['id'])
         s.create_delivery('d',run['id'],ctx);s.record_publication_approval('d',1,ctx.context_hash,'approval',('a','b'))
         lease=s.claim_run(run['id'],'old-worker',{'host_id':'host','pid':123,'started_at':NOW.isoformat()},NOW)
         a=s.create_attempt('d',s.get_delivery('d')['version'],lease,ctx.context_hash,'approval',now=NOW)
         s.finish_attempt(a['id'],'failed',evidence={'confirmed_not_submitted':True},now=NOW)
         return s,ctx,reg,policy
+
+    def test_retry_missing_provider_policy_stays_blocked_without_writes(self):
+        from dataclasses import replace
+        from common.operations.recovery import retry_delivery
+        s,ctx,registry,policy=self.retry_fixture()
+        decision={'expected_version':s.get_delivery('d')['version'],'request_key':'missing-policy'}
+        incomplete=replace(policy,provider_policy={})
+        before=(s.root/'operations.sqlite3').read_bytes()
+        with self.assertRaises(StoreError) as error:
+            retry_delivery(s,'d',decision,'server-user',policy=incomplete,registry=registry,
+                           process_probe=self.dead,lock_probe=self.free,now=NOW+timedelta(minutes=2))
+        self.assertEqual(error.exception.code,'provider_policy_unavailable')
+        self.assertEqual((s.root/'operations.sqlite3').read_bytes(),before)
 
     def test_retry_same_run_claimable_and_request_replay_enqueues_once(self):
         from common.operations.recovery import retry_delivery
