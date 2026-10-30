@@ -92,3 +92,89 @@ class MultipleDeliveryTests(WorkerBoundaryTests):
         run_once(self.store,self.registry,{'x':FakeAdapter()},self.policy,self.store.locks,NOW)
         import json
         self.assertNotIn(seen[0],json.dumps(self.store.events('d')))
+
+class ApprovalQuotaTests(WorkerBoundaryTests):
+    def assert_target_api_reserved(self,amount):
+        from common.operations.quota import bucket_id,quota_window
+        for req in self.registry.policies['p']['quota_requirements']:
+            if req['scope_kind']=='owner':continue
+            start,end=quota_window(req,NOW);key=bucket_id(req['scope_kind'],req['scope_id'],req['metric'],start,end)
+            self.assertEqual(next(b for b in self.store.quota_buckets() if b['id']==key)['reserved'],amount)
+    def revoke(self):
+        self.store.record_publication_approval('d',self.store.get_delivery('d')['version'],self.ctx.context_hash,'revoked',self.ctx.review_report_hashes,decision='revoked')
+    def test_revoked_approval_three_calls_reserve_nothing(self):
+        from common.operations.worker import run_once
+        self.observe_quota();self.revoke();adapter=Mock()
+        for _ in range(3):
+            with self.assertRaises(Exception):run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW)
+        adapter.submit.assert_not_called();self.assert_target_api_reserved(0);self.assertEqual(self.store.attempts('d'),[])
+    def test_revoke_after_reserve_cleans_target_api_and_does_not_repeat(self):
+        from common.operations.worker import run_once
+        from common.operations.quota import reserve_quota
+        from unittest.mock import patch
+        self.observe_quota();adapter=Mock();adapter.prepare.return_value={}
+        def competing_revoke(*args,**kwargs):
+            reservation=reserve_quota(*args,**kwargs);self.revoke();return reservation
+        with patch('common.operations.worker.reserve_quota',side_effect=competing_revoke):
+            with self.assertRaises(Exception):run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW)
+        for _ in range(3):
+            try:run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW)
+            except Exception:pass
+        adapter.submit.assert_not_called();self.assert_target_api_reserved(0)
+    def test_cleanup_db_failure_reuses_one_logical_reservation(self):
+        from common.operations.worker import run_once
+        from unittest.mock import patch
+        self.observe_quota();adapter=Mock();adapter.prepare.return_value={}
+        # Approval remains valid; a transient final-gate failure and unavailable
+        # cleanup must not allocate three independent target/API holds.
+        with patch('common.operations.worker.authorize_submission',side_effect=RuntimeError('fixture gate failure')):
+            with patch.object(self.store,'settle_reservation',side_effect=RuntimeError('fixture db unavailable')):
+                for _ in range(3):
+                    with self.assertRaises(Exception):run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW)
+        adapter.submit.assert_not_called();self.assert_target_api_reserved(1)
+        adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
+        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d')
+        self.assertEqual(adapter.submit.call_count,1);self.assert_target_api_reserved(1)
+    def test_partial_retry_only_selected_queued_delivery_runs(self):
+        from dataclasses import replace
+        import json
+        from common.operations.worker import run_once
+        self.observe_quota()
+        # Fixture is the S5 result: A verified, B explicitly requeued, C retry_wait.
+        with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+            db.execute("UPDATE runtime_deliveries SET state='verified' WHERE id='d'");db.commit()
+        for identity,slot,state in [('B','slotB','queued'),('C','slotC','retry_wait')]:
+            plan=dict(self.plan,id=identity,schedule_slot=slot)
+            with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+                db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',(identity,self.content['id'],1,'x','initial',slot,identity,json.dumps(plan)));db.commit()
+            ctx=replace(self.ctx,schedule_slot=slot)
+            self.store.create_delivery(identity,self.run,ctx);self.store.record_evidence(identity,'target_observation',self.observed)
+            self.store.record_publication_approval(identity,1,ctx.context_hash,identity,ctx.review_report_hashes)
+            if state=='retry_wait':
+                with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+                    db.execute("UPDATE runtime_deliveries SET state='retry_wait' WHERE id=?",(identity,));db.commit()
+        adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='selected-B')
+        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'B')
+        self.assertIsNone(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW))
+        self.assertEqual(adapter.submit.call_count,1);self.assertEqual(self.store.attempts('C'),[])
+        self.assertEqual(self.store.get_delivery('d')['state'],'verified');self.assertEqual(self.store.get_delivery('C')['state'],'retry_wait')
+    def test_reservation_identity_separates_new_runtime_occurrences(self):
+        from dataclasses import replace
+        import json
+        from datetime import timedelta
+        from common.operations.worker import run_once
+        self.observe_quota()
+        run2=self.store.submit_occurrence(dict(job_id='j',scheduled_at_utc=(NOW+timedelta(minutes=1)).isoformat(),phase='submit',source='console',request_kind='new_publication',mode='live'))['id']
+        plan2=dict(self.plan,id='d2',schedule_slot='new-run-slot')
+        with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2',self.content['id'],1,'x','initial','new-run-slot','new',json.dumps(plan2)));db.commit()
+        ctx2=replace(self.ctx,run_id=run2,schedule_slot='new-run-slot')
+        self.store.create_delivery('d2',run2,ctx2);self.store.record_evidence('d2','target_observation',self.observed)
+        self.store.record_publication_approval('d2',1,ctx2.context_hash,'new',ctx2.review_report_hashes)
+        adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
+        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d2')
+        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d')
+        first=self.store.attempts('d')[0]['reservation_id'];second=self.store.attempts('d2')[0]['reservation_id']
+        self.assertNotEqual(first,second)
+        self.assertEqual(self.store.get_reservation(first)['delivery_id'],'d');self.assertEqual(self.store.get_reservation(second)['delivery_id'],'d2')
+        self.assert_target_api_reserved(2)

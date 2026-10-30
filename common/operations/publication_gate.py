@@ -1,6 +1,7 @@
 """별도 발행 승인과 일회성 permit. 외부 adapter는 이 모듈에서 호출하지 않는다."""
 import hashlib
 import json
+import time
 from collections.abc import Mapping
 from datetime import timedelta
 from .models import ContractError, thaw
@@ -132,24 +133,55 @@ def fresh_lease(store,run_id,now):
     return RunLease(run_id,run['worker_id'],run['generation'],run['lease_expires_at'])
 
 
+def _clock(now):
+    started=time.monotonic();base=utc(now)
+    return lambda:base+timedelta(seconds=max(0,time.monotonic()-started))
+
+
+def _time_valid(store,ctx,lease,now,permit=None):
+    max_age=store.registry.policies[ctx.policy_revision].get('auth_max_age_seconds',300)
+    if not ctx.auth_checked_at<=now<ctx.auth_expires_at or now-ctx.auth_checked_at>timedelta(seconds=max_age):
+        raise ContractError('authentication_expired')
+    if lease.expires_at<=now:raise ContractError('lease_expired')
+    if permit is not None and permit.expires_at<=now:raise ContractError('permit_expired')
+
+
+def require_publication_approval(store,delivery_id,ctx,approval=None):
+    current=store.get_publication_approval(delivery_id)
+    if (not isinstance(current,Mapping) or current.get('scope','publication')!='publication' or
+        current.get('decision')!='approved' or current.get('context_hash')!=ctx.context_hash or
+        set(current.get('report_hashes',()))!=set(ctx.review_report_hashes) or
+        (approval is not None and current!=approval)):
+        raise ContractError('publication_approval_required')
+    return current
+
+
 def authorize_submission(store,ctx,snapshot,approval,lease,reservation_id,now):
+    current_time=_clock(now)
     if not isinstance(ctx,PublicationContext):raise ContractError('publication_context_required')
     if not isinstance(approval,Mapping) or approval.get('scope','publication')!='publication' or approval.get('decision')!='approved':raise ContractError('publication_approval_required')
+    def checked_clock():
+        checked=current_time();_time_valid(store,ctx,lease,checked);return checked
     with store.locks.hold(['control:publish-gate'],job='publication-authorize',wait=10):
-        _clear(store);delivery=_inputs(store,ctx,now)
+        _clear(store);delivery=_inputs(store,ctx,current_time())
         if snapshot.get('manifest_hash')!=ctx.manifest_hash:raise ContractError('content_changed')
-        current=store.get_publication_approval(delivery['id'])
-        if current!=approval or approval.get('context_hash')!=ctx.context_hash or set(approval.get('report_hashes',()))!=set(ctx.review_report_hashes):raise ContractError('publication_approval_required')
+        require_publication_approval(store,delivery['id'],ctx,approval)
         if not reservation_id:raise ContractError('quota_reservation_required')
-        attempt=store.create_attempt(delivery['id'],delivery['version'],lease,ctx.context_hash,approval['approval_hash'],reservation_id=reservation_id,now=now)
-        return store.issue_permit(attempt['id'],lease,ctx.context_hash,approval['approval_hash'],now)
+        checked=current_time();_time_valid(store,ctx,lease,checked)
+        attempt=store.create_attempt(delivery['id'],delivery['version'],lease,ctx.context_hash,approval['approval_hash'],reservation_id=reservation_id,now=checked,clock=checked_clock)
+        checked=current_time();_time_valid(store,ctx,lease,checked)
+        return store.issue_permit(attempt['id'],lease,ctx.context_hash,approval['approval_hash'],checked,clock=checked_clock)
 
 
 def consume_permit(store,permit,ctx,now):
+    current_time=_clock(now)
     if not isinstance(ctx,PublicationContext) or permit.context_hash!=ctx.context_hash:raise ContractError('publication_context_required')
     with store.locks.hold(['control:publish-gate'],job='publication-consume',wait=10):
-        _clear(store);_inputs(store,ctx,now)
-        # Keep caller worker identity: DB expiry is authoritative, generation is not transferable.
-        lease=fresh_lease(store,ctx.run_id,now)
+        _clear(store);_inputs(store,ctx,current_time())
+        # Refresh after gate wait and all validation, immediately before atomic consume.
+        lease=fresh_lease(store,ctx.run_id,current_time())
         if permit.generation!=lease.generation:raise ContractError('lease_changed')
-        store.consume_permit(permit,lease,now)
+        checked=current_time();_time_valid(store,ctx,lease,checked,permit)
+        def checked_clock():
+            checked=current_time();_time_valid(store,ctx,lease,checked,permit);return checked
+        store.consume_permit(permit,lease,checked,clock=checked_clock)

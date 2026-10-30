@@ -190,9 +190,10 @@ class RuntimeStore:
         for control in controls:
             applies=control['scope']=='managed' or (control['scope']=='account' and control['target_id'] in (d['context']['owner_account_id'],d['context']['destination_account_id'])) or (control['scope']=='connection' and control['target_id']==d['context']['connection_id'])
             if applies and control['action']=='pause':raise ConflictError()
-    def create_attempt(self,delivery_id,expected_version,lease,context_hash,approval_hash,*,reservation_id=None,now=None):
+    def create_attempt(self,delivery_id,expected_version,lease,context_hash,approval_hash,*,reservation_id=None,now=None,clock=None):
         now=stamp(now)
         with self._db(True) as c:
+            if clock is not None:now=stamp(clock())
             d=self._delivery(c,delivery_id,expected_version);self._lease(c,lease,now)
             if d['run_id']!=lease.run_id or d['state'] not in ('queued','running','retry_wait'):raise ConflictError()
             self._check_approval(c,d,context_hash,approval_hash,now)
@@ -220,17 +221,19 @@ class RuntimeStore:
         if a['reservation_id']:
             reservation=self._reservation(c,a['reservation_id'])
             if reservation['state']!='held' or reservation['delivery_id']!=d['id']:raise ConflictError()
-    def issue_permit(self,attempt_id,lease,context_hash,approval_hash,now,ttl_seconds=30):
+    def issue_permit(self,attempt_id,lease,context_hash,approval_hash,now,ttl_seconds=30,*,clock=None):
         positive(ttl_seconds)
         with self._db(True) as c:
+            if clock is not None:now=clock()
             self._lease(c,lease,now);a=self._attempt(c,attempt_id);d=self._delivery(c,a['delivery_id']);self._check_approval(c,d,context_hash,approval_hash,now)
             self._submission_eligible(c,a,d)
             if a['resolved'] or a['request_started'] or a['generation']!=lease.generation or d['run_id']!=lease.run_id or a['context_hash']!=context_hash or a['approval_hash']!=approval_hash:raise ConflictError()
             nonce=secrets.token_hex(32);expiry=min(utc(now)+timedelta(seconds=ttl_seconds),lease.expires_at,utc(d['context']['auth_expires_at']))
             c.execute('INSERT INTO submission_permits(attempt_id,nonce_hash,run_id,generation,context_hash,approval_hash,expires_at) VALUES(?,?,?,?,?,?,?)',(attempt_id,hashlib.sha256(nonce.encode()).hexdigest(),lease.run_id,lease.generation,context_hash,approval_hash,stamp(expiry)))
             return SubmissionPermit(attempt_id,nonce,lease.run_id,lease.generation,expiry,context_hash,approval_hash)
-    def consume_permit(self,permit,lease,now):
+    def consume_permit(self,permit,lease,now,*,clock=None):
         with self._db(True) as c:
+            if clock is not None:now=clock()
             self._lease(c,lease,now);a=self._attempt(c,permit.attempt_id);d=self._delivery(c,a['delivery_id']);self._check_approval(c,d,permit.context_hash,permit.approval_hash,now)
             self._submission_eligible(c,a,d)
             p=c.execute('SELECT * FROM submission_permits WHERE attempt_id=?',(permit.attempt_id,)).fetchone()
@@ -471,6 +474,7 @@ class RuntimeStore:
             self._aggregate(c,d['run_id'])
             self._event(c,delivery_id,'resolved_'+kind,dict(evidence=evidence,note=note,actor=actor));result=self._delivery(c,delivery_id)
             c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)));return result
+
     def requeue_delivery(self,delivery_id,expected_version,request_key,actor,*,expected_run_version,process_evidence,lock_evidence,now):
         """서버 재개 전용. 대상/회차 CAS와 이전 lease 무효화를 한 번에 기록한다."""
         expected(expected_version);expected(expected_run_version);now=utc(now)
@@ -507,7 +511,6 @@ class RuntimeStore:
             result=self._delivery(c,delivery_id)
             c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)))
             return result
-
     def control(self,scope,id,action,expected_version,request_key,reason,actor='console_user'):
         expected(expected_version)
         if scope not in ('managed','account','connection') or action not in ('pause','resume') or not all(isinstance(x,str) and x for x in (id,request_key,reason,actor)):raise StoreError('invalid')

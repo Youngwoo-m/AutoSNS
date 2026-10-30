@@ -3,9 +3,10 @@ from datetime import datetime, timezone, timedelta
 import time
 import os
 import socket
+import hashlib
 from .models import ContractError, thaw
 from .runtime_models import PublicationContext, SubmissionResult, utc
-from .publication_gate import authorize_submission, consume_permit, _inputs, _snapshot, fresh_lease
+from .publication_gate import authorize_submission, consume_permit, _inputs, _snapshot, fresh_lease, require_publication_approval
 
 from .quota import reserve_quota, settle_quota
 
@@ -23,6 +24,19 @@ def _redact(value,nonce):
     return value
 
 
+def _abandon_unstarted(store,delivery_id,reservation,now):
+    """DB로 확인한 미소비만 해제한다. 소비 선행/DB 불명은 held를 유지한다."""
+    attempts=[a for a in store.attempts(delivery_id) if a.get('reservation_id')==reservation]
+    if any(a['request_started'] for a in attempts):return
+    for attempt in attempts:
+        if not attempt['resolved']:
+            store.finish_attempt(attempt['id'],'failed',evidence={'confirmed_not_submitted':True,'reason':'submission_gate_blocked'},now=now)
+    settle_quota(store,reservation,'confirmed_not_submitted')
+    delivery=store.get_delivery(delivery_id)
+    if delivery['state'] in ('queued','running','retry_wait'):
+        store.transition_delivery(delivery_id,delivery['version'],'needs_review',evidence={'reason':'submission_gate_blocked'})
+
+
 def run_once(store,registry,adapters,policy,locks,now):
     """adapters/policy/locks는 서버 시작 시 주입하며 HTTP 입력을 받지 않는다."""
     if not policy.enabled:return None
@@ -31,11 +45,12 @@ def run_once(store,registry,adapters,policy,locks,now):
     # mode/phase 필터를 claim 전에 적용해 dry/shadow에서 adapter 호출 0.
     identity=_identity()
     eligible={r['id'] for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
-    deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state'] in ('queued','retry_wait') and d['context']['connection_id'] in adapters]
+    deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state']=='queued' and d['context']['connection_id'] in adapters]
     if not deliveries:return None
     delivery=deliveries[0];run=store.get_run(delivery['run_id'])
     store.registry=registry;store.execution_policy=policy;store.locks=locks
     ctx=PublicationContext(**delivery['context']);adapter=adapters[ctx.connection_id]
+    require_publication_approval(store,delivery['id'],ctx)
     connection=registry.connections[ctx.connection_id]
     # Profile refs are server-owned symbols; never accept a path or executor from a request.
     resource=connection.profile_ref
@@ -53,11 +68,19 @@ def run_once(store,registry,adapters,policy,locks,now):
         _inputs(store,ctx,current_time())
         lease=fresh_lease(store,ctx.run_id,current_time())
         snapshot=_snapshot(store,ctx.content_id,ctx.content_revision,ctx.manifest_hash)
+        approval=require_publication_approval(store,delivery['id'],ctx)
         prepared=adapter.prepare(ctx,snapshot)  # contractual pure local work
-        reservation=reserve_quota(store,{'delivery_id':delivery['id'],'context':ctx},{},current_time())
-        approval=store.get_publication_approval(delivery['id'])
-        permit=authorize_submission(store,ctx,snapshot,approval,lease,reservation,current_time())
-        consume_permit(store,permit,ctx,current_time())
+        # Stable across a crash before attempt creation; different delivery/run/version/ordinal never share it.
+        logical=f"{delivery['id']}:{ctx.run_id}:{ctx.context_hash}:{delivery['version']}:{len(store.attempts(delivery['id']))+1}"
+        reservation='worker_reservation_'+hashlib.sha256(logical.encode()).hexdigest()
+        try:
+            reserve_quota(store,{'delivery_id':delivery['id'],'context':ctx},{},current_time(),reservation_id=reservation)
+            permit=authorize_submission(store,ctx,snapshot,approval,lease,reservation,current_time())
+            consume_permit(store,permit,ctx,current_time())
+        except BaseException:
+            try:_abandon_unstarted(store,delivery['id'],reservation,current_time())
+            except Exception:pass  # Unknown DB outcome keeps the bounded reservation held.
+            raise
         try:
             result=adapter.submit(ctx,prepared,permit)
             if not isinstance(result,SubmissionResult):raise ContractError('invalid_submission_result')

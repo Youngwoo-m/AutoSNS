@@ -141,3 +141,112 @@ class GateFixture(unittest.TestCase):
         with self.assertRaises(Exception):self.store.record_content_evidence(self.content['id'],1,self.content['manifest_hash'],'production_provenance','wrong',self.producer,now=NOW)
         path=self.store.root/'operations.sqlite3';before=path.read_bytes()
         self.store.read_content_evidence(self.content['id'],1,self.content['manifest_hash']);self.assertEqual(path.read_bytes(),before)
+
+class GateClockTests(GateFixture):
+    def advancing_gate(self,seconds):
+        from contextlib import contextmanager
+        real=self.store.locks;elapsed=[0.0]
+        class AdvancingLocks:
+            paths=real.paths
+            @contextmanager
+            def hold(self,*args,**kwargs):
+                with real.hold(*args,**kwargs):
+                    elapsed[0]+=seconds
+                    yield
+        self.store.locks=AdvancingLocks()
+        return elapsed
+    def test_consume_wait_expires_permit(self):
+        from common.operations.publication_gate import consume_permit
+        from unittest.mock import patch
+        permit=self.ready();elapsed=self.advancing_gate(2)
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with self.assertRaises(Exception):consume_permit(self.store,permit,self.ctx,NOW+timedelta(seconds=29))
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def test_consume_wait_expires_auth(self):
+        from common.operations.publication_gate import consume_permit
+        from unittest.mock import patch
+        permit=self.ready();elapsed=self.advancing_gate(3601)
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with self.assertRaises(Exception):consume_permit(self.store,permit,self.ctx,NOW)
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def test_consume_wait_expires_lease(self):
+        from common.operations.publication_gate import consume_permit
+        from unittest.mock import patch
+        permit=self.ready();elapsed=self.advancing_gate(61)
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with self.assertRaises(Exception):consume_permit(self.store,permit,self.ctx,NOW)
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def test_authorize_wait_expires_lease_before_attempt(self):
+        from common.operations.publication_gate import authorize_submission
+        from unittest.mock import patch
+        lease=self.store.claim_run(self.run,'worker',{'host_id':'fixture','pid':1,'started_at':NOW.isoformat()},NOW)
+        for b in ('a','b','c'):self.store.observe_bucket(b,5,0,NOW,NOW+timedelta(hours=1))
+        reservation=self.store.reserve_quota('d',[{'bucket_id':b,'amount':1} for b in ('a','b','c')],NOW)
+        elapsed=self.advancing_gate(61)
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with self.assertRaises(Exception):authorize_submission(self.store,self.ctx,self.content,self.store.get_publication_approval('d'),lease,reservation['id'],NOW)
+        self.assertEqual(self.store.attempts('d'),[])
+    def test_validation_elapsed_rechecked_immediately_before_consume(self):
+        from common.operations.publication_gate import consume_permit,_inputs
+        from unittest.mock import patch
+        permit=self.ready();elapsed=[0.0]
+        def slow_validation(*args,**kwargs):
+            result=_inputs(*args,**kwargs);elapsed[0]+=2;return result
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with patch('common.operations.publication_gate._inputs',side_effect=slow_validation):
+                with self.assertRaises(Exception):consume_permit(self.store,permit,self.ctx,NOW+timedelta(seconds=29))
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def test_database_transaction_wait_expiry_is_checked_inside_transaction(self):
+        from contextlib import contextmanager
+        from common.operations.publication_gate import consume_permit
+        from unittest.mock import patch
+        permit=self.ready();elapsed=[0.0];original_db=self.store._db
+        @contextmanager
+        def waiting_database(write=False):
+            with original_db(write) as db:
+                if write:elapsed[0]+=2
+                yield db
+        with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+            with patch.object(self.store,'_db',side_effect=waiting_database):
+                with self.assertRaises(Exception):consume_permit(self.store,permit,self.ctx,NOW+timedelta(seconds=29))
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def real_database_wait(self,kind):
+        import threading,time
+        from contextlib import contextmanager,closing
+        from dataclasses import replace
+        from unittest.mock import patch
+        from common.operations.publication_gate import consume_permit
+        if kind=='auth':
+            self.ctx=replace(self.ctx,auth_expires_at=NOW+timedelta(seconds=30))
+            self.observed['expires_at']=self.ctx.auth_expires_at.isoformat()
+            with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+                db.execute('UPDATE runtime_deliveries SET context=?,context_hash=? WHERE id=?',(json.dumps(self.ctx.to_dict()),self.ctx.context_hash,'d'))
+                db.execute('UPDATE publication_approvals SET context_hash=? WHERE delivery_id=?',(self.ctx.context_hash,'d'));db.commit()
+            self.store.record_evidence('d','target_observation',self.observed)
+        permit=self.ready();start=NOW+timedelta(seconds=29)
+        if kind=='lease':
+            permit=replace(permit,expires_at=NOW+timedelta(seconds=60));start=NOW+timedelta(seconds=59)
+            with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
+                db.execute('UPDATE submission_permits SET expires_at=? WHERE attempt_id=?',(permit.expires_at.isoformat(),permit.attempt_id));db.commit()
+        elapsed=[0.0];entered=threading.Event();errors=[];original=self.store._db
+        @contextmanager
+        def waiting(write=False):
+            if write:entered.set()
+            with original(write) as db:yield db
+        def consume():
+            try:consume_permit(self.store,permit,self.ctx,start)
+            except Exception as exc:errors.append(exc)
+        with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as blocker:
+            blocker.execute('BEGIN IMMEDIATE')
+            with patch('time.monotonic',side_effect=lambda:elapsed[0]):
+                with patch.object(self.store,'_db',side_effect=waiting):
+                    thread=threading.Thread(target=consume);thread.start()
+                    observed=entered.wait(2)
+                    if observed:time.sleep(0.05)
+                    elapsed[0]=2;blocker.rollback();thread.join(5)
+        self.assertTrue(observed);self.assertFalse(thread.is_alive());self.assertTrue(errors)
+        self.assertEqual(errors[0].code,{'permit':'permit_expired','auth':'authentication_expired','lease':'lease_expired'}[kind])
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['request_started'])
+    def test_two_connections_wait_expires_permit(self):self.real_database_wait('permit')
+    def test_two_connections_wait_expires_auth(self):self.real_database_wait('auth')
+    def test_two_connections_wait_expires_lease(self):self.real_database_wait('lease')

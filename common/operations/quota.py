@@ -50,7 +50,7 @@ def _context(store, ctx):
     return ctx['delivery_id'], ctx['context']
 
 
-def reserve_quota(store, ctx, observed_usage, now):
+def reserve_quota(store, ctx, observed_usage, now, *, reservation_id=None):
     now = utc(now)
     delivery_id, context = _context(store, ctx)
     registry = store.registry
@@ -116,7 +116,7 @@ def reserve_quota(store, ctx, observed_usage, now):
     # one RuntimeStore transaction, so competing callers cannot overbook.
     for observation in observations:
         store.observe_bucket(*observation)
-    return store.reserve_quota(delivery_id, requirements, now, production_requirements=productions)['id']
+    return store.reserve_quota(delivery_id, requirements, now, reservation_id=reservation_id, production_requirements=productions)['id']
 
 
 def settle_quota(store, reservation_id, outcome):
