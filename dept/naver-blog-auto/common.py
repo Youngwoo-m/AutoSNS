@@ -12,8 +12,9 @@ POSTS_DIR = os.path.join(BASE_DIR, "posts")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 HISTORY_PATH = os.path.join(BASE_DIR, "title_history.json")
 
-for d in (POSTS_DIR, LOGS_DIR, PROFILE_DIR):
-    os.makedirs(d, exist_ok=True)
+def _ensure_legacy_directories():
+    for directory in (POSTS_DIR, LOGS_DIR, PROFILE_DIR):
+        os.makedirs(directory, exist_ok=True)
 
 
 def load_config():
@@ -62,11 +63,13 @@ def load_history():
 
 
 def save_history(titles):
+    _ensure_legacy_directories()
     with open(HISTORY_PATH, "w", encoding="utf-8") as f:
         json.dump(titles[-50:], f, ensure_ascii=False, indent=2)
 
 
 def log(msg):
+    _ensure_legacy_directories()
     line = f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {msg}"
     print(line, flush=True)
     logfile = os.path.join(LOGS_DIR, f"{datetime.now():%Y-%m}.log")
@@ -82,6 +85,7 @@ def start_chrome(options, tries=3, wait=90):
     1~2분이면 되는데, 그 사이에 걸리면 그날 글이 통째로 버려졌다
     (2026-09-19, 09-26 실제 발생 — 본문까지 다 만들어 놓고 발행에서 끊겼다).
     """
+    _ensure_legacy_directories()
     from selenium import webdriver
     from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)

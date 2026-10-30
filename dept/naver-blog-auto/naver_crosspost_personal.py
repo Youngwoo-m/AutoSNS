@@ -22,14 +22,15 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# 로그인 프로필은 본 체크아웃에만 있다(워크트리에서 돌려도 본 체크아웃 프로필을 쓴다)
-_MAIN = os.path.realpath(os.path.join(HERE, "..", ".."))
-if "/.claude/worktrees/" in _MAIN:
-    _MAIN = _MAIN.split("/.claude/worktrees/")[0]
-os.environ["AX_NAVER_PROFILE"] = os.path.join(_MAIN, "dept", "naver-blog-auto", "chrome-profile-safeworking")
-os.environ["AX_NAVER_ID"] = "safeworking"
-sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))
+def _legacy_profile_setup():
+    # 로그인 프로필은 본 체크아웃에만 있다(워크트리에서 돌려도 본 체크아웃 프로필을 쓴다)
+    _MAIN = os.path.realpath(os.path.join(HERE, "..", ".."))
+    if "/.claude/worktrees/" in _MAIN:
+        _MAIN = _MAIN.split("/.claude/worktrees/")[0]
+    os.environ["AX_NAVER_PROFILE"] = os.path.join(_MAIN, "dept", "naver-blog-auto", "chrome-profile-safeworking")
+    os.environ["AX_NAVER_ID"] = "safeworking"
+    sys.path.insert(0, HERE)
+    sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))
 
 BLOG_ID = "safeworking"
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -112,6 +113,7 @@ def rss_has(title):
 
 
 def main():
+    _legacy_profile_setup()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--tistory-url", required=True)
     ap.add_argument("--assets-dir", default="", help="(쓰지 않음) 그림·첨부는 티스토리 원문에서 받는다. 옛 호출과 맞추려고 남김")
@@ -159,3 +161,28 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('naver_blog', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    return services.inspect(target)
+
+
+def managed_submit(prepared, target, services):
+    from common.publishers.blog_legacy import load_blog_leaf
+    # 환경변수로 학과 실행기를 바꾸지 않는다. 서비스가 personal 프로필을 고정한다.
+    leaf = load_blog_leaf('dept.naver_blog')
+    return services.submit(prepared, target, leaf._managed_input, leaf._managed_upload, leaf._managed_options)
+
+
+def managed_lookup(target, attempt, services):
+    return services.lookup(target, attempt)
+
+
+def managed_verify(target, remote_id, services):
+    return services.verify(target, remote_id)

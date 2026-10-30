@@ -12,24 +12,31 @@ import tempfile
 import time
 from datetime import datetime
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
-from make_banner import make_banner
-from gamma_image import make_gamma_image
+def _legacy_dependencies():
+    global webdriver, Options, ActionChains, By, Keys, WebDriverWait, EC
+    global LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
+    global make_banner, make_gamma_image, MOD_KEY
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+
+    from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, log, start_chrome
+    from make_banner import make_banner
+    from gamma_image import make_gamma_image
+    MOD_KEY = Keys.COMMAND if IS_MAC else Keys.CONTROL
 
 IS_MAC = sys.platform == "darwin"
 # 맥은 붙여넣기/문서끝 이동이 Command 키. 윈도우는 Control.
-MOD_KEY = Keys.COMMAND if IS_MAC else Keys.CONTROL
+MOD_KEY = None
 
 
 def build_driver(headless):
+    _legacy_dependencies()
     opts = Options()
     opts.add_argument(f"--user-data-dir={PROFILE_DIR}")
     opts.add_argument("--disable-blink-features=AutomationControlled")
@@ -615,6 +622,7 @@ def _save_payload(data, dry_run):
 
 
 def publish(data, dry_run=None):
+    _legacy_dependencies()
     cfg = load_config()
     naver_id = os.environ.get("AX_NAVER_ID") or cfg["naver_id"]
     pub = cfg.get("publish", {})
@@ -856,3 +864,54 @@ if __name__ == "__main__":
         path = os.path.join(POSTS_DIR, files[-1])
     with open(path, "r", encoding="utf-8") as f:
         publish(json.load(f))
+
+
+# 관리 leaf는 이미 검토된 본문/참조만 사용한다. 생성·dry·자동 재로그인은 없다.
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('naver_blog', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    return services.inspect(target)
+
+
+def _managed_input(driver, prepared):
+    driver.find_element('css selector', '.se-section-documentTitle .se-text-paragraph').send_keys(prepared['title'])
+    driver.execute_script('''/* AX_BLOG_EDITOR_INPUT */
+const body=document.querySelector('.se-main-container .se-component.se-text .se-text-paragraph');
+if(!body)throw Error('editor body unavailable');body.focus();
+body.innerHTML=arguments[0];body.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:null}));
+''', prepared['body_html'])
+
+
+def _managed_options(driver, prepared):
+    # 발행 설정을 열고 필수 분류·태그·공개를 선택한다. 최종 발행은 services가 한 번만 실행한다.
+    driver.execute_script('''/* AX_BLOG_PUBLISH_OPTIONS */
+const open=document.querySelector('button[data-action="publish"],button[class*="publish_btn"]');
+if(!open)throw Error('publish options unavailable');open.click();
+const category=arguments[0];
+if(category){const c=[...document.querySelectorAll('[role="option"],[data-category-name]')].find(e=>e.getAttribute('aria-label')===category||e.getAttribute('data-category-name')===category);if(!c)throw Error('category unavailable');c.click();}
+''', prepared.get('category', ''))
+    for tag in prepared.get('tags', []):
+        field = driver.find_element('css selector', '#tag-input')
+        field.send_keys(tag)
+        field.send_keys('\ue007')
+
+
+def _managed_upload(driver, path):
+    # generation/clipboard fallback가 없는 검토 자산 전용 입력이다.
+    driver.find_element('css selector', 'input[type="file"]').send_keys(path)
+
+
+def managed_submit(prepared, target, services):
+    return services.submit(prepared, target, _managed_input, _managed_upload, _managed_options)
+
+
+def managed_lookup(target, attempt, services):
+    return services.lookup(target, attempt)
+
+
+def managed_verify(target, remote_id, services):
+    return services.verify(target, remote_id)
