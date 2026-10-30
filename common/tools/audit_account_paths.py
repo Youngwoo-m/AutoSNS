@@ -6,10 +6,11 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import stat
 
 from common.operations.layout import absolute_root, build_path_migration
-from common.operations.environment_manifest import build_environment_manifest
+from common.operations.environment_manifest import build_environment_manifest, reference_observation
 
 
 # glob/rglob/os.walk를 사용하지 않는다. config/token/profile/.venv는 포함하지 않는다.
@@ -106,10 +107,15 @@ def _alias(root, name):
                 return dict(name=name, link_target=chain[0]['target'] if chain else None,
                             canonical_path=str(candidate), exists=False, status='dangling', chain=chain)
             if stat.S_ISLNK(info.st_mode):
-                if str(current) in seen or len(chain) >= 40:
+                # 같은 링크도 남은 경로가 줄면 정상 재방문일 수 있다.
+                state = (str(current), str(candidate.relative_to(current)))
+                if state in seen:
                     return dict(name=name, link_target=chain[0]['target'] if chain else None,
                                 canonical_path=None, exists=None, status='cycle', chain=chain)
-                seen.add(str(current))
+                if len(chain) >= 40:
+                    return dict(name=name, link_target=chain[0]['target'] if chain else None,
+                                canonical_path=None, exists=None, status='resolution_limit', chain=chain)
+                seen.add(state)
                 target = os.readlink(current)
                 chain.append({'path': str(current), 'target': target})
                 tail = candidate.relative_to(current)
@@ -146,6 +152,102 @@ def _env_names(text, suffix):
     else:
         names.update(re.findall(r'\$\{?([A-Za-z_][A-Za-z0-9_]*)', text))
     return sorted(n for n in names if isinstance(n, str) and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', n))
+
+
+def _static_relations(texts, root, aliases):
+    """확인 가능한 cwd의 shell 실행과 직접 import만 연결한다. 실행하지 않는다."""
+    relations, unknown = [], set()
+    known = set(texts)
+
+    def target_for(candidate):
+        candidate = Path(os.path.normpath(str(candidate)))
+        if not candidate.is_relative_to(root):
+            return None
+        relative = candidate.relative_to(root).as_posix()
+        if relative in known:
+            return relative, []
+        # 이미 관측한 allowlist alias의 canonical 경로만 이용한다.
+        for alias in aliases:
+            prefix = root / alias['name']
+            if alias['status'] == 'resolved' and candidate.is_relative_to(prefix):
+                canonical = Path(alias['canonical_path']) / candidate.relative_to(prefix)
+                if canonical.is_relative_to(root) and canonical.relative_to(root).as_posix() in known:
+                    return canonical.relative_to(root).as_posix(), [alias['name']]
+        return None
+
+    for caller, text in texts.items():
+        directory = root / Path(caller).parent
+        if caller.endswith('.py'):
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                unknown.update(known)
+                continue
+            for node in ast.walk(tree):
+                modules = []
+                if isinstance(node, ast.Import):
+                    modules = [name.name for name in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    modules = [node.module]
+                for module in modules:
+                    module_path = Path(*module.split('.')).with_suffix('.py')
+                    bases = [directory, root]
+                    if isinstance(node, ast.ImportFrom) and node.level:
+                        bases = [directory.joinpath(*(['..'] * (node.level - 1)))]
+                    for base in bases:
+                        target = target_for(base / module_path)
+                        if target and target[0] != caller:
+                            callee, via_alias = target
+                            relations.append({'caller': caller, 'callee': callee, 'line': node.lineno,
+                                              'kind': 'python_import', 'resolution_basis': 'static_module_path',
+                                              'via_alias': via_alias})
+                            break
+            continue
+        cwd = None
+        for line_number, line in enumerate(text.splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith('cd '):
+                command, *failure = stripped.split('||', 1)
+                script_cwd = command.strip() in ('cd "$(dirname "$0")"',
+                                                  'cd "$(dirname "${BASH_SOURCE[0]}")"')
+                if script_cwd and (not failure or re.fullmatch(r'\s*exit(?:\s+[0-9]+)?\s*', failure[0])):
+                    cwd = directory
+                else:
+                    # 동적 cwd·외부 cwd를 디렉터리 이름으로 추정하지 않는다.
+                    cwd = None
+                continue
+            try:
+                tokens = shlex.split(stripped, comments=True)
+            except ValueError:
+                unknown.update(known)
+                continue
+            if tokens[:1] == ['exec']:
+                tokens = tokens[1:]
+            if not tokens:
+                continue
+            executable = Path(tokens[0]).name
+            if not re.fullmatch(r'python(?:\d+(?:\.\d+)*)?|bash|sh', executable):
+                continue
+            args = tokens[1:]
+            # -m/-c의 값은 파일 entrypoint가 아니므로 해석하지 않는다.
+            if '-m' in args or '-c' in args:
+                unknown.update(known)
+                continue
+            script = next((arg for arg in args if not arg.startswith('-')), None)
+            if not script or '$' in script or '`' in script:
+                unknown.update(known)
+                continue
+            path = Path(script)
+            if not path.is_absolute() and cwd is None:
+                unknown.update(name for name in known if Path(name).name == path.name)
+                continue
+            target = target_for(path if path.is_absolute() else cwd / path)
+            if target and target[0] != caller:
+                callee, via_alias = target
+                relations.append({'caller': caller, 'callee': callee, 'line': line_number,
+                                  'kind': 'shell_entrypoint', 'resolution_basis': 'explicit_cwd' if cwd else 'absolute_path',
+                                  'via_alias': via_alias})
+    return relations, unknown
 
 
 def audit_inventory(root, *, code_root, workspace_root=None):
@@ -185,15 +287,36 @@ def audit_inventory(root, *, code_root, workspace_root=None):
             'cwd': str(root / project), 'profile_ref': 'profile:acct-personal' if personal_geoai else None,
             'credential_ref': 'credential:personal:legacy-unverified' if personal_geoai else None,
             'environment_variable_names': _env_names(text, Path(relative).suffix), 'callers': []})
-    for row in inventory['files']:
-        row['callers'] = sorted(name for name, text in texts.items()
-                                if name != row['path'] and row['path'] in text)
     for name in ALIAS_ALLOWLIST:
         alias = _alias(root, name)
-        alias['callers'] = sorted(path for path, text in texts.items() if name in text)
+        alias['path_literal_references'] = sorted(path for path, text in texts.items() if name in text)
         alias['observation_confirmed'] = False
         alias['caller_inventory_complete'] = False
         inventory['aliases'].append(alias)
+    relations, unknown_callers = _static_relations(texts, root, inventory['aliases'])
+    inventory['direct_relations'] = relations
+    for alias in inventory['aliases']:
+        alias['callers'] = sorted({edge['caller'] for edge in relations if alias['name'] in edge['via_alias']})
+        alias['callers_observation'] = reference_observation(alias['callers'], unknown=bool(unknown_callers))
+    for row in inventory['files']:
+        relative = row['path']
+        row['callers'] = sorted({edge['caller'] for edge in relations if edge['callee'] == relative})
+        row['callers_observation'] = reference_observation(row['callers'], unknown=relative in unknown_callers)
+        # 단순 문자열 참조와 직접 호출을 같은 근거로 표시하지 않는다.
+        row['path_literal_references'] = sorted(name for name, text in texts.items()
+                                               if name != relative and relative in text)
+        row['alias'] = sorted(alias['name'] for alias in inventory['aliases']
+                              if alias['status'] == 'resolved'
+                              and (root / relative).is_relative_to(Path(alias['canonical_path'])))
+        row['alias_observation'] = reference_observation(row['alias'], unknown=any(
+            alias['status'] not in ('resolved', 'not_alias') for alias in inventory['aliases']))
+        row['environment_ref'] = sorted({relative, *row['callers']})
+        row['environment_ref_observation'] = reference_observation(row['environment_ref'])
+    files = {row['path']: row for row in inventory['files']}
+    for environment in inventory['environments']:
+        file = files[environment['id']]
+        environment['callers'] = file['callers']
+        environment['callers_observation'] = file['callers_observation']
     inventory['environment_manifest'] = build_environment_manifest(inventory)
     return inventory
 

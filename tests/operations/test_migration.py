@@ -201,6 +201,96 @@ class MigrationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 layout.build_path_migration({**base, 'files': [{'path': path}]})
 
+    def test_finite_alias_revisit_is_not_a_cycle(self):
+        _, _, audit = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            (root / 'assets').symlink_to('.')
+            (root / 'shared').symlink_to('assets/assets')
+            row = next(a for a in audit.audit_inventory(root, code_root=root)['aliases'] if a['name'] == 'shared')
+            self.assertEqual(row['status'], 'resolved')
+            self.assertEqual(row['canonical_path'], str(root))
+
+    def test_alias_resolution_limit_is_distinct_from_a_cycle(self):
+        _, _, audit = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            (root / 'assets').symlink_to('.')
+            (root / 'shared').symlink_to('/'.join(['assets'] * 45))
+            row = next(a for a in audit.audit_inventory(root, code_root=root)['aliases'] if a['name'] == 'shared')
+            self.assertEqual(row['status'], 'resolution_limit')
+
+    def test_manifest_rejects_objects_and_arbitrary_values_in_callers(self):
+        _, env, _ = self.api()
+        result = env.build_environment_manifest({'environments': [{'id': 'job', 'callers': [
+            {'credential': 'SYNTHETIC-MARKER'}, ['NESTED-MARKER'], 'API_KEY=value',
+            '../escape.py', 'not-a-path', '/secret/token.json', 'dept/job.py', 'run.sh']}]})
+        self.assertEqual(result['environments'][0]['callers'], ['dept/job.py', 'run.sh'])
+        self.assertNotIn('MARKER', json.dumps(result))
+        for malformed in (None, {'credential': 'MARKER'}, 'run.sh'):
+            row = env.build_environment_manifest({'environments': [{'callers': malformed}]})['environments'][0]
+            self.assertEqual(row['callers'], [])
+            self.assertEqual(row['callers_observation']['status'], 'unknown')
+
+    def test_direct_shell_import_alias_and_environment_relations_are_connected(self):
+        layout, _, audit = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            daily, _ = self.fixture(root)
+            wrapper = daily.parent / 'run_geoai.sh'
+            wrapper.write_text('#!/bin/bash\ncd "$(dirname "$0")" || exit 1\n'
+                               'exec ./.venv/bin/python geoai_daily.py --go\n'
+                               'python3 ../../shared/paths.py\n')
+            daily.write_text('import geoai_assets\n')
+            (daily.parent / 'geoai_assets.py').write_text('VALUE = 1\n')
+            (root / 'common/shared/paths.py').write_text('VALUE = 2\n')
+            inv = audit.audit_inventory(root, code_root=root)
+            files = {f['path']: f for f in inv['files']}
+            wrapper_path = 'dept/naver-blog-auto/run_geoai.sh'
+            daily_path = 'dept/naver-blog-auto/geoai_daily.py'
+            self.assertIn(wrapper_path, files[daily_path]['callers'])
+            self.assertIn(daily_path, files['dept/naver-blog-auto/geoai_assets.py']['callers'])
+            self.assertIn(wrapper_path, files['common/shared/paths.py']['callers'])
+            self.assertIn('shared', files['common/shared/paths.py']['alias'])
+            self.assertIn(wrapper_path, files[daily_path]['environment_ref'])
+            self.assertEqual(files[daily_path]['callers_observation']['status'], 'partial')
+            self.assertEqual(files[wrapper_path]['callers_observation']['status'], 'observed_zero_in_scope')
+            env = {e['id']: e for e in inv['environment_manifest']['environments']}
+            self.assertIn(wrapper_path, env[daily_path]['callers'])
+            self.assertEqual(env[daily_path]['callers_observation']['status'], 'partial')
+            row = next(r for r in layout.build_path_migration(inv)['entries'] if r['original_path'] == daily_path)
+            self.assertEqual(row['callers_observation'], files[daily_path]['callers_observation'])
+            self.assertTrue(any(e['kind'] == 'python_import' for e in inv['direct_relations']))
+            edge = next(e for e in inv['direct_relations'] if e['callee'] == 'common/shared/paths.py')
+            self.assertEqual(edge.get('via_alias'), ['shared'])
+            alias = next(a for a in inv['aliases'] if a['name'] == 'shared')
+            self.assertIn(wrapper_path, alias['callers'])
+
+    def test_unparsed_cwd_does_not_claim_observed_zero(self):
+        layout, _, audit = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            daily, _ = self.fixture(root)
+            (daily.parent / 'run_geoai.sh').write_text('cd "$DYNAMIC_CWD"\npython geoai_daily.py\n')
+            inv = audit.audit_inventory(root, code_root=root)
+            file = next(f for f in inv['files'] if f['path'].endswith('geoai_daily.py'))
+            self.assertEqual(file['callers'], [])
+            self.assertEqual(file['callers_observation']['status'], 'unknown')
+            self.assertFalse(file['callers_observation']['complete'])
+            row = next(r for r in layout.build_path_migration(inv)['entries'] if r['original_path'] == file['path'])
+            self.assertEqual(row['callers_observation']['status'], 'unknown')
+
+    def test_shell_changed_subdirectory_is_not_treated_as_script_directory(self):
+        _, _, audit = self.api()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            daily, _ = self.fixture(root)
+            (daily.parent / 'run_geoai.sh').write_text('cd "$(dirname "$0")/other"\npython geoai_daily.py\n')
+            inv = audit.audit_inventory(root, code_root=root)
+            row = next(f for f in inv['files'] if f['path'].endswith('geoai_daily.py'))
+            self.assertEqual(row['callers'], [])
+            self.assertEqual(row['callers_observation']['status'], 'unknown')
+
 
 if __name__ == '__main__':
     unittest.main()

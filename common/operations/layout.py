@@ -72,6 +72,10 @@ def build_path_migration(baseline) -> dict:
                      'original_id': entry.get('original_id'), 'destination': destination,
                      'callers': entry.get('callers', []), 'hash': entry.get('hash'),
                      'alias': entry.get('alias', []), 'environment_ref': entry.get('environment_ref', []),
+                     **{field + '_observation': entry.get(field + '_observation',
+                         {'status': 'unknown', 'scope': 'not_provided', 'complete': False})
+                        for field in ('callers', 'alias', 'environment_ref')},
+                     'path_literal_references': entry.get('path_literal_references', []),
                      'blockers': list(blockers)})
     return {'schema_version': 1, 'source_root': str(source), 'code_root': str(code),
             'workspace_root': str(workspace) if workspace else None,
