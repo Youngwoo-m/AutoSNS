@@ -116,7 +116,7 @@ class RuntimeAcceptanceTests(unittest.TestCase):
         # 동일 복구 명령 재전송은 읽기 전용 lookup도 되풀이하지 않는다.
         self.assertEqual(reconcile_delivery(restarted, 'd', adapter, later,
                          expected_version=version, request_key='recover-existing'), linked)
-        snapshot = restarted.content_store.get(self.content['id'], 1)
+        snapshot = restarted.content_store.get(self.content['id'], self.content['revision'])
         self.assertEqual(verify_delivery(restarted, 'd', adapter, snapshot, now=later).outcome, 'verified')
         self.assertEqual(restarted.get_run(self.run)['state'], 'completed')
         self.assertIsNone(self.work(restarted, adapter, later))
@@ -151,7 +151,7 @@ class RuntimeAcceptanceTests(unittest.TestCase):
         plan = dict(self.plan, id=identity, schedule_slot=identity)
         with closing(sqlite3.connect(self.store.root / 'operations.sqlite3')) as db:
             db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',
-                       (identity, self.content['id'], 1, 'x', 'initial', identity, identity, json.dumps(plan)))
+                       (identity, self.content['id'], self.content['revision'], 'x', 'initial', identity, identity, json.dumps(plan)))
             db.commit()
         context = replace(self.ctx, run_id=run, schedule_slot=identity)
         self.store.create_delivery(identity, run, context)
@@ -163,7 +163,7 @@ class RuntimeAcceptanceTests(unittest.TestCase):
         self.observe_quota()
         adapter = RemoteFixture()
         self.work(self.store, adapter)
-        snapshot = self.store.content_store.get(self.content['id'], 1)
+        snapshot = self.store.content_store.get(self.content['id'], self.content['revision'])
         later = NOW + timedelta(minutes=2)
         verify_delivery(self.store, 'd', adapter, snapshot, now=later)
         run = self.store.get_run(self.run)

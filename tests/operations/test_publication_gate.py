@@ -51,17 +51,17 @@ class GateFixture(unittest.TestCase):
         self.registry=Registry('r',{'personal':{}},{},{'p':{'account_id':'personal','lock_resource':'profile:tistory'}},{'x':Connection('x','personal','tistory',target_id='t',profile_ref='p',enabled=True,expected_login_subject='subject')},{'j':{'enabled':True,'execution_owner':'managed','schedule_owner':'console','owner_account_id':'personal','connection_id':'x','policy_revision':'p'}},{'p':{'subscription_only':True,'review_authorities':{'reviewer':['source']},'quota_requirements':requirements}}, {})
         self.store=RuntimeStore(root/'managed',self.registry,content);self.store.initialize()
         self.store.execution_policy=self.policy;self.store.locks=AxLock(LockPaths.from_root(root/'source'))
-        self.plan=dict(id='d',content_id=self.content['id'],revision=1,manifest_hash=self.content['manifest_hash'],owner_account_id='personal',destination_account_id='personal',connection_id='x',publication_purpose='initial',schedule_slot='slot',options={},schedule_condition={'kind':'fixed','at':NOW.isoformat()},status='ready',context={'scope':'plan'},run_id='plan-run')
+        from tests.operations.production_fixture import produce_reviewed_fixture
+        made=produce_reviewed_fixture(content,self.store,self.registry,self.content,NOW)
+        self.registry=made['registry'];self.content=made['snapshot']
+        self.producer=made['producer'];self.review=made['review']
+        self.production_store=made['production_store'];self.production_unit_id=made['unit_id']
+        self.plan=dict(id='d',content_id=self.content['id'],revision=self.content['revision'],manifest_hash=self.content['manifest_hash'],owner_account_id='personal',destination_account_id='personal',connection_id='x',publication_purpose='initial',schedule_slot='slot',options={},schedule_condition={'kind':'fixed','at':NOW.isoformat()},status='ready',context={'scope':'plan'},run_id='plan-run')
         with closing(sqlite3.connect(root/'managed'/'operations.sqlite3')) as db:
-            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d',self.content['id'],1,'x','initial','slot','planhash',json.dumps(self.plan)))
+            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d',self.content['id'],self.content['revision'],'x','initial','slot','planhash',json.dumps(self.plan)))
             db.commit()
         self.run=self.store.submit_occurrence(dict(job_id='j',scheduled_at_utc=NOW.isoformat(),phase='submit',source='console',request_kind='new_publication',mode='live'))['id']
         self.observed=dict(platform='tistory',target_id='t',authenticated=True,login_subject='subject',verification_method='fixture',checked_at=NOW.isoformat(),expires_at=(NOW+timedelta(hours=1)).isoformat())
-        self.producer={'principal_id':'author','execution_id':'generation'}
-        r=dict(role='source',reviewer_id='reviewer',execution_id='review',content_id=self.content['id'],content_revision=1,manifest_hash=self.content['manifest_hash'],verdict='pass',checked_at=NOW.isoformat());r['report_hash']=report_hash(r)
-        self.review={'producer':self.producer,'reports':[r]}
-        for kind,evidence in [('production_provenance',self.producer),('independent_review',r)]:
-            self.store.record_content_evidence(self.content['id'],1,self.content['manifest_hash'],kind,report_hash(evidence),evidence,now=NOW)
         self.ctx=self.build()
         self.store.create_delivery('d',self.run,self.ctx)
         self.store.record_evidence('d','target_observation',self.observed)
@@ -104,12 +104,12 @@ class GateFixture(unittest.TestCase):
         from common.operations.publication_gate import _snapshot
         snapshot=dict(self.content,assets=[{'id':'asset','size':4,'sha256':'0'*64}])
         fake=Mock();fake.content_store.get.return_value=snapshot;fake.content_store.read_asset.return_value=(snapshot['assets'][0],b'evil')
-        with self.assertRaisesRegex(Exception,'asset_changed'):_snapshot(fake,snapshot['id'],1,snapshot['manifest_hash'])
+        with self.assertRaisesRegex(Exception,'asset_changed'):_snapshot(fake,snapshot['id'],snapshot['revision'],snapshot['manifest_hash'])
     def test_calc_review_required_by_policy(self):
         from common.operations.publication_gate import validate_reviews
         policy=dict(self.registry.policies['p'],require_calc_review=True)
         with self.assertRaisesRegex(Exception,'independent_review_required'):
-            validate_reviews(self.review,policy,self.ctx,[{'kind':r['kind'],'evidence':r['report']} for r in self.store.read_content_evidence(self.ctx.content_id,1,self.ctx.manifest_hash)],NOW)
+            validate_reviews(self.review,policy,self.ctx,[{'kind':r['kind'],'evidence':r['report']} for r in self.store.read_content_evidence(self.ctx.content_id,self.ctx.content_revision,self.ctx.manifest_hash)],NOW)
     def test_two_process_stop_before_consume(self):
         import multiprocessing
         from common.operations.publication_gate import consume_permit
@@ -131,16 +131,16 @@ class GateFixture(unittest.TestCase):
         from common.operations.publication_gate import _snapshot
         asset={'id':'asset','size':4,'sha256':hashlib.sha256(b'data').hexdigest()}
         fake=Mock();fake.content_store.get.return_value=dict(self.content,assets=[asset]);fake.content_store.read_asset.return_value=(asset,b'data')
-        snapshot=_snapshot(fake,self.content['id'],1,self.content['manifest_hash'])
+        snapshot=_snapshot(fake,self.content['id'],self.content['revision'],self.content['manifest_hash'])
         self.assertEqual(snapshot['asset_bytes'],{'asset':b'data'})
     def test_content_evidence_append_only_binding_and_readonly(self):
-        rows=self.store.read_content_evidence(self.content['id'],1,self.content['manifest_hash'])
+        rows=self.store.read_content_evidence(self.content['id'],self.content['revision'],self.content['manifest_hash'])
         self.assertEqual(len(rows),2)
-        self.assertEqual(self.store.read_content_evidence(self.content['id'],1,'wrong'),[])
-        with self.assertRaises(Exception):self.store.record_content_evidence(self.content['id'],1,'wrong','production_provenance',report_hash(self.producer),self.producer,now=NOW)
-        with self.assertRaises(Exception):self.store.record_content_evidence(self.content['id'],1,self.content['manifest_hash'],'production_provenance','wrong',self.producer,now=NOW)
+        self.assertEqual(self.store.read_content_evidence(self.content['id'],self.content['revision'],'wrong'),[])
+        with self.assertRaises(Exception):self.store.record_content_evidence(self.content['id'],self.content['revision'],'wrong','production_provenance',report_hash(self.producer),self.producer,now=NOW)
+        with self.assertRaises(Exception):self.store.record_content_evidence(self.content['id'],self.content['revision'],self.content['manifest_hash'],'production_provenance','wrong',self.producer,now=NOW)
         path=self.store.root/'operations.sqlite3';before=path.read_bytes()
-        self.store.read_content_evidence(self.content['id'],1,self.content['manifest_hash']);self.assertEqual(path.read_bytes(),before)
+        self.store.read_content_evidence(self.content['id'],self.content['revision'],self.content['manifest_hash']);self.assertEqual(path.read_bytes(),before)
 
 class GateClockTests(GateFixture):
     def advancing_gate(self,seconds):

@@ -74,7 +74,7 @@ class MultipleDeliveryTests(WorkerBoundaryTests):
         self.observe_quota()
         second=dict(self.plan,id='d2',schedule_slot='slot2')
         with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
-            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2',self.content['id'],1,'x','initial','slot2','second',json.dumps(second)));db.commit()
+            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2',self.content['id'],self.content['revision'],'x','initial','slot2','second',json.dumps(second)));db.commit()
         ctx2=replace(self.ctx,schedule_slot='slot2')
         self.store.create_delivery('d2',self.run,ctx2);self.store.record_evidence('d2','target_observation',self.observed)
         self.store.record_publication_approval('d2',1,ctx2.context_hash,'second',ctx2.review_report_hashes)
@@ -148,7 +148,7 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
         for identity,slot,state in [('B','slotB','queued'),('C','slotC','retry_wait')]:
             plan=dict(self.plan,id=identity,schedule_slot=slot)
             with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
-                db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',(identity,self.content['id'],1,'x','initial',slot,identity,json.dumps(plan)));db.commit()
+                db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',(identity,self.content['id'],self.content['revision'],'x','initial',slot,identity,json.dumps(plan)));db.commit()
             ctx=replace(self.ctx,schedule_slot=slot)
             self.store.create_delivery(identity,self.run,ctx);self.store.record_evidence(identity,'target_observation',self.observed)
             self.store.record_publication_approval(identity,1,ctx.context_hash,identity,ctx.review_report_hashes)
@@ -169,7 +169,7 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
         run2=self.store.submit_occurrence(dict(job_id='j',scheduled_at_utc=(NOW+timedelta(minutes=1)).isoformat(),phase='submit',source='console',request_kind='new_publication',mode='live'))['id']
         plan2=dict(self.plan,id='d2',schedule_slot='new-run-slot')
         with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
-            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2',self.content['id'],1,'x','initial','new-run-slot','new',json.dumps(plan2)));db.commit()
+            db.execute('INSERT INTO deliveries VALUES(?,?,?,?,?,?,?,?)',('d2',self.content['id'],self.content['revision'],'x','initial','new-run-slot','new',json.dumps(plan2)));db.commit()
         ctx2=replace(self.ctx,run_id=run2,schedule_slot='new-run-slot')
         self.store.create_delivery('d2',run2,ctx2);self.store.record_evidence('d2','target_observation',self.observed)
         self.store.record_publication_approval('d2',1,ctx2.context_hash,'new',ctx2.review_report_hashes)
