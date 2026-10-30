@@ -25,10 +25,15 @@ REASONS = frozenset(('execution_disabled', 'execution_service_unavailable', 'ada
     'identity_mismatch', 'auth_required', 'needs_auth', 'needs_review', 'unsupported', 'quota_exceeded',
     'quota_unavailable', 'quota_unknown', 'quota_limit', 'limit_reached', 'job_disabled',
     'connection_disabled', 'legacy_owner', 'managed_paused', 'global_stop', 'stopped', 'context_changed',
-    'cutover_required', 'provider_policy_violation', 'production_policy_unavailable', 'unknown_job',
+    'cutover_required', 'provider_policy_violation', 'production_policy_unavailable', 'unknown_job', 'unknown_executor',
     'invalid_registry', 'invalid_catalog', 'production_unavailable', 'review_required',
     'independent_review_required', 'content_changed', 'target_unconfirmed', 'not_public',
     'scheduled_future', 'adapter_error', 'invalid_adapter_result'))
+PRODUCTION_REASONS = REASONS | frozenset(('daily_limit', 'weekly_limit', 'monthly_limit', 'needs_login',
+    'provider_unavailable', 'provider_error', 'invalid_output', 'missing_result', 'isolation_violation',
+    'timeout', 'spawn_failed', 'missing_required_media', 'invalid_production_result', 'production_in_progress',
+    'invalid_provider_result', 'production_output_unlinked', 'production_execution_failed', 'conflict',
+    'asset_changed', 'media_render_failed', 'media_validation_failed'))
 ID_FIELDS = ('id', 'run_id', 'delivery_id', 'planned_delivery_id', 'observation_id', 'binding_id',
     'base_job_id', 'execution_job_id', 'job_id', 'content_id', 'registry_revision', 'connection_id')
 INT_FIELDS = ('version', 'plan_version', 'content_revision', 'expected_revision')
@@ -95,6 +100,25 @@ def _request(body):
     return dict(request)
 
 
+def _production_result(raw):
+    """A8 service_run_results의 단일 제작 결과. 원고/파일/공급자 원문은 제외한다."""
+    result = {}
+    if raw.get('status') in ('completed', 'blocked', 'unknown'):
+        result['status'] = raw['status']
+    reason = raw.get('reason_code')
+    if isinstance(reason, str) and reason in PRODUCTION_REASONS:
+        result['reason_code'] = reason
+    if _identifier(raw.get('content_id')):
+        result['content_id'] = raw['content_id']
+    revision = raw.get('revision')
+    if type(revision) is int and revision >= 1:
+        result['revision'] = revision
+    manifest = raw.get('manifest_hash')
+    if isinstance(manifest, str) and re.fullmatch(r'[0-9a-f]{64}', manifest):
+        result['manifest_hash'] = manifest
+    return result
+
+
 def public_result(raw):
     """등록 서비스의 결과도 공개 필드만 복사한다. 자유 오류·context·result는 제외한다."""
     if not isinstance(raw, Mapping):
@@ -128,9 +152,13 @@ def public_result(raw):
     for name in ('runtime',):
         if isinstance(raw.get(name), Mapping):
             result[name] = public_result(raw[name])
-    for name in ('deliveries', 'production'):
-        if isinstance(raw.get(name), (list, tuple)):
-            result[name] = [public_result(row) for row in raw[name][:1000] if isinstance(row, Mapping)]
+    if isinstance(raw.get('deliveries'), (list, tuple)):
+        result['deliveries'] = [public_result(row) for row in raw['deliveries'][:1000] if isinstance(row, Mapping)]
+    if 'production' in raw:
+        if raw['production'] is None:
+            result['production'] = None
+        elif isinstance(raw['production'], Mapping):
+            result['production'] = _production_result(raw['production'])
     return result
 
 

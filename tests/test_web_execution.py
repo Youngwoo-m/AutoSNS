@@ -24,6 +24,9 @@ class FixtureService:
         self.calls = []
         self.occurrences = {}
         self.approvals = {}
+        self.production = dict(status='completed', content_id='content_fixture', revision=3,
+            manifest_hash='a'*64, producer={'credential': 'SECRET'}, observed_usage=None,
+            artifact_root='/SECRET', media_evidence=[{'path': '/SECRET'}])
 
     def submit(self, request, caller_id, *, content_id=None, expected_revision=None):
         self.calls.append(('submit', request, caller_id, content_id, expected_revision))
@@ -62,8 +65,7 @@ class FixtureService:
             deliveries=[dict(id='delivery_fixture', state='needs_auth', version=2,
                 reason='media_evidence_required', context_hash='b'*64,
                 context={'credential': 'SECRET'}, path='/SECRET')],
-            production=[dict(id='production_fixture', state='completed', result={'path': '/SECRET'},
-                manifest_hash='a'*64, content_revision=2)], error='token SECRET', credential='SECRET')
+            production=self.production, error='token SECRET', credential='SECRET')
 
 
 class ExecutionFacadeTests(unittest.TestCase):
@@ -194,9 +196,45 @@ class ExecutionFacadeTests(unittest.TestCase):
         self.assertEqual(result['state'], 'queued')
         self.assertEqual(result['deliveries'][0]['state'], 'needs_auth')
         self.assertEqual(result['deliveries'][0]['reason'], 'media_evidence_required')
-        self.assertEqual(result['production'][0]['state'], 'completed')
+        self.assertEqual(result.get('production'), dict(status='completed', content_id='content_fixture',
+                         revision=3, manifest_hash='a'*64))
         self.assertNotIn('SECRET', json.dumps(result))
         self.assertEqual(self.service.calls, [('status', 'run_fixture')])
+
+    def test_blocked_production_mapping_preserves_fixed_reason_only(self):
+        self.service.production = dict(status='blocked', reason_code='daily_limit', artifact_root='/SECRET',
+            observed_usage={'token': 'SECRET'}, result={'credential': 'SECRET'}, text='SECRET', nonce='SECRET')
+        result = self.send('GET', '/api/v2/execution/runs/run_fixture')
+        self.assertEqual(result.get('production'), dict(status='blocked', reason_code='daily_limit'))
+        self.assertNotIn('SECRET', json.dumps(result))
+
+    def test_unknown_production_mapping_preserves_uncertainty_and_fixed_reason(self):
+        self.service.production = dict(status='unknown', reason_code='production_execution_failed',
+            artifact_root='/SECRET', credential='SECRET', result={'status': 'completed'})
+        result = self.send('GET', '/api/v2/execution/runs/run_fixture')
+        self.assertEqual(result.get('production'), dict(status='unknown', reason_code='production_execution_failed'))
+        self.assertNotIn('SECRET', json.dumps(result))
+
+    def test_production_mapping_drops_free_reason_and_invalid_snapshot_values(self):
+        self.service.production = dict(status='blocked', reason_code='/SECRET', content_id='/SECRET',
+                                       revision=True, manifest_hash='SECRET', path='/SECRET')
+        result = self.send('GET', '/api/v2/execution/runs/run_fixture')
+        self.assertEqual(result.get('production'), dict(status='blocked'))
+        self.assertNotIn('SECRET', json.dumps(result))
+
+    def test_no_recorded_production_result_remains_null(self):
+        self.service.production = None
+        result = self.send('GET', '/api/v2/execution/runs/run_fixture')
+        self.assertIn('production', result)
+        self.assertIsNone(result['production'])
+
+    def test_status_discovery_preserves_unknown_executor_reason(self):
+        info = dict(production_jobs=[dict(id='produce', enabled=True, available=False, reason='unknown_executor')])
+        result = self.web.handle_request('GET', '/api/v2/execution/status', {}, None, self.service,
+                                        policy=self.policy, status_info=info)
+        self.assertEqual(result['production_jobs'], [dict(id='produce', enabled=True, available=False,
+                                                         reason='unknown_executor')])
+        self.assertEqual(self.service.calls, [])
 
     def test_status_discovery_is_pure_and_uses_server_allowlist(self):
         info = dict(production_jobs=[dict(id='produce', label='원고 제작', enabled=False, available=False,
