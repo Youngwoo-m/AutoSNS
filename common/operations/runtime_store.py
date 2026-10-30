@@ -83,6 +83,13 @@ class RuntimeStore:
             if not self._v3(c):return []
             rows=c.execute('SELECT id FROM runtime_runs'+(' WHERE state=?' if state else '')+' ORDER BY rowid',((state,) if state else ()))
             return [self._run(c,r[0]) for r in rows]
+    def get_plan_delivery(self,id):
+        """내부 builder 전용 원본 계획. HTTP 응답에 직접 노출하지 않는다."""
+        with self._db() as c:
+            if not self._v3(c):return None
+            row=c.execute('SELECT payload FROM deliveries WHERE id=?',(id,)).fetchone()
+            return json.loads(row[0]) if row else None
+
     def get_delivery(self,id):
         with self._db() as c:
             if not self._v3(c):return None
@@ -421,3 +428,26 @@ class RuntimeStore:
         with self._db() as c:
             if not self._v3(c):return []
             return [dict(r) for r in c.execute('SELECT * FROM control_events e WHERE version=(SELECT MAX(version) FROM control_events WHERE scope=e.scope AND target_id=e.target_id) ORDER BY e.id')]
+
+    def record_content_evidence(self,content_id,revision,manifest_hash,kind,report_hash,report,*,now=None):
+        """서버 검토 ingestion 전용. HTTP 입력/수동 검토 흉내를 연결하지 않는다."""
+        if (kind not in ('production_provenance','independent_review') or not isinstance(report,dict) or
+            type(revision) is not int or revision<1 or not isinstance(report_hash,str) or
+            report_hash!=digest({k:v for k,v in report.items() if k!='report_hash'})):
+            raise StoreError('invalid_content_evidence')
+        with self._db(True) as c:
+            row=c.execute('SELECT manifest_hash FROM revisions WHERE content_id=? AND revision=?',(content_id,revision)).fetchone()
+            if not row or row[0]!=manifest_hash:raise ConflictError()
+            old=c.execute('SELECT report FROM content_evidence WHERE content_id=? AND revision=? AND manifest_hash=? AND kind=? AND report_hash=?',(content_id,revision,manifest_hash,kind,report_hash)).fetchone()
+            raw=_json(serial(report))
+            if old and old[0]!=raw:raise ConflictError()
+            if not old:c.execute('INSERT INTO content_evidence(content_id,revision,manifest_hash,kind,report_hash,report,recorded_at) VALUES(?,?,?,?,?,?,?)',(content_id,revision,manifest_hash,kind,report_hash,raw,stamp(now)))
+        return dict(content_id=content_id,revision=revision,manifest_hash=manifest_hash,kind=kind,report_hash=report_hash,report=serial(report))
+
+    def read_content_evidence(self,content_id,revision,manifest_hash):
+        """누락된 이전 v3 저널도 쓰기 없이 빈 목록으로 관측한다."""
+        with self._db() as c:
+            if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='content_evidence'").fetchone():return []
+            rows=c.execute('SELECT * FROM content_evidence WHERE content_id=? AND revision=? AND manifest_hash=? ORDER BY id',(content_id,revision,manifest_hash))
+            return [dict(r,report=json.loads(r['report'])) for r in rows]
+
