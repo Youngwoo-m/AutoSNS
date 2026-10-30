@@ -21,16 +21,38 @@ def workspace_available(root):
         raise StoreError('storage_error') from exc
 
 
-def compose_workspace_snapshot(snapshot, workspace_root, account='all'):
+def compose_workspace_snapshot(snapshot, workspace_root, account='all', *, ledger=None):
     result = {**snapshot, 'read_only': True, 'workspace_writable': False,
               'contents': [{**item, 'source': 'legacy'} for item in snapshot.get('contents', [])],
               'warnings': list(snapshot.get('warnings', []))}
     try:
         available = workspace_available(workspace_root)
         if available:
-            managed = ContentStore(workspace_root).list(account)
+            store = ContentStore(workspace_root)
+            managed = store.list(account)
             result['contents'].extend(content_summary(item) for item in managed)
             result['workspace_writable'] = True
+            if ledger is not None:
+                try:
+                    plans = ledger.list_deliveries(account)
+                    known = {c['id'] for c in managed}
+                    for plan in plans:
+                        if plan['content_id'] not in known:
+                            content = store.get(plan['content_id'])
+                            if content is not None:
+                                managed.append(content)
+                                result['contents'].append(content_summary(content))
+                                known.add(content['id'])
+                    result['deliveries'] = list(result.get('deliveries', [])) + plans
+                    titles = {c['id']: c.get('title', '') for c in managed}
+                    result['schedule'] = list(result.get('schedule', [])) + [{**p, 'title': titles.get(p['content_id'], ''), 'channel': p['platform'], 'kind': 'local_plan'} for p in plans]
+                    for item in result['contents']:
+                        if item.get('source') == 'managed':
+                            item['deliveries'] = [p for p in plans if p['content_id'] == item['id']]
+                            item['target_accounts'] = list(dict.fromkeys(item['target_accounts'] + [p['destination_account_id'] for p in item['deliveries']]))
+                            item['channels'] = list(dict.fromkeys(item['channels'] + [p['platform'] for p in item['deliveries']]))
+                except StoreError:
+                    result['warnings'].append('배포 계획 저장소의 명시적 초기화가 필요합니다.')
         else:
             result['warnings'].append('관리 저장소가 초기화되지 않아 조회 전용으로 표시합니다.')
     except StoreError:

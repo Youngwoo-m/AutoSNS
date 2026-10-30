@@ -27,6 +27,9 @@ for _module_root in (_APP.parents[1], _APP):
         sys.path.insert(0, str(_module_root))
 from common.operations.content_store import ContentStore, StoreError, MAX_ASSET_BYTES
 from common.operations.integration_store import IntegrationStore
+from common.operations.ledger import Ledger
+from common.operations.models import ContractError
+from web_deliveries import handle as handle_deliveries
 from web_content import (CONTENT_ID, ASSET_ID, MEDIA_TYPES, ERROR_STATUS, ERROR_MESSAGES,
                          content_body, review_body, serialize_content)
 from web_integrations import validate_settings_body, settings_response
@@ -40,6 +43,7 @@ _STATIC = {
     'app.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
+    'delivery_editor.js': 'text/javascript; charset=utf-8',
     'integration_settings.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
@@ -272,6 +276,12 @@ class _Handler(BaseHTTPRequestHandler):
             if query.get('account', ['all'])[0] not in ('all', 'dept', 'personal'):
                 self._error(400, '올바르지 않은 계정입니다')
                 return None
+        elif parsed.path == '/api/v2/deliveries':
+            if (set(query)-{'account','content_id'} or any(len(v)!=1 for v in query.values())
+                or query.get('account',['all'])[0] not in ('all','dept','personal')
+                or ('content_id' in query and not re.fullmatch(CONTENT_ID,query['content_id'][0]))):
+                self._error(400, '올바르지 않은 조회 조건입니다')
+                return None
         elif re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path):
             if (set(query) - {'revision'} or any(len(values) != 1 for values in query.values())
                     or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
@@ -324,6 +334,18 @@ class _Handler(BaseHTTPRequestHandler):
             if method == 'POST' and path in ('/api/auth/login', '/api/auth/logout'):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
+            deliveries = path == '/api/v2/connections' or path == '/api/v2/deliveries' or path.startswith('/api/v2/deliveries/')
+            if deliveries:
+                if not self._authed():
+                    return self._error(401, '로그인이 필요합니다')
+                if self.server.workspace_root is None:
+                    if method != 'GET': return self._error(405, '조회 전용 화면에서는 지원하지 않는 요청입니다')
+                    if path in ('/api/v2/connections','/api/v2/deliveries'): return self._send(200, {'items': []})
+                    raise StoreError('not_found')
+                if method != 'GET' and query: raise StoreError('invalid')
+                result = handle_deliveries(self.server.ledger, method, path, query, lambda: self._read_body(1024*1024,json_body=True))
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200,result)
             if managed:
                 if not self._authed():
                     return self._error(401, '로그인이 필요합니다')
@@ -349,7 +371,7 @@ class _Handler(BaseHTTPRequestHandler):
                 snapshot = self.server.snapshot_builder(self.server.source_root, query.get('account', ['all'])[0], **kwargs)
                 if self.server.workspace_root is not None:
                     snapshot = compose_workspace_snapshot(snapshot, self.server.workspace_root,
-                                                          query.get('account', ['all'])[0])
+                                                          query.get('account', ['all'])[0], ledger=self.server.ledger)
                     if not getattr(self.server.content_store, '_initialized', False):
                         snapshot['workspace_writable'] = False
                 return self._send(200, snapshot)
@@ -358,6 +380,8 @@ class _Handler(BaseHTTPRequestHandler):
             if path.startswith('/web/') and path[5:] in _STATIC:
                 return self._static(path[5:])
             return self._error(404, '지원하지 않는 경로입니다')
+        except ContractError as exc:
+            self._error(503 if exc.code == 'invalid_registry' else 400, '등록부를 확인할 수 없습니다' if exc.code == 'invalid_registry' else '올바르지 않은 배포 계획 요청입니다')
         except StoreError as exc:
             self._error(ERROR_STATUS.get(exc.code, 503), ERROR_MESSAGES.get(exc.code, ERROR_MESSAGES['storage_error']))
         except (BrokenPipeError, ConnectionResetError, TimeoutError):
@@ -521,7 +545,7 @@ class _Handler(BaseHTTPRequestHandler):
 
 def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   web_root: Path, auth_backend=None, snapshot_builder=None,
-                  workspace_root: Path | None = None) -> ThreadingHTTPServer:
+                  workspace_root: Path | None = None, operations_registry=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -540,6 +564,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.workspace_root = workspace_root
     server.content_store = ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
+    server.ledger = Ledger(workspace_root, registry=operations_registry or _APP.parent / 'config' / 'operations.json', content_store=server.content_store) if workspace_root is not None else None
     server.web_root = web_root
     server.auth_backend = backend
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot
@@ -557,11 +582,13 @@ def main():
     server = create_server(os.environ.get('AX_HOST', '127.0.0.1'),
                            int(os.environ.get('AX_PORT', '8767')),
                            source_root=Path(source), web_root=_APP / 'web',
-                           workspace_root=Path(os.environ['AX_WORKSPACE_ROOT']) if os.environ.get('AX_WORKSPACE_ROOT') else None)
+                           workspace_root=Path(os.environ['AX_WORKSPACE_ROOT']) if os.environ.get('AX_WORKSPACE_ROOT') else None,
+                           operations_registry=Path(os.environ['AX_OPERATIONS_REGISTRY']) if os.environ.get('AX_OPERATIONS_REGISTRY') else None)
     try:
         if server.workspace_root is not None:
             server.content_store.initialize()
             server.integration_store.initialize()
+            server.ledger.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass

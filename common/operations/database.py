@@ -2,7 +2,7 @@
 from pathlib import Path
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DB_NAME = 'operations.sqlite3'
 DDL = (
     'CREATE TABLE IF NOT EXISTS contents(id TEXT PRIMARY KEY, owner_account_id TEXT NOT NULL, current_revision INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
@@ -26,7 +26,7 @@ def _open(path, writable):
         conn.row_factory = sqlite3.Row
         conn.execute('PRAGMA foreign_keys=ON')
         conn.execute('PRAGMA busy_timeout=5000')
-        if conn.execute('PRAGMA user_version').fetchone()[0] != SCHEMA_VERSION:
+        if conn.execute('PRAGMA user_version').fetchone()[0] not in ((SCHEMA_VERSION,) if writable else (1, SCHEMA_VERSION)):
             raise sqlite3.DatabaseError('Unsupported operations schema version')
         if writable:
             conn.execute('PRAGMA journal_mode=DELETE')
@@ -40,7 +40,7 @@ def connect_database(root: Path, *, writable: bool = False) -> sqlite3.Connectio
     if not path.is_file():
         raise FileNotFoundError(path)
     conn = _open(path,writable)
-    if conn.execute('PRAGMA user_version').fetchone()[0] != SCHEMA_VERSION:
+    if conn.execute('PRAGMA user_version').fetchone()[0] not in ((SCHEMA_VERSION,) if writable else (1, SCHEMA_VERSION)):
         conn.close()
         raise sqlite3.DatabaseError('Unsupported operations schema version')
     return conn
@@ -53,18 +53,29 @@ def initialize_database(root: Path) -> None:
     try:
         conn.execute('PRAGMA foreign_keys=ON')
         conn.execute('PRAGMA busy_timeout=5000')
-        if conn.execute('PRAGMA user_version').fetchone()[0] not in (0,SCHEMA_VERSION):
+        if conn.execute('PRAGMA user_version').fetchone()[0] not in (0,1,SCHEMA_VERSION):
             raise sqlite3.DatabaseError('Unsupported operations schema version')
         conn.execute('PRAGMA journal_mode=DELETE')
         conn.execute('BEGIN IMMEDIATE')
         version=conn.execute('PRAGMA user_version').fetchone()[0]
-        if version not in (0,SCHEMA_VERSION):
+        if version not in (0,1,SCHEMA_VERSION):
             raise sqlite3.DatabaseError('Unsupported operations schema version')
         for statement in DDL: conn.execute(statement)
-        conn.execute('PRAGMA user_version=1')
+        for statement in OPERATIONS_DDL: conn.execute(statement)
+        conn.execute('PRAGMA user_version=2')
         conn.commit()
     except BaseException:
         conn.rollback()
         raise
     finally:
         conn.close()
+
+# 이행은 initialize_database의 단일 트랜잭션에서만 실행한다.
+OPERATIONS_DDL = (
+    'CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, payload TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS triggers(id TEXT PRIMARY KEY, job_id TEXT NOT NULL, payload TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, job_id TEXT NOT NULL, scheduled_at_utc TEXT NOT NULL, phase TEXT NOT NULL, request_hash TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(job_id,scheduled_at_utc,phase))',
+    'CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY, content_id TEXT NOT NULL, revision INTEGER NOT NULL, connection_id TEXT NOT NULL, publication_purpose TEXT NOT NULL, schedule_slot TEXT NOT NULL, request_hash TEXT NOT NULL, payload TEXT NOT NULL, UNIQUE(content_id,revision,connection_id,publication_purpose,schedule_slot))',
+    'CREATE TABLE IF NOT EXISTS approvals(id TEXT PRIMARY KEY, delivery_id TEXT NOT NULL REFERENCES deliveries(id), payload TEXT NOT NULL)',
+    'CREATE TABLE IF NOT EXISTS delivery_events(id INTEGER PRIMARY KEY, delivery_id TEXT NOT NULL REFERENCES deliveries(id), version INTEGER NOT NULL, kind TEXT NOT NULL, summary TEXT NOT NULL, created_at TEXT NOT NULL)',
+)
