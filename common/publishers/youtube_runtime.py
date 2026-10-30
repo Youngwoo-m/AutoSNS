@@ -9,7 +9,10 @@ from common.operations.execution_catalog import ExecutionCatalog, ExecutorSpec
 from .youtube_services import observation
 
 ROOT = Path(__file__).resolve().parents[2]
-YOUTUBE_BINDINGS = MappingProxyType({key: 'youtube.' + key for key in ('dept.youtube', 'personal.youtube')})
+YOUTUBE_BINDINGS = MappingProxyType({
+    'dept.youtube': 'youtube.dept',
+    'personal.youtube': 'youtube.personal',
+})
 CREDENTIAL_CATALOG = MappingProxyType({key + '.credential': MappingProxyType(dict(
     credential_ref=key + '.credential', account_id=key.split('.')[0], platform='youtube')) for key in YOUTUBE_BINDINGS})
 

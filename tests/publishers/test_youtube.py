@@ -46,7 +46,7 @@ def registry():
          'personal': dict(account_id='personal', lock_resource='profile:youtube-personal')},
         {key: Connection(key, key.split('.')[0], 'youtube', target_id='UC-' + key.split('.')[0],
                          credential_ref=key + '.credential', profile_ref=key.split('.')[0], enabled=True) for key in KEYS},
-        {'job-' + key: dict(executor_id='youtube.' + key, connection_id=key, owner_account_id=key.split('.')[0],
+        {'job-' + key: dict(executor_id={'dept.youtube': 'youtube.dept', 'personal.youtube': 'youtube.personal'}[key], connection_id=key, owner_account_id=key.split('.')[0],
                            enabled=True, execution_owner='managed', managed_eligible=True, policy_revision='policy', schedule_owner='console') for key in KEYS},
         {'policy': {}}, {})
 
@@ -274,9 +274,23 @@ class YoutubeTests(unittest.TestCase):
         with patch.object(self.runtime, 'resolve_youtube_credentials', side_effect=AssertionError('credentials forbidden')):
             with self.assertRaises(ContractError): self.module.bridge_bootstrap()
 
+    def test_approved_executor_ids_register_both_channels_and_reach_upload_leaf(self):
+        catalog = self.runtime.build_youtube_catalog(self.reg)
+        self.assertEqual({key: spec.job_ids for key, spec in catalog.executors.items()},
+                         {'youtube.dept': ('job-dept.youtube',), 'youtube.personal': ('job-personal.youtube',)})
+        for connection, executor in (('dept.youtube', 'youtube.dept'), ('personal.youtube', 'youtube.personal')):
+            with self.subTest(connection=connection):
+                self.assertIn((executor, 'inspect_target'), self.handlers)
+                self.assertIn((executor, 'publish'), self.handlers)
+                ctx = context(connection)
+                self.assertEqual(self.adapter.inspect_target(ctx)['target_id'], ctx.target_id)
+                result = self.adapter.submit(ctx, self.prepare(ctx), object())
+                self.assertEqual(result.remote_id, 'remote')
+                self.assertEqual(sum(name == 'videos.insert' for name, _ in self.google[connection].calls), 1)
+
     def test_static_catalog_uses_fixed_module_and_independent_host(self):
         catalog = self.runtime.build_youtube_catalog(self.reg)
-        self.assertEqual(set(catalog.executors), {'youtube.dept.youtube', 'youtube.personal.youtube'})
+        self.assertEqual(set(catalog.executors), {'youtube.dept', 'youtube.personal'})
         self.assertTrue(all(spec.module == 'common.publishers.youtube' for spec in catalog.executors.values()))
         from common.publishers.bridge_host import BridgeHost
         store = SimpleNamespace(locks=None)
