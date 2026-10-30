@@ -1,0 +1,1447 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "id": "geoai-short.tiktok",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "any": [
+          {
+            "field": "phase",
+            "op": "eq",
+            "value": "uploaded"
+          },
+          {
+            "field": "phase",
+            "op": "eq",
+            "value": "scheduled"
+          },
+          {
+            "field": "phase",
+            "op": "eq",
+            "value": "published"
+          }
+        ]
+      },
+      "allowed_slots": [],
+      "transform_id": "geoai-short.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "activation_evidence": [
+        {
+          "kind": "config",
+          "key": "tiktok_web.daily",
+          "value": true
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        },
+        {
+          "kind": "installed_plist",
+          "key": "tiktok_queue",
+          "present": false,
+          "loaded": null,
+          "disabled": null
+        },
+        {
+          "kind": "automation_note",
+          "key": "tiktok_web.daily",
+          "value": false,
+          "stale": true
+        },
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/tiktok_queue.py",
+          "symbol": "add",
+          "delay_seconds": 1800
+        }
+      ],
+      "delay_seconds": 1800,
+      "delay_owner": "legacy_queue_add",
+      "min_gap_seconds": 10800,
+      "window": {
+        "start": "07:00",
+        "end": "23:00",
+        "timezone": "Asia/Seoul"
+      },
+      "dedupe_strategy": "legacy_video_path",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "geoai_short"
+          },
+          {
+            "field": "upload_response",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "channel_ok",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "queue_source": "geoai_short",
+      "ai_generated": true,
+      "ai_voice": true,
+      "source_time_basis": "youtube_scheduled_at_or_upload_at",
+      "failure_independent_of_source": true,
+      "queue_constraints": {
+        "max_age_days": 14,
+        "max_tries": 5,
+        "excluded_states": [
+          "skipped",
+          "posted"
+        ],
+        "requires_video_exists": true,
+        "hold_until": true,
+        "ordering": [
+          "new_before_backfill",
+          "priority",
+          "not_before"
+        ],
+        "backfill_quiet_seconds": 10800,
+        "infrastructure_error_increments_tries": false,
+        "repeated_screen_error_hold": {
+          "count": 2,
+          "until": "next_midnight"
+        }
+      }
+    },
+    {
+      "id": "youtube-generic-personal.tiktok",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "field": "phase",
+        "op": "eq",
+        "value": "uploaded"
+      },
+      "allowed_slots": [],
+      "transform_id": "youtube-generic-personal.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "activation_evidence": [
+        {
+          "kind": "config",
+          "key": "tiktok_web.daily",
+          "value": true
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        },
+        {
+          "kind": "installed_plist",
+          "key": "tiktok_queue",
+          "present": false,
+          "loaded": null,
+          "disabled": null
+        },
+        {
+          "kind": "automation_note",
+          "key": "tiktok_web.daily",
+          "value": false,
+          "stale": true
+        },
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/tiktok_queue.py",
+          "symbol": "add",
+          "delay_seconds": 1800
+        }
+      ],
+      "delay_seconds": 1800,
+      "delay_owner": "legacy_queue_add",
+      "min_gap_seconds": 10800,
+      "window": {
+        "start": "07:00",
+        "end": "23:00",
+        "timezone": "Asia/Seoul"
+      },
+      "dedupe_strategy": "legacy_video_path",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "youtube_upload"
+          },
+          {
+            "field": "video_id_present",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "visibility",
+            "op": "eq",
+            "value": "public"
+          },
+          {
+            "field": "description",
+            "op": "not_contains",
+            "value": "쿠팡"
+          }
+        ]
+      },
+      "queue_source": "geoai",
+      "queue_constraints": {
+        "max_age_days": 14,
+        "max_tries": 5,
+        "excluded_states": [
+          "skipped",
+          "posted"
+        ],
+        "requires_video_exists": true,
+        "hold_until": true,
+        "ordering": [
+          "new_before_backfill",
+          "priority",
+          "not_before"
+        ],
+        "backfill_quiet_seconds": 10800,
+        "infrastructure_error_increments_tries": false,
+        "repeated_screen_error_hold": {
+          "count": 2,
+          "until": "next_midnight"
+        }
+      }
+    },
+    {
+      "id": "youtube-generic-dept.tiktok",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "field": "phase",
+        "op": "eq",
+        "value": "uploaded"
+      },
+      "allowed_slots": [],
+      "transform_id": "youtube-generic-dept.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "activation_evidence": [
+        {
+          "kind": "config",
+          "key": "tiktok_web.daily",
+          "value": true
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        },
+        {
+          "kind": "installed_plist",
+          "key": "tiktok_queue",
+          "present": false,
+          "loaded": null,
+          "disabled": null
+        },
+        {
+          "kind": "automation_note",
+          "key": "tiktok_web.daily",
+          "value": false,
+          "stale": true
+        },
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/tiktok_queue.py",
+          "symbol": "add",
+          "delay_seconds": 1800
+        }
+      ],
+      "delay_seconds": 1800,
+      "delay_owner": "legacy_queue_add",
+      "min_gap_seconds": 10800,
+      "window": {
+        "start": "07:00",
+        "end": "23:00",
+        "timezone": "Asia/Seoul"
+      },
+      "dedupe_strategy": "legacy_video_path",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "youtube_upload"
+          },
+          {
+            "field": "video_id_present",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "visibility",
+            "op": "eq",
+            "value": "public"
+          },
+          {
+            "field": "description",
+            "op": "not_contains",
+            "value": "쿠팡"
+          }
+        ]
+      },
+      "queue_source": "youtube_upload",
+      "queue_constraints": {
+        "max_age_days": 14,
+        "max_tries": 5,
+        "excluded_states": [
+          "skipped",
+          "posted"
+        ],
+        "requires_video_exists": true,
+        "hold_until": true,
+        "ordering": [
+          "new_before_backfill",
+          "priority",
+          "not_before"
+        ],
+        "backfill_quiet_seconds": 10800,
+        "infrastructure_error_increments_tries": false,
+        "repeated_screen_error_hold": {
+          "count": 2,
+          "until": "next_midnight"
+        }
+      }
+    },
+    {
+      "id": "geoai.threads",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.blogger",
+      "destination_connection_id": "dept.threads",
+      "trigger": {},
+      "allowed_slots": [
+        "morning",
+        "evening"
+      ],
+      "transform_id": "geoai.threads",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/naver-blog-auto/geoai_daily.py",
+          "line": 393
+        },
+        {
+          "kind": "comment",
+          "condition": "evening_only",
+          "override": "--threads"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "any": [
+              {
+                "field": "blogger_status",
+                "op": "eq",
+                "value": "published"
+              },
+              {
+                "field": "dry_run",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "field": "no_video",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "field": "threads",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "transform_constraints": {
+        "summary": "first_summary",
+        "source_url": true,
+        "max_tags": 5,
+        "max_chars": 500
+      },
+      "flags": {
+        "evening": "no_video",
+        "explicit_override": "threads"
+      }
+    },
+    {
+      "id": "jobs.tistory",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.naver_blog",
+      "destination_connection_id": "personal.tistory",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "jobs.tistory",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/naver-blog-auto/run_jobs.sh",
+          "lines": [
+            22,
+            32
+          ]
+        },
+        {
+          "kind": "code",
+          "path": "personal/naver-blog-auto/tistory_jobs.py",
+          "lines": [
+            94,
+            135
+          ]
+        },
+        {
+          "kind": "user_stop_note",
+          "stopped": true
+        },
+        {
+          "kind": "installed_schedule",
+          "weekday": "sunday",
+          "time": "21:00"
+        },
+        {
+          "kind": "stale_comment",
+          "time": "20:00"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "jobs:basename",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "jobs"
+          },
+          {
+            "field": "naver_success",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "draft_age_seconds",
+            "op": "lte",
+            "value": 21600
+          },
+          {
+            "field": "naver_posted_job_count",
+            "op": "gte",
+            "value": 1
+          },
+          {
+            "field": "valid_job_count",
+            "op": "gte",
+            "value": 3
+          }
+        ]
+      },
+      "independent_of_instagram_success": true
+    },
+    {
+      "id": "tistory.safeworking",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.tistory",
+      "destination_connection_id": "personal.naver_blog",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "tistory.safeworking",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/naver-blog-auto/naver_crosspost_personal.py"
+        },
+        {
+          "kind": "instruction",
+          "path": "personal/claude-jobs/공통규칙.md",
+          "lines": [
+            83,
+            90
+          ]
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "title_rss",
+      "conditions": {
+        "all": [
+          {
+            "field": "public_verified",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "subject_area",
+            "op": "in",
+            "value": [
+              "survey",
+              "civil",
+              "building",
+              "safety",
+              "nordic",
+              "safekorea"
+            ]
+          },
+          {
+            "field": "shorts_only",
+            "op": "eq",
+            "value": false
+          },
+          {
+            "field": "department_round",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "forced_target": "safeworking",
+      "transform_constraints": {
+        "no_cta": true,
+        "original_link": true,
+        "preserve": [
+          "category",
+          "tables",
+          "figures",
+          "attachments",
+          "headings"
+        ],
+        "categories": {
+          "survey": "측량기술사",
+          "civil": "토목시공기술사",
+          "building": "건축시공기술사",
+          "safety": "건설안전기술사",
+          "nordic": "노르딕워킹·건강",
+          "safekorea": "안전한국훈련·재난"
+        }
+      },
+      "dry_run_side_effects": "editor_input"
+    },
+    {
+      "id": "naver.blogger",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.naver_blog",
+      "destination_connection_id": "dept.blogger",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "naver.blogger",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/naver-blog-auto/run_weekly.py",
+          "line": 90
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "field": "caller",
+        "op": "eq",
+        "value": "naver_weekly"
+      },
+      "failure_independent_of_source": true
+    },
+    {
+      "id": "blogger.tistory",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.blogger",
+      "destination_connection_id": "personal.tistory",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "blogger.tistory",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "personal/naver-blog-auto/tistory_crosspost.py",
+          "line": 613
+        },
+        {
+          "kind": "user_stop_note",
+          "stopped": true
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "field": "tistory_explicit_disabled",
+        "op": "eq",
+        "value": false
+      },
+      "per_run_default": 2,
+      "activation_semantics": "only_explicit_false_blocks",
+      "transform_constraints": {
+        "summary": true,
+        "original_link": true
+      }
+    },
+    {
+      "id": "geoai.community",
+      "owner_account_id": "personal",
+      "source_connection_id": "personal.blogger",
+      "destination_connection_id": "personal.youtube",
+      "trigger": {},
+      "allowed_slots": [
+        "morning",
+        "evening"
+      ],
+      "transform_id": "geoai.community",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/naver-blog-auto/geoai_daily.py",
+          "line": 394
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "any": [
+          {
+            "field": "blogger_status",
+            "op": "eq",
+            "value": "published"
+          },
+          {
+            "field": "dry_run",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "transform_constraints": {
+        "kind": "community",
+        "original_link": true
+      }
+    },
+    {
+      "id": "news.naver_blog",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.naver_blog",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "news.naver_blog",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/run_weekly.py"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "weekly_news"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "delivery_kind": "legacy_crosspost",
+      "transform_constraints": {
+        "category": "동영상뉴스",
+        "requires_crosspost_config": true
+      }
+    },
+    {
+      "id": "news.instagram",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.instagram",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "news.instagram",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/run_weekly.py"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "weekly_news"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "made_anchor",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "delivery_kind": "legacy_crosspost"
+    },
+    {
+      "id": "news.threads",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.threads",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "news.threads",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/run_weekly.py"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "weekly_news"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "delivery_kind": "legacy_crosspost",
+      "transform_constraints": {
+        "max_chars": 500,
+        "max_tags": 5,
+        "exclude_tag": "shorts",
+        "requires_cli_and_interpreter": true
+      }
+    },
+    {
+      "id": "news.x",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.x",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "news.x",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/run_weekly.py"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "weekly_news"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "delivery_kind": "legacy_crosspost"
+    },
+    {
+      "id": "news.tiktok",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "news.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": false,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/run_weekly.py"
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "weekly_news"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "tiktok_enabled",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "delivery_kind": "direct"
+    },
+    {
+      "id": "career.tiktok",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "career.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "activation_evidence": [
+        {
+          "kind": "config",
+          "key": "tiktok_web.daily",
+          "value": true
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        },
+        {
+          "kind": "installed_plist",
+          "key": "tiktok_queue",
+          "present": false,
+          "loaded": null,
+          "disabled": null
+        },
+        {
+          "kind": "automation_note",
+          "key": "tiktok_web.daily",
+          "value": false,
+          "stale": true
+        },
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/tiktok_queue.py",
+          "symbol": "add",
+          "delay_seconds": 1800
+        }
+      ],
+      "delay_seconds": 1800,
+      "delay_owner": "legacy_queue_add",
+      "min_gap_seconds": 10800,
+      "window": {
+        "start": "07:00",
+        "end": "23:00",
+        "timezone": "Asia/Seoul"
+      },
+      "dedupe_strategy": "legacy_video_path",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "publish_career"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "queue_source": "publish_career",
+      "queue_constraints": {
+        "max_age_days": 14,
+        "max_tries": 5,
+        "excluded_states": [
+          "skipped",
+          "posted"
+        ],
+        "requires_video_exists": true,
+        "hold_until": true,
+        "ordering": [
+          "new_before_backfill",
+          "priority",
+          "not_before"
+        ],
+        "backfill_quiet_seconds": 10800,
+        "infrastructure_error_increments_tries": false,
+        "repeated_screen_error_hold": {
+          "count": 2,
+          "until": "next_midnight"
+        }
+      }
+    },
+    {
+      "id": "career.instagram",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.instagram",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "career.instagram",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/publish_career.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekday": "tuesday",
+          "time": "20:00"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "publish_career"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "no_ig",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "queue_source": "publish_career"
+    },
+    {
+      "id": "career.threads",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.threads",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "career.threads",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/publish_career.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekday": "tuesday",
+          "time": "20:00"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "publish_career"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "field": "no_threads",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "queue_source": "publish_career"
+    },
+    {
+      "id": "career.x",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.x",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "career.x",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/publish_career.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekday": "tuesday",
+          "time": "20:00"
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "publish_career"
+          },
+          {
+            "field": "youtube_success",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "queue_source": "publish_career"
+    },
+    {
+      "id": "disaster.tiktok",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.tiktok",
+      "trigger": {
+        "any": [
+          {
+            "field": "phase",
+            "value": "scheduled"
+          },
+          {
+            "field": "phase",
+            "value": "uploaded"
+          }
+        ]
+      },
+      "allowed_slots": [],
+      "transform_id": "disaster.tiktok",
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "activation_evidence": [
+        {
+          "kind": "config",
+          "key": "tiktok_web.daily",
+          "value": true
+        },
+        {
+          "kind": "config",
+          "key": "tiktok.enabled",
+          "value": false
+        },
+        {
+          "kind": "installed_plist",
+          "key": "tiktok_queue",
+          "present": false,
+          "loaded": null,
+          "disabled": null
+        },
+        {
+          "kind": "automation_note",
+          "key": "tiktok_web.daily",
+          "value": false,
+          "stale": true
+        },
+        {
+          "kind": "code",
+          "path": "dept/youtube-shorts-auto/tiktok_queue.py",
+          "symbol": "add",
+          "delay_seconds": 1800
+        },
+        {
+          "kind": "code",
+          "path": "dept/disaster-shorts/tools/publish.py",
+          "line": 112
+        }
+      ],
+      "delay_seconds": 1800,
+      "delay_owner": "legacy_queue_add",
+      "min_gap_seconds": 10800,
+      "window": {
+        "start": "07:00",
+        "end": "23:00",
+        "timezone": "Asia/Seoul"
+      },
+      "dedupe_strategy": "legacy_video_path",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "value": "disaster_publish"
+          },
+          {
+            "field": "upload_response",
+            "value": true
+          }
+        ]
+      },
+      "may_change_youtube_visibility": false,
+      "queue_constraints": {
+        "max_age_days": 14,
+        "max_tries": 5,
+        "excluded_states": [
+          "skipped",
+          "posted"
+        ],
+        "requires_video_exists": true,
+        "hold_until": true,
+        "ordering": [
+          "new_before_backfill",
+          "priority",
+          "not_before"
+        ],
+        "backfill_quiet_seconds": 10800,
+        "infrastructure_error_increments_tries": false,
+        "repeated_screen_error_hold": {
+          "count": 2,
+          "until": "next_midnight"
+        }
+      },
+      "source_time_basis": "youtube_scheduled_at",
+      "queue_source": "shorts-disaster",
+      "ai_generated": true
+    },
+    {
+      "id": "disaster.instagram",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.instagram",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "disaster.instagram",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/disaster-shorts/tools/crosspost.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekdays": [
+            "tuesday",
+            "friday"
+          ],
+          "time": "19:30"
+        },
+        {
+          "kind": "installed_retry_plist",
+          "time": "21:00",
+          "present": false
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "disaster"
+          },
+          {
+            "field": "target_previous_state",
+            "op": "not_in",
+            "value": [
+              "published",
+              "shared_unconfirmed"
+            ]
+          }
+        ]
+      },
+      "may_change_youtube_visibility": true
+    },
+    {
+      "id": "disaster.blogger",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.blogger",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "disaster.blogger",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/disaster-shorts/tools/crosspost.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekdays": [
+            "tuesday",
+            "friday"
+          ],
+          "time": "19:30"
+        },
+        {
+          "kind": "installed_retry_plist",
+          "time": "21:00",
+          "present": false
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "disaster"
+          },
+          {
+            "field": "target_previous_state",
+            "op": "not_in",
+            "value": [
+              "published",
+              "shared_unconfirmed"
+            ]
+          }
+        ]
+      },
+      "may_change_youtube_visibility": true
+    },
+    {
+      "id": "disaster.naver_blog",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.naver_blog",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "disaster.naver_blog",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/disaster-shorts/tools/crosspost.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekdays": [
+            "tuesday",
+            "friday"
+          ],
+          "time": "19:30"
+        },
+        {
+          "kind": "installed_retry_plist",
+          "time": "21:00",
+          "present": false
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "disaster"
+          },
+          {
+            "field": "target_previous_state",
+            "op": "not_in",
+            "value": [
+              "published",
+              "shared_unconfirmed"
+            ]
+          }
+        ]
+      },
+      "may_change_youtube_visibility": true
+    },
+    {
+      "id": "disaster.threads",
+      "owner_account_id": "dept",
+      "source_connection_id": "dept.youtube",
+      "destination_connection_id": "dept.threads",
+      "trigger": {
+        "phase": "published"
+      },
+      "allowed_slots": [],
+      "transform_id": "disaster.threads",
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "activation_evidence": [
+        {
+          "kind": "code",
+          "path": "dept/disaster-shorts/tools/crosspost.py"
+        },
+        {
+          "kind": "installed_schedule",
+          "weekdays": [
+            "tuesday",
+            "friday"
+          ],
+          "time": "19:30"
+        },
+        {
+          "kind": "installed_retry_plist",
+          "time": "21:00",
+          "present": false
+        }
+      ],
+      "delay_seconds": 0,
+      "delay_owner": "none",
+      "min_gap_seconds": 0,
+      "window": null,
+      "dedupe_strategy": "legacy_state",
+      "conditions": {
+        "all": [
+          {
+            "field": "caller",
+            "op": "eq",
+            "value": "disaster"
+          },
+          {
+            "field": "target_previous_state",
+            "op": "not_in",
+            "value": [
+              "published",
+              "shared_unconfirmed"
+            ]
+          }
+        ]
+      },
+      "may_change_youtube_visibility": true
+    }
+  ]
+}
