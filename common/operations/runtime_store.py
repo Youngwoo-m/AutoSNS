@@ -345,10 +345,15 @@ class RuntimeStore:
         if not isinstance(production_requirements,(tuple,list)):raise StoreError('invalid')
         production_requirements=serial(production_requirements);production_ids=set()
         for item in production_requirements:
-            if not isinstance(item,dict) or set(item)!={'production_id','requirement'} or not isinstance(item['production_id'],str) or not item['production_id'] or item['production_id'] in production_ids:raise StoreError('invalid')
-            req=item['requirement']
-            if not isinstance(req,dict) or set(req)!={'bucket_id','amount'} or not isinstance(req['bucket_id'],str) or req['bucket_id'] in seen:raise StoreError('invalid')
-            positive(req['amount']);seen.add(req['bucket_id']);production_ids.add(item['production_id'])
+            if not isinstance(item,dict):raise StoreError('invalid')
+            if set(item)=={'production_id','requirement'}:
+                item['requirements']=[item.pop('requirement')]
+            if set(item)!={'production_id','requirements'} or not isinstance(item['production_id'],str) or not item['production_id'] or item['production_id'] in production_ids:raise StoreError('invalid')
+            if not isinstance(item['requirements'],list) or not item['requirements']:raise StoreError('invalid')
+            for req in item['requirements']:
+                if not isinstance(req,dict) or set(req)!={'bucket_id','amount'} or not isinstance(req['bucket_id'],str) or req['bucket_id'] in seen:raise StoreError('invalid')
+                positive(req['amount']);seen.add(req['bucket_id'])
+            production_ids.add(item['production_id'])
         with self._db(True) as c:
             self._delivery(c,delivery_id);id=reservation_id or ident('reservation')
             old=c.execute('SELECT id FROM quota_reservations WHERE id=?',(id,)).fetchone()
@@ -360,18 +365,18 @@ class RuntimeStore:
             for item in production_requirements:
                 prior=c.execute('SELECT * FROM quota_productions WHERE id=?',(item['production_id'],)).fetchone()
                 if prior:
-                    if json.loads(prior['requirements'])[0]['amount']!=item['requirement']['amount']:raise ConflictError()
+                    if {r['amount'] for r in json.loads(prior['requirements'])}!={r['amount'] for r in item['requirements']}:raise ConflictError()
                     if prior['state']!='released':continue
                     # Explicitly confirmed unproduced work may be reserved again.
                 new_productions.append(item)
             buckets=self._buckets(c)
-            for req in requirements+[p['requirement'] for p in new_productions]:
+            for req in requirements+[r for p in new_productions for r in p['requirements']]:
                 b=buckets.get(req['bucket_id'])
                 if not b or utc(b['expires_at'])<=utc(now) or utc(b['observed_at'])>utc(now):raise StoreError('quota_observation_required')
                 if b['observed_usage']+b['reserved']+req['amount']>b['capacity']:raise StoreError('quota_exceeded')
             c.execute("INSERT INTO quota_reservations(id,delivery_id,requirements,state,created_at) VALUES(?,?,?,'held',?)",(id,delivery_id,_json(requirements),stamp(now)))
             for item in new_productions:
-                c.execute("INSERT INTO quota_productions VALUES(?,?,'held',?,NULL) ON CONFLICT(id) DO UPDATE SET requirements=excluded.requirements,state='held',created_at=excluded.created_at,settled_at=NULL",(item['production_id'],_json([item['requirement']]),stamp(now)))
+                c.execute("INSERT INTO quota_productions VALUES(?,?,'held',?,NULL) ON CONFLICT(id) DO UPDATE SET requirements=excluded.requirements,state='held',created_at=excluded.created_at,settled_at=NULL",(item['production_id'],_json(item['requirements']),stamp(now)))
             for production_id in production_ids:
                 c.execute('INSERT INTO quota_production_links VALUES(?,?)',(id,production_id))
             return self._reservation(c,id)

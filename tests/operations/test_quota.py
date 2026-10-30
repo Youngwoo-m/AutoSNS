@@ -202,3 +202,42 @@ class QuotaTests(unittest.TestCase):
         settle_quota(s,rid,'submitted')
         self.assertEqual(s.get_reservation(rid)['state'],'settled')
         self.assertEqual(s.get_production(s.get_reservation(rid)['production_ids'][0])['state'],'settled')
+    def test_owner_daily_and_long_period_share_one_production(self):
+        s,ctx,reqs=self.setup_quota()
+        for r in reqs:
+            if r['scope_kind']!='owner':r['limit']=10
+        long=dict(reqs[-1],window_end=(NOW+timedelta(days=30)).isoformat(),limit=30)
+        reqs.append(long)
+        two,other=self.second_delivery(s,ctx['context']);other.append(dict(long))
+        first=reserve_quota(s,ctx,observed(reqs),NOW)
+        second=reserve_quota(s,two,observed(other),NOW)
+        self.assertEqual(len(s.list_productions()),1)
+        production=s.get_production(s.get_reservation(first)['production_ids'][0])
+        self.assertEqual(len(production['requirements']),2)
+        self.assertEqual(s.get_reservation(first)['production_ids'],s.get_reservation(second)['production_ids'])
+        for r in (reqs[-2],long):
+            id=bucket_id('owner','personal','posts',r['window_start'],r['window_end'])
+            self.assertEqual(next(b for b in s.quota_buckets() if b['id']==id)['reserved'],1)
+        s.settle_production(production['id'],now=NOW)
+        self.assertEqual(s.get_production(production['id'])['state'],'settled')
+        later=NOW+timedelta(days=1);new=requirements(later)
+        new[0]['limit']=10;new[1]['limit']=10;new.append(dict(long))
+        s.registry.policies['p']['quota_requirements']=new
+        obs=observed(new)
+        for r in new:
+            id=bucket_id(r['scope_kind'],r['scope_id'],r['metric'],r['window_start'],r['window_end'])
+            if r['scope_kind']=='owner':obs.pop(id)
+        reserve_quota(s,ctx,obs,later)
+        self.assertEqual(len(s.list_productions()),1)
+        self.assertEqual(s.get_production(production['id'])['requirements'],production['requirements'])
+    def test_owner_any_period_insufficient_rolls_back_all_reservations(self):
+        s,ctx,reqs=self.setup_quota()
+        reqs.append(dict(reqs[-1],window_end=(NOW+timedelta(days=30)).isoformat(),limit=30))
+        for blocked in (reqs[-1],reqs[-2]):
+            with self.subTest(period=blocked['window_end']):
+                obs=observed(reqs)
+                id=bucket_id('owner','personal','posts',blocked['window_start'],blocked['window_end'])
+                obs[id]['observed_usage']=blocked['limit']
+                with self.assertRaises(StoreError):reserve_quota(s,ctx,obs,NOW)
+                self.assertEqual(s.list_productions(),[])
+                self.assertTrue(all(b['reserved']==0 for b in s.quota_buckets()))

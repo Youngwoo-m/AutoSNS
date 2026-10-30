@@ -60,7 +60,7 @@ def reserve_quota(store, ctx, observed_usage, now):
         raise StoreError('quota_policy_required')
     if not isinstance(observed_usage, Mapping):
         raise StoreError('invalid')
-    requirements, productions, observations, kinds = [], [], [], set()
+    requirements, productions, observations, kinds = [], {}, [], set()
     for row in rows:
         if not isinstance(row, Mapping):
             raise StoreError('invalid_quota_policy')
@@ -86,7 +86,8 @@ def reserve_quota(store, ctx, observed_usage, now):
             identity = [context.owner_account_id, context.content_id, context.content_revision,
                         context.manifest_hash, metric, production_label]
             production_id = 'production_' + hashlib.sha256(json.dumps(identity, separators=(',', ':')).encode()).hexdigest()
-            productions.append({'production_id': production_id, 'requirement': requirement})
+            production = productions.setdefault(production_id, {'production_id': production_id, 'requirements': []})
+            production['requirements'].append(requirement)
             existing = store.get_production(production_id)
             if existing is not None and existing['state'] != 'released':
                 # Creation belongs to its original accounting period. Reposting
@@ -107,7 +108,8 @@ def reserve_quota(store, ctx, observed_usage, now):
             old = next((b for b in store.quota_buckets() if b['id'] == id), None)
             if old is None or old['capacity'] != limit:
                 raise StoreError('quota_observation_required')
-    all_requirements = requirements + [p['requirement'] for p in productions]
+    productions = list(productions.values())
+    all_requirements = requirements + [r for p in productions for r in p['requirements']]
     if kinds != {'target', 'api', 'owner'} or len({r['bucket_id'] for r in all_requirements}) != len(all_requirements):
         raise StoreError('invalid_quota_policy')
     # Observations do not consume capacity. All reservations are made together by
