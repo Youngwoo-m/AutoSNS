@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from collections.abc import Mapping
 from .content_store import StoreError, ConflictError
 from .runtime_models import ExecutionPolicy, RunLease, utc
+from .models import Registry
 
 _PROCESS_STARTED_AT = datetime.now(timezone.utc).isoformat()
 _FIELDS = {'job_id', 'scheduled_at_utc', 'phase', 'source', 'request_kind', 'mode'}
@@ -20,7 +21,7 @@ def _connections(job):
     return ids
 
 
-def submit_trigger(store, request, registry, policy):
+def submit_trigger(store, request, registry, policy, *, production_policy_resolver=None):
     """새 회차를 원자 기록하고 resume은 알려진 회차만 반환한다."""
     if not isinstance(request, dict) or set(request) != _FIELDS:
         raise StoreError('invalid_request')
@@ -36,12 +37,38 @@ def submit_trigger(store, request, registry, policy):
         raise StoreError('unknown_job')
     if job.get('execution_owner') != 'managed' or job.get('schedule_owner') not in ('launchd', 'console'):
         raise StoreError('legacy_owner')
+    # 회차의 source는 현재 schedule owner로 고정한다. caller source 검증은
+    # entrypoints에서 먼저 수행하며 console/launchd 재전송은 같은 회차다.
+    normalized['source'] = job['schedule_owner']
     if job.get('enabled') is not True:
         raise StoreError('job_disabled')
     job_policy = registry.policies.get(job.get('policy_revision'))
     if not isinstance(job_policy, Mapping):
         raise StoreError('unknown_policy')
-    ids = _connections(job)
+    production = job.get('kind') == 'production'
+    if production:
+        if not isinstance(registry, Registry):
+            raise StoreError('invalid_registry')
+        if request['phase'] != 'prepare':
+            raise StoreError('invalid_production_phase')
+        if any(job.get(name) is not None for name in
+               ('connection_id', 'connection_ids', 'target_id', 'credential_ref', 'profile_ref')):
+            raise StoreError('invalid_production_target')
+        if not callable(production_policy_resolver):
+            raise StoreError('production_policy_unavailable')
+        # A4의 명시 정책 resolver만 허용한다. bool/누락은 허가로 해석하지 않는다.
+        from .production_models import ProviderPolicy
+        resolved = production_policy_resolver(job, registry, policy)
+        if not isinstance(resolved, ProviderPolicy):
+            raise StoreError('production_policy_unavailable')
+        base_job_id = job.get('base_job_id', request['job_id'])
+        if resolved.owner_account_id != job.get('owner_account_id') or base_job_id not in resolved.job_ids:
+            raise StoreError('provider_policy_violation')
+        if job_policy.get('subscription_only') is True and resolved.subscription_only is not True:
+            raise StoreError('provider_policy_violation')
+        ids = []
+    else:
+        ids = _connections(job)
     for id in ids:
         connection = registry.connections.get(id)
         if connection is None:

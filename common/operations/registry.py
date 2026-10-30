@@ -68,6 +68,13 @@ def load_registry(path: Path) -> Registry:
             connections[key] = Connection(**{k: v for k, v in dict(row, id=key).items() if k in allowed})
         tables['connections'] = connections
         for row in tables['jobs'].values():
+            if row.get('execution_owner') not in ('managed', 'legacy'):
+                raise ContractError('invalid_registry')
+            if row.get('kind') not in (None, 'publication', 'production'):
+                raise ContractError('invalid_registry')
+            # 콘텐츠별 binding job은 서버가 저장 binding을 검증한 뒤에만 추가한다.
+            if 'base_job_id' in row or 'binding_id' in row:
+                raise ContractError('invalid_registry')
             if row.get('schedule_owner') not in ('launchd', 'console'):
                 if not (row.get('schedule_owner') is None and row.get('execution_owner') == 'legacy' and row.get('planning_enabled') is False):
                     raise ContractError('invalid_registry')
