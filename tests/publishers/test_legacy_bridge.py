@@ -47,7 +47,7 @@ def bootstrap():
     def handler(ctx,payload,credentials):
         {leaf or "(ROOT/'mutations').open('a').write('1')"}
         return {{'outcome':'submitted','remote_id':'fixture-remote'}}
-    return BridgeHost(registry,catalog,store,locks,{{('fixture','publish'):handler,('fixture','inspect_target'):lambda c,p,k:{{'platform':'tistory','target_id':'t'}}}},clock=lambda:datetime.fromisoformat({NOW.isoformat()!r}))
+    return BridgeHost(registry,catalog,store,locks,{{('fixture','publish'):handler,('fixture','inspect_target'):lambda c,p,k:{{'platform':'tistory','target_id':'t'}}}},clock=lambda:datetime.fromisoformat({NOW.isoformat()!r}),module_root=ROOT)
 if __name__=='__main__':
     raise SystemExit(main(bootstrap=bootstrap,bootstrap_module=__spec__.name))
 '''
@@ -55,7 +55,7 @@ if __name__=='__main__':
     def bridge(self, spawn=None):
         from common.publishers.legacy_bridge import LegacyBridge
         return LegacyBridge(self.registry,self.catalog,self.store,self.store.locks,
-                            spawn=spawn or subprocess.Popen,clock=lambda:NOW)
+                            spawn=spawn or subprocess.Popen,clock=lambda:NOW,module_root=self.root)
 
     def consumed(self):
         permit=self.ready()
@@ -354,6 +354,58 @@ if __name__=='__main__':"""
                         self.ctx.context_hash,'revoked',self.ctx.review_report_hashes,decision='revoked')
         self.assertEqual(path.read_bytes(),before)
         self.store.locks=saved_locks
+
+    def test_module_lookup_uses_trusted_root_with_distinct_legacy_cwd(self):
+        permit=self.consumed()
+        legacy=self.root/'legacy-project';legacy.mkdir()
+        self.spec=replace(self.spec,cwd=legacy);self.catalog=ExecutionCatalog({'fixture':self.spec})
+        source=self.fixture_source().replace("sys.executable,ROOT,'fixture_bridge'",
+            "sys.executable,Path("+repr(str(legacy))+"),'fixture_bridge'")
+        self.module.write_text(source)
+        (legacy/'common.py').write_text("from pathlib import Path; Path("+repr(str(self.root/'shadow-loaded'))+").write_text('bad'); raise RuntimeError('cwd shadow')")
+        result=None
+        with self.held():
+            try:result=self.bridge().submit('fixture',self.ctx,{},permit)
+            except Exception:pass
+        self.assertIsNotNone(result,'registered module must resolve from server code root, independently of cwd')
+        self.assertFalse((self.root/'shadow-loaded').exists())
+        self.assertEqual(self.marker.read_text(),'1')
+
+    def test_real_child_cwd_common_shadow_is_never_imported(self):
+        permit=self.consumed()
+        legacy=self.root/'legacy-project';legacy.mkdir()
+        self.spec=replace(self.spec,cwd=legacy);self.catalog=ExecutionCatalog({'fixture':self.spec})
+        source=self.fixture_source().replace("sys.executable,ROOT,'fixture_bridge'",
+            "sys.executable,Path("+repr(str(legacy))+"),'fixture_bridge'")
+        self.module.write_text(source)
+        # 이전 cwd 기반 lookup도 통과시켜 실제 Python import shadow를 재현한다.
+        (legacy/'fixture_bridge.py').write_text(source)
+        (legacy/'common.py').write_text("from pathlib import Path; Path("+repr(str(self.root/'shadow-loaded'))+").write_text('bad'); raise RuntimeError('cwd shadow')")
+        result=None
+        from unittest.mock import patch
+        with self.held(),patch.dict(os.environ,{'PYTHONPATH':str(legacy),'PYTHONHOME':str(legacy)}):
+            try:result=self.bridge().submit('fixture',self.ctx,{},permit)
+            except Exception:pass
+        self.assertFalse((self.root/'shadow-loaded').exists(),'legacy cwd common.py must never execute')
+        self.assertIsNotNone(result)
+        self.assertEqual(self.marker.read_text(),'1')
+
+    def test_default_managed_module_is_found_in_code_root_not_legacy_cwd(self):
+        from common.publishers.legacy_bridge import _registered_spec
+        legacy=self.root/'legacy-project';legacy.mkdir()
+        spec=replace(self.spec,cwd=legacy,module='common.publishers.bridge_host')
+        self.assertEqual(_registered_spec(ExecutionCatalog({'fixture':spec}),'fixture'),spec)
+
+    def test_fixed_interpreter_without_isolation_support_is_unavailable_no_fallback(self):
+        interpreter=self.root/'unsupported-python'
+        interpreter.write_text('#!'+sys.executable+' -I\nfrom pathlib import Path\nPath('+repr(str(self.root/'capability-checked'))+").write_text('1')\nraise SystemExit(78)\n")
+        interpreter.chmod(0o700)
+        self.spec=replace(self.spec,interpreter=str(interpreter));self.catalog=ExecutionCatalog({'fixture':self.spec})
+        permit=self.consumed();spawn=Mock()
+        with self.held():
+            with self.assertRaisesRegex(Exception,'bridge_unavailable'):self.bridge(spawn).submit('fixture',self.ctx,{},permit)
+        self.assertEqual((self.root/'capability-checked').read_text(),'1')
+        spawn.assert_not_called();self.assertFalse(self.marker.exists())
 
     def test_default_host_is_unavailable(self):
         from common.publishers.bridge_host import main

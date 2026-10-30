@@ -17,6 +17,8 @@ from common.shared.axlock import _canon, read_control_state
 READ_ACTIONS = frozenset(('inspect_target', 'lookup', 'verify'))
 MAX_JSON = 1024 * 1024
 SAFE_ENV = frozenset(('LANG', 'LC_ALL', 'LC_CTYPE', 'TZ', 'PATH'))
+CODE_ROOT = Path(__file__).resolve().parents[2]
+_ISOLATED_INTERPRETERS = set()
 
 
 def _json_bytes(value):
@@ -51,15 +53,53 @@ def resolve_registered_credentials(connection_id, *, registry, credential_catalo
     return resolver(reference,account_id=connection.account_id,platform=connection.platform,scope=scope)
 
 
-def _registered_spec(catalog,executor_id):
+def _trusted_roots(module_root=None):
+    roots=[CODE_ROOT]
+    if module_root is not None:
+        extra=Path(module_root)
+        if not extra.is_absolute():raise ContractError('bridge_unavailable')
+        extra=extra.resolve()
+        if not extra.is_dir():raise ContractError('bridge_unavailable')
+        if extra!=CODE_ROOT:roots.append(extra)
+    return roots
+
+
+def _registered_spec(catalog,executor_id,*,module_root=None):
     spec=catalog.executors.get(executor_id)
     if spec is None:raise ContractError('bridge_unregistered_executor')
     if not Path(spec.interpreter).is_file() or not os.access(spec.interpreter,os.X_OK) or not spec.cwd.is_dir():
         raise ContractError('bridge_unavailable')
-    module_path=spec.cwd.joinpath(*spec.module.split('.'))
-    if not module_path.with_suffix('.py').is_file() and not (module_path/'__init__.py').is_file():
-        raise ContractError('bridge_unavailable')
-    return spec
+    # cwd는 legacy 작업 위치다. 관리 코드나 launcher의 검색 루트가 아니다.
+    for root in _trusted_roots(module_root):
+        module_path=root.joinpath(*spec.module.split('.'))
+        candidates=(module_path.with_suffix('.py'),module_path/'__init__.py')
+        if any(path.is_file() and path.resolve().is_relative_to(root) for path in candidates):
+            return spec
+    raise ContractError('bridge_unavailable')
+
+
+def _ensure_isolated_interpreter(interpreter):
+    """선택된 interpreter의 -I 지원만 고정 코드로 확인한다. fallback 없음."""
+    info=Path(interpreter).stat()
+    key=(interpreter,info.st_dev,info.st_ino,info.st_mtime_ns,info.st_size)
+    if key in _ISOLATED_INTERPRETERS:return
+    try:
+        result=subprocess.run([interpreter,'-I','-c',
+            "import sys;sys.exit(0 if sys.flags.isolated and sys.version_info>=(3,10) else 78)"],
+            cwd=str(CODE_ROOT),env={'LC_ALL':'C','PATH':'/usr/bin:/bin'},
+            stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=5)
+    except (OSError,subprocess.TimeoutExpired) as exc:raise ContractError('bridge_unavailable') from exc
+    if result.returncode:raise ContractError('bridge_unavailable')
+    _ISOLATED_INTERPRETERS.add(key)
+
+
+def _bootstrap_code(module,module_root=None):
+    # import runpy는 -I의 표준 검색 경로에서 끝낸다. 그 뒤 서버가 고른 루트만
+    # 앞에 넣는다. cwd/빈문자열/PYTHONPATH를 bootstrap 검색에 사용하지 않는다.
+    roots=[str(root) for root in _trusted_roots(module_root)]
+    return ('import sys,runpy;sys.path[:0]='+repr(roots)+';'
+            'sys.argv=['+repr(module)+',*sys.argv[1:]];'
+            'runpy.run_module('+repr(module)+",run_name='__main__',alter_sys=True)")
 
 
 def _connection(registry,ctx):
@@ -141,13 +181,14 @@ def _clear(locks):
 
 
 class LegacyBridge:
-    def __init__(self,registry,catalog,store,locks,*,spawn=subprocess.Popen,clock=None):
+    def __init__(self,registry,catalog,store,locks,*,spawn=subprocess.Popen,clock=None,module_root=None):
         self.registry=registry;self.catalog=catalog;self.store=store;self.locks=locks
+        self.module_root=module_root
         self.spawn=spawn;self.clock=clock or (lambda:datetime.now(timezone.utc));self.timeout=60
 
     def read(self,executor_id,action,context,payload):
         if action not in READ_ACTIONS:raise ContractError('bridge_read_action_required')
-        spec=_registered_spec(self.catalog,executor_id)
+        spec=_registered_spec(self.catalog,executor_id,module_root=self.module_root)
         if not set(spec.phases)&{'submit','verify'}:raise ContractError('bridge_action_unregistered')
         if isinstance(context,PublicationContext):context=context.to_dict()
         if not isinstance(payload,Mapping):raise ContractError('bridge_invalid_payload')
@@ -158,7 +199,7 @@ class LegacyBridge:
         return self._call(spec,action,dict(context=context,payload=payload,parent=evidence),None)
 
     def submit(self,executor_id,ctx,prepared,permit):
-        spec=_registered_spec(self.catalog,executor_id)
+        spec=_registered_spec(self.catalog,executor_id,module_root=self.module_root)
         if len(spec.mutation_actions)!=1 or 'submit' not in spec.phases:raise ContractError('bridge_action_unregistered')
         if (not isinstance(ctx,PublicationContext) or not isinstance(permit,SubmissionPermit) or
             permit.context_hash!=ctx.context_hash or permit.run_id!=ctx.run_id or permit.expires_at<=utc(self.clock())):
@@ -182,8 +223,8 @@ class LegacyBridge:
     def _call(self,spec,action,request,nonce):
         raw=_json_bytes(request)
         env={key:os.environ[key] for key in spec.environment_names if key in SAFE_ENV and key in os.environ}
-        # 코드 위치는 서버가 결정한다. caller의 PYTHONPATH/AX_LOCKED는 계승하지 않는다.
-        env['PYTHONPATH']=str(Path(__file__).resolve().parents[2])
+        # caller의 PYTHONPATH/AX_LOCKED와 cwd의 import 우선권은 계승하지 않는다.
+        _ensure_isolated_interpreter(spec.interpreter)
         read_fd,write_fd=os.pipe()
         process=None
         try:
@@ -193,7 +234,8 @@ class LegacyBridge:
                 if len(encoded)>2048:raise ContractError('bridge_invalid_permit')
                 os.write(write_fd,encoded)
             os.close(write_fd);write_fd=None
-            argv=[spec.interpreter,'-m',spec.module,'--executor',spec.id,'--action',action,'--secret-fd',str(read_fd)]
+            argv=[spec.interpreter,'-I','-c',_bootstrap_code(spec.module,self.module_root),
+                  '--executor',spec.id,'--action',action,'--secret-fd',str(read_fd)]
             process=self.spawn(argv,cwd=str(spec.cwd),env=env,pass_fds=(read_fd,request['parent']['lock_fd']),stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
             os.close(read_fd);read_fd=None

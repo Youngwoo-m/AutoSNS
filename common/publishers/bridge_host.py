@@ -29,15 +29,16 @@ class _Discard:
 
 class BridgeHost:
     def __init__(self,registry,catalog,store,locks,handlers,*,credential_catalog=None,
-                 credential_resolver=None,clock=None):
+                 credential_resolver=None,clock=None,module_root=None):
         self.registry=registry;self.catalog=catalog;self.store=store;self.locks=locks
         self.store.locks=locks
+        self.module_root=module_root
         self.handlers=dict(handlers);self.credential_catalog=credential_catalog or {}
         self.credential_resolver=credential_resolver
         self.clock=clock or (lambda:datetime.now(timezone.utc))
 
     def execute(self,executor_id,action,request,nonce,*,bootstrap_module,parent_pid,secret_binding=None):
-        spec=_registered_spec(self.catalog,executor_id)
+        spec=_registered_spec(self.catalog,executor_id,module_root=self.module_root)
         if (spec.module!=bootstrap_module or Path(sys.executable).resolve()!=Path(spec.interpreter).resolve() or
             Path.cwd().resolve()!=spec.cwd.resolve()):raise ContractError('bridge_executor_mismatch')
         if not isinstance(request,dict):raise ContractError('bridge_invalid_json')
