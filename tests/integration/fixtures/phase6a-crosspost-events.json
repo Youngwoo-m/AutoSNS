@@ -29,11 +29,16 @@
     "registry_snapshot": "prepared",
     "pure_preview": "unit_tested",
     "pure_time_boundaries": "unit_tested",
-    "legacy_functional_comparison": "not_run",
-    "managed_queue_comparison": "not_run",
+    "legacy_functional_comparison": "normalized_predicates_and_selected_pure_ast_only_no_wrapper_execution",
+    "managed_queue_comparison": "6b_required_legacy_queue_preserved",
     "actual_runtime": "not_run",
     "live_auth": "not_run",
-    "live_publish": "not_run"
+    "live_publish": "not_run",
+    "legacy_pure_queue": "18_cases_executed",
+    "legacy_pure_failure": "3_policies_executed",
+    "legacy_pure_transform": "tiktok_career_disaster_executed",
+    "legacy_normalized_predicate_comparison": "28_events_23_paths_executed",
+    "isolated_a5_a8_runtime": "unit_and_integration_fixture_executed"
   },
   "rules": [
     {
@@ -2307,5 +2312,10 @@
     "notice_before_tags": true,
     "cross_line": "📌 유튜브·블로그 등 전 채널 모음 👉 url.kr/gitdat",
     "generative_caption_not_executed": true
+  },
+  "phase_scope_ruling": {
+    "authority": "parent_task_2026-10-31",
+    "phase6a": "기존 TikTok 큐 유지. legacy AST 계약과 관리 preview/earliest_post_time/intent의 대상·회차·지연 책임 및 추가 실행0을 비교한다.",
+    "phase6b_required": "관리 TikTok selector/adapter와 전체23경로 실제 전환은 필수 잔여다. 관리 큐 전체 동치나 운영 완료로 표현하지 않는다."
   }
 }
