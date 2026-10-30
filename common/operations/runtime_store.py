@@ -179,9 +179,37 @@ class RuntimeStore:
             return self._approval(c,delivery_id)
     def get_publication_approval(self,delivery_id):
         with self._db() as c:return self._approval(c,delivery_id) if self._v3(c) else None
-    def _check_approval(self,c,d,context_hash,approval_hash,now):
+    def refresh_auth_proof(self,delivery_id,expected_version,context,observation,now):
+        """신뢰하는 gate만 호출. 의도 고정, 최신 승인 CAS, 원장/unknown/예약 보존."""
+        if not isinstance(context,PublicationContext):raise StoreError('invalid')
+        with self._db(True) as c:
+            d=self._delivery(c,delivery_id,expected_version);old=PublicationContext(**d['context'])
+            if old.intent_hash!=context.intent_hash or context.auth_checked_at<old.auth_checked_at:raise ConflictError()
+            approval=self._approval(c,delivery_id)
+            if not approval or approval['decision']!='approved' or approval['context_hash']!=d['context_hash']:raise ConflictError()
+            self._check_approval(c,d,d['context_hash'],approval['approval_hash'],now,require_fresh_auth=False)
+            content=c.execute('SELECT current_revision FROM contents WHERE id=?',(context.content_id,)).fetchone()
+            if not content or content['current_revision']!=context.content_revision:raise ConflictError()
+            if context.context_hash==old.context_hash:return d
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
+            c.execute('UPDATE runtime_deliveries SET context=?,context_hash=?,version=version+1 WHERE id=?',(_json(context.to_dict()),context.context_hash,delivery_id))
+            # 재승인이 아니라 기존 승인 의도와 새 인증 증명의 결속. 원래 승인은 append-only 보존.
+            c.execute('INSERT INTO publication_approvals(delivery_id,context_hash,approval_hash,report_hashes,actor,decision,created_at) VALUES(?,?,?,?,?,?,?)',
+                (delivery_id,context.context_hash,approval['approval_hash'],_json(approval['report_hashes']),'server_auth_refresh','approved',stamp(now)))
+            self._event(c,delivery_id,'auth_proof_refreshed',dict(previous_context_hash=old.context_hash,context_hash=context.context_hash,intent_hash=context.intent_hash,source_approval_id=approval['id'],checked_at=stamp(now)))
+            self._event(c,delivery_id,'target_observation',observation)
+            return self._delivery(c,delivery_id)
+    def fail_preflight(self,delivery_id,expected_version,lease,now):
+        with self._db(True) as c:
+            d=self._delivery(c,delivery_id,expected_version)
+            run=self._run(c,d['run_id'])
+            if run['worker_id']!=lease.worker_id or run['generation']!=lease.generation or d['state']!='queued':raise ConflictError()
+            if c.execute('SELECT 1 FROM attempts WHERE delivery_id=? AND resolved=0',(delivery_id,)).fetchone():raise ConflictError()
+            self._state(c,delivery_id,'retry_wait')
+            self._event(c,delivery_id,'preflight_failed',dict(confirmed_not_submitted=True,checked_at=stamp(now)))
+    def _check_approval(self,c,d,context_hash,approval_hash,now,*,require_fresh_auth=True):
         a=self._approval(c,d['id'])
-        if d['context_hash']!=context_hash or not a or a['decision']!='approved' or a['context_hash']!=context_hash or a['approval_hash']!=approval_hash or utc(d['context']['auth_expires_at'])<=utc(now):raise ConflictError()
+        if d['context_hash']!=context_hash or not a or a['decision']!='approved' or a['context_hash']!=context_hash or a['approval_hash']!=approval_hash or (require_fresh_auth and utc(d['context']['auth_expires_at'])<=utc(now)):raise ConflictError()
         p=c.execute('SELECT payload FROM deliveries WHERE id=?',(d['id'],)).fetchone()
         if p:
             plan=json.loads(p[0])
@@ -269,7 +297,8 @@ class RuntimeStore:
             dead=dead and all(process_evidence.get(k)==identity.get(k) and identity.get(k) is not None for k in ('host_id','pid','started_at'))
             rows=[self._delivery(c,r[0]) for r in c.execute('SELECT id FROM runtime_deliveries WHERE run_id=?',(run_id,))]
             for d in rows:
-                if d['state'] not in ('running','submitting','retry_wait'):continue
+                if d['state'] not in ('queued','running','submitting','retry_wait'):continue
+                if d['state']=='queued' and run.get('resume_delivery_id') not in (None,d['id']):continue
                 lock=lock_evidence.get(d['id'],{}) if isinstance(lock_evidence,dict) else {}
                 free=lock.get('status')=='free' and lock.get('connection_id')==d['context']['connection_id']
                 evidence=dict(process=process_evidence,lock=lock,checked_at=stamp(now))
@@ -289,6 +318,12 @@ class RuntimeStore:
                         c.execute("UPDATE attempts SET outcome='failed',resolved=1,result=? WHERE id=?",(_json(result),a['id']))
                         self._state(c,d['id'],'retry_wait')
                 if not attempts and dead and free and d['state']!='retry_wait':self._state(c,d['id'],'retry_wait')
+                if dead and free:
+                    # reserve commit 직후 종료해 attempt가 없는 예약도 같은 죽음/잠금 증명으로 회수한다.
+                    orphans=[r[0] for r in c.execute("SELECT id FROM quota_reservations r WHERE delivery_id=? AND state='held' AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.reservation_id=r.id)",(d['id'],))]
+                    for reservation_id in orphans:
+                        c.execute("UPDATE quota_reservations SET state='released',settled_at=? WHERE id=?",(stamp(now),reservation_id))
+                        self._event(c,d['id'],'unstarted_reservation_released',dict(evidence,reservation_id=reservation_id,confirmed_not_submitted=True))
             return self._run(c,run_id)
 
     def submit_occurrence(self,request,request_hash=None):
@@ -507,7 +542,8 @@ class RuntimeStore:
                 if not safe:raise ConflictError()
             approval=self._approval(c,delivery_id)
             if not approval:raise ConflictError()
-            self._check_approval(c,d,d['context_hash'],approval['approval_hash'],now)
+            # 로컬 재개는 외부 요청 권한이 아니다. 새 worker가 잠금 아래 인증을 다시 관측한다.
+            self._check_approval(c,d,d['context_hash'],approval['approval_hash'],now,require_fresh_auth=False)
             self._state(c,delivery_id,'queued')
             c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
             c.execute("UPDATE runtime_runs SET state='queued',version=version+1,worker_id=NULL,lease_expires_at=NULL,process_identity=NULL WHERE id=?",(d['run_id'],))

@@ -56,7 +56,7 @@ def recover_expired_runs(store, now, process_probe, *, lock_probe=None):
         if not run.get('lease_expires_at') or utc(run['lease_expires_at']) > now:
             continue
         deliveries = [d for d in store.list_operations() if d['run_id'] == run['id']]
-        if not any(d['state'] in ('running', 'submitting', 'retry_wait') for d in deliveries):
+        if not any(d['state'] in ('queued', 'running', 'submitting', 'retry_wait') for d in deliveries):
             continue
         process = _process_evidence(run.get('process_identity'), process_probe)
         locks = {d['id']: _lock_evidence(d['context'], lock_probe) for d in deliveries}

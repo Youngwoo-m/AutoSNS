@@ -101,7 +101,28 @@ def build_publication_context(store,delivery_id,observed_target,review_evidence,
     subject=type('ReviewSubject',(),values)()
     values['review_report_hashes']=validate_reviews(review_evidence,job_policy,subject,_review_records(store,values['content_id'],values['content_revision'],values['manifest_hash']),now)
     ctx=PublicationContext(**values)
-    if existing and (existing['run_id']!=run_id or existing['context_hash']!=ctx.context_hash):raise ContractError('publication_context_changed')
+    if existing and (existing['run_id']!=run_id or PublicationContext(**existing['context']).intent_hash!=ctx.intent_hash):raise ContractError('publication_context_changed')
+    return ctx
+
+
+def refresh_auth_observation(store,delivery_id,observed_target,now,*,expected_version):
+    """서버 전용. live 정책/프로필 잠금 아래 읽기 관측을 검증하고 CAS 결합한다."""
+    delivery=store.get_delivery(delivery_id)
+    if not delivery or delivery['version']!=expected_version:raise ContractError('conflict')
+    old=PublicationContext(**delivery['context'])
+    require_publication_approval(store,delivery_id,old)
+    observations=[e['evidence'] for e in store.events(delivery_id) if e['kind']=='target_observation']
+    if (not observations or not isinstance(observed_target,Mapping) or
+        observed_target.get('login_subject')!=observations[-1].get('login_subject')):
+        raise ContractError('target_mismatch')
+    events=_review_records(store,old.content_id,old.content_revision,old.manifest_hash)
+    producers=[e['evidence'] for e in events if e['kind']=='production_provenance']
+    reports=[e['evidence'] for e in events if e['kind']=='independent_review' and e['evidence'].get('report_hash') in old.review_report_hashes]
+    if not producers:raise ContractError('publication_evidence_required')
+    ctx=build_publication_context(store,delivery_id,observed_target,{'producer':producers[-1],'reports':reports},store.execution_policy,now)
+    # 토큰/임의 adapter 필드는 저장하지 않는다.
+    observation={key:observed_target[key] for key in ('platform','target_id','authenticated','login_subject','verification_method','checked_at','expires_at')}
+    store.refresh_auth_proof(delivery_id,expected_version,ctx,observation,now)
     return ctx
 
 
@@ -139,6 +160,8 @@ def _clock(now):
 
 
 def _time_valid(store,ctx,lease,now,permit=None):
+    from .dispatch import run_is_due
+    if not run_is_due(store.get_run(ctx.run_id),now):raise ContractError('run_not_due')
     max_age=store.registry.policies[ctx.policy_revision].get('auth_max_age_seconds',300)
     if not ctx.auth_checked_at<=now<ctx.auth_expires_at or now-ctx.auth_checked_at>timedelta(seconds=max_age):
         raise ContractError('authentication_expired')

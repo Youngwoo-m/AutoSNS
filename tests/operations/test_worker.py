@@ -8,7 +8,7 @@ class WorkerTests(unittest.TestCase):
         from common.operations.worker import run_once
         store=Mock();adapter=Mock()
         self.assertIsNone(run_once(store,Mock(),{'x':adapter},ExecutionPolicy(),Mock(),NOW))
-        store.list_runs.assert_not_called();adapter.submit.assert_not_called()
+        store.list_runs.assert_not_called();adapter.submit.assert_not_called();adapter.inspect_target.assert_not_called()
     def test_empty_factory(self):
         from common.publishers import build_adapters
         self.assertEqual(build_adapters(),{})
@@ -26,8 +26,9 @@ class WorkerBoundaryTests(GateFixture):
             self.store.observe_bucket(bucket_id(req['scope_kind'],req['scope_id'],req['metric'],start,end),5,0,NOW,end)
     def test_live_fake_adapter_without_transaction_and_unknown_no_resend(self):
         from common.operations.worker import run_once
-        self.observe_quota();calls=[];store=self.store
+        self.observe_quota();calls=[];store=self.store;observed=self.observed
         class FakeAdapter:
+            def inspect_target(self,ctx):return observed
             def prepare(self,ctx,snapshot):return {'title':snapshot['title']}
             def submit(self,ctx,prepared,permit):
                 with closing(sqlite3.connect(store.root/'operations.sqlite3',timeout=0)) as db:
@@ -55,10 +56,10 @@ class WorkerBoundaryTests(GateFixture):
         for mode in ('dry','shadow'):
             store=Mock();store.list_runs.return_value=[{'id':'r','occurrence':{'mode':mode,'phase':'submit'}}];store.list_operations.return_value=[]
             adapter=Mock();self.assertIsNone(run_once(store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW))
-            adapter.submit.assert_not_called();adapter.prepare.assert_not_called();store.claim_run.assert_not_called()
+            adapter.submit.assert_not_called();adapter.prepare.assert_not_called();adapter.inspect_target.assert_not_called();store.claim_run.assert_not_called()
     def test_success_submits_once(self):
         from common.operations.worker import run_once
-        self.observe_quota();adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture-id')
+        self.observe_quota();adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture-id')
         self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d')
         self.assertEqual(self.store.get_delivery('d')['state'],'uploaded');self.assertEqual(adapter.submit.call_count,1)
 
@@ -77,14 +78,15 @@ class MultipleDeliveryTests(WorkerBoundaryTests):
         ctx2=replace(self.ctx,schedule_slot='slot2')
         self.store.create_delivery('d2',self.run,ctx2);self.store.record_evidence('d2','target_observation',self.observed)
         self.store.record_publication_approval('d2',1,ctx2.context_hash,'second',ctx2.review_report_hashes)
-        adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
+        adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
         self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d2')
         self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d')
         self.assertEqual(adapter.submit.call_count,2)
     def test_adapter_nonce_never_enters_result_or_error(self):
         from common.operations.worker import run_once
-        self.observe_quota();seen=[]
+        self.observe_quota();seen=[];observed=self.observed
         class FakeAdapter:
+            def inspect_target(self,ctx):return observed
             def prepare(self,*args):return {}
             def submit(self,ctx,prepared,permit):
                 seen.append(permit.nonce)
@@ -112,7 +114,7 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
         from common.operations.worker import run_once
         from common.operations.quota import reserve_quota
         from unittest.mock import patch
-        self.observe_quota();adapter=Mock();adapter.prepare.return_value={}
+        self.observe_quota();adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={}
         def competing_revoke(*args,**kwargs):
             reservation=reserve_quota(*args,**kwargs);self.revoke();return reservation
         with patch('common.operations.worker.reserve_quota',side_effect=competing_revoke):
@@ -124,7 +126,7 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
     def test_cleanup_db_failure_reuses_one_logical_reservation(self):
         from common.operations.worker import run_once
         from unittest.mock import patch
-        self.observe_quota();adapter=Mock();adapter.prepare.return_value={}
+        self.observe_quota();adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={}
         # Approval remains valid; a transient final-gate failure and unavailable
         # cleanup must not allocate three independent target/API holds.
         with patch('common.operations.worker.authorize_submission',side_effect=RuntimeError('fixture gate failure')):
@@ -153,7 +155,7 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
             if state=='retry_wait':
                 with closing(sqlite3.connect(self.store.root/'operations.sqlite3')) as db:
                     db.execute("UPDATE runtime_deliveries SET state='retry_wait' WHERE id=?",(identity,));db.commit()
-        adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='selected-B')
+        adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='selected-B')
         self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'B')
         self.assertIsNone(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW))
         self.assertEqual(adapter.submit.call_count,1);self.assertEqual(self.store.attempts('C'),[])
@@ -171,9 +173,10 @@ class ApprovalQuotaTests(WorkerBoundaryTests):
         ctx2=replace(self.ctx,run_id=run2,schedule_slot='new-run-slot')
         self.store.create_delivery('d2',run2,ctx2);self.store.record_evidence('d2','target_observation',self.observed)
         self.store.record_publication_approval('d2',1,ctx2.context_hash,'new',ctx2.review_report_hashes)
-        adapter=Mock();adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
-        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d2')
+        adapter=Mock();adapter.inspect_target.return_value=self.observed;adapter.prepare.return_value={};adapter.submit.return_value=SubmissionResult('submitted',remote_id='fixture')
         self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW),'d')
+        self.assertIsNone(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW))
+        self.assertEqual(run_once(self.store,self.registry,{'x':adapter},self.policy,self.store.locks,NOW+timedelta(minutes=1)),'d2')
         first=self.store.attempts('d')[0]['reservation_id'];second=self.store.attempts('d2')[0]['reservation_id']
         self.assertNotEqual(first,second)
         self.assertEqual(self.store.get_reservation(first)['delivery_id'],'d');self.assertEqual(self.store.get_reservation(second)['delivery_id'],'d2')

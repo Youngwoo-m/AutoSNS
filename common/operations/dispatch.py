@@ -81,6 +81,11 @@ def submit_trigger(store, request, registry, policy):
     return store.submit_occurrence(normalized)
 
 
+def run_is_due(run, now):
+    scheduled=(run.get('occurrence') or {}).get('scheduled_at_utc')
+    return scheduled is not None and utc(scheduled)<=utc(now)
+
+
 def claim_next_run(store, worker_id, now, lease_seconds):
     now = utc(now)
     if (not isinstance(worker_id, str) or not worker_id or type(lease_seconds) not in (int, float)
@@ -88,9 +93,7 @@ def claim_next_run(store, worker_id, now, lease_seconds):
         raise StoreError('invalid')
     identity = {'host_id': socket.gethostname(), 'pid': os.getpid(), 'started_at': _PROCESS_STARTED_AT}
     for run in store.list_runs(state='queued'):
-        occurrence = run.get('occurrence') or {}
-        scheduled = occurrence.get('scheduled_at_utc')
-        if scheduled is None or utc(scheduled) > now:
+        if not run_is_due(run, now):
             continue
         try:
             return store.claim_run(run['id'], worker_id, identity, now, lease_seconds,

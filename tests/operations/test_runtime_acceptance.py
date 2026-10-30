@@ -31,6 +31,11 @@ class RemoteFixture:
         self.lookups = 0
         self.verifications = 0
 
+    def inspect_target(self, context):
+        return dict(platform=context.platform, target_id=context.target_id, authenticated=True,
+                    login_subject='subject', verification_method='fixture',
+                    checked_at=NOW.isoformat(), expires_at=(NOW+timedelta(hours=1)).isoformat())
+
     def prepare(self, context, snapshot):
         return {'body_sha256': hashlib.sha256(snapshot['original'].encode()).hexdigest(),
                 'media_sha256': [a['sha256'] for a in snapshot['assets']]}

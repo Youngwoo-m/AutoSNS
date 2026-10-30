@@ -70,6 +70,12 @@ class PublicationContext(RuntimeModel):
         if self.auth_checked_at>=self.auth_expires_at:raise ContractError('invalid_time')
     @property
     def context_hash(self):return hashlib.sha256(json.dumps(self.to_dict(),sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+    @property
+    def intent_hash(self):
+        """승인 의도는 인증 관측 시각만 제외한다. 전체 context_hash 검증은 유지한다."""
+        values=self.to_dict()
+        for name in ('auth_checked_at','auth_expires_at'):values.pop(name)
+        return hashlib.sha256(json.dumps(values,sort_keys=True,separators=(',',':'),ensure_ascii=False,allow_nan=False).encode()).hexdigest()
 
 
 @dataclass(frozen=True)

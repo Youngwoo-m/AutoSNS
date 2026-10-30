@@ -6,7 +6,8 @@ import socket
 import hashlib
 from .models import ContractError, thaw
 from .runtime_models import PublicationContext, SubmissionResult, utc
-from .publication_gate import authorize_submission, consume_permit, _inputs, _snapshot, fresh_lease, require_publication_approval
+from .publication_gate import authorize_submission, consume_permit, _inputs, _snapshot, fresh_lease, require_publication_approval, refresh_auth_observation, check_policy, _clear
+from .dispatch import run_is_due
 
 from .quota import reserve_quota, settle_quota
 
@@ -44,7 +45,7 @@ def run_once(store,registry,adapters,policy,locks,now):
     def current_time():return utc(now)+timedelta(seconds=time.monotonic()-started)
     # mode/phase 필터를 claim 전에 적용해 dry/shadow에서 adapter 호출 0.
     identity=_identity()
-    eligible={r['id']:r for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
+    eligible={r['id']:r for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and run_is_due(r,current_time()) and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
     deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state']=='queued' and d['context']['connection_id'] in adapters and eligible[d['run_id']].get('resume_delivery_id') in (None,d['id'])]
     if not deliveries:return None
     delivery=deliveries[0];run=store.get_run(delivery['run_id'])
@@ -52,6 +53,9 @@ def run_once(store,registry,adapters,policy,locks,now):
     ctx=PublicationContext(**delivery['context']);adapter=adapters[ctx.connection_id]
     require_publication_approval(store,delivery['id'],ctx)
     connection=registry.connections[ctx.connection_id]
+    job=registry.jobs.get(run['occurrence']['job_id'])
+    if not job or job.get('enabled') is not True or job.get('execution_owner')!='managed':raise ContractError('job_disabled')
+    check_policy(policy,connection,registry.policies[ctx.policy_revision])
     # Profile refs are server-owned symbols; never accept a path or executor from a request.
     resource=connection.profile_ref
     profile=registry.profiles.get(resource) if resource else None
@@ -60,19 +64,29 @@ def run_once(store,registry,adapters,policy,locks,now):
     with locks.hold([profile['lock_resource']],job='managed-publication',wait=2400):
         # No SQLite transaction/control gate/lease was held during profile wait.
         run=store.get_run(ctx.run_id)
+        if not run_is_due(run,current_time()):return None
         if run.get('resume_delivery_id') not in (None,delivery['id']):return None
         if run['state']=='queued':
             lease=store.claim_run(run['id'],'managed-worker',identity,current_time(),expected_version=run['version'])
         elif run['state']=='running' and run.get('process_identity')==identity:
             lease=fresh_lease(store,ctx.run_id,current_time())
         else:return None
-        _inputs(store,ctx,current_time())
-        lease=fresh_lease(store,ctx.run_id,current_time())
-        snapshot=_snapshot(store,ctx.content_id,ctx.content_revision,ctx.manifest_hash)
-        approval=require_publication_approval(store,delivery['id'],ctx)
-        prepared=adapter.prepare(ctx,snapshot)  # contractual pure local work
-        # Stable across a crash before attempt creation; different delivery/run/version/ordinal never share it.
-        logical=f"{delivery['id']}:{ctx.run_id}:{ctx.context_hash}:{delivery['version']}:{len(store.attempts(delivery['id']))+1}"
+        try:
+            _clear(store)
+            observed=adapter.inspect_target(ctx)  # read-only, under the server profile lock
+            ctx=refresh_auth_observation(store,delivery['id'],observed,current_time(),expected_version=delivery['version'])
+            delivery=store.get_delivery(delivery['id'])
+            _inputs(store,ctx,current_time())
+            lease=fresh_lease(store,ctx.run_id,current_time())
+            snapshot=_snapshot(store,ctx.content_id,ctx.content_revision,ctx.manifest_hash)
+            approval=require_publication_approval(store,delivery['id'],ctx)
+            prepared=adapter.prepare(ctx,snapshot)  # contractual pure local work
+        except BaseException:
+            try:store.fail_preflight(delivery['id'],delivery['version'],lease,current_time())
+            except Exception:pass  # queued crash/DB failure is covered by expired-run recovery.
+            raise
+        # Auth-only proof refresh does not allocate another hold; explicit resume has a new generation.
+        logical=f"{delivery['id']}:{ctx.run_id}:{ctx.intent_hash}:{lease.generation}:{len(store.attempts(delivery['id']))+1}"
         reservation='worker_reservation_'+hashlib.sha256(logical.encode()).hexdigest()
         try:
             reserve_quota(store,{'delivery_id':delivery['id'],'context':ctx},{},current_time(),reservation_id=reservation)
