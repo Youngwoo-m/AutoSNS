@@ -120,6 +120,27 @@ class MetricsStore:
             saved, _ = self._append(conn, row, observation_key)
             return saved
 
+    def append_collection(self, observation, observation_key):
+        """시도 키를 원자 비교한다. 직접 record의 생성 시각만 최초 값으로 고정.
+
+        서버가 받은 완료시각은 result_fingerprint에도 들어가므로 변경시 충돌한다.
+        legacy/import append의 엄격한 payload 일치 계약은 바꾸지 않는다.
+        """
+        row = normalize_observation(observation)
+        _text(observation_key, limit=1000)
+        if row['source_kind'] != 'verified_delivery' or not row['source'].get('result_fingerprint'):
+            raise StoreError('invalid')
+        with self._db(True) as conn:
+            found = conn.execute('SELECT id,payload FROM observations WHERE observation_key=?', (observation_key,)).fetchone()
+            if found:
+                previous = json.loads(found['payload'])
+                comparison = dict(row, collected_at=previous['collected_at'])
+                if _json(comparison) != found['payload']:
+                    raise ConflictError()
+                return dict(previous, id=found['id'])
+            saved, _ = self._append(conn, row, observation_key)
+            return saved
+
     def list_observations(self, account_id='all'):
         _account(account_id, all_allowed=True)
         with self._db() as conn:

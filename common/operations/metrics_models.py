@@ -106,8 +106,15 @@ class MetricResult(_Model):
     basis: str = 'unknown'
     period: Mapping | None = None
     source: Mapping = field(default_factory=dict)
+    # 서버 수집 경계가 발급한다. 값/관측시각과 독립인 시도 ID와 완료시각.
+    collection_id: str | None = None
+    collected_at: str | None = None
 
     def __post_init__(self):
+        if (self.collection_id is None) != (self.collected_at is None):
+            _invalid()
+        _text(self.collection_id, nullable=True, limit=1000)
+        object.__setattr__(self, 'collected_at', _time(self.collected_at, nullable=True))
         if self.status not in ('ok', 'unsupported', 'error'):
             _invalid()
         for name in ('remote_id', 'target_id'):

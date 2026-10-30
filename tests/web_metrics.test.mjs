@@ -102,3 +102,44 @@ test('재조회로 사라진 관측 체크박스는 제목으로 이동하고 �
   let reads=0;const panel=await opened(apiFor({list:async()=>++reads===1?snapshot():snapshot([])}));const n=root(panel);field(n,'observation-zero').focus();await panel.load('all');assert.equal(document.activeElement.tagName,'h2');assert.equal(n.contains(document.activeElement),true);
   const external=document.createElement('input');external.focus();await panel.load('all');assert.equal(document.activeElement,external);
 });
+
+test('실제 importer→MetricsStore→GET의 색인·IG·YT·검색 수치를 의미와 단위로 모두 표시한다',async()=>{
+  const {execFileSync}=await import('node:child_process');
+  const data=JSON.parse(execFileSync('python3',['-m','tests.operations.test_metrics_final_fix','--emit-fixture'],{cwd:new URL('..',import.meta.url),encoding:'utf8'}));
+  const panel=await opened(apiFor({list:async()=>data}));const text=root(panel).textContent;
+  for(const label of [/색인 총수: 321/,/검사 수: 15/,/색인 확인 수: 12/,/미색인 수: 3/,/팔로워: 123/,/게시물 수: 4/,/저장 수: 7/,/구독자: 55/,/누적 조회수: 678/,/클릭률: 0.75/,/평균 게재순위: 2.5/,/검색어 수: 9/])assert.match(text,label);
+  assert.match(text,/비율 단위 미확인/);assert.doesNotMatch(text,/SECRET|75%|보고 조회수: 미수집/);
+});
+test('이름표 미정 수치는 안전한 상세에 원래 숫자로 남긴다',async()=>{
+  const panel=await opened(apiFor({list:async()=>snapshot([observation('other',{values:{'<img onerror=x>':1.25}})])}));
+  const detail=all(root(panel)).find(n=>n.tagName==='article').children.find(n=>n.tagName==='details');
+  assert.match(detail.textContent,/<img onerror=x>: 1.25/);assert.match(detail.textContent,/의미·단위 미확인/);assert.equal(all(detail).some(n=>n.tagName==='img'),false);
+});
+test('401→새 창 로그인→재조회→동일 제안 재시도는 기존 문서 입력과 키를 유지한다',async()=>{
+  let authenticated=false;const sent=[];
+  const panel=await opened(apiFor({list:async()=>{if(sent.length&&!authenticated)throw Object.assign(new Error(),{status:401});return snapshot();},createProposal:async body=>{sent.push(structuredClone(body));if(!authenticated)throw Object.assign(new Error(),{status:401});return {proposal:{id:'saved'}};}}));
+  await fill(panel);await submit(panel);const n=root(panel);
+  const link=all(n).find(n=>n.tagName==='a'&&n.href==='/login');assert.ok(link);assert.equal(link.target,'_blank');assert.match(link.rel,/noopener/);
+  assert.equal(panel.isDirty(),true);assert.equal(field(n,'proposal-note').value,'관측 근거 검토');
+  authenticated=true;await button(n,'로그인 완료 후 재조회').fire('click');
+  assert.equal(field(root(panel),'proposal-account').value,'personal');assert.equal(field(root(panel),'observation-zero').checked,true);assert.equal(field(root(panel),'proposal-title').value,'次の企画 <img onerror=x>');
+  await submit(panel);assert.deepEqual(sent[1],sent[0]);assert.equal(panel.isDirty(),false);
+});
+test('401 가져오기 복구와 다른 계정의 dirty·pending·busy 상태를 모두 보고한다',async()=>{
+  let authenticated=false,finish;const sent=[];
+  const panel=await opened(apiFor({importObservations:async body=>{sent.push({...body});if(!authenticated)throw Object.assign(new Error(),{status:401});await new Promise(done=>finish=done);return {};}}));
+  assert.equal(panel.isDirty(),false);await button(root(panel),'가져오기 미리보기').fire('click');assert.equal(panel.isDirty(),true);
+  await button(root(panel),'미리보기 명시 저장').fire('click');authenticated=true;await button(root(panel),'로그인 완료 후 재조회').fire('click');
+  const pending=button(root(panel),'미리보기 명시 저장').fire('click');assert.equal(panel.isBusy(),true);
+  panel.render({account:'dept',writable:true});assert.equal(panel.isDirty(),true);assert.equal(panel.isBusy(),true);
+  finish();await pending;assert.deepEqual(sent[1],sent[0]);assert.equal(panel.isBusy(),false);assert.equal(panel.isDirty(),false);
+});
+test('아주 작은 유효 수치는 실제 0으로 반올림하지 않고 모든 원래 숫자를 보존한다',async()=>{
+  const panel=await opened(apiFor({list:async()=>snapshot([observation('tiny',{values:{ctr:1e-25,unknown_value:1e-30}})])}));
+  const article=all(root(panel)).find(n=>n.tagName==='article');assert.match(article.textContent,/1e-25/);assert.match(article.textContent,/1e-30/);
+});
+test('미정 수치 상세도 Escape가 요약 버튼으로 포커스를 복귀시킨다',async()=>{
+  const panel=await opened(apiFor({list:async()=>snapshot([observation('unknown',{values:{custom:12}})])}));
+  const article=all(root(panel)).find(n=>n.tagName==='article');const detail=article.children.find(n=>n.tagName==='details');
+  detail.open=true;await detail.fire('keydown',{key:'Escape'});assert.equal(detail.open,false);assert.equal(document.activeElement.tagName,'summary');
+});

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 import json
+from uuid import uuid4
 
 from .content_store import StoreError
 from .metrics_models import MetricObservation, MetricResult, _time
@@ -73,20 +74,28 @@ def collect_delivery_metrics(ctx, remote_id, collector) -> MetricResult:
     """ctx/collector는 서버 주입 전용. 등록이 없으면 미지원, 예외는 고정 오류로 반환한다."""
     if not isinstance(ctx, MetricsContext) or ctx.remote_id != remote_id:
         raise StoreError('metrics_identity_mismatch')
+    collection_id = uuid4().hex
     if collector is None:
-        return MetricResult('unsupported', {}, None, ctx.remote_id, ctx.target_id, 'collection.unsupported')
-    try:
-        result = collector(ctx, remote_id)
-    except Exception:
-        return MetricResult('error', {}, None, ctx.remote_id, ctx.target_id, 'collection.error')
+        result = MetricResult('unsupported', {}, None, ctx.remote_id, ctx.target_id, 'collection.unsupported')
+    else:
+        try:
+            result = collector(ctx, remote_id)
+        except Exception:
+            result = MetricResult('error', {}, None, ctx.remote_id, ctx.target_id, 'collection.error')
     _check_result(ctx, result)
     safe = result.to_dict()
     safe['source'] = {}
+    safe['collection_id'] = collection_id
+    safe['collected_at'] = datetime.now(timezone.utc).isoformat()
     return MetricResult(**safe)
 
 
 def record_metrics(store, delivery_id, result, *, runtime_store=None, registry=None, observation_key=None):
-    """저장 직전 검증 상태를 다시 대조한다. 저장소 초기화는 명시 호출자의 책임이다."""
+    """수집 ID/명시 키만 재전송으로 취급. 둘 다 없는 직접 호출은 매번 새 시도.
+
+    collected_at 없는 직접 호출은 최초 저장 시각이 완료시각이며, 재전송은 그
+    시각까지 그대로 반환한다. 저장 직전 원장 재검증과 명시 initialize는 유지.
+    """
     runtime = runtime_store if runtime_store is not None else RuntimeStore(store.root, registry=registry)
     registry = registry if registry is not None else runtime.registry
     ctx = build_metrics_context(runtime, delivery_id, registry)
@@ -94,19 +103,22 @@ def record_metrics(store, delivery_id, result, *, runtime_store=None, registry=N
     # 외부 source에는 임의 응답·비밀값이 있을 수 있으므로 복사하지 않는다.
     result_data = result.to_dict()
     result_data.pop('source')
-    identity = dict(ctx.__dict__, result=result_data, request_key=observation_key)
+    identity = dict(ctx.__dict__, result=result_data)
     fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if observation_key is not None:
+        from .metrics_models import _text
+        _text(observation_key, limit=1000)
+    attempt_key = observation_key if observation_key is not None else result.collection_id or uuid4().hex
+    collection_key = hashlib.sha256(attempt_key.encode()).hexdigest()
     source = dict(content_revision=ctx.content_revision, manifest_hash=ctx.manifest_hash,
-                  verified_at=ctx.verified_at, collection_key=fingerprint)
-    for previous in store.list_observations():
-        if previous['source_kind'] == 'verified_delivery' and previous['source'].get('collection_key') == fingerprint:
-            return previous
+                  verified_at=ctx.verified_at, collection_key=collection_key,
+                  result_fingerprint=fingerprint)
     row = MetricObservation('verified_delivery', ctx.owner_account_id, ctx.destination_account_id,
                             ctx.platform, ctx.connection_id, ctx.target_id, ctx.remote_id, ctx.delivery_id,
                             ctx.content_id, '', result.status, result.values, result.observed_at,
-                            datetime.now(timezone.utc).isoformat(), None, result.definition_id,
+                            result.collected_at or datetime.now(timezone.utc).isoformat(), None, result.definition_id,
                             result.basis, result.period, source)
-    return store.append_observation(row, observation_key or 'metrics:' + fingerprint)
+    return store.append_collection(row, 'metrics:' + collection_key)
 
 
 _PLATFORMS = {'youtube': 'YouTube', 'naver_blog': '네이버 블로그', 'blogger': 'Blogger',

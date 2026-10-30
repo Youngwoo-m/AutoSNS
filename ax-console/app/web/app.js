@@ -68,7 +68,7 @@ function renderStatus() {
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
   $('.readonly-bar').textContent=writable()?'5단계 · 출처 기반 성과·기획제안 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'5단계 · 실제 자료·성과 조회 · 기존 STOP 읽기 전용';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
-  if(state.phase==='unauthorized') line.append(h('a',{href:'/login'},'로그인으로 이동'));
+  if(state.phase==='unauthorized') line.append(h('a',{href:'/login',target:'_blank',rel:'noopener noreferrer'},'새 창에서 로그인'));
   box.replaceChildren(line);
   if(state.snapshot?.warnings.length) box.append(h('details',{},h('summary',{},`자료 누락·확인 안내 ${state.snapshot.warnings.length}건`),h('ul',{class:'warnings'},state.snapshot.warnings.map(w=>h('li',{},text(w))))));
   $('#refresh').textContent=state.phase==='loading'?'다시 갱신':'새로고침';
@@ -268,7 +268,7 @@ const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
 document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
 $('#refresh').addEventListener('click',()=>{if(operations.isBusy()||(editorActive&&editor.isBusy()))return;operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()){event.preventDefault();event.returnValue='';}});
+window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()){event.preventDefault();event.returnValue='';}});
 operations.load('all');
 loader.select('all');
 setInterval(renderStatus,60000);

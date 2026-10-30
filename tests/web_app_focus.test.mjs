@@ -51,3 +51,11 @@ test('기획 갱신의 인증만료 빈 화면도 기존 제목 포커스만 새
   h.pending.shift().reject(Object.assign(new Error('인증만료'),{status:401}));await tick();
   assert.equal(h.app.phase(),'unauthorized');assert.equal(h.document.activeElement,h.title());
 });
+
+test('실제 app beforeunload는 성과 입력·진행 중·pending mutation을 보호한다',()=>{
+  const line=source.split('\n').find(line=>line.startsWith("window.addEventListener('beforeunload'"));
+  for(const [dirty,busy,want] of [[true,false,true],[false,true,true],[false,false,false]]){
+    let listener;vm.runInNewContext(line,{window:{addEventListener:(_,fn)=>listener=fn},editorActive:false,integrationSettings:{hasUnsavedChanges:()=>false},operations:{isDirty:()=>false,isBusy:()=>false},metrics:{isDirty:()=>dirty,isBusy:()=>busy}});
+    let prevented=false;const event={preventDefault(){prevented=true;}};listener(event);assert.equal(prevented,want);
+  }
+});

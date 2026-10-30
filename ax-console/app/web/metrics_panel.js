@@ -3,7 +3,16 @@ import {formatDateTime} from './view_helpers.js';
 const scopes=new Set(['all','personal','dept']);
 const accountName=id=>({personal:'개인',dept:'학과'}[id]||'미확인');
 const platforms={naver_blog:'네이버 블로그',youtube:'유튜브',tiktok:'틱톡',instagram:'인스타그램',threads:'스레드',x:'엑스',tistory:'티스토리',facebook:'페이스북',blogger:'블로거',homepage:'홈페이지',kakao:'카카오'};
-const metricNames={views:'조회수',likes:'좋아요',comments:'댓글',shares:'공유',reach:'도달',impressions:'노출',clicks:'클릭',subscribers:'구독자',watch_time:'시청 시간'};
+const metricNames={
+  views:['조회수','회'],likes:['좋아요','건'],comments:['댓글','건'],shares:['공유','회'],
+  reach:['고유 도달','명 · 관측 간 중복 가능'],impressions:['노출','회'],clicks:['클릭','회'],
+  subscribers:['구독자','명 · 계정 시점값'],followers:['팔로워','명 · 계정 시점값'],
+  posts:['게시물 수','건'],saves:['저장 수','회'],total_views:['누적 조회수','회 · 기간 발생량 아님'],
+  indexed_total:['색인 총수','건'],검사:['검사 수','건'],색인확인:['색인 확인 수','건'],미색인:['미색인 수','건'],
+  ctr:['클릭률','비율 단위 미확인 · 보고값 그대로'],position:['평균 게재순위','순위 · 평균 기준은 정의 참조'],
+  queries:['검색어 수','개'],watch_time:['시청 시간','시간 단위 미확인'],cost:['비용','통화 단위 미확인']
+};
+const metricNumber=value=>Number.isInteger(value)?value.toLocaleString('ko-KR',{maximumFractionDigits:0}):String(value);
 const unique=rows=>[...new Map((rows||[]).filter(row=>row&&typeof row.id==='string').map(row=>[row.id,row])).values()];
 const requestKey=()=>globalThis.crypto.randomUUID();
 
@@ -48,12 +57,12 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
   }
   const states=new Map();
   const freshDraft=scope=>({account_id:scope==='all'?'':scope,title:'',note:'',selected:new Set()});
-  function state(scope=account){if(!states.has(scope))states.set(scope,{scope,snapshot:null,started:false,loading:false,busy:false,readVersion:0,message:'성과 기록을 불러오세요.',owner:'all',destination:'all',draft:freshDraft(scope),proposalRequest:null,preview:null,importRequest:null});return states.get(scope);}
+  function state(scope=account){if(!states.has(scope))states.set(scope,{scope,snapshot:null,started:false,loading:false,busy:false,readVersion:0,message:'성과 기록을 불러오세요.',owner:'all',destination:'all',draft:freshDraft(scope),proposalRequest:null,preview:null,importRequest:null,authRequired:false});return states.get(scope);}
   const node=(tag,text,className)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);if(className)n.className=className;return n;};
   const time=value=>value?`${formatDateTime(value)} · 한국시간`:'미확인';
   const canWrite=s=>writable&&s.snapshot?.writable===true;
   function emit(s){if(destroyed)return;if(s.scope===account)paint();onChange();}
-  function feedback(error){return error?.status===401?'인증이 만료되었습니다. 다시 로그인하세요. 입력과 요청키는 보존했습니다.':error?.status===409?'원본이나 저장 상태가 바뀌었습니다. 입력·미리보기·요청키를 보존했습니다. 요청을 버리기 전에는 같은 요청으로 재시도합니다.':'요청을 처리하지 못했습니다. 입력·미리보기·요청키를 보존했습니다.';}
+  function feedback(error,s){if(error?.status===401)s.authRequired=true;return error?.status===401?'인증이 만료되었습니다. 새 창에서 로그인한 뒤 이 화면으로 돌아와 재조회하세요. 입력과 요청키는 이 화면에 보존했습니다.':error?.status===409?'원본이나 저장 상태가 바뀌었습니다. 입력·미리보기·요청키를 보존했습니다. 요청을 버리기 전에는 같은 요청으로 재시도합니다.':'요청을 처리하지 못했습니다. 입력·미리보기·요청키를 보존했습니다.';}
   function button(text,action,disabled=false){const n=focusTarget(node('button',text,'btn'),`button:${text}`);n.type='button';n.disabled=disabled;n.addEventListener('click',action);return n;}
   function field(parent,name,label,value,{options,area=false,disabled=false,change}={}){
     const wrap=node('label',label);const input=focusTarget(node(options?'select':area?'textarea':'input'),`field:${name}`);input.name=name;
@@ -69,8 +78,8 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
       const data=await api.list(scope);
       if(destroyed||s.readVersion!==version)return false;
       if(!data||!Array.isArray(data.observations)||!Array.isArray(data.support)||!Array.isArray(data.proposals))throw new Error('응답 형식 오류');
-      s.snapshot=data;s.message='성과 기록을 조회했습니다. 자동 수집은 실행하지 않았습니다.';return true;
-    }catch(error){if(!destroyed&&s.readVersion===version)s.message=feedback(error);return false;}
+      s.snapshot=data;s.authRequired=false;s.message='성과 기록을 조회했습니다. 자동 수집은 실행하지 않았습니다.';return true;
+    }catch(error){if(!destroyed&&s.readVersion===version)s.message=feedback(error,s);return false;}
     finally{if(!destroyed&&s.readVersion===version){s.loading=false;emit(s);}}
   }
   async function showPreview(s){
@@ -78,7 +87,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     if(s.importRequest){s.message='이전 가져오기 요청과 미리보기를 보존했습니다. 같은 요청을 재시도하거나 명시적으로 버리세요.';emit(s);return;}
     s.busy=true;emit(s);
     try{const result=await api.importPreview();if(destroyed)return;if(typeof result?.preview_digest!=='string')throw new Error();s.preview=result;s.message='전체 계정 과거자료의 저장 전 미리보기입니다. 명시 저장 버튼을 눌러야 저장됩니다.';}
-    catch(error){if(!destroyed)s.message=feedback(error);}finally{s.busy=false;emit(s);}
+    catch(error){if(!destroyed)s.message=feedback(error,s);}finally{s.busy=false;emit(s);}
   }
   async function saveImport(s){
     if(s.busy||!canWrite(s)||s.preview?.writable!==true||!api?.importObservations)return;
@@ -89,7 +98,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
       s.importRequest=null;s.preview=null;
       const refreshed=await load(s.scope);if(destroyed)return;
       s.message=refreshed?'가져오기 자료를 저장했습니다. 검증 배포와 과거 보고 자료는 분리됩니다.':'가져오기 자료를 저장했습니다. 후속 조회에 실패했습니다. 재조회로 저장 상태를 확인하세요.';
-    }catch(error){if(!destroyed)s.message=feedback(error);}finally{s.busy=false;emit(s);}
+    }catch(error){if(!destroyed)s.message=feedback(error,s);}finally{s.busy=false;emit(s);}
   }
   async function saveProposal(s){
     if(s.busy||!canWrite(s)||!api?.createProposal)return;
@@ -104,7 +113,7 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
       s.proposalRequest=null;s.draft=freshDraft(s.scope);
       const refreshed=await load(s.scope);if(destroyed)return;
       s.message=refreshed?'기획제안 초안을 저장했습니다.':'기획제안 초안을 저장했습니다. 후속 조회에 실패했습니다. 재조회로 저장 상태를 확인하세요.';
-    }catch(error){if(!destroyed)s.message=feedback(error);}finally{s.busy=false;emit(s);}
+    }catch(error){if(!destroyed)s.message=feedback(error,s);}finally{s.busy=false;emit(s);}
   }
   function renderObservation(parent,row,s){
     const legacy=row.source_kind==='legacy_reported';const article=node('article',undefined,'metrics-observation');
@@ -112,13 +121,19 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     const status=({ok:'관측 완료',unsupported:'미지원',error:'조회 오류',legacy_reported:'과거 보고 자료'}[row.status]||'미수집');article.append(node('p',`상태: ${status}`));
     if(legacy)article.append(node('p','과거 파일의 보고값입니다. 검증 배포 성과나 기간 발생량으로 합산하지 않습니다.'));
     if(row.status==='ok'||legacy&&row.status==='legacy_reported'){
-      for(const [key,label] of Object.entries(metricNames)){
-        const value=row.values?.[key];if(key!=='views'&&value==null)continue;
-        article.append(node('p',`${legacy?'보고 ':''}${label}: ${typeof value==='number'&&Number.isFinite(value)?value.toLocaleString('ko-KR'):'미수집'}`));
+      const values=Object.entries(row.values||{}).filter(([,value])=>typeof value==='number'&&Number.isFinite(value));
+      for(const [key,value] of values){
+        if(!Object.hasOwn(metricNames,key))continue;
+        const [label,unit]=metricNames[key];
+        article.append(node('p',`${legacy?'보고 ':''}${label}: ${metricNumber(value)} · ${unit}`));
       }
+      if(!values.length)article.append(node('p','관측 수치: 미수집'));
     }else article.append(node('p',row.status==='error'?'조회 실패로 수치를 확인할 수 없습니다.':row.status==='unsupported'?'이 항목은 조회를 지원하지 않습니다.':'관측값을 수집하지 않았습니다.'));
-    article.append(node('p',`비용: ${typeof row.values?.cost==='number'&&Number.isFinite(row.values.cost)?`${row.values.cost.toLocaleString('ko-KR')} · 통화 단위 미확인`:'미확인'}`));
+    article.append(node('p',`비용: ${typeof row.values?.cost==='number'&&Number.isFinite(row.values.cost)?`${metricNumber(row.values.cost)} · 통화 단위 미확인`:'미확인'}`));
     const detail=node('details');detail.append(focusTarget(node('summary','관측·출처 상세'),`summary:${row.id}`));
+    if(row.status==='ok'||legacy&&row.status==='legacy_reported')for(const [key,value] of Object.entries(row.values||{})){
+      if(!Object.hasOwn(metricNames,key)&&typeof value==='number'&&Number.isFinite(value))detail.append(node('p',`기타 수치 ${key}: ${metricNumber(value)} · 의미·단위 미확인`));
+    }
     for(const [key,label] of [['content_id','원본 식별자'],['delivery_id','배포 식별자'],['connection_id','연결 식별자'],['target_id','대상 식별자'],['remote_id','원격 게시물 식별자']])detail.append(node('p',`${label}: ${row[key]??'미확인'}`));
     detail.append(node('p',`관측 시각: ${time(row.observed_at)}`),node('p',`자료 수집 시각: ${time(row.collected_at)}`),node('p',`파일 수정 시각: ${time(row.file_mtime)} · 관측 시각과 다릅니다.`),node('p',`정의: ${row.definition_id||'미확인'}`));
     detail.append(node('p',row.basis==='lifetime'?'기준: 누적값 · 기간 발생량이 아닙니다.':row.basis==='interval'?'기준: 명시된 기간의 관측값입니다.':'기준: 누적·기간 여부 미확인'));
@@ -150,6 +165,10 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
     if(destroyed)return;const savedFocus=rememberFocus();focusTargets.clear();const s=state();root.replaceChildren();
     const heading=focusTarget(node('h2','성과'),'heading');heading.tabIndex=-1;root.append(heading,node('p','검증 배포 관측과 과거 보고 자료를 분리합니다. 서로 다른 정의·기간·채널의 수치는 합산하지 않습니다.'));
     const status=node('p',s.message);status.setAttribute('role','status');status.setAttribute('aria-live','polite');root.append(status);
+    if(s.authRequired){
+      const login=focusTarget(node('a','새 창에서 다시 로그인'),'login');login.href='/login';login.target='_blank';login.rel='noopener noreferrer';
+      root.append(login,node('p','로그인을 마친 뒤 이 화면으로 돌아오세요. 재조회 후 기존 저장 버튼을 누르면 보존한 동일 요청으로 재시도합니다.'),button('로그인 완료 후 재조회',()=>load(s.scope),s.loading||s.busy||!api?.list));
+    }
     if(s.loading)root.append(node('p','성과 기록 조회 중…'));
     root.append(node('p','자동 수집은 실행하지 않습니다. 관측값이 없으면 0으로 간주하지 않습니다. 가져오기는 현재 필터와 관계없이 전체 계정의 과거자료를 저장합니다.'),button('성과 다시 조회',()=>load(account),s.loading||s.busy||!api?.list),button('가져오기 미리보기',()=>showPreview(s),s.busy||!canWrite(s)||!api?.importPreview));
     if(!canWrite(s))root.append(node('p','읽기 전용 상태입니다. 성과 저장을 사용할 수 없습니다.'));
@@ -172,6 +191,8 @@ export function createMetricsPanel({api,onChange=()=>{},document=globalThis.docu
   return {
     render({account:scope='all',writable:allowed=false}={}){if(!scopes.has(scope))throw new Error('계정 범위가 올바르지 않습니다.');account=scope;writable=allowed;const s=state();if(!s.started){s.message='성과 기록을 불러오세요.';void load(scope);}else paint();return root;},
     load,
+    isDirty(){return [...states.values()].some(s=>!!(s.draft.title||s.draft.note||s.draft.selected.size||s.draft.account_id!==freshDraft(s.scope).account_id||s.preview||s.proposalRequest||s.importRequest));},
+    isBusy(){return [...states.values()].some(s=>s.busy);},
     destroy(){destroyed=true;for(const s of states.values())s.readVersion++;root.replaceChildren();}
   };
 }
