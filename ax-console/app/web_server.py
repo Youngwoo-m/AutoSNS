@@ -4,6 +4,7 @@ import/factory는 파일을 쓰거나 운영 작업을 시작하지 않는다. �
 생성·갱신·삭제만 기존 auth.py가 담당하며 운영 서버는 import하지 않는다.
 """
 import fcntl
+import hashlib
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
@@ -64,6 +65,76 @@ class _SessionLock:
             self.thread_lock.release()
 
 
+def _credential_version(path):
+    """인증 내용과 파일 교체를 함께 식별한다. 읽기 중 변경되면 거부한다."""
+    def identity(stat):
+        return stat.st_dev, stat.st_ino, stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size
+
+    try:
+        with path.open('rb') as stream:
+            before = identity(os.fstat(stream.fileno()))
+            data = stream.read(65537)
+            after = identity(os.fstat(stream.fileno()))
+        if len(data) > 65536 or before != after or after != identity(path.stat()):
+            return None
+    except OSError:
+        return None
+    return hashlib.sha256(data + b'\0' + repr(after).encode()).hexdigest()
+
+
+class _VersionedAuth:
+    """원본 인증 함수에 비밀번호 버전 검사를 덧붙이는 새 웹 전용 어댑터."""
+
+    def __init__(self, backend):
+        self.backend = backend
+        self.verified = threading.local()
+
+    def __getattr__(self, name):
+        return getattr(self.backend, name)
+
+    def verify(self, password, ip='local'):
+        self.verified.__dict__.clear()
+        version = _credential_version(self.AUTH)
+        valid = self.backend.verify(password, ip)
+        if valid and version is not None and version == _credential_version(self.AUTH):
+            self.verified.version = version
+            return True
+        return False
+
+    def new_session(self, ua=''):
+        # HTTP 로그인은 같은 요청 스레드의 verify에서 확인한 버전을 사용한다.
+        version = getattr(self.verified, 'version', _credential_version(self.AUTH))
+        self.verified.__dict__.clear()
+        if version is None or version != _credential_version(self.AUTH):
+            raise ValueError('인증 정보가 변경되었습니다')
+        token = self.backend.new_session(ua)
+        try:
+            with self.backend._lock:
+                if version != _credential_version(self.AUTH):
+                    raise ValueError('인증 정보가 변경되었습니다')
+                sessions = self.backend._load(self.SESSIONS, {})
+                sessions[self.backend._h(token)]['auth_version'] = version
+                self.backend._save(self.SESSIONS, sessions)
+            if version != _credential_version(self.AUTH):
+                raise ValueError('인증 정보가 변경되었습니다')
+        except BaseException:
+            self.backend.drop(token)
+            raise
+        return token
+
+    def check(self, token):
+        if not token:
+            return False
+        version = _credential_version(self.AUTH)
+        if version is None:
+            return False
+        with self.backend._lock:
+            session = self.backend._load(self.SESSIONS, {}).get(self.backend._h(token))
+            if not isinstance(session, dict) or session.get('auth_version') != version:
+                return False
+        return self.backend.check(token) and version == _credential_version(self.AUTH)
+
+
 def _load_auth(source_root):
     """기존 비밀번호·내부키를 읽고 새 웹의 세션·쿠키만 별도로 저장한다."""
     spec = importlib.util.spec_from_file_location('_ax_web_auth', _APP / 'auth.py')
@@ -79,7 +150,7 @@ def _load_auth(source_root):
     backend.KEYFILE = directory / 'internal.key'
     with _AUTH_LOCKS_LOCK:
         backend._lock = _AUTH_LOCKS.setdefault(session_directory, _SessionLock(session_directory))
-    return backend
+    return _VersionedAuth(backend)
 
 
 def _build_snapshot(source_root, account='all', **kwargs):
@@ -285,7 +356,10 @@ class _Handler(BaseHTTPRequestHandler):
             return self._error(429, '로그인 요청이 너무 많습니다. 잠시 뒤 다시 시도하세요')
         if not verified:
             return self._error(401, '비밀번호가 맞지 않습니다')
-        token = auth.new_session(self.headers.get('User-Agent', ''))
+        try:
+            token = auth.new_session(self.headers.get('User-Agent', ''))
+        except ValueError:
+            return self._error(401, '인증 정보가 변경되었습니다. 다시 로그인하세요')
         return self._send(200, {'ok': True}, headers={'Set-Cookie': auth.set_cookie(token)})
 
     def _unsupported(self):

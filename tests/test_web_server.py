@@ -1,5 +1,6 @@
 """임시 원본·인증과 loopback HTTP만 사용하는 조회 서버 회귀 시험."""
 import fcntl
+import hashlib
 import http.client
 import importlib.util
 import json
@@ -11,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -198,6 +200,23 @@ class WebServerTests(unittest.TestCase):
         backend.setup('fixture-password')
         return backend
 
+    def real_auth_fixture(self):
+        directory = Path(self.tmp.name) / 'versioned-auth'
+        legacy = self.seed_auth(directory)
+        with patch.dict(os.environ, {'AX_AUTH_DIR': str(directory)}):
+            server = self.module.create_server(source_root=self.source, web_root=self.web,
+                                               snapshot_builder=self.snapshot)
+        self.addCleanup(server.server_close)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(lambda: (server.shutdown(), thread.join()))
+        return legacy, server
+
+    def real_login(self, server, password='fixture-password'):
+        status, headers, _ = self.request('/api/auth/login', 'POST', {'password': password}, server=server)
+        self.assertEqual(status, 200)
+        return {'Cookie': headers['Set-Cookie'].split(';')[0]}
+
     def test_errors_do_not_expose_paths_or_traceback(self):
         def failed(*args, **kwargs):
             raise RuntimeError(str(self.source) + '/secret password=hidden')
@@ -309,6 +328,58 @@ print(token, flush=True)
             self.assertTrue(output.strip())
         stored = json.loads((session_dir / 'sessions.json').read_text())
         self.assertEqual(len(stored), 1)
+
+    def test_password_change_revokes_existing_web_session(self):
+        legacy, server = self.real_auth_fixture()
+        cookie = self.real_login(server)
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 200)
+        legacy.change_password('fixture-password', 'changed-password')
+        before = self.file_state(legacy.DIR)
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+        self.assertFalse(json.loads(self.request('/api/auth/status', headers=cookie, server=server)[2])['logged_in'])
+        self.assertEqual(self.file_state(legacy.DIR), before)
+        fresh_cookie = self.real_login(server, 'changed-password')
+        self.assertEqual(self.request('/api/v2/snapshot', headers=fresh_cookie, server=server)[0], 200)
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+
+    def test_deleted_and_recreated_auth_file_does_not_revive_session(self):
+        legacy, server = self.real_auth_fixture()
+        cookie = self.real_login(server)
+        original = legacy.AUTH.read_bytes()
+        legacy.AUTH.unlink()
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+        # 같은 바이트를 복원해도 이전 파일의 세션을 되살리지 않는다.
+        legacy.AUTH.write_bytes(original)
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+        self.real_login(server)
+
+    def test_unversioned_existing_web_session_is_rejected(self):
+        _, server = self.real_auth_fixture()
+        token = 'existing-session-without-password-version'
+        now = int(time.time())
+        session_file = server.auth_backend.SESSIONS
+        session_file.parent.mkdir(parents=True, exist_ok=True)
+        session_file.write_text(json.dumps({hashlib.sha256(token.encode()).hexdigest(): {
+            'created': now, 'last': now, 'ua': 'old-web-version'}}))
+        cookie = {'Cookie': 'ax_web_session=' + token}
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+        self.real_login(server)
+        self.assertEqual(self.request('/api/v2/snapshot', headers=cookie, server=server)[0], 401)
+
+    def test_password_change_between_verify_and_issue_rejects_login(self):
+        legacy, server = self.real_auth_fixture()
+        real_verify = server.auth_backend.verify
+
+        def verify_then_change(password, ip):
+            verified = real_verify(password, ip)
+            legacy.change_password('fixture-password', 'changed-password')
+            return verified
+
+        with patch.object(server.auth_backend, 'verify', side_effect=verify_then_change):
+            status, headers, _ = self.request('/api/auth/login', 'POST', {'password': 'fixture-password'}, server=server)
+        self.assertEqual(status, 401)
+        self.assertNotIn('Set-Cookie', headers)
+        self.real_login(server, 'changed-password')
 
     def test_login_uses_system_font_without_missing_font_request(self):
         original = (APP / 'login.html').read_bytes()
