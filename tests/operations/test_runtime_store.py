@@ -45,7 +45,7 @@ class RuntimeStoreTests(unittest.TestCase):
             self.fixture(min(v,2))
             if v==3:s.initialize()
             before={p:p.read_bytes() for p in self.root.iterdir()}
-            self.assertEqual(s.list_operations(),[]);self.assertIsNone(s.get_delivery('d'))
+            self.assertEqual(s.list_operations(),[]);self.assertEqual(s.list_runs(),[]);self.assertIsNone(s.get_delivery('d'))
             self.assertEqual(before,{p:p.read_bytes() for p in self.root.iterdir()})
     def test_migration_preserves_every_old_row(self):
         for v in (1,2):
@@ -126,7 +126,7 @@ class RuntimeStoreTests(unittest.TestCase):
     def test_resolve_is_cas_idempotent_and_preserves_plan(self):
         s,ctx,lease=self.ready();a=s.create_attempt('d',s.get_delivery('d')['version'],lease,ctx.context_hash,'approval',now=NOW)
         p=s.issue_permit(a['id'],lease,ctx.context_hash,'approval',NOW);s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
-        v=s.get_delivery('d')['version'];args=('d',v,'resolve','confirmed_not_posted',{'confirmed_not_posted':True},'독립 확인','server-user')
+        v=s.get_delivery('d')['version'];args=('d',v,'resolve','confirmed_not_posted',{'confirmed_not_posted':True,'old_process_terminated':True,'profile_lock_released':True},'독립 확인','server-user')
         r=s.resolve_delivery(*args);self.assertEqual(r,s.resolve_delivery(*args));self.assertEqual(r['state'],'retry_wait')
         with self.assertRaises(ConflictError):s.resolve_delivery('d',v,'new','cancel_local',{'checked':True},'취소','server-user')
         c=sqlite3.connect(self.root/'operations.sqlite3');self.assertEqual(json.loads(c.execute("SELECT payload FROM deliveries WHERE id='d'").fetchone()[0])['status'],'ready');c.close()
@@ -164,3 +164,76 @@ class RuntimeStoreTests(unittest.TestCase):
         held=s.reserve_quota('d',[{'bucket_id':'x:2026-10-30','amount':1}],NOW+timedelta(seconds=1))
         s.observe_bucket('x:2026-10-30',10,3,NOW+timedelta(seconds=2),NOW+timedelta(hours=1))
         self.assertEqual(s.quota_buckets()[0]['reserved'],1)
+    def reserved_attempt(self):
+        if self.root.exists():
+            import shutil;shutil.rmtree(self.root)
+        s,ctx,lease=self.ready();s.observe_bucket('daily',10,0,NOW,NOW+timedelta(hours=1))
+        r=s.reserve_quota('d',[{'bucket_id':'daily','amount':3}],NOW)
+        a=s.create_attempt('d',s.get_delivery('d')['version'],lease,ctx.context_hash,'approval',reservation_id=r['id'],now=NOW)
+        p=s.issue_permit(a['id'],lease,ctx.context_hash,'approval',NOW)
+        return s,lease,r,a,p
+    def test_cancel_or_review_before_consume_invalidates_submission(self):
+        for state in ('cancelled','needs_review'):
+            with self.subTest(state=state):
+                s,lease,r,a,p=self.reserved_attempt()
+                s.transition_delivery('d',s.get_delivery('d')['version'],state)
+                with self.assertRaises(ConflictError):s.consume_permit(p,lease,NOW)
+                self.assertEqual(s.get_delivery('d')['state'],state);self.assertFalse(s.get_attempt(a['id'])['request_started'])
+                c=sqlite3.connect(self.root/'operations.sqlite3');self.assertEqual(c.execute('SELECT invalidated FROM submission_permits').fetchone()[0],1);c.close()
+                import shutil;shutil.rmtree(self.root)
+    def test_consume_before_cancel_or_review_preserves_started_request(self):
+        for state in ('cancelled','needs_review'):
+            with self.subTest(state=state):
+                s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW)
+                with self.assertRaises(ConflictError):s.transition_delivery('d',s.get_delivery('d')['version'],state)
+                self.assertEqual(s.get_delivery('d')['state'],'submitting');self.assertTrue(s.get_attempt(a['id'])['request_started'])
+                import shutil;shutil.rmtree(self.root)
+    def test_release_before_consume_invalidates_permit_and_blocks_issue(self):
+        s,lease,r,a,p=self.reserved_attempt();s.settle_reservation(r['id'],release=True,now=NOW)
+        with self.assertRaises(ConflictError):s.consume_permit(p,lease,NOW)
+        self.assertFalse(s.get_attempt(a['id'])['request_started']);self.assertEqual(s.get_reservation(r['id'])['state'],'released')
+        c=sqlite3.connect(self.root/'operations.sqlite3');self.assertEqual(c.execute('SELECT invalidated FROM submission_permits').fetchone()[0],1);c.close()
+    def test_consume_before_release_preserves_held_reservation(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW)
+        with self.assertRaises(ConflictError):s.settle_reservation(r['id'],release=True,now=NOW)
+        self.assertEqual(s.get_reservation(r['id'])['state'],'held');self.assertEqual(s.get_delivery('d')['state'],'submitting')
+    def test_cancel_local_preserves_unknown_quota_across_new_observation(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
+        s.resolve_delivery('d',s.get_delivery('d')['version'],'local-cancel','cancel_local',{'checked':True},'로컬 취소','server')
+        self.assertEqual(s.get_delivery('d')['state'],'cancelled');self.assertTrue(s.get_delivery('d')['remote_uncertain']);self.assertFalse(s.get_attempt(a['id'])['resolved']);self.assertEqual(s.get_run('r')['state'],'waiting')
+        for release in (False,True):
+            with self.assertRaises(ConflictError):s.settle_reservation(r['id'],release=release,now=NOW)
+        s.observe_bucket('daily',10,0,NOW+timedelta(minutes=1),NOW+timedelta(hours=1))
+        self.assertEqual(s.quota_buckets()[0]['reserved'],3)
+    def test_confirmed_not_posted_resolves_uncertainty_and_allows_release(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
+        s.resolve_delivery('d',s.get_delivery('d')['version'],'proof','confirmed_not_posted',{'confirmed_not_posted':True,'old_process_terminated':True,'profile_lock_released':True},'원격 미게시 확인','server')
+        s.settle_reservation(r['id'],release=True,now=NOW)
+        self.assertEqual(s.get_reservation(r['id'])['state'],'released');self.assertFalse(s.get_delivery('d')['remote_uncertain'])
+    def test_list_runs_includes_empty_queued_and_is_readonly(self):
+        s=self.store();self.assertEqual(s.list_runs(),[]);self.assertFalse(self.root.exists())
+        s.initialize();r=s.submit_occurrence(dict(job_id='j',scheduled_at_utc=NOW.isoformat(),phase='publish',source='scheduler',request_kind='scheduled',mode='live'))
+        before=(self.root/'operations.sqlite3').read_bytes()
+        self.assertEqual([x['id'] for x in s.list_runs('queued')],[r['id']]);self.assertEqual(s.list_runs('running'),[])
+        self.assertEqual(s.list_runs(),s.list_runs('queued'));self.assertEqual(before,(self.root/'operations.sqlite3').read_bytes())
+    def test_cancelled_uncertain_delivery_can_be_confirmed_with_fresh_cas(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
+        old=s.get_delivery('d')['version'];s.resolve_delivery('d',old,'local','cancel_local',{'checked':True},'로컬 취소','server')
+        proof={'confirmed_not_posted':True,'old_process_terminated':True,'profile_lock_released':True}
+        with self.assertRaises(ConflictError):s.resolve_delivery('d',old,'stale','confirmed_not_posted',proof,'확정','server')
+        self.assertTrue(s.list_operations()[0]['remote_uncertain'])
+        s.resolve_delivery('d',s.get_delivery('d')['version'],'confirmed','confirmed_not_posted',proof,'확정','server')
+        s.settle_reservation(r['id'],release=True,now=NOW);self.assertFalse(s.get_delivery('d')['remote_uncertain'])
+        self.assertEqual(s.get_attempt(a['id'])['result']['resolution']['kind'],'confirmed_not_posted')
+    def test_cancelled_uncertain_can_link_existing_and_settle_but_not_release(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
+        s.resolve_delivery('d',s.get_delivery('d')['version'],'local','cancel_local',{'checked':True},'로컬 취소','server')
+        s.resolve_delivery('d',s.get_delivery('d')['version'],'link','link_existing',{'remote_id':'existing','identity_confirmed':True},'정확한 대상 확인','server')
+        self.assertEqual(s.get_delivery('d')['state'],'uploaded');self.assertFalse(s.get_delivery('d')['remote_uncertain'])
+        with self.assertRaises(ConflictError):s.settle_reservation(r['id'],release=True,now=NOW)
+        s.settle_reservation(r['id'],now=NOW);self.assertEqual(s.get_reservation(r['id'])['state'],'settled')
+    def test_incomplete_nonpublication_proof_does_not_resolve_or_free_quota(self):
+        s,lease,r,a,p=self.reserved_attempt();s.consume_permit(p,lease,NOW);s.finish_attempt(a['id'],'unknown',now=NOW)
+        from common.operations.content_store import StoreError
+        with self.assertRaises(StoreError):s.resolve_delivery('d',s.get_delivery('d')['version'],'weak','confirmed_not_posted',{'confirmed_not_posted':True},'프로세스 미확인','server')
+        self.assertTrue(s.get_delivery('d')['remote_uncertain']);self.assertEqual(s.get_reservation(r['id'])['state'],'held')

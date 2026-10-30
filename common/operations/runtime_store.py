@@ -61,6 +61,7 @@ class RuntimeStore:
         row=c.execute('SELECT * FROM runtime_deliveries WHERE id=?',(id,)).fetchone()
         if row is None:raise StoreError('not_found')
         r=dict(row);r['context']=json.loads(r['context']);r['required']=bool(r['required']);r['execution_state']=r['state']
+        r['remote_uncertain']=c.execute('SELECT 1 FROM attempts WHERE delivery_id=? AND request_started=1 AND resolved=0 LIMIT 1',(id,)).fetchone() is not None
         plan=c.execute('SELECT payload FROM deliveries WHERE id=?',(id,)).fetchone();r['plan_status']=json.loads(plan[0]).get('status') if plan else None
         if version is not None:
             expected(version)
@@ -73,6 +74,12 @@ class RuntimeStore:
             except StoreError as e:
                 if e.code=='not_found':return None
                 raise
+    def list_runs(self,state=None):
+        if state is not None and state not in ('queued','running','waiting','completed','partial','failed'):raise StoreError('invalid')
+        with self._db() as c:
+            if not self._v3(c):return []
+            rows=c.execute('SELECT id FROM runtime_runs'+(' WHERE state=?' if state else '')+' ORDER BY rowid',((state,) if state else ()))
+            return [self._run(c,r[0]) for r in rows]
     def get_delivery(self,id):
         with self._db() as c:
             if not self._v3(c):return None
@@ -125,11 +132,16 @@ class RuntimeStore:
         allowed={'remote_id','url','scheduled_at'}
         if set(values)-allowed:raise StoreError('invalid')
         sql='UPDATE runtime_deliveries SET state=?,version=version+1'+''.join(','+k+'=?' for k in values)+' WHERE id=?'
-        c.execute(sql,(state,*values.values(),id));self._aggregate(c,self._delivery(c,id)['run_id'])
+        c.execute(sql,(state,*values.values(),id))
+        if state in ('cancelled','needs_review'):
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(id,))
+        self._aggregate(c,self._delivery(c,id)['run_id'])
     def _aggregate(self,c,run_id):
         states=[r[0] for r in c.execute('SELECT state FROM runtime_deliveries WHERE run_id=? AND required=1',(run_id,))]
         if not states:return
-        if all(s=='verified' for s in states):state='completed'
+        uncertain=c.execute("SELECT 1 FROM attempts a JOIN runtime_deliveries d ON a.delivery_id=d.id WHERE d.run_id=? AND a.request_started=1 AND a.resolved=0 AND (a.outcome IS NOT NULL OR d.state IN ('cancelled','needs_review','unknown')) LIMIT 1",(run_id,)).fetchone()
+        if uncertain:state='waiting'
+        elif all(s=='verified' for s in states):state='completed'
         elif any(s in ('unknown','needs_review') for s in states):state='waiting'
         elif any(s=='verified' for s in states) and any(s in ('failed','cancelled','retry_wait') for s in states):state='partial'
         elif all(s in ('failed','cancelled') for s in states):state='failed'
@@ -194,10 +206,16 @@ class RuntimeStore:
                 raise
     def attempts(self,delivery_id):
         with self._db() as c:return [self._attempt(c,r[0]) for r in c.execute('SELECT id FROM attempts WHERE delivery_id=? ORDER BY ordinal',(delivery_id,))] if self._v3(c) else []
+    def _submission_eligible(self,c,a,d):
+        if d['state']!='running' or a['resolved'] or a['request_started']:raise ConflictError()
+        if a['reservation_id']:
+            reservation=self._reservation(c,a['reservation_id'])
+            if reservation['state']!='held' or reservation['delivery_id']!=d['id']:raise ConflictError()
     def issue_permit(self,attempt_id,lease,context_hash,approval_hash,now,ttl_seconds=30):
         positive(ttl_seconds)
         with self._db(True) as c:
             self._lease(c,lease,now);a=self._attempt(c,attempt_id);d=self._delivery(c,a['delivery_id']);self._check_approval(c,d,context_hash,approval_hash,now)
+            self._submission_eligible(c,a,d)
             if a['resolved'] or a['request_started'] or a['generation']!=lease.generation or d['run_id']!=lease.run_id or a['context_hash']!=context_hash or a['approval_hash']!=approval_hash:raise ConflictError()
             nonce=secrets.token_hex(32);expiry=min(utc(now)+timedelta(seconds=ttl_seconds),lease.expires_at,utc(d['context']['auth_expires_at']))
             c.execute('INSERT INTO submission_permits(attempt_id,nonce_hash,run_id,generation,context_hash,approval_hash,expires_at) VALUES(?,?,?,?,?,?,?)',(attempt_id,hashlib.sha256(nonce.encode()).hexdigest(),lease.run_id,lease.generation,context_hash,approval_hash,stamp(expiry)))
@@ -205,6 +223,7 @@ class RuntimeStore:
     def consume_permit(self,permit,lease,now):
         with self._db(True) as c:
             self._lease(c,lease,now);a=self._attempt(c,permit.attempt_id);d=self._delivery(c,a['delivery_id']);self._check_approval(c,d,permit.context_hash,permit.approval_hash,now)
+            self._submission_eligible(c,a,d)
             p=c.execute('SELECT * FROM submission_permits WHERE attempt_id=?',(permit.attempt_id,)).fetchone()
             if not p or p['consumed'] or p['invalidated'] or utc(p['expires_at'])<=utc(now) or p['nonce_hash']!=hashlib.sha256(permit.nonce.encode()).hexdigest() or p['run_id']!=lease.run_id or p['generation']!=lease.generation or permit.run_id!=lease.run_id or permit.generation!=lease.generation or p['context_hash']!=permit.context_hash or p['approval_hash']!=permit.approval_hash or a['request_started'] or a['resolved']:raise ConflictError()
             c.execute('UPDATE submission_permits SET consumed=1 WHERE attempt_id=?',(permit.attempt_id,));c.execute('UPDATE attempts SET request_started=1 WHERE id=?',(permit.attempt_id,));self._state(c,d['id'],'submitting');self._event(c,d['id'],'request_started',{},a['id']);return self._attempt(c,a['id'])
@@ -287,12 +306,20 @@ class RuntimeStore:
         with self._db(True) as c:
             r=self._reservation(c,reservation_id)
             attempts=[dict(x) for x in c.execute('SELECT * FROM attempts WHERE reservation_id=?',(reservation_id,))]
-            if any(not a['resolved'] and a['request_started'] for a in attempts):raise ConflictError()
-            if release and any(a['request_started'] for a in attempts):raise ConflictError()
+            for a in attempts:
+                if not a['request_started']:continue
+                result=json.loads(a['result']) if a['result'] else {}
+                resolution=result.get('resolution',{}).get('kind')
+                if not a['resolved']:raise ConflictError()
+                if release:
+                    if resolution!='confirmed_not_posted':raise ConflictError()
+                elif a['outcome'] not in ('submitted','scheduled') and resolution!='link_existing':raise ConflictError()
             state='released' if release else 'settled'
             if r['state']==state:return r
             if r['state']!='held':raise ConflictError()
-            c.execute('UPDATE quota_reservations SET state=?,settled_at=? WHERE id=?',(state,stamp(now),reservation_id));return self._reservation(c,reservation_id)
+            c.execute('UPDATE quota_reservations SET state=?,settled_at=? WHERE id=?',(state,stamp(now),reservation_id))
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE consumed=0 AND attempt_id IN (SELECT id FROM attempts WHERE reservation_id=?)',(reservation_id,))
+            return self._reservation(c,reservation_id)
     def record_evidence(self,delivery_id,kind,evidence,*,attempt_id=None):
         with self._db(True) as c:
             self._delivery(c,delivery_id)
@@ -307,16 +334,23 @@ class RuntimeStore:
                 if old['command_hash']!=command:raise ConflictError()
                 return json.loads(old['result'])
             d=self._delivery(c,delivery_id,expected_version)
-            if d['state'] not in ('unknown','needs_review','failed','retry_wait'):raise ConflictError()
+            if d['state'] not in ('unknown','needs_review','failed','retry_wait') and not (d['state']=='cancelled' and d['remote_uncertain'] and kind!='cancel_local'):raise ConflictError()
             attempts=list(c.execute('SELECT * FROM attempts WHERE delivery_id=? AND resolved=0',(delivery_id,)))
             if kind=='link_existing':
                 if not isinstance(evidence.get('remote_id'),str) or not evidence['remote_id'] or evidence.get('identity_confirmed') is not True:raise StoreError('insufficient_evidence')
                 self._state(c,delivery_id,'uploaded',remote_id=evidence['remote_id'])
             elif kind=='confirmed_not_posted':
-                if evidence.get('confirmed_not_posted') is not True:raise StoreError('insufficient_evidence')
+                if any(evidence.get(key) is not True for key in ('confirmed_not_posted','old_process_terminated','profile_lock_released')):raise StoreError('insufficient_evidence')
                 self._state(c,delivery_id,'retry_wait')
             else:self._state(c,delivery_id,'cancelled')
-            c.execute('UPDATE attempts SET resolved=1 WHERE delivery_id=? AND resolved=0',(delivery_id,));c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
+            for attempt in attempts:
+                # Local cancellation cannot turn uncertainty about a started request into certainty.
+                if kind=='cancel_local' and attempt['request_started']:continue
+                result=json.loads(attempt['result']) if attempt['result'] else {}
+                result['resolution']=dict(kind=kind,evidence=serial(evidence),note=note,actor=actor,recorded_at=stamp())
+                c.execute('UPDATE attempts SET resolved=1,result=? WHERE id=?',(_json(result),attempt['id']))
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
+            self._aggregate(c,d['run_id'])
             self._event(c,delivery_id,'resolved_'+kind,dict(evidence=evidence,note=note,actor=actor));result=self._delivery(c,delivery_id)
             c.execute('INSERT INTO runtime_requests VALUES(?,?,?)',(request_key,command,_json(result)));return result
     def control(self,scope,id,action,expected_version,request_key,reason,actor='console_user'):
