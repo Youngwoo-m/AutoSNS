@@ -1,5 +1,5 @@
 """실제 실행 원장의 짧은 CAS 트랜잭션. 외부 제출·STOP·프로필 I/O 없음."""
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import hashlib
@@ -10,7 +10,7 @@ import sqlite3
 from uuid import uuid4
 from .database import initialize_database, connect_database
 from .content_store import StoreError, ConflictError, _json
-from .runtime_models import PublicationContext, RunLease, SubmissionPermit, utc, serial
+from .runtime_models import PublicationContext, RunLease, SubmissionPermit, ExecutionPolicy, utc, serial
 
 
 def stamp(value=None):return utc(value if value is not None else datetime.now(timezone.utc)).isoformat()
@@ -168,15 +168,28 @@ class RuntimeStore:
     def _approval(self,c,id):
         r=c.execute('SELECT * FROM publication_approvals WHERE delivery_id=? ORDER BY id DESC LIMIT 1',(id,)).fetchone()
         return dict(r,report_hashes=json.loads(r['report_hashes'])) if r else None
+    def _publication_guard(self):
+        """실행 store는 승인 writer와 최종 허가를 직렬화한다. 순수 DB fixture 호환."""
+        locks=getattr(self,'locks',None)
+        if locks is None:
+            policy=getattr(self,'execution_policy',None)
+            if self.registry is not None or (isinstance(policy,ExecutionPolicy) and policy.enabled):
+                raise StoreError('publication_lock_required')
+            # 등록부도 활성 실행 정책도 없는 DB-only store만 이전 순수 fixture 허용.
+            return nullcontext()
+        guard=getattr(locks,'publication_guard',None)
+        if callable(guard):return guard(job='publication-approval',wait=10)
+        return locks.hold(['control:publish-gate'],job='publication-approval',wait=10)
     def record_publication_approval(self,delivery_id,expected_version,context_hash,approval_hash,report_hashes,*,actor='console_user',decision='approved'):
         if decision not in ('approved','rejected','revoked') or not isinstance(approval_hash,str) or not approval_hash or not isinstance(report_hashes,(list,tuple)) or len(set(report_hashes))<1 or not all(isinstance(x,str) and x for x in report_hashes):raise StoreError('invalid')
-        with self._db(True) as c:
-            r=self._delivery(c,delivery_id,expected_version)
-            if r['context_hash']!=context_hash or tuple(r['context']['review_report_hashes'])!=tuple(report_hashes):raise ConflictError()
-            c.execute('INSERT INTO publication_approvals(delivery_id,context_hash,approval_hash,report_hashes,actor,decision,created_at) VALUES(?,?,?,?,?,?,?)',(delivery_id,context_hash,approval_hash,_json(list(report_hashes)),actor,decision,stamp()))
-            c.execute('UPDATE runtime_deliveries SET version=version+1 WHERE id=?',(delivery_id,))
-            if decision!='approved':c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
-            return self._approval(c,delivery_id)
+        with self._publication_guard():
+            with self._db(True) as c:
+                r=self._delivery(c,delivery_id,expected_version)
+                if r['context_hash']!=context_hash or tuple(r['context']['review_report_hashes'])!=tuple(report_hashes):raise ConflictError()
+                c.execute('INSERT INTO publication_approvals(delivery_id,context_hash,approval_hash,report_hashes,actor,decision,created_at) VALUES(?,?,?,?,?,?,?)',(delivery_id,context_hash,approval_hash,_json(list(report_hashes)),actor,decision,stamp()))
+                c.execute('UPDATE runtime_deliveries SET version=version+1 WHERE id=?',(delivery_id,))
+                if decision!='approved':c.execute('UPDATE submission_permits SET invalidated=1 WHERE attempt_id IN (SELECT id FROM attempts WHERE delivery_id=?)',(delivery_id,))
+                return self._approval(c,delivery_id)
     def get_publication_approval(self,delivery_id):
         with self._db() as c:return self._approval(c,delivery_id) if self._v3(c) else None
     def refresh_auth_proof(self,delivery_id,expected_version,context,observation,now):

@@ -231,6 +231,7 @@ class AxLock:
     def __init__(self, paths, process_probe=None):
         self.paths = paths
         self.process_probe = process_probe
+        self._owned_locks = {}
 
     def _check_control(self, resources):
         if resources == ['control:publish-gate']:
@@ -319,16 +320,71 @@ class AxLock:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
             raise
+        self._owned_locks[res] = (fd, os.getpid(), threading.get_ident())
         return fd
 
     def _release(self, fds):
         for res, fd in fds:
+            owned = self._owned_locks.get(res)
+            if owned and owned[0] == fd:
+                self._owned_locks.pop(res, None)
             try:
                 (self.paths.lock_dir / f'{_safe(res)}.json').unlink()
             except OSError:
                 pass
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
+
+    def verify_descriptor(self, res, fd):
+        """등록 파일과 같은 열린 description이 실제 배타 flock을 보유하는지 확인한다.
+
+        별도 FD의 busy 관측만으로 소유자를 추정하지 않는다. 상속 FD의 같은
+        description 재확인까지 성공해야 한다. 새 잠금을 얻는 API가 아니다.
+        """
+        if type(fd) is not int or fd < 3:
+            raise ValueError('invalid_lock_descriptor')
+        res = _canon(res)
+        path = self.paths.lock_dir / f'{_safe(res)}.lock'
+        if path.is_symlink():
+            raise ValueError('invalid_lock_descriptor')
+        info, target = os.fstat(fd), path.stat()
+        if (info.st_dev, info.st_ino) != (target.st_dev, target.st_ino):
+            raise ValueError('invalid_lock_descriptor')
+        probe = os.open(path, os.O_RDWR)
+        try:
+            try:
+                fcntl.flock(probe, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                pass
+            else:
+                fcntl.flock(probe, fcntl.LOCK_UN)
+                raise ValueError('lock_not_held')
+            # 다른 owner만 보유했으면 supplied FD에서는 실패한다. 상속된 동일
+            # description의 재확인은 기존 잠금과 충돌하지 않는다.
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        finally:
+            os.close(probe)
+        return True
+
+    def owned_descriptor(self, res):
+        """이 객체가 현재 프로세스에서 획득하고 아직 해제하지 않은 실제 FD."""
+        res = _canon(res)
+        owned = self._owned_locks.get(res)
+        if not owned or owned[1] != os.getpid():
+            raise ValueError('lock_not_owned')
+        self.verify_descriptor(res, owned[0])
+        return owned[0]
+
+    @contextmanager
+    def publication_guard(self, *, job, wait=10):
+        """이미 같은 thread가 보유한 gate에는 중첩 flock을 요청하지 않는다."""
+        owned = self._owned_locks.get('control:publish-gate')
+        if owned and owned[1:] == (os.getpid(), threading.get_ident()):
+            self.verify_descriptor('control:publish-gate', owned[0])
+            yield
+            return
+        with self.hold(['control:publish-gate'], job=job, wait=wait):
+            yield
 
     def holder_of(self, res):
         try:

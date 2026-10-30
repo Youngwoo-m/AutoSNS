@@ -104,18 +104,22 @@ def parent_evidence(registry,locks,context):
         not isinstance(holder.get('job'),str) or not holder['job'] or
         not isinstance(holder.get('since'),str) or not holder['since']):
         raise ContractError('bridge_parent_lock_required')
-    return dict(holder,process_started_at=_process_start(os.getpid()))
+    try:fd=locks.owned_descriptor(resource)
+    except (OSError,ValueError,AttributeError) as exc:raise ContractError('bridge_parent_lock_required') from exc
+    return dict(holder,process_started_at=_process_start(os.getpid()),lock_fd=fd)
 
 
 def check_parent_evidence(registry,locks,context,evidence,*,parent_pid):
     _,resource=_connection(registry,context)
-    if (not isinstance(evidence,dict) or set(evidence)!={'resource','pid','job','since','process_started_at'} or
+    if (not isinstance(evidence,dict) or set(evidence)!={'resource','pid','job','since','process_started_at','lock_fd'} or
         evidence.get('resource')!=resource or evidence.get('pid')!=parent_pid or
         evidence.get('process_started_at')!=_process_start(parent_pid)):
         raise ContractError('bridge_parent_identity')
     holder=locks.holder_of(resource)
     if not isinstance(holder,dict) or holder!={k:evidence[k] for k in ('resource','pid','job','since')}:
         raise ContractError('bridge_parent_lock_required')
+    try:locks.verify_descriptor(resource,evidence['lock_fd'])
+    except (OSError,ValueError,AttributeError) as exc:raise ContractError('bridge_parent_lock_required') from exc
 
 
 def validate_job_binding(registry,store,spec,context):
@@ -190,7 +194,7 @@ class LegacyBridge:
                 os.write(write_fd,encoded)
             os.close(write_fd);write_fd=None
             argv=[spec.interpreter,'-m',spec.module,'--executor',spec.id,'--action',action,'--secret-fd',str(read_fd)]
-            process=self.spawn(argv,cwd=str(spec.cwd),env=env,pass_fds=(read_fd,),stdin=subprocess.PIPE,
+            process=self.spawn(argv,cwd=str(spec.cwd),env=env,pass_fds=(read_fd,request['parent']['lock_fd']),stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
             os.close(read_fd);read_fd=None
             stdout=self._exchange(process,raw)

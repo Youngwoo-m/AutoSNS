@@ -237,6 +237,124 @@ if __name__=='__main__':
                 self.bridge(spawn).submit('fixture',self.ctx,{'body':'x'*(1024*1024+1)},permit)
         spawn.assert_not_called()
 
+    def test_stale_holder_json_without_flock_rejected_by_parent_and_child(self):
+        from common.publishers.legacy_bridge import parent_evidence,check_parent_evidence
+        from common.shared.axlock import _canon,_safe
+        import fcntl
+        self.consumed()
+        with self.held():
+            evidence=parent_evidence(self.registry,self.store.locks,self.ctx.to_dict())
+            metadata=self.store.locks.paths.lock_dir/(_safe(_canon('profile:tistory'))+'.json')
+            saved=metadata.read_bytes()
+        metadata.write_bytes(saved)
+        lockpath=metadata.with_suffix('.lock')
+        with lockpath.open('r+b') as probe:
+            fcntl.flock(probe.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
+            fcntl.flock(probe.fileno(),fcntl.LOCK_UN)
+            with self.assertRaises(Exception):parent_evidence(self.registry,self.store.locks,self.ctx.to_dict())
+            evidence['lock_fd']=probe.fileno()
+            with self.assertRaises(Exception):check_parent_evidence(self.registry,self.store.locks,self.ctx.to_dict(),evidence,parent_pid=os.getpid())
+            # 부모 검사를 고의로 우회해도 실제 자식이 free FD를 독립 거절한다.
+            with self.assertRaisesRegex(Exception,'bridge_child_failed'):
+                self.bridge()._call(self.spec,'inspect_target',dict(context=self.ctx.to_dict(),payload={},parent=evidence),None)
+
+    def child_credentials_barrier(self):
+        source=self.fixture_source().replace('    return BridgeHost(','    host=BridgeHost(')
+        replacement="""    def credentials(ctx,scope):
+        (ROOT/'credentials-ready').write_text('ready')
+        import time
+        deadline=time.monotonic()+5
+        while not (ROOT/'credentials-release').exists():
+            if time.monotonic()>deadline:raise RuntimeError('fixture barrier timeout')
+            time.sleep(.01)
+        return None
+    host._credentials=credentials
+    return host
+if __name__=='__main__':"""
+        self.module.write_text(source.replace("if __name__=='__main__':",replacement))
+
+    def wait_marker(self,name):
+        import time
+        deadline=time.monotonic()+5
+        while not (self.root/name).exists():
+            if time.monotonic()>deadline:self.fail('child marker timeout: '+name)
+            time.sleep(.01)
+
+    def submit_in_thread(self,permit):
+        import threading
+        results=[]
+        def run():
+            try:results.append(self.bridge().submit('fixture',self.ctx,{},permit))
+            except Exception as exc:results.append(exc)
+        thread=threading.Thread(target=run);thread.start()
+        return thread,results
+
+    def test_approval_revoke_during_credentials_blocks_actual_child_leaf(self):
+        permit=self.consumed();self.child_credentials_barrier()
+        with self.held():
+            thread,results=self.submit_in_thread(permit)
+            try:
+                self.wait_marker('credentials-ready')
+                delivery=self.store.get_delivery('d')
+                self.store.record_publication_approval('d',delivery['version'],self.ctx.context_hash,
+                    'revoked',self.ctx.review_report_hashes,decision='revoked')
+            finally:(self.root/'credentials-release').write_text('release')
+            thread.join(5);self.assertFalse(thread.is_alive())
+        self.assertFalse(self.marker.exists())
+        self.assertIsInstance(results[0],Exception)
+
+    def test_stop_writer_returns_while_actual_child_handler_io_is_blocked(self):
+        import threading,time
+        permit=self.consumed()
+        self.module.write_text(self.fixture_source(leaf="(ROOT/'handler-ready').write_text('ready'); __import__('time').sleep(2)"))
+        with self.held():
+            child,results=self.submit_in_thread(permit)
+            self.wait_marker('handler-ready')
+            done=threading.Event()
+            def stop():self.store.locks.set_stop('after-authorization');done.set()
+            writer=threading.Thread(target=stop);writer.start()
+            responsive=done.wait(.5)
+            child.join(5);writer.join(5)
+        self.assertTrue(responsive,'STOP must not wait for handler I/O')
+        self.assertTrue(self.store.get_attempt(permit.attempt_id)['request_started'])
+        self.assertFalse(self.store.get_attempt(permit.attempt_id)['resolved'])
+        self.assertEqual(results[0]['outcome'],'submitted')
+
+    def test_approval_writer_uses_final_gate_and_nested_same_thread_does_not_deadlock(self):
+        import threading
+        self.consumed();entered=threading.Event();done=threading.Event();errors=[]
+        def revoke():
+            entered.set()
+            try:
+                delivery=self.store.get_delivery('d')
+                self.store.record_publication_approval('d',delivery['version'],self.ctx.context_hash,
+                    'revoked',self.ctx.review_report_hashes,decision='revoked')
+            except Exception as exc:errors.append(exc)
+            finally:done.set()
+        with self.store.locks.hold(['control:publish-gate'],job='nested-final-permission',wait=.1):
+            delivery=self.store.get_delivery('d')
+            self.store.record_publication_approval('d',delivery['version'],self.ctx.context_hash,
+                'approved-again',self.ctx.review_report_hashes)
+            thread=threading.Thread(target=revoke);thread.start()
+            self.assertTrue(entered.wait(1));self.assertFalse(done.wait(.1))
+            self.assertEqual(self.store.get_publication_approval('d')['decision'],'approved')
+        thread.join(3)
+        self.assertTrue(done.is_set());self.assertEqual(errors,[])
+        self.assertEqual(self.store.get_publication_approval('d')['decision'],'revoked')
+
+    def test_managed_approval_writer_missing_locks_fails_closed(self):
+        from common.operations.runtime_models import ExecutionPolicy
+        saved_locks=self.store.locks;del self.store.locks
+        path=self.store.root/'operations.sqlite3';before=path.read_bytes()
+        for registry,policy in ((self.registry,None),(None,self.policy)):
+            with self.subTest(registry=registry is not None):
+                self.store.registry=registry;self.store.execution_policy=policy
+                with self.assertRaisesRegex(Exception,'publication_lock_required'):
+                    self.store.record_publication_approval('d',self.store.get_delivery('d')['version'],
+                        self.ctx.context_hash,'revoked',self.ctx.review_report_hashes,decision='revoked')
+        self.assertEqual(path.read_bytes(),before)
+        self.store.locks=saved_locks
+
     def test_default_host_is_unavailable(self):
         from common.publishers.bridge_host import main
         self.assertNotEqual(main([]),0)

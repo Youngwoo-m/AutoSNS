@@ -31,6 +31,7 @@ class BridgeHost:
     def __init__(self,registry,catalog,store,locks,handlers,*,credential_catalog=None,
                  credential_resolver=None,clock=None):
         self.registry=registry;self.catalog=catalog;self.store=store;self.locks=locks
+        self.store.locks=locks
         self.handlers=dict(handlers);self.credential_catalog=credential_catalog or {}
         self.credential_resolver=credential_resolver
         self.clock=clock or (lambda:datetime.now(timezone.utc))
@@ -76,7 +77,9 @@ class BridgeHost:
             job.get('execution_owner')!='managed' or ctx.connection_id not in connection_ids or
             job.get('owner_account_id')!=ctx.owner_account_id or job.get('policy_revision')!=ctx.policy_revision):
             raise ContractError('bridge_job_mismatch')
-        with self.locks.hold(['control:publish-gate'],job='bridge-leaf',wait=10):
+        # credential 준비는 승인/STOP writer를 막지 않는 허가 이전 단계다.
+        credentials=self._credentials(ctx,'publication')
+        with self.locks.publication_guard(job='bridge-leaf',wait=10):
             _clear(self.locks)
             check_parent_evidence(self.registry,self.locks,ctx.to_dict(),request['parent'],parent_pid=parent_pid)
             checked=utc(self.clock())
@@ -85,9 +88,9 @@ class BridgeHost:
             require_publication_approval(self.store,attempt['delivery_id'],ctx)
             # 새 heartbeat lease와 실제 gate/DB 대기 뒤 clock을 다시 사용한다.
             self.store.redeem_bridge(permit,executor_id,action,request['prepared_hash'],checked,clock=self.clock)
-            # redeem 트랜잭션은 닫혔다. 첫 외부 변경 전체는 control gate의 선형화 뒤 실행한다.
-            credentials=self._credentials(ctx,'publication')
-            return handler(ctx.to_dict(),request['payload'],credentials)
+        # 허가는 redemption commit에서 선형화됐다. 이후 STOP/철회는 이미 시작된
+        # 요청의 취소 성공을 뜻하지 않으며 외부 I/O 동안 gate를 잡지 않는다.
+        return handler(ctx.to_dict(),request['payload'],credentials)
 
     def _credentials(self,ctx,scope):
         return resolve_registered_credentials(ctx.connection_id,registry=self.registry,
