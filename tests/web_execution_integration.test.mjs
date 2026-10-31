@@ -88,7 +88,7 @@ async function conflictable({admit,approve,request,getRun,getContent,getDelivery
  const api={status:async()=>discovery,request:request||(async()=>({run_id:'publish-run',state:'queued'})),observe:async()=>({observation_id:'observation-1'}),admit:admit||(async id=>({id,version:1,context_hash:'b'.repeat(64)})),approve:approve||(async id=>({id,version:2,state:'queued'})),getRun:getRun||(async()=>({run_id:'publish-run',state:'queued',deliveries:[]}))};
  const workspace=make({document,api,contentApi:{listDeliveries:listDeliveries||(async()=>({items:[plan()]})),getDelivery:getDelivery||(async()=>plan()),getContent:getContent||(async()=>content)}});await workspace.load();const root=workspace.forContent(content);
  await button(root,'배포 계획 다시 조회').fire('click');get(root,'planned_delivery').value='delivery-1';await get(root,'planned_delivery').fire('change');get(root,'publication_job').value='publish';await get(root,'publication_job').fire('change');await action(publicationRoot(root),'request').fire('click');
- return {workspace,root,setVersion:value=>version=value};
+ return {workspace,root,document,setVersion:value=>version=value};
 }
 
 test('실제 plan4→5 admit409는 읽기 조회로 원요청을 보존한 뒤 명시 로컬 종료와 재관측으로 CAS5를 사용한다',async()=>{
@@ -208,4 +208,59 @@ test('R1 highwater 이전 정상 snapshot은 새 검토 응답의 필수 context
 test('R1 highwater 불확실 읽기 근거는 pending 없는 새 요청에도 적용하고 조회는 계속 허용한다',async()=>{
  const {root}=await conflictable({getRun:async()=>({run_id:'publish-run',state:'unknown',deliveries:[{id:'delivery-1',version:4,state:'unknown',remote_uncertain:true,context_hash:'d'.repeat(64)}]})});await action(publicationRoot(root),'refresh').fire('click');
  for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);assert.equal(action(publicationRoot(root),'refresh').disabled,false);
+});
+
+async function selectExecution(root,name,value) {
+ const select=get(root,name);assert.ok(!select.disabled);select.value=value;await select.fire('change');
+}
+
+for(const signal of ['unknown','remote_id','conflict'])test(`R2 ${signal} 근거는 선택 해제·다른 계획·재선택 뒤에도 원래 실행에 남는다`,async()=>{
+ let requests=0,reads=0;const readIds=[];
+ const plans=['delivery-1','delivery-2'].map(id=>({id,content_id:content.id,revision:2,manifest_hash:content.manifest_hash,connection_id:'personal.youtube',version:4,status:'ready'}));
+ const {root}=await conflictable({listDeliveries:async()=>({items:plans}),request:async()=>({run_id:`publish-run-${++requests}`,state:'queued'}),getRun:async id=>{
+  readIds.push(id);reads++;
+  return {run_id:id,state:signal==='unknown'&&reads===1?'unknown':'waiting',deliveries:[{id:'delivery-1',run_id:id,version:reads>2?3:4,state:'queued',context_hash:(signal==='conflict'&&reads===2?'b':'a').repeat(64),...(signal==='remote_id'&&reads===1?{remote_id:'kept-remote'}:{})}]};
+ }});
+ await action(publicationRoot(root),'refresh').fire('click');
+ if(signal==='conflict')await action(publicationRoot(root),'refresh').fire('click');
+ assert.equal(action(publicationRoot(root),'request').disabled,true);
+ await selectExecution(root,'planned_delivery','');
+ await selectExecution(root,'planned_delivery','delivery-2');await selectExecution(root,'publication_job','publish');
+ assert.equal(action(publicationRoot(root),'request').disabled,false,'다른 계획은 불확실 근거를 상속하지 않는다');
+ assert.equal(action(publicationRoot(root),'refresh').disabled,true,'다른 계획에 이전 run을 연결하지 않는다');
+ assert.doesNotMatch(publicationRoot(root).textContent,/publish-run-1|kept-remote/);
+ await selectExecution(root,'planned_delivery','delivery-1');await selectExecution(root,'publication_job','publish');
+ assert.equal(action(publicationRoot(root),'request').disabled,true,'동일 계획 재선택은 미해소 근거를 버리지 않는다');
+ assert.equal(action(publicationRoot(root),'refresh').disabled,false);
+ await action(publicationRoot(root),'request').fire('click');assert.equal(requests,1);
+ await action(publicationRoot(root),'refresh').fire('click');await action(publicationRoot(root),'refresh').fire('click');
+ assert.ok(readIds.every(id=>id==='publish-run-1'));
+ assert.match(publicationRoot(root).textContent,/배포: delivery-1 · 버전: 4/);
+ for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+ if(signal==='remote_id')assert.match(publicationRoot(root).textContent,/kept-remote/);
+ if(signal==='conflict')assert.match(publicationRoot(root).textContent,/동일 버전 조회 결과가 불일치/);
+});
+
+test('R2 실제 편집기의 다른 원고·과거 버전 왕복은 같은 원고 계획의 원격 근거를 지우지 않는다',async()=>{
+ const readIds=[];let requests=0;
+ const {root,workspace,document}=await conflictable({request:async()=>({run_id:`publish-run-${++requests}`,state:'queued'}),getRun:async id=>{
+  readIds.push(id);return {run_id:id,state:'unknown',deliveries:[{id:'delivery-1',run_id:id,version:4,state:'unknown',remote_id:'navigation-remote'}]};
+ }});
+ await action(publicationRoot(root),'refresh').fire('click');await selectExecution(root,'planned_delivery','');
+ const previous=globalThis.document;globalThis.document=document;
+ try {
+  const {createContentEditor}=await import(pathToFileURL(join(staged,'content_editor.js')));
+  const api={getContent:async(id,revision=2)=>({...content,id,revision,manifest_hash:revision===2?content.manifest_hash:'b'.repeat(64)}),listRevisions:async()=>({items:[{revision:1},{revision:2}]}),listConnections:async()=>({items:[]}),listDeliveries:async()=>({items:[]})};
+  const editor=createContentEditor({api,writable:()=>true,execution:workspace});
+  await editor.open({id:content.id,revision:1,source:'managed'});
+  assert.doesNotMatch(editor.element.textContent,/navigation-remote|publish-run-1/);
+  await editor.open({id:'content-2',revision:2,source:'managed'});
+  assert.doesNotMatch(editor.element.textContent,/navigation-remote|publish-run-1/);
+  await editor.open({id:content.id,revision:2,source:'managed'});
+  await selectExecution(editor.element,'planned_delivery','delivery-1');await selectExecution(editor.element,'publication_job','publish');
+  assert.match(publicationRoot(editor.element).textContent,/navigation-remote/);
+  assert.equal(action(publicationRoot(editor.element),'request').disabled,true);
+  await action(publicationRoot(editor.element),'request').fire('click');assert.equal(requests,1);
+  await action(publicationRoot(editor.element),'refresh').fire('click');assert.deepEqual(readIds,['publish-run-1','publish-run-1']);
+ } finally {for(let i=0;i<10;i++)await Promise.resolve();globalThis.document=previous;}
 });

@@ -55,8 +55,15 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
         const readPlan=r.latestPlans?.find(plan=>plan.id===r.plan?.id);
         if(readPlan)section.append(node('p',`조회된 최신 계획 버전: ${readPlan.version} · 현재 선택과 보존 요청은 바꾸지 않았습니다.`));
         selection(section,'planned_delivery','배포 계획',r.plans.map(plan=>[plan.id,`${plan.connection_id} · 원고 버전 ${plan.revision} · 계획 버전 ${plan.version}`]),r.plan?.id,id=>{
-          if(blockedRecord(r))return;r.plan=r.plans.find(plan=>plan.id===id)||null;r.publication=empty('publication');
-          if(r.plan)r.publication.delivery={id:r.plan.id,version:r.plan.version,plan_version:r.plan.version,content_revision:r.plan.revision,connection_id:r.plan.connection_id,state:r.plan.status};
+          if(blockedRecord(r))return;r.plan=r.plans.find(plan=>plan.id===id)||null;
+          // The record owns each plan's session, not the selection/panel. Keep the
+          // original run, monotonic read evidence and recovery history together.
+          if(r.plan&&!r.publications.has(r.plan.id)) {
+            const session=empty('publication');
+            session.delivery={id:r.plan.id,version:r.plan.version,plan_version:r.plan.version,content_revision:r.plan.revision,connection_id:r.plan.connection_id,state:r.plan.status};
+            r.publications.set(r.plan.id,session);
+          }
+          r.publication=r.publications.get(r.plan?.id)||empty('publication');
           r.publication.recovery_blocked=r.blockedPlans.has(r.plan?.id);r.publicationJob='';paint(r);notify();
         },blocked);
       }
@@ -185,7 +192,7 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
   }
   function forContent(content,{dirty:changed=false,readOnly=false}={}) {
     const key=`${content.id}:${content.revision}:${content.manifest_hash}`;
-    if(!records.has(key))records.set(key,{key,content,dirty:changed,readOnly,production:empty('production'),publication:empty('publication'),productionJob:'',publicationJob:'',plans:[],plan:null,cleanups:[],recoverySlots:{},reviews:{production:{},publication:{}},blockedPlans:new Set(),root:node('section')});
+    if(!records.has(key))records.set(key,{key,content,dirty:changed,readOnly,production:empty('production'),publication:empty('publication'),publications:new Map(),productionJob:'',publicationJob:'',plans:[],plan:null,cleanups:[],recoverySlots:{},reviews:{production:{},publication:{}},blockedPlans:new Set(),root:node('section')});
     const r=records.get(key);r.content=content;r.dirty=changed;r.readOnly=readOnly;r.production.content_dirty=r.publication.content_dirty=changed||readOnly;paint(r);return r.root;
   }
   function renderStatus() {
