@@ -83,10 +83,10 @@ test('제작 전용 화면은 발행 승인 입력을 보이지 않고 pending �
 });
 
 const publicationRoot=root=>all(root).find(n=>n.className==='execution-publication');
-async function conflictable({admit,approve,request,getRun,getContent}={}) {
+async function conflictable({admit,approve,request,getRun,getContent,getDelivery,listDeliveries}={}) {
  const {document}=harness();let version=4;const plan=()=>({id:'delivery-1',content_id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,connection_id:'personal.youtube',owner_account_id:'personal',destination_account_id:'personal',version,status:'ready'});
  const api={status:async()=>discovery,request:request||(async()=>({run_id:'publish-run',state:'queued'})),observe:async()=>({observation_id:'observation-1'}),admit:admit||(async id=>({id,version:1,context_hash:'b'.repeat(64)})),approve:approve||(async id=>({id,version:2,state:'queued'})),getRun:getRun||(async()=>({run_id:'publish-run',state:'queued',deliveries:[]}))};
- const workspace=make({document,api,contentApi:{listDeliveries:async()=>({items:[plan()]}),getDelivery:async()=>plan(),getContent:getContent||(async()=>content)}});await workspace.load();const root=workspace.forContent(content);
+ const workspace=make({document,api,contentApi:{listDeliveries:listDeliveries||(async()=>({items:[plan()]})),getDelivery:getDelivery||(async()=>plan()),getContent:getContent||(async()=>content)}});await workspace.load();const root=workspace.forContent(content);
  await button(root,'배포 계획 다시 조회').fire('click');get(root,'planned_delivery').value='delivery-1';await get(root,'planned_delivery').fire('change');get(root,'publication_job').value='publish';await get(root,'publication_job').fire('change');await action(publicationRoot(root),'request').fire('click');
  return {workspace,root,setVersion:value=>version=value};
 }
@@ -158,4 +158,54 @@ test('R1 원격 ID 없이 remote_uncertain만 관측해도 오래된 검토로 �
  let reads=0;const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>++reads===2?{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:4,state:'queued',remote_uncertain:true,context_hash:'d'.repeat(64)}]}:{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]}});
  await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');await action(publicationRoot(root),'refresh').fire('click');
  assert.match(root.textContent,/게시 여부 불확실/);assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+
+for(const source of ['refresh','review'])test(`R1 highwater ${source} unknown4 뒤 연속 queued3 조회도 불확실 근거와 CAS4를 보존한다`,async()=>{
+ let reads=0;const sent=[];const unknownAt=source==='refresh'?2:1;
+ const {root}=await conflictable({approve:async(id,body)=>{sent.push(structuredClone(body));throw Object.assign(new Error(),{status:409});},getRun:async()=>++reads===unknownAt?{run_id:'publish-run',state:'unknown',deliveries:[{id:'delivery-1',version:4,state:'unknown',remote_id:'highwater-remote',remote_uncertain:true,context_hash:'d'.repeat(64)}]}:{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]}});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');const original=structuredClone(sent[0]);
+ await button(root,'별도 발행 승인 처리 상태 조회').fire('click');if(source==='refresh')await action(publicationRoot(root),'refresh').fire('click');
+ await action(publicationRoot(root),'refresh').fire('click');await action(publicationRoot(root),'refresh').fire('click');
+ assert.match(root.textContent,/highwater-remote/);await action(publicationRoot(root),'approve').fire('click');assert.deepEqual(sent[1],original);
+ await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(publicationRoot(root).textContent,/배포: delivery-1 · 버전: 4/);assert.match(root.textContent,/highwater-remote/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+test('R1 highwater 동버전 runtime 문맥 불일치는 이후 일치 응답으로 해소하지 않고 변이를 차단한다',async()=>{
+ let reads=0;const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>({run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:(++reads===2?'d':'c').repeat(64)}]})});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');await action(publicationRoot(root),'refresh').fire('click');await action(publicationRoot(root),'refresh').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,/불일치/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+test('R1 highwater 계획5 조회 뒤 계획4 목록과 검토는 새 요청 CAS를 하강시키지 않는다',async()=>{
+ const sent=[];const fixture=await conflictable({admit:async(id,body)=>{sent.push(structuredClone(body));if(body.expected_version===4)throw Object.assign(new Error(),{status:409});return {id,version:1,context_hash:'c'.repeat(64)};}});const {root}=fixture;
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');fixture.setVersion(5);await button(root,'배포 계획 다시 조회').fire('click');fixture.setVersion(4);await button(root,'배포 계획 다시 조회').fire('click');assert.match(root.textContent,/조회된 최신 계획 버전: 5/);
+ await button(root,'발행 의도 확인 처리 상태 조회').fire('click');let check=get(root,'close_publication_admit');check.checked=true;await check.fire('change');await button(root,'발행 의도 확인 충돌 요청 로컬 종료').fire('click');await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');assert.equal(sent.at(-1).expected_version,5);
+});
+
+
+test('R1 highwater 같은 계획 버전의 대상 불일치는 재조회로 해소되지 않는다',async()=>{
+ let reads=0;const {root}=await conflictable({admit:async()=>{throw Object.assign(new Error(),{status:409});},getDelivery:async()=>({id:'delivery-1',content_id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,connection_id:++reads===1?'personal.other':'personal.youtube',owner_account_id:'personal',destination_account_id:'personal',version:4,status:'ready'})});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');await button(root,'발행 의도 확인 처리 상태 조회').fire('click');await button(root,'발행 의도 확인 처리 상태 조회').fire('click');const check=get(root,'close_publication_admit');check.checked=true;await check.fire('change');await button(root,'발행 의도 확인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,/동일 버전 계획 조회 결과가 불일치/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+test('R1 highwater unknown 뒤 더 높은 queued 버전도 원격 불확실성을 자동 해소하지 않는다',async()=>{
+ let reads=0;const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>++reads===1?{run_id:'publish-run',state:'unknown',deliveries:[{id:'delivery-1',version:4,state:'unknown',remote_uncertain:true,context_hash:'d'.repeat(64)}]}:{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:6,state:'queued',remote_uncertain:false,context_hash:'f'.repeat(64)}]}});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');await action(publicationRoot(root),'refresh').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(publicationRoot(root).textContent,/배포: delivery-1 · 버전: 6/);assert.match(root.textContent,/게시 여부 불확실/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+
+test('R1 highwater 이전 정상 snapshot은 새 검토 응답의 필수 context 누락을 채워 성공시키지 않는다',async()=>{
+ let reads=0;const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>({run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',...(++reads===1?{context_hash:'c'.repeat(64)}:{})}]})});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');const check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');
+ assert.match(root.textContent,/처리 상태 조회에 실패/);assert.equal(get(root,'close_publication_approve').disabled,true);assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);
+});
+
+
+test('R1 highwater 불확실 읽기 근거는 pending 없는 새 요청에도 적용하고 조회는 계속 허용한다',async()=>{
+ const {root}=await conflictable({getRun:async()=>({run_id:'publish-run',state:'unknown',deliveries:[{id:'delivery-1',version:4,state:'unknown',remote_uncertain:true,context_hash:'d'.repeat(64)}]})});await action(publicationRoot(root),'refresh').fire('click');
+ for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);assert.equal(action(publicationRoot(root),'refresh').disabled,false);
 });

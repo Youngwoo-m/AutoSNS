@@ -1,4 +1,4 @@
-import {renderExecutionPanel,bindExecutionPanel} from './execution_panel.js';
+import {renderExecutionPanel,bindExecutionPanel,rememberExecutionRead} from './execution_panel.js';
 
 const reasons={execution_disabled:'서버 실행 정책이 비활성입니다.',execution_service_unavailable:'실행 서비스 미연결',job_disabled:'작업 비활성',legacy_owner:'기존 자동 작업 소유',unknown_executor:'실행기 미등록',media_evidence_required:'매체 게시 근거 확인 필요',quota_exceeded:'한도 초과',needs_auth:'로그인 필요',needs_review:'독립 검토 필요'};
 const reason=value=>reasons[value]||'현재 실행 조건을 확인할 수 없습니다.';
@@ -25,7 +25,7 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
     return (source||[]).filter(job=>job.owner_account_id===r.content.owner_account_id&&(mode==='production'||!r.plan||job.connection_ids?.includes(r.plan.connection_id)));
   };
   function sync(r,s,mode) {
-    s.content=r.content;s.content_dirty=r.dirty||r.readOnly;s.enabled=metadata?.execution_enabled===true&&metadata?.service_available===true&&!error;
+    s.content=r.content;s.plan_read_conflict=mode==='publication'&&r.planConflicts?.has(r.plan?.id)===true;s.content_dirty=r.dirty||r.readOnly;s.enabled=metadata?.execution_enabled===true&&metadata?.service_available===true&&!error;
     const selected=jobs(r,mode).find(job=>job.id===r[`${mode}Job`]);
     const available=s.enabled&&selected?.available===true&&selected?.enabled===true;
     const why=error?error.status===401?'인증을 갱신하고 다시 조회하세요. 입력·요청은 보존했습니다.':'실행 서비스를 사용할 수 없습니다.':!selected?'등록된 작업을 직접 선택하세요.':reason(selected.reason||metadata?.blockers?.[0]);
@@ -72,6 +72,15 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
     }
     r.output=node('div');root.append(r.output);updateOutput(r);
   }
+  function rememberPlan(r,row) {
+    const plan=planSnapshot(row);r.planEvidence??=new Map();r.planVersions??=new Map();r.planConflicts??=new Set();
+    const key=JSON.stringify([plan.id,plan.version]),seen=r.planVersions.get(key);
+    if(seen&&Object.keys(plan).some(field=>Object.hasOwn(seen,field)&&seen[field]!==plan[field]))r.planConflicts.add(plan.id);
+    r.planVersions.set(key,{...plan,...seen});
+    const previous=r.planEvidence.get(plan.id);
+    const latest=!previous||plan.version>previous.version?plan:plan.version<previous.version?previous:{...plan,...previous};
+    r.planEvidence.set(plan.id,latest);return latest;
+  }
   function updateOutput(r) {
     if(!r.output)return;r.output.replaceChildren();
     const production=r.production.run?.production;
@@ -79,6 +88,7 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
   }
   function renderRecovery(r,mode) {
     const slot=r.recoverySlots[mode];if(!slot)return;slot.replaceChildren();const s=r[mode];r.closeChecks??={};
+    if(r.planConflicts?.has(r.plan?.id))slot.append(node('p','동일 버전 계획 조회 결과가 불일치합니다. 새 변이를 허용하지 않습니다.'));
     if(s.recovery_blocked)slot.append(node('p','게시 여부가 불확실하거나 최신 원고 선택이 필요합니다. 로컬 요청 정리는 원격 취소나 새 게시 허가가 아닙니다.'));
     for(const [action,pending] of Object.entries(s.pending))if(pending) {
       const label=labels[action];const box=node('section');box.append(node('h5',`${label} 보존 요청 검토`),node('p','처리 상태를 읽기 조회해 확인하세요. 기존 본문·CAS·요청키는 조회로 바꾸지 않습니다.'));
@@ -118,9 +128,10 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
       if(mode==='publication') {
         const [freshPlan,freshRun]=await Promise.all([contentApi.getDelivery?contentApi.getDelivery(r.plan.id):contentApi.listDeliveries('all',r.content.id).then(data=>data.items.find(row=>row.id===r.plan.id)),api.getRun(s.run.run_id)]);
         if(!freshPlan||freshPlan.id!==r.plan.id||freshPlan.content_id!==r.content.id||!Number.isSafeInteger(freshPlan.version)||freshRun?.run_id!==s.run.run_id)throw new Error();
-        plan=planSnapshot(freshPlan);run=pick(freshRun,['run_id','state','status']);delivery=deliverySnapshot((freshRun.deliveries||[]).find(row=>row.id===r.plan.id));
+        plan=rememberPlan(r,freshPlan);const knownRun=rememberExecutionRead(s,freshRun);run=pick(knownRun,['run_id','state']);delivery=deliverySnapshot((knownRun.deliveries||[]).find(row=>row.id===r.plan.id));
         if(!delivery.id)delivery=null;
-        if(action==='approve'&&(!delivery||!Number.isSafeInteger(delivery.version)||typeof delivery.context_hash!=='string'||!delivery.context_hash))throw new Error();
+        const received=(freshRun.deliveries||[]).find(row=>row.id===r.plan.id);
+        if(action==='approve'&&(!received||!Number.isSafeInteger(received.version)||received.version<0||typeof received.context_hash!=='string'||!received.context_hash))throw new Error();
       } else {
         const latest=await contentApi.getContent(r.content.id);
         if(latest?.id!==r.content.id||!Number.isSafeInteger(latest.revision)||latest.owner_account_id!==r.content.owner_account_id)throw new Error();
@@ -134,10 +145,10 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
     const s=r[mode],review=r.reviews[mode][action];
     if(busy()||s.pending_errors?.[action]?.status!==409||!review||review.token!==token(s,action)||review.confirmed!==true)return;
     const matching=s.run?.deliveries?.find(row=>row.id===s.delivery?.id);
-    const latestDelivery=[review.delivery,s.latest_delivery,matching].filter(row=>row&&row.id===s.delivery?.id).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
-    const latestPlan=[review.plan,...(r.latestPlans||[]).filter(row=>row.id===r.plan?.id)].filter(Boolean).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
-    const unsafe=uncertain(review.run,review.delivery)||uncertain(s.run,s.latest_delivery)||uncertain(s.run,matching);
-    s.closed_requests??=[];s.closed_requests.push({action,request:copy(s.pending[action]),status:409,review:copy(pick(review,['plan','content','run','delivery'])),latest_known:{read_generation:s.read_generation||0,...(latestDelivery?{delivery:copy(deliverySnapshot(latestDelivery))}:{})}});
+    const latestDelivery=[...(s.read_evidence?.deliveries||[]),review.delivery,s.latest_delivery,matching].filter(row=>row&&row.id===s.delivery?.id).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
+    const latestPlan=[r.planEvidence?.get(r.plan?.id),review.plan,...(r.latestPlans||[]).filter(row=>row.id===r.plan?.id)].filter(Boolean).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
+    const unsafe=s.read_evidence?.unsafe||s.read_evidence?.conflict||r.planConflicts?.has(r.plan?.id)||uncertain(review.run,review.delivery)||uncertain(s.run,s.latest_delivery)||uncertain(s.run,matching);
+    s.closed_requests??=[];s.closed_requests.push({action,request:copy(s.pending[action]),status:409,review:copy(pick(review,['plan','content','run','delivery'])),latest_known:{read_generation:s.read_generation||0,unresolved:!!unsafe,...(latestDelivery?{delivery:copy(deliverySnapshot(latestDelivery))}:{})}});
     delete s.pending[action];delete s.pending_errors[action];delete r.reviews[mode][action];
     s.error=null;s.draft={publication_confirmed:false,confirmation_key:null};s.message='충돌 요청을 로컬 종료했습니다. 원래 요청은 이력에 보존했습니다. 원격 취소나 새 게시 허가가 아닙니다.';
     if(mode==='production') {
@@ -159,7 +170,8 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
     r.loadingPlans=true;renderRecovery(r,'publication');notify();
     try {
       const data=await contentApi.listDeliveries('all',r.content.id);
-      r.latestPlans=(data.items||[]).filter(plan=>plan.content_id===r.content.id&&plan.revision===r.content.revision&&plan.manifest_hash===r.content.manifest_hash&&plan.status!=='cancelled').map(planSnapshot);
+      for(const plan of data.items||[])if(plan.content_id===r.content.id&&Number.isSafeInteger(plan.version))rememberPlan(r,plan);
+      r.latestPlans=[...(r.planEvidence?.values()||[])].filter(plan=>plan.revision===r.content.revision&&plan.manifest_hash===r.content.manifest_hash&&plan.status!=='cancelled');
       if(!dirty(r.production)&&!dirty(r.publication))r.plans=r.latestPlans;
       r.planError=null;
     }catch(e){r.planError={status:e.status};r.publication.error={status:e.status};}

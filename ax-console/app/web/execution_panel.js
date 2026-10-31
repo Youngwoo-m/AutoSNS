@@ -48,6 +48,28 @@ function safeRun(raw) {
   if(Array.isArray(raw.deliveries))run.deliveries=raw.deliveries.map(safeRuntimeDelivery);
   return run;
 }
+// Read evidence is monotonic within one run. No response contract exists to resolve
+// remote uncertainty or contradictory snapshots, so later reads cannot clear it.
+export function rememberExecutionRead(state,raw) {
+  const run={...safeRun(raw),...normalizedState(raw,['state','status'],true)};
+  const evidence=state.read_evidence?.run_id===run.run_id?state.read_evidence:{run_id:run.run_id,deliveries:[],versions:{},unsafe:false,conflict:false};
+  if(['unknown','submitting','submitted','running'].includes(run.state))evidence.unsafe=true;
+  for(const row of run.deliveries||[]) {
+    if(!id(row.id)||!Number.isSafeInteger(row.version)||row.version<0)continue;
+    const key=JSON.stringify([row.id,row.version]),seen=evidence.versions[key];
+    const fields=['run_id','state','context_hash','remote_id','remote_uncertain'];
+    if(seen&&fields.some(field=>Object.hasOwn(seen,field)&&Object.hasOwn(row,field)&&seen[field]!==row[field]))evidence.conflict=true;
+    evidence.versions[key]={...row,...seen};
+    if(row.remote_id||row.remote_uncertain===true||['unknown','uploaded','published','scheduled','verified','submitting'].includes(row.state))evidence.unsafe=true;
+    const index=evidence.deliveries.findIndex(item=>item.id===row.id),previous=evidence.deliveries[index];
+    const latest=!previous||row.version>previous.version?{...row}:row.version<previous.version?{...previous}:{...row,...previous};
+    if(previous?.remote_id||row.remote_id)latest.remote_id=previous?.remote_id||row.remote_id;
+    if(previous?.remote_uncertain===true||row.remote_uncertain===true)latest.remote_uncertain=true;
+    if(index<0)evidence.deliveries.push(latest);else evidence.deliveries[index]=latest;
+  }
+  state.read_evidence=evidence;
+  return {...run,deliveries:evidence.deliveries.map(copy)};
+}
 const stateLabel = value => labels[value]||'상태 미확인';
 const reasonLabel = value => reasonNames[value]||text(value);
 const runId = state => state.run?.run_id;
@@ -71,6 +93,7 @@ function blocked(state,action,controller) {
   if(capability?.available!==true)return reasonLabel(capability?.reason||'unavailable');
   if(action!=='refresh'&&state.enabled!==true)return reasonLabel(state.disabled_reason||'disabled');
   if(action==='refresh')return id(runId(state))?'':'조회할 실행이 없습니다.';
+  if((state.read_evidence?.unsafe||state.read_evidence?.conflict||state.plan_read_conflict)&&!state.pending?.[action])return '관측한 불확실 상태나 동일 버전 불일치의 처리 근거를 먼저 확인하세요. 새 요청은 허용하지 않습니다.';
   if(state.recovery_blocked)return '게시 여부가 불확실하거나 최신 원고 선택이 필요합니다. 로컬 정리는 원격 취소나 새 게시 허가가 아닙니다.';
   if(Object.entries(state.pending||{}).some(([name,value])=>value&&name!==action))return '다른 보존 요청의 처리 상태를 먼저 확인하세요.';
   if(action==='request') {
@@ -116,6 +139,8 @@ function draw(root,state,document,controller) {
       const login=node('a','새 창에서 다시 로그인');login.setAttribute('href','/login');login.setAttribute('target','_blank');login.setAttribute('rel','noopener noreferrer');controls.set('login',login);body.push(login);
     }
   }
+  if(state.read_evidence?.conflict)body.push(node('p','동일 버전 조회 결과가 불일치합니다. 원격 처리 근거 확인 전 새 변이를 허용하지 않습니다.'));
+  if(state.read_evidence?.unsafe)body.push(node('p','이미 관측한 게시 불확실·원격 진행 근거를 보존하고 있습니다. 이후 대기 응답만으로 해소하지 않습니다.'));
   if(state.content) {
     body.push(node('h4',state.content.title||'제목 없음'),node('p',`선택 원고: ${text(state.content.id)} · 버전: ${text(state.content.revision)}`));
     const original=node('p',state.content.original||'');original.style.whiteSpace='pre-wrap';body.push(original);
@@ -219,7 +244,7 @@ export function bindExecutionPanel(root,controller={}) {
     } else if(name==='refresh') {
       if(result.run_id!==runId(state))throw invalidResponse();
       const status=normalizedState(result,['state','status'],true);
-      const previous=state.run;const next={...previous,...safeRun(result),...status,...pick(previous,frozenFields)};
+      const previous=state.run;const next={...previous,...rememberExecutionRead(state,{...result,...status}),...pick(previous,frozenFields)};
       delete next.status;
       const delivery=next.deliveries?.find(row=>row.id===state.delivery?.id);
       state.run=next;
