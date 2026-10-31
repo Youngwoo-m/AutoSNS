@@ -36,6 +36,9 @@ from common.operations.registry import load_registry
 from common.operations.models import Registry
 from web_deliveries import handle as handle_deliveries
 from web_operations import handle as handle_operations, recognizes as operations_path, OperationsBlocked
+from common.operations.production_store import ProductionStore
+from common.shared.axlock import AxLock, LockPaths
+from web_execution import handle_request as handle_execution, recognizes as execution_path, ExecutionBlocked, ExecutionUnavailable, REASONS
 from common.operations.runtime_store import RuntimeStore
 from common.operations.runtime_models import ExecutionPolicy
 from web_content import (CONTENT_ID, ASSET_ID, MEDIA_TYPES, ERROR_STATUS, ERROR_MESSAGES,
@@ -55,6 +58,8 @@ _STATIC = {
     'integration_settings.js': 'text/javascript; charset=utf-8',
     'operations_panel.js': 'text/javascript; charset=utf-8',
     'metrics_panel.js': 'text/javascript; charset=utf-8',
+    'execution_panel.js': 'text/javascript; charset=utf-8',
+    'execution_controller.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -345,6 +350,15 @@ class _Handler(BaseHTTPRequestHandler):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
             deliveries = path == '/api/v2/connections' or path == '/api/v2/deliveries' or path.startswith('/api/v2/deliveries/')
+            if execution_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                body = self._read_body(1024*1024, json_body=True) if method == 'POST' else None
+                info = self.server.execution_status_info
+                result = handle_execution(method, path, query, body, self.server.execution_service,
+                    policy=self.server.execution_policy, actor='console_user',
+                    status_info=(info() if callable(info) else info) if path=='/api/v2/execution/status' else None)
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200, result)
             if metrics_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 result = handle_metrics(self.server.metrics_store, method, path, query,
@@ -405,14 +419,22 @@ class _Handler(BaseHTTPRequestHandler):
             if path.startswith('/web/') and path[5:] in _STATIC:
                 return self._static(path[5:])
             return self._error(404, '지원하지 않는 경로입니다')
+        except ExecutionUnavailable:
+            self._send(503, {'error':'실행 서비스를 사용할 수 없습니다', 'code':'execution_service_unavailable'})
+        except ExecutionBlocked as exc:
+            self._send(409, {'error':'서버 실행 정책이 비활성 상태입니다', 'code':exc.code if exc.code in REASONS else 'execution_disabled'})
         except OperationsBlocked as exc:
             self._send(409, {'error':'실행 정책 또는 등록된 복구 서비스가 없어 이 조치를 실행할 수 없습니다', 'code':exc.code})
         except ContractError as exc:
+            if 'path' in locals() and execution_path(path):
+                return self._send(409 if exc.code in REASONS else 503, {'error':'실행 조건을 확인할 수 없습니다', 'code':exc.code if exc.code in REASONS else 'execution_service_unavailable'})
             self._error(503 if exc.code == 'invalid_registry' else 400, '등록부를 확인할 수 없습니다' if exc.code == 'invalid_registry' else '올바르지 않은 배포 계획 요청입니다')
         except StoreError as exc:
             status = ERROR_STATUS.get(exc.code, 503)
             message = ERROR_MESSAGES.get(exc.code, ERROR_MESSAGES['storage_error'])
-            if 'path' in locals() and metrics_path(path):
+            if 'path' in locals() and execution_path(path):
+                self._send(getattr(exc,'status',409 if exc.code in REASONS else status), {'error':message, 'code':exc.code if exc.code in REASONS or exc.code in ERROR_STATUS else 'execution_service_unavailable'})
+            elif 'path' in locals() and metrics_path(path):
                 self._send(status, {'error': message, 'code': exc.code})
             else:
                 self._error(status, message)
@@ -578,7 +600,8 @@ class _Handler(BaseHTTPRequestHandler):
 def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   web_root: Path, auth_backend=None, snapshot_builder=None,
                   workspace_root: Path | None = None, operations_registry=None, execution_policy=None,
-                  recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None) -> ThreadingHTTPServer:
+                  recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None,
+                  execution_service=None, execution_status_info=None, operations_locks=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -590,22 +613,38 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     workspace_root = Path(workspace_root).resolve() if workspace_root is not None else None
     if workspace_root is not None and (workspace_root.is_relative_to(source_root) or source_root.is_relative_to(workspace_root)):
         raise ValueError('관리 저장소와 운영 루트는 분리해야 합니다')
+    registry_source = operations_registry or _APP.parent / 'config' / 'operations.json'
+    registry_value = registry_source() if callable(registry_source) else registry_source
+    registry = registry_value if isinstance(registry_value, Registry) else load_registry(Path(registry_value))
+    input_registry = registry
+    locks = operations_locks or getattr(execution_service, 'locks', None) or AxLock(LockPaths.from_root(source_root))
+    if locks.paths.root != source_root:
+        raise ValueError('실행 서비스의 원본 잠금 루트가 일치하지 않습니다')
+    service_store = getattr(execution_service, 'store', None)
+    if service_store is not None:
+        if workspace_root is None or service_store.root.resolve() != workspace_root:
+            raise ValueError('실행 서비스의 관리 저장소가 일치하지 않습니다')
+        registry = execution_service.registry
+        if not isinstance(registry, Registry):raise ValueError('실제 등록부 객체가 필요합니다')
+        if operations_registry is not None and getattr(execution_service,'base_registry',registry) != input_registry:
+            raise ValueError('실행 서비스 등록부가 일치하지 않습니다')
     backend = auth_backend if auth_backend is not None else _load_auth(source_root)
     server_class = _IPv6WebServer if address.version == 6 else _WebServer
     server = server_class((str(address), port), _Handler)
     server.source_root = source_root
     server.workspace_root = workspace_root
-    server.content_store = ContentStore(workspace_root) if workspace_root is not None else None
+    server.content_store = service_store.content_store if service_store is not None else ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
-    server.ledger = Ledger(workspace_root, registry=operations_registry or _APP.parent / 'config' / 'operations.json', content_store=server.content_store) if workspace_root is not None else None
+    server.ledger = execution_service.ledger if service_store is not None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
-    registry_source = operations_registry or _APP.parent / 'config' / 'operations.json'
-    def metrics_registry():
-        value = registry_source() if callable(registry_source) else registry_source
-        return value if isinstance(value, Registry) else load_registry(Path(value))
-    server.metrics_registry = metrics_registry
-    server.runtime_store = RuntimeStore(workspace_root, registry=operations_registry, content_store=server.content_store) if workspace_root is not None else None
-    server.execution_policy = execution_policy if execution_policy is not None else ExecutionPolicy()
+    server.runtime_store = service_store if service_store is not None else RuntimeStore(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
+    server.production_store = execution_service.production_store if service_store is not None else ProductionStore(workspace_root, registry=registry) if workspace_root is not None else None
+    server.execution_policy = execution_policy if execution_policy is not None else getattr(execution_service,'policy',ExecutionPolicy())
+    for store in (server.runtime_store,server.production_store):
+        if store is not None:store.locks=locks;store.execution_policy=server.execution_policy
+    server.execution_service = execution_service
+    server.execution_status_info = execution_status_info if execution_status_info is not None else getattr(execution_service,'status_info',{})
+    server.metrics_registry = lambda: execution_service.registry if service_store is not None else registry
     server.recovery_adapters = dict(recovery_adapters or {})
     server.process_probe = process_probe
     server.lock_probe = lock_probe

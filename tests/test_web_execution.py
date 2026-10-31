@@ -281,3 +281,33 @@ class ExecutionFacadeTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class ExecutionRuntimeSummaryTests(unittest.TestCase):
+    def test_uploaded_published_remote_id_and_followups_are_public_without_payload(self):
+        from web_execution import public_result
+        for state in ('uploaded','published'):
+            raw={'run_id':'run_fixture','state':'running','deliveries':[{'id':'delivery_fixture','state':state,'remote_id':'remote_123','followup_completion':'pending','followup_intents':[{'action':'comment','required':True,'state':'not_started','separate_approval_required':True,'payload':{'comment':'SECRET'},'path':'/SECRET'},{'action':'arbitrary','required':True,'state':'not_started'}]}]}
+            result=public_result(raw);row=result['deliveries'][0]
+            self.assertEqual(row['state'],state);self.assertEqual(row['remote_id'],'remote_123')
+            self.assertEqual(row['followup_intents'],[{'action':'comment','required':True,'state':'not_started','separate_approval_required':True}]);self.assertEqual(row['followup_completion'],'pending');self.assertNotIn('SECRET',json.dumps(result))
+
+class ActualServiceShapeTests(unittest.TestCase):
+    def test_observe_id_and_approval_delivery_id_are_bound_to_requested_route(self):
+        from web_execution import handle_request
+        class Service(FixtureService):
+            def approve(self,delivery_id,*args):return {'id':37,'delivery_id':delivery_id,'version':3,'state':'queued'}
+        service=Service();policy=ExecutionPolicy(True,(),'cutover')
+        observed=handle_request('POST','/api/v2/execution/deliveries/delivery_fixture/observe',{},dict(run_id='run_fixture',expected_version=1),service,policy=policy)
+        self.assertEqual(observed['observation_id'],'observation_fixture')
+        approved=handle_request('POST','/api/v2/execution/deliveries/delivery_fixture/approve',{},dict(expected_version=2,context_hash='a'*64,request_key='key'),service,policy=policy,actor='console_user')
+        self.assertEqual(approved['id'],'delivery_fixture')
+    def test_production_review_is_safe_fixed_status_and_reason_only(self):
+        from web_execution import public_result
+        result=public_result({'production':{'status':'completed','review':{'status':'required','reason_code':'independent_review_required','report_hashes':['SECRET'],'path':'/SECRET'}}})
+        self.assertEqual(result['production']['review'],{'status':'required','reason_code':'independent_review_required'});self.assertNotIn('SECRET',json.dumps(result))
+
+class ReviewReasonTests(unittest.TestCase):
+    def test_known_uncertain_review_reason_survives_without_provenance_payload(self):
+        from web_execution import public_result
+        result=public_result({'production':{'status':'completed','review':{'status':'unknown','reason_code':'review_execution_uncertain','execution_id':'SECRET'}}})
+        self.assertEqual(result['production']['review'],{'status':'unknown','reason_code':'review_execution_uncertain'})

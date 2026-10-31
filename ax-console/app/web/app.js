@@ -1,8 +1,9 @@
+import {createExecutionWorkspace} from './execution_controller.js';
 import {createMetricsApi,createMetricsPanel} from './metrics_panel.js';
 import {createOperationsApi,createOperationsPanel} from './operations_panel.js';
 import {createContentEditor} from './content_editor.js';
 import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
-import {createSnapshotLoader,contentApi,refreshWorkspace} from './api.js';
+import {createSnapshotLoader,contentApi,refreshWorkspace,createExecutionApi} from './api.js';
 import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
 const $=selector=>document.querySelector(selector);
@@ -46,13 +47,14 @@ const views={
 };
 const writable=()=>state.snapshot?.workspace_writable===true;
 let editorActive=false,integrationAccount=null;
-const editor=createContentEditor({api:contentApi,writable,onSaved:()=>loader.refresh()});
+const execution=createExecutionWorkspace({api:createExecutionApi(),contentApi,onChange:()=>renderStatus(),onOpenOutput:(id,revision)=>openEditor({id,revision,source:'managed'})});
+const editor=createContentEditor({api:contentApi,writable,execution,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
 const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
-const operations=createOperationsPanel({api:createOperationsApi(),onChange:()=>{renderStatus();}});
+const operations=createOperationsPanel({api:createOperationsApi(),execution,onChange:()=>{renderStatus();}});
 function confirmLeave(){
-  if(operations.isBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty());
+  if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty());
   if(accepted&&operations.isDirty())operations.discard();return accepted;
 }
 function pageHead() {
@@ -66,7 +68,7 @@ function renderStatus() {
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
     state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
-  $('.readonly-bar').textContent=writable()?'5단계 · 출처 기반 성과·기획제안 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'5단계 · 실제 자료·성과 조회 · 기존 STOP 읽기 전용';
+  $('.readonly-bar').textContent=writable()?'6A · 제작 접수·별도 발행 승인 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'6A · 실제 자료·성과 조회 · 기존 STOP 읽기 전용';
   const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login',target:'_blank',rel:'noopener noreferrer'},'새 창에서 로그인'));
   box.replaceChildren(line);
@@ -202,7 +204,7 @@ function renderAccounts() {
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
   if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
-  return h('div',{},operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
+  return h('div',{},execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   return metrics.render({account:state.account,writable:writable()});
@@ -210,10 +212,10 @@ function renderAnalytics() {
 function renderIssues() {
   const s=state.snapshot;let content;
   if(issueTab==='actions') content=panel('확인이 필요한 기록',incidentRows(s.incidents));
-  if(issueTab==='runs') content=panel('대상별 배포 기록',h('div',{class:'mini-note'},'준비·검증·후처리 전체 실행 원장은 아직 미지원입니다. 수집된 배포 기록만 표시합니다.'),deliveryTable(s.deliveries));
+  if(issueTab==='runs') content=panel('대상별 배포 기록',h('div',{class:'mini-note'},'위 서비스 패널에서 접수한 회차의 제작 결과·대상별 실행·미시작 후처리를 확인합니다. 아래는 수집된 배포 기록입니다.'),deliveryTable(s.deliveries));
   if(issueTab==='policy')content=panel('운영 정책',empty('관리 실행 정책은 위 운영 패널에서 확인','위 패널은 실행 정책과 원본 STOP 관측을 제공합니다. 예산·발행 한도의 상세 편집은 지원하지 않습니다.'),h('div',{class:'panel-body'},disabled('정책 저장 미지원')));
-  if(issueTab==='settings')content=panel('시스템 설정',h('div',{class:'panel-body'},muted('현재 화면은 로컬 읽기 전용입니다. 연결·인증·스케줄러·알림 설정 변경은 지원하지 않습니다. 관리 실행 중지와 원본 STOP 관측은 계정의 운영 제어에서 확인합니다.'),h('div',{class:'actions'},h('button',{class:'btn btn-small',onclick:()=>setView('accounts')},'채널 설정 기록 보기'),disabled('설정 변경 미지원'))));
-  return h('div',{},operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
+  if(issueTab==='settings')content=panel('시스템 설정',h('div',{class:'panel-body'},muted('실행 서비스 등록과 운영 정책은 위 패널에서 확인합니다. 활성화·정책 변경은 이 화면에서 지원하지 않습니다. 원격 인증은 명시적 대상 읽기 점검으로만 확인합니다.'),h('div',{class:'actions'},h('button',{class:'btn btn-small',onclick:()=>setView('accounts')},'채널 설정 기록 보기'),disabled('설정 변경 미지원'))));
+  return h('div',{},execution.renderStatus(),operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
 function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
@@ -242,7 +244,7 @@ function openEditor(content=null){
   editorActive=true;lastFocus=document.activeElement;
   $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},content?.source==='managed'?'관리 원본 편집':'새 기획 저장'));
   $('#drawer-content').replaceChildren(editor.element);
-  $('.drawer-foot span').textContent='관리 원본 · 로컬 계획·계획 승인 · 실제 예약·발행 미지원';
+  $('.drawer-foot span').textContent='관리 원본 · 계획 승인과 별도 발행 승인 구분 · 실행은 서버 정책에 따름';
   editor.open(content);if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
 function openContent(id) {
@@ -267,8 +269,9 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
 document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>{if(operations.isBusy()||(editorActive&&editor.isBusy()))return;operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()){event.preventDefault();event.returnValue='';}});
+$('#refresh').addEventListener('click',()=>{if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()){event.preventDefault();event.returnValue='';}});
+execution.load();
 operations.load('all');
 loader.select('all');
 setInterval(renderStatus,60000);

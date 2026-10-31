@@ -104,7 +104,7 @@ class OperationsHTTPTests(unittest.TestCase):
         import sqlite3
         fixture=RecoveryAPIIntegrationTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
         self.server.runtime_store=fixture.store;self.server.ledger.registry=registry
-        self.server.execution_policy=ExecutionPolicy(True,('x',),'cutover')
+        self.server.execution_policy=ExecutionPolicy(True,('x',),'cutover',{'subscription_only':True})
         self.server.process_probe=lambda i:dict(i,status='dead')
         self.server.lock_probe=lambda c:dict(status='free',connection_id=c['connection_id'])
         self.server.operations_clock=lambda:fixture.now+timedelta(minutes=2)
@@ -244,7 +244,7 @@ class RecoveryAPIIntegrationTests(unittest.TestCase):
         from tests.operations.test_dispatch import registry,request
         from common.operations.runtime_models import ExecutionPolicy
         from common.operations.content_store import ConflictError
-        policy=ExecutionPolicy(True,('x',),'cutover');reg=registry()
+        policy=ExecutionPolicy(True,('x',),'cutover',{'subscription_only':True});reg=registry()
         dead=lambda identity:dict(identity,status='dead')
         free=lambda context:dict(status='free',connection_id=context['connection_id'])
         decision=self.decision('confirmed_not_posted');decision['evidence']={'confirmed_not_posted':True}
@@ -292,7 +292,7 @@ class RecoveryAPIIntegrationTests(unittest.TestCase):
         handle(self.store,'GET','/api/v2/operations',{},lambda:{},source_root=self.source,adapters={'x':Adapter()})
         self.assertEqual((self.root/'operations.sqlite3').read_bytes(),before)
         self.now+=timedelta(minutes=2)
-        with self.assertRaises(ConflictError):self.request('retry',{'expected_version':self.store.get_delivery(self.id)['version'],'request_key':'never'},policy=ExecutionPolicy(True,('x',),'cutover'),registry=registry(),process_probe=lambda i:dict(i,status='dead'),lock_probe=lambda c:dict(status='free',connection_id='x'),adapters={'x':Adapter()})
+        with self.assertRaises(ConflictError):self.request('retry',{'expected_version':self.store.get_delivery(self.id)['version'],'request_key':'never'},policy=ExecutionPolicy(True,('x',),'cutover',{'subscription_only':True}),registry=registry(),process_probe=lambda i:dict(i,status='dead'),lock_probe=lambda c:dict(status='free',connection_id='x'),adapters={'x':Adapter()})
         self.assertEqual((self.root/'operations.sqlite3').read_bytes(),before)
 
     def test_cancelled_uncertain_keeps_remote_resolution_but_cannot_cancel_twice(self):
@@ -356,3 +356,10 @@ class CrossAccountControlTests(unittest.TestCase):
             self.assertEqual((result['state'],result['version']),('running',4))
 
 if __name__=='__main__':unittest.main()
+
+class SafeExecutionEvidenceTests(unittest.TestCase):
+    def test_media_reason_and_followup_intents_are_fixed_summaries(self):
+        from web_operations import safe_evidence
+        raw={'reason':'media_evidence_required','remote_id':'remote_one','followup_intents':[{'action':'thumbnail','required':True,'state':'not_started','separate_approval_required':True,'payload':{'path':'/SECRET'}}]}
+        result=safe_evidence(raw)
+        self.assertEqual(result['reason'],'media_evidence_required');self.assertEqual(result['followup_intents'],[{'action':'thumbnail','required':True,'state':'not_started','separate_approval_required':True}]);self.assertNotIn('SECRET',json.dumps(result))

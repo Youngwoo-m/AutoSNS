@@ -52,7 +52,7 @@ test('test_disabled_reason_visible: 기본 비활성과 capability 불가 이유
 
 test('test_queued_is_not_published: 접수·제작 완료·공개 확인과 한도·로그인·미지원을 구분한다',()=>{
   const {document}=harness();
-  for(const [state,label] of [['queued','접수 대기'],['completed','실행 완료'],['published','공개 게시 확인'],['quota_exceeded','한도 초과'],['needs_auth','로그인 필요'],['unsupported','미지원'],['unknown','게시 여부 불확실']]) {
+  for(const [state,label] of [['queued','접수 대기'],['completed','실행 완료'],['published','게시됨 · 내용 검증 전'],['quota_exceeded','한도 초과'],['needs_auth','로그인 필요'],['unsupported','미지원'],['unknown','게시 여부 불확실']]) {
     const root=renderExecutionPanel(fixture({run:{run_id:'r',state},delivery:null}),{document});
     assert.match(root.textContent,new RegExp(label));
     if(state==='queued'||state==='completed')assert.doesNotMatch(root.textContent,/공개 게시 확인/);
@@ -177,7 +177,7 @@ for(const [old,next] of [[{execution_state:'queued'},{state:'published'}],[{stat
   const state=fixture();delete state.delivery.state;Object.assign(state.delivery,old);const {root}=opened(state,{approve:async id=>({id,version:3,...next})});
   const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');await action(root,'approve').fire('click');
   assert.equal(state.delivery.state,Object.values(next)[0]);assert.equal(state.delivery.execution_state,undefined);assert.equal(state.error,null);
-  const delivery=all(root).find(node=>node.tagName==='p'&&node.textContent.startsWith('배포: '));assert.match(delivery.textContent,new RegExp(Object.values(next)[0]==='published'?'공개 게시 확인':'게시 여부 불확실'));assert.doesNotMatch(delivery.textContent,/접수 대기/);
+  const delivery=all(root).find(node=>node.tagName==='p'&&node.textContent.startsWith('배포: '));assert.match(delivery.textContent,new RegExp(Object.values(next)[0]==='published'?'게시됨 · 내용 검증 전':'게시 여부 불확실'));assert.doesNotMatch(delivery.textContent,/접수 대기/);
 });
 
 for(const response of [{id:'delivery-1',version:3},{id:'delivery-1',version:3,context_hash:''},{id:'delivery-1',version:3,context_hash:null},{id:'delivery-1',version:-1,context_hash:'new-context'}])test(`I2 잘못된 admit 응답 ${JSON.stringify(response)}는 기존 승인 문맥과 pending을 보존한다`,async()=>{
@@ -203,4 +203,20 @@ test('I2 유효한 admit 최소 응답은 새 context hash와 CAS만 반영하�
   const state=fixture();const {root}=opened(state,{admit:async id=>({id,version:3,context_hash:'new-context'}),approve:async id=>({id,version:4,state:'queued'})});
   const confirm=field(root,'publication_confirmed');confirm.checked=true;await confirm.fire('change');await action(root,'admit').fire('click');
   assert.equal(state.delivery.context_hash,'new-context');assert.equal(state.delivery.version,3);assert.equal(state.pending.admit,undefined);assert.equal(state.error,null);assert.equal(action(root,'approve').disabled,true);
+});
+
+test('실제 publication 모드는 별도 submit run과 plan version으로 점검하며 제작 바인딩을 합성하지 않는다',async()=>{
+ const state=fixture({mode:'publication',run:null,delivery:{id:'delivery-1',version:4,plan_version:4,state:'approved'}});state.trigger.phase='submit';const sent=[];
+ const {root}=opened(state,{request:async()=>({run_id:'publication-run',state:'queued'}),observe:async(id,body)=>{sent.push({id,...body});return {observation_id:'obs-new'};},admit:async id=>({id,version:1,context_hash:'new-context'})});
+ await action(root,'request').fire('click');assert.equal(state.run.binding_id,undefined);await action(root,'observe').fire('click');await action(root,'admit').fire('click');assert.deepEqual(sent,[{id:'delivery-1',run_id:'publication-run',expected_version:4}]);assert.equal(state.delivery.version,1);assert.equal(state.delivery.plan_version,4);
+});
+
+test('production Mapping은 동결 입력과 산출 revision·review 미완료를 분리 표시하고 원고를 바꾸지 않는다',async()=>{
+ const state=fixture();const {root}=opened(state,{getRun:async()=>({run_id:'run-1',state:'waiting',production:{status:'completed',content_id:'content-1',revision:5,manifest_hash:'b'.repeat(64),review:{status:'required',reason_code:'independent_review_required'},path:'/SECRET'}})});
+ await action(root,'refresh').fire('click');assert.match(root.textContent,/동결 원고 버전: 4/);assert.match(root.textContent,/산출 원고 버전: 5/);assert.match(root.textContent,/독립 검토.*필요/);assert.equal(state.content.revision,4);assert.equal(state.run.production.path,undefined);assert.doesNotMatch(root.textContent,/SECRET/);
+});
+
+test('runtime uploaded/published·remote ID·후처리 not_started를 공개 완료와 분리 표시한다',async()=>{
+ const state=fixture();const {root}=opened(state,{getRun:async()=>({run_id:'run-1',state:'partial',deliveries:[{id:'delivery-1',version:3,state:'uploaded',remote_id:'remote_1',followup_completion:'pending',followup_intents:[{action:'comment',state:'not_started',required:true,separate_approval_required:true,payload:'SECRET'}]}]})});
+ await action(root,'refresh').fire('click');assert.match(root.textContent,/업로드.*공개 확인 전/);assert.match(root.textContent,/remote_1/);assert.match(root.textContent,/댓글.*미시작.*별도 승인/);assert.doesNotMatch(root.textContent,/SECRET/);assert.equal(state.run.deliveries[0].followup_intents[0].payload,undefined);assert.equal(state.delivery.version,3);
 });

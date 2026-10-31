@@ -1,0 +1,11 @@
+import {mkdtempSync,cpSync,existsSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+const base=fileURLToPath(new URL('../../',import.meta.url));
+const plan=join(base,'.superpowers/sdd/2026-10-30-web-phase6a/web-artifacts/manifest.json');
+const temporary=mkdtempSync(join(tmpdir(),'a9-staged-web-'));
+const root=join(temporary,'web');cpSync(join(base,'ax-console/app/web'),root,{recursive:true});
+if(existsSync(plan))for(const entry of JSON.parse(readFileSync(plan)).entries)cpSync(join(base,entry.artifact),join(root,entry.target.split('/').at(-1)));
+process.on('exit',()=>rmSync(temporary,{recursive:true,force:true}));
+export const loadWebModule=name=>import(pathToFileURL(join(root,name)));

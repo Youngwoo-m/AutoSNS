@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createOperationsApi,createOperationsPanel} from '../ax-console/app/web/operations_panel.js';
+import {loadWebModule} from './helpers/staged_web.mjs';
+const {createOperationsApi,createOperationsPanel}=await loadWebModule('operations_panel.js');
 class Node {
   constructor(tag){this.tagName=tag;this.children=[];this.listeners={};this.value='';this.disabled=false;this._text='';}
   set textContent(v){this._text=String(v);this.children=[];} get textContent(){return this._text+this.children.map(x=>x.textContent).join('');}
@@ -126,4 +127,9 @@ for(const readMode of ['성공','실패','오래된 응답'])test(`관리 제어
 });
 test('관리 제어는 사람 이름을 우선 표시하고 내부 범위 ID는 보조로 접는다',async()=>{
  const panel=createOperationsPanel({document,api:apiFor({list:async()=>({...listing(),control:{managed:[{scope:'managed',id:'all',state:'running',version:0,available_actions:['pause']},{scope:'connection',id:'personal.youtube',target_label:'개인 유튜브',state:'paused',version:1,available_actions:['resume']}]}})})});await panel.load();const root=panel.render('accounts');assert.match(root.textContent,/전체 관리 작업 · 정상/);assert.match(root.textContent,/개인 유튜브 · 일시중지/);assert.ok(find(root,'관리 일시중지 · 전체 관리 작업'));assert.ok(find(root,'관리 재개 · 개인 유튜브'));assert.ok(all(root).some(n=>n.tagName==='details'&&n.textContent.includes('personal.youtube')));
+});
+
+test('A9 원격 ID가 있는 미시작 후처리·매체 확인 사유를 표시하고 정확한 원고로 이동한다',async()=>{
+ let opened;const row=item('delivery',{content_revision:4,attempts:[{ordinal:1,remote_id:'remote-one',reason:'media_evidence_required',followup_intents:[{action:'comment',state:'not_started',required:true,separate_approval_required:true,payload:'SECRET'}]}]});
+ const panel=createOperationsPanel({document,api:apiFor({get:async()=>row}),execution:{openFromOperation:value=>opened=value}});await panel.load();await find(panel.render(),'상세 · delivery').fire('click');const root=panel.render();assert.match(root.textContent,/댓글.*미시작.*별도 승인/);assert.match(root.textContent,/매체 게시 근거/);assert.doesNotMatch(root.textContent,/SECRET/);await find(root,'원고와 별도 발행 승인 화면').fire('click');assert.equal(opened.content_revision,4);
 });

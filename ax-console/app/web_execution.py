@@ -16,7 +16,7 @@ IDENTIFIER = r'[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}'
 RUN_ROUTE = re.compile(BASE + '/runs/(' + IDENTIFIER + ')')
 DELIVERY_ROUTE = re.compile(BASE + '/deliveries/(' + IDENTIFIER + ')/(observe|admit|approve)')
 TRIGGER_FIELDS = frozenset(('job_id', 'scheduled_at_utc', 'phase', 'source', 'request_kind', 'mode'))
-STATES = frozenset(('queued', 'waiting', 'running', 'preparing', 'prepared', 'submitting', 'submitted',
+STATES = frozenset(('uploaded', 'published', 'queued', 'waiting', 'running', 'preparing', 'prepared', 'submitting', 'submitted',
     'verifying', 'verified', 'completed', 'partial', 'failed', 'cancelled', 'unknown', 'needs_auth',
     'needs_review', 'retry_wait', 'blocked_quota', 'blocked', 'unsupported', 'scheduled', 'dry', 'shadow',
     'pending', 'reserved', 'consumed', 'released', 'producing', 'approved', 'draft', 'planned'))
@@ -33,9 +33,10 @@ PRODUCTION_REASONS = REASONS | frozenset(('daily_limit', 'weekly_limit', 'monthl
     'provider_unavailable', 'provider_error', 'invalid_output', 'missing_result', 'isolation_violation',
     'timeout', 'spawn_failed', 'missing_required_media', 'invalid_production_result', 'production_in_progress',
     'invalid_provider_result', 'production_output_unlinked', 'production_execution_failed', 'conflict',
-    'asset_changed', 'media_render_failed', 'media_validation_failed'))
+    'asset_changed', 'media_render_failed', 'media_validation_failed','review_execution_uncertain',
+    'review_unclear','review_execution_reused','review_fix_required','fix_cycle_limit','calculation_schema_unavailable'))
 ID_FIELDS = ('id', 'run_id', 'delivery_id', 'planned_delivery_id', 'observation_id', 'binding_id',
-    'base_job_id', 'execution_job_id', 'job_id', 'content_id', 'registry_revision', 'connection_id')
+    'remote_id', 'base_job_id', 'execution_job_id', 'job_id', 'content_id', 'registry_revision', 'connection_id')
 INT_FIELDS = ('version', 'plan_version', 'content_revision', 'expected_revision')
 HASH_FIELDS = ('context_hash', 'manifest_hash')
 TIME_FIELDS = ('scheduled_at_utc', 'created_at', 'checked_at', 'completed_at')
@@ -116,7 +117,22 @@ def _production_result(raw):
     manifest = raw.get('manifest_hash')
     if isinstance(manifest, str) and re.fullmatch(r'[0-9a-f]{64}', manifest):
         result['manifest_hash'] = manifest
+    review=raw.get('review')
+    if isinstance(review,Mapping):
+        clean={}
+        if review.get('status') in ('completed','required','blocked','unknown'):clean['status']=review['status']
+        if isinstance(review.get('reason_code'),str) and review['reason_code'] in PRODUCTION_REASONS:clean['reason_code']=review['reason_code']
+        result['review']=clean
     return result
+
+
+def safe_followups(raw):
+    """고정 후처리 의도만 공개한다. 본문·경로·토큰은 복사하지 않는다."""
+    actions=('thumbnail','playlist','comment','caption','public_switch','tiktok')
+    return [dict(action=row['action'],required=True,state='not_started',separate_approval_required=True)
+            for row in raw[:100] if isinstance(row,Mapping) and row.get('action') in actions
+            and row.get('required') is True and row.get('state')=='not_started'
+            and row.get('separate_approval_required') is True] if isinstance(raw,(list,tuple)) else []
 
 
 def public_result(raw):
@@ -154,6 +170,9 @@ def public_result(raw):
             result[name] = public_result(raw[name])
     if isinstance(raw.get('deliveries'), (list, tuple)):
         result['deliveries'] = [public_result(row) for row in raw['deliveries'][:1000] if isinstance(row, Mapping)]
+    if 'followup_intents' in raw:
+        result['followup_intents'] = safe_followups(raw['followup_intents'])
+        result['followup_completion'] = 'pending' if result['followup_intents'] else 'not_required'
     if 'production' in raw:
         if raw['production'] is None:
             result['production'] = None
@@ -262,4 +281,11 @@ def handle_request(method, path, query, body, service, *, policy=None, actor=Non
     else:
         # 서비스가 request_key별 원본 결과를 보존한다. facade는 키를 생성/교체하지 않는다.
         raw = service.approve(delivery_id, body['expected_version'], body['context_hash'], body['request_key'], actor)
+    if action == 'observe' and isinstance(raw,Mapping):
+        if raw.get('planned_delivery_id',delivery_id)!=delivery_id or raw.get('run_id',body['run_id'])!=body['run_id']:
+            raise ExecutionUnavailable()
+        raw=dict(raw,observation_id=raw.get('observation_id',raw.get('id')))
+    elif action == 'approve' and isinstance(raw,Mapping):
+        if raw.get('delivery_id',raw.get('id'))!=delivery_id:raise ExecutionUnavailable()
+        raw=dict(raw,id=delivery_id)
     return public_result(raw)

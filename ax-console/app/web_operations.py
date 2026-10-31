@@ -5,6 +5,7 @@ from urllib.parse import urlsplit, parse_qs
 from collections.abc import Mapping
 from common.operations.content_store import StoreError
 from common.operations.runtime_models import ExecutionPolicy
+from web_execution import safe_followups
 from common.shared.axlock import LockPaths, read_control_state
 
 DELIVERY_ID = r'delivery_[0-9a-f]{32}'
@@ -71,7 +72,9 @@ def safe_evidence(raw):
     if type(raw.get('candidate_count')) is int and raw['candidate_count']>=0:result['candidate_count']=raw['candidate_count']
     if raw.get('outcome') in ('matched','ambiguous','not_found','unsupported','error','verified','pending','failed','submitted','scheduled','unknown'):result['outcome']=raw['outcome']
     if raw.get('visibility') in ('public','private','unlisted','scheduled'):result['visibility']=raw['visibility']
-    if raw.get('reason') in ('adapter_error','invalid_adapter_result','insufficient_evidence','identity_mismatch','not_public','scheduled_future'):result['reason']=raw['reason']
+    if raw.get('reason') in ('adapter_error','invalid_adapter_result','insufficient_evidence','identity_mismatch','not_public','scheduled_future','media_evidence_required','remote_identity_mismatch'):result['reason']=raw['reason']
+    if 'followup_intents' in raw:
+        result['followup_intents']=safe_followups(raw['followup_intents'])
     for name in ('created_at','checked_at','scheduled_at','started_at','completed_at'):
         value=timestamp(raw.get(name))
         if value:result[name]=value
@@ -128,7 +131,8 @@ def item(row, *, detail=False, store=None, enabled=False, policy=None, adapters=
                 value=timestamp(attempt.get(name))
                 if value:clean[name]=value
             remote=attempt.get('result') or {}
-            if isinstance(remote,Mapping):clean.update(safe_evidence(remote))
+            if isinstance(remote,Mapping):
+                clean.update(safe_evidence(remote));clean.update(safe_evidence(remote.get('evidence',{})))
             result['attempts'].append(clean)
         result['evidence']=[]
         for event in store.events(row['id']):

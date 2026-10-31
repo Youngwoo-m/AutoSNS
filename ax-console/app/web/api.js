@@ -63,3 +63,13 @@ export function createContentApi({fetcher=globalThis.fetch}={}) {
   };
 }
 export const contentApi=createContentApi();
+
+export function createExecutionApi({fetcher=globalThis.fetch}={}) {
+  const segment=value=>{if(typeof value!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}$/.test(value))throw new Error('실행 식별자가 올바르지 않습니다.');return encodeURIComponent(value);};
+  async function request(path,body) {
+    const response=await fetcher(`/api/v2/execution${path}`,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+    if(!response.ok){let code;try{code=(await response.json()).code;}catch{}throw Object.assign(new Error(response.status===401?'인증이 만료되었습니다. 입력과 요청을 보존했습니다.':response.status===409?'실행 조건이 바뀌었습니다. 입력과 요청을 보존했습니다.':'실행 서비스를 사용할 수 없습니다. 입력과 요청을 보존했습니다.'),{status:response.status,code});}
+    return response.json();
+  }
+  return {status:()=>request('/status'),request:body=>request('/requests',body),getRun:id=>request(`/runs/${segment(id)}`),observe:(id,body)=>request(`/deliveries/${segment(id)}/observe`,body),admit:(id,body)=>request(`/deliveries/${segment(id)}/admit`,body),approve:(id,body)=>request(`/deliveries/${segment(id)}/approve`,body)};
+}

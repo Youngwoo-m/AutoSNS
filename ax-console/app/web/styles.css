@@ -37,3 +37,12 @@
 .metrics-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}.metrics-panel label{display:grid;gap:.4rem;min-width:0;margin:.7rem 0}.metrics-panel input,.metrics-panel textarea,.metrics-panel select{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:.65rem;border:1px solid var(--line,#b6c1ba);border-radius:6px;font:inherit;background:#fff;color:#1d2922}.metrics-panel input[type=checkbox]{width:1.2rem;height:1.2rem;justify-self:start}.metrics-panel textarea{min-height:7rem;resize:vertical}
 .metrics-group,.metrics-proposal,.metrics-preview,.metrics-support{min-width:0;margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line,#d6ddd8)}.metrics-observation{min-width:0;border:1px solid var(--line,#d6ddd8);border-radius:10px;padding:1rem;margin:.75rem 0}.metrics-observation details{padding:.5rem 0}.metrics-observation summary{cursor:pointer;font-weight:600}.metrics-observation details p{white-space:pre-wrap}.metrics-preview{padding:1rem;background:#fff8eb;border:1px solid #e8dabd;border-radius:10px}
 @media(max-width:480px){.metrics-filters{grid-template-columns:minmax(0,1fr)}.metrics-panel{padding:.65rem}.metrics-observation,.metrics-preview{padding:.7rem}.metrics-panel .btn{width:100%;margin:.3rem 0}}
+
+/* 6A execution controls share the existing editor without forcing a minimum viewport. */
+.execution-panel,.execution-service,.execution-production,.execution-publication{min-width:0;max-width:100%;overflow-wrap:anywhere;box-sizing:border-box}
+.execution-production,.execution-publication{border:1px solid var(--line,#d8dce3);border-radius:10px;padding:12px;margin-block:12px}
+.execution-panel button,.execution-service button{white-space:normal;max-width:100%;height:auto;min-height:40px;margin:4px 4px 4px 0}
+.execution-production label,.execution-publication label{display:block;margin-block:8px}
+.execution-production select,.execution-publication select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.execution-panel p{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:480px){.execution-production,.execution-publication{padding:8px}.execution-panel button,.execution-service button{display:block;width:100%;margin-inline:0}}

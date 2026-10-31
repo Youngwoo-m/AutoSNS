@@ -25,7 +25,7 @@ export function createEditSession(content=null) {
   session.baseline=JSON.stringify(session.draft);return session;
 }
 const platforms=['youtube','tiktok','instagram','threads','x','facebook','tistory','naver_blog','blogger','homepage','kakao'];
-export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
+export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execution=null}) {
   const root=document.createElement('div');root.className='content-editor';
   let session=createEditSession(),historical=false,busy=false,loadFailed=false,generation=0,revisions=[],message='',reviewDraft={kind:'general',decision:'pass',notes:''};
   const el=(tag,attrs={},...children)=>{
@@ -38,18 +38,18 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
   const canWrite=()=>writable()===true&&!historical&&!busy&&!loadFailed;
   let deliveryKey='';
   const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved,onStateChange:()=>updateRevisionControls()});
-  const childBlocksRevision=()=>delivery.hasUnsavedChanges()||delivery.isBusy();
+  const childBlocksRevision=()=>delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
   function updateRevisionControls(){const blocked=childBlocksRevision();root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;const notice=root.querySelector('[data-child-block]');if(notice)notice.textContent=blocked?(delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.'):'';}
-  const hasChanges=()=>delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
+  const hasChanges=()=>!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength}={}) {
     const input=el(type,{...(maxLength?{maxlength:maxLength}:{}),disabled:!canWrite(),oninput:e=>{onChange(e.target.value);updateNotice();}});
     if(options)for(const [id,text] of options)input.append(el('option',{value:id},text));
     input.value=value;return el('label',{class:'editor-field'},el('span',{},label),input);
   }
-  function updateNotice(){delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
+  function updateNotice(){if(session.content&&execution)execution.forContent(session.content,{dirty:session.dirty(),readOnly:!canWrite()});delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
   function notice(){return el('p',{class:'editor-message',role:'status','aria-live':'polite'},session.error||message|| (session.phase==='saved'?'저장했습니다.':busy?'처리 중입니다.':''));}
   async function action(task) {
-    if(delivery.isBusy())return;
+    if(delivery.isBusy()||execution?.isBusy())return;
     busy=true;message='';session.error='';render();
     try {await task();}catch(error){session.error=error.message;session.phase=error.status===401?'unauthorized':error.status===409?'conflict':'error';}
     finally {busy=false;render();}
@@ -95,15 +95,17 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false}) {
     const reviewButton=[...form.querySelectorAll('button')].find(node=>node.textContent==='이 버전의 수동 검토 기록 저장');if(reviewButton)reviewButton.setAttribute('data-needs-clean','');
     root.replaceChildren(form);
     if(c&&!historical){root.append(delivery.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==deliveryKey){deliveryKey=key;delivery.open(c);}else delivery.refreshControls();}
+    if(c&&execution)root.append(execution.forContent(c,{dirty:session.dirty(),readOnly:!canWrite()}));
     updateRevisionControls();
   }
   async function open(content=null) {
     const token=++generation;deliveryKey='';delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];session=createEditSession();busy=true;render();
     try {
-      if(content?.source==='managed'){const [full,history]=await Promise.all([api.getContent(content.id),api.listRevisions(content.id)]);if(token!==generation)return;session=createEditSession(full);revisions=history.items||[];}
+      if(content?.source==='managed'){const [full,history]=await Promise.all([api.getContent(content.id,content.revision),api.listRevisions(content.id)]);if(token!==generation)return;session=createEditSession(full);revisions=history.items||[];historical=full.revision<Math.max(full.revision,...revisions.map(item=>item.revision));}
       else if(content){session.draft=copyLegacySummary(content);session.baseline=JSON.stringify(emptyDraft());message='기존 자료의 수집 요약만 복사했습니다. 전체 원문은 제공되지 않았습니다. 새 원본 소유 계정을 선택해 저장하세요.';}
     }catch(error){if(token===generation){loadFailed=true;session.error=error.message;session.phase=error.status===401?'unauthorized':'error';}}
     finally {if(token===generation){busy=false;render();}}
   }
-  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||delivery.isBusy()};
+  execution?.subscribe?.(()=>updateRevisionControls());
+  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||delivery.isBusy()||!!execution?.isBusy()};
 }

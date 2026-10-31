@@ -5,7 +5,7 @@ const labels={cancelled:'로컬 취소',unknown:'게시 여부 불확실',needs_
 const accountName=id=>({personal:'개인',dept:'학과'}[id]||'계정 미확인');
 const platformName=id=>({naver_blog:'네이버 블로그',youtube:'유튜브',tiktok:'틱톡',instagram:'인스타그램',threads:'스레드',x:'엑스',facebook:'페이스북',tistory:'티스토리',blogger:'블로거',homepage:'홈페이지',kakao:'카카오'}[id]||'플랫폼 미확인');
 const planName=id=>({pending:'대기',ready:'준비 완료',approved:'승인 완료',draft:'초안',planned:'계획됨',scheduled:'예약됨',cancelled:'취소됨',failed:'실패',published:'게시됨',verified:'검증 완료',needs_review:'검토 필요'}[id]||'상태 미확인');
-const blockerLabels={execution_disabled:'서버 실행 정책이 비활성 상태입니다.',adapter_unavailable:'이 연결의 읽기 전용 원격 조회 어댑터가 등록되지 않았습니다.',probe_unavailable:'서버 프로세스·잠금 관측이 등록되지 않아 미게시 확인을 확정할 수 없습니다.',insufficient_evidence:'서버 관측 근거가 충분하지 않습니다.',worker_active:'이전 작업자의 실행 시간이 아직 유효합니다.',invalid_resume:'실제 제출 회차로 연결된 실행만 재개할 수 있습니다.',context_changed:'등록된 대상 또는 운영 정책이 바뀌어 재검토가 필요합니다.',connection_not_allowed:'이 연결은 서버 실행 허용 범위에 없습니다.',cutover_required:'서버 실행 전환 근거가 필요합니다.',legacy_owner:'기존 자동 작업 소유 범위라 관리 실행으로 재개할 수 없습니다.',job_disabled:'등록된 작업이 비활성 상태입니다.',connection_disabled:'등록된 연결이 비활성 상태입니다.',managed_paused:'관리 범위가 일시중지 상태입니다.',recovery_state_blocked:'현재 상태에서는 이 복구 조치를 사용할 수 없습니다.'};
+const blockerLabels={media_evidence_required:'매체 게시 근거가 필요합니다. 원격 게시 ID가 있어도 내용 검증 완료로 간주하지 않습니다.',execution_disabled:'서버 실행 정책이 비활성 상태입니다.',adapter_unavailable:'이 연결의 읽기 전용 원격 조회 어댑터가 등록되지 않았습니다.',probe_unavailable:'서버 프로세스·잠금 관측이 등록되지 않아 미게시 확인을 확정할 수 없습니다.',insufficient_evidence:'서버 관측 근거가 충분하지 않습니다.',worker_active:'이전 작업자의 실행 시간이 아직 유효합니다.',invalid_resume:'실제 제출 회차로 연결된 실행만 재개할 수 있습니다.',context_changed:'등록된 대상 또는 운영 정책이 바뀌어 재검토가 필요합니다.',connection_not_allowed:'이 연결은 서버 실행 허용 범위에 없습니다.',cutover_required:'서버 실행 전환 근거가 필요합니다.',legacy_owner:'기존 자동 작업 소유 범위라 관리 실행으로 재개할 수 없습니다.',job_disabled:'등록된 작업이 비활성 상태입니다.',connection_disabled:'등록된 연결이 비활성 상태입니다.',managed_paused:'관리 범위가 일시중지 상태입니다.',recovery_state_blocked:'현재 상태에서는 이 복구 조치를 사용할 수 없습니다.'};
 const blockerText=code=>blockerLabels[code]||'운영 조건을 추가로 확인해야 합니다.';
 export function createOperationsApi({fetcher=globalThis.fetch}={}){
   async function request(path,body){
@@ -16,7 +16,7 @@ export function createOperationsApi({fetcher=globalThis.fetch}={}){
   const path=id=>`/operations/${encodeURIComponent(id)}`;
   return {list:(account='all')=>{if(!scopes.has(account))return Promise.reject(new Error('계정 범위가 올바르지 않습니다.'));return request(`/operations?account=${account}`);},get:id=>request(path(id)),reconcile:(id,body)=>request(`${path(id)}/reconcile`,body),resolve:(id,body)=>request(`${path(id)}/resolve`,body),retry:(id,body)=>request(`${path(id)}/retry`,body),control:body=>request('/control',body)};
 }
-export function createOperationsPanel({api,onChange=()=>{},document=globalThis.document}){
+export function createOperationsPanel({api,onChange=()=>{},document=globalThis.document,execution=null}){
   const roots=Object.fromEntries(['issues','today','accounts'].map(mode=>{const node=document.createElement('section');node.className=`operations-panel operations-${mode}`;return [mode,node];}));
   let account='all',snapshot=null,detail=null,draft=null,dirty=false,busy=false,generation=0,selection=0,message='운영 상태를 불러오세요.',conflict=false,filter='all';
   const controls=new Map(), confirmedControls=new Map(), actionRequests=new Map(), actionNeedsRefresh=new Set();
@@ -113,6 +113,9 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
         else if(name==='visibility')value={public:'공개',private:'비공개',unlisted:'일부 공개',scheduled:'예약됨'}[value]||'미확인';
         box.append(node('p',`${label}: ${value}`));
       }
+      if(typeof row.reason==='string')box.append(node('p',`확인 사유: ${blockerText(row.reason)}`));
+      const followupNames={thumbnail:'썸네일',playlist:'재생목록',comment:'댓글',caption:'자막',public_switch:'공개 전환',tiktok:'틱톡 교차 게시'};
+      for(const intent of Array.isArray(row.followup_intents)?row.followup_intents:[])if(followupNames[intent.action]&&intent.state==='not_started'&&intent.required===true&&intent.separate_approval_required===true)box.append(node('p',`${followupNames[intent.action]} · 필수 · 미시작 · 별도 승인 필요`));
       if(typeof row.remote_id==='string'){const identity=node('details');identity.append(node('summary','원격 게시물 식별자'),node('p',row.remote_id));box.append(identity);}
       const href=safeUrl(row.url);if(href){const link=node('a','원격 근거 열기');link.href=href;link.target='_blank';link.rel='noopener noreferrer';box.append(link);}parent.append(box);
     }
@@ -121,6 +124,7 @@ export function createOperationsPanel({api,onChange=()=>{},document=globalThis.d
     if(!detail)return;const box=node('section',undefined,'operations-detail');box.append(node('h3',detail.title||'실행 상세'),node('p',detail.target_label||platformName(detail.platform)));const identity=node('details');identity.append(node('summary','내부 실행 식별자'),node('p',`실행 상세 · ${detail.id}`));box.append(identity);
     for(const [label,value] of [['계획 상태',planName(detail.plan_status)],['실행 상태',labels[detail.execution_state]||'상태 미확인'],['원본 소유 계정',accountName(detail.owner_account_id)],['대상 계정',accountName(detail.destination_account_id)],['연결',detail.connection_id],['플랫폼',platformName(detail.platform)],['버전',detail.version],['생성 시각',localTime(detail.created_at)],['확인 시각',localTime(detail.checked_at)],['예약 시각',localTime(detail.scheduled_at)]])box.append(node('p',`${label}: ${value??'미확인'}`));
     if(detail.remote_uncertain)box.append(node('p','게시 여부 불확실 · 로컬 상태와 별개로 원격 결과가 확정되지 않았습니다. 새 제출 없이 근거를 확인하세요.','operations-warning'));
+    if(execution&&detail.content_id&&detail.content_revision)box.append(button('원고와 별도 발행 승인 화면',()=>execution.openFromOperation(detail)));
     box.append(node('h4','시도 기록'));evidence(box,detail.attempts);box.append(node('h4','확인 근거'));evidence(box,detail.evidence);
     for(const reason of detail.blockers||[])if(typeof reason==='string')box.append(node('p',blockerText(reason),'operations-warning'));
     box.append(button('상태 다시 조회',()=>runAction('reconcile'),!allowed('reconcile')),button('동일 실행 재개',()=>runAction('retry'),!allowed('retry')));
