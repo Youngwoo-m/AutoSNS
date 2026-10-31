@@ -24,3 +24,17 @@ class NormalizationTests(unittest.TestCase):
         self.assertEqual(result.status, 'ok')
         self.assertEqual(result.definition_id, 'manual.csv.youtube.views.v1')
         self.assertNotIn('source_kind', result.source)
+
+    def test_unsupported_definition_still_validates_value_time_and_period(self):
+        base = self.row(); base['metric_name'] = 'ctr'
+        for changes in ({'value': 'NaN'}, {'observed_at': 'not-a-time'}, {'basis': 'broken'},
+                        {'basis': 'interval'}, {'basis': 'lifetime', 'period_start': '2026-01-01T00:00:00Z'},
+                        {'basis': 'interval', 'period_start': '2026-01-02T00:00:00Z', 'period_end': '2026-01-01T00:00:00Z', 'timezone': 'UTC'}):
+            with self.subTest(changes=changes):
+                result = normalize_metric_row(dict(base, **changes))
+                self.assertEqual(result.status, 'error'); self.assertEqual(result.values, {})
+        for changes in ({}, {'basis': 'interval', 'period_start': '2026-01-01T00:00:00Z', 'period_end': '2026-01-02T00:00:00Z', 'timezone': 'UTC'}):
+            result = normalize_metric_row(dict(base, **changes))
+            self.assertEqual(result.status, 'unsupported'); self.assertEqual(result.values, {})
+            self.assertEqual(result.basis, changes.get('basis', 'lifetime'))
+            self.assertIsNotNone(result.observed_at)

@@ -73,3 +73,19 @@ class CsvTests(unittest.TestCase):
         self.assertIsNone(rows[0]['destination_account_id'])
         self.assertEqual(rows[1]['destination_account_id'], 'personal')
         self.assertTrue(all(r['source_kind'] == 'legacy_reported' and r['content_id'] is None and r['delivery_id'] is None for r in rows))
+
+    def test_invalid_unsupported_rows_block_whole_import(self):
+        valid = ['youtube','channel','v','views','0','2026-01-01T00:00:00Z','lifetime','valid']
+        for index, value in ((4, 'NaN'), (5, 'not-a-time'), (6, 'broken'), (6, 'interval')):
+            unsupported = valid.copy(); unsupported[3] = 'ctr'; unsupported[index] = value
+            data = self.data([valid, unsupported])
+            preview = self.preview(data)
+            self.assertEqual(preview['counts']['error'], 1)
+            self.assertFalse(preview['can_import'])
+            with self.assertRaises(StoreError): self.load(data, 'invalid-unsupported')
+            self.assertEqual(self.store.list_observations(), [])
+        unsupported = valid.copy(); unsupported[3] = 'ctr'
+        data = self.data([unsupported]); self.assertTrue(self.preview(data)['can_import'])
+        self.load(data, 'valid-unsupported')
+        saved = self.store.list_observations()[0]
+        self.assertEqual(saved['status'], 'unsupported'); self.assertEqual(saved['values'], {})

@@ -22,8 +22,6 @@ def normalize_metric_row(row: Mapping) -> MetricResult:
     definition = f'manual.csv.{platform}.{metric}.v1'
     def failure(reason, status='error'):
         return MetricResult(status, {}, None, row['remote_id'], row['target_id'], definition, source={'reason': reason})
-    if metric not in COUNT_METRICS:
-        return failure('unsupported_definition', 'unsupported')
     value = row.get('value')
     if value is None or value == '':
         return failure('missing_value')
@@ -46,6 +44,10 @@ def normalize_metric_row(row: Mapping) -> MetricResult:
         return failure('unexpected_period')
     try:
         observed = _time(row.get('observed_at'))
-        return MetricResult('ok', {metric: number}, observed, row['remote_id'], row['target_id'], definition, basis, period)
+        # Definition support never bypasses validation of the supplied observation.
+        status = 'ok' if metric in COUNT_METRICS else 'unsupported'
+        source = {} if status == 'ok' else {'reason': 'unsupported_definition'}
+        return MetricResult(status, {metric: number} if status == 'ok' else {}, observed,
+                            row['remote_id'], row['target_id'], definition, basis, period, source)
     except StoreError:
         return failure('invalid_period_or_time')
