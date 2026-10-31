@@ -50,7 +50,8 @@ class GateFixture(unittest.TestCase):
         requirements=[{'scope_kind':k,'scope_id':v,'metric':'posts','window_kind':'day','timezone':'UTC','limit':5,'amount':1} for k,v in [('target','t'),('api','fixture-api'),('owner','personal')]]
         self.registry=Registry('r',{'personal':{}},{},{'p':{'account_id':'personal','lock_resource':'profile:tistory'}},{'x':Connection('x','personal','tistory',target_id='t',profile_ref='p',enabled=True,expected_login_subject='subject')},{'j':{'enabled':True,'execution_owner':'managed','schedule_owner':'console','owner_account_id':'personal','connection_id':'x','policy_revision':'p'}},{'p':{'subscription_only':True,'review_authorities':{'reviewer':['source']},'quota_requirements':requirements}}, {})
         self.store=RuntimeStore(root/'managed',self.registry,content);self.store.initialize()
-        self.store.execution_policy=self.policy;self.store.locks=AxLock(LockPaths.from_root(root/'source'))
+        # 사용자 로그인 브라우저는 관측하지 않고 임시 루트의 실제 flock/STOP은 유지한다.
+        self.store.execution_policy=self.policy;self.store.locks=AxLock(LockPaths.from_root(root/'source'),process_probe=lambda resource: False)
         from tests.operations.production_fixture import produce_reviewed_fixture
         made=produce_reviewed_fixture(content,self.store,self.registry,self.content,NOW)
         self.registry=made['registry'];self.content=made['snapshot']
