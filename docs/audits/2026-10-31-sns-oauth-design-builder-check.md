@@ -48,3 +48,12 @@ OAuth 화면부터 UI·서버 계약·격리 검증을 함께 개발한다는 �
 |P2 registry/Keychain 쓰기·복구 주체|설계 수준 해결|`ManagedConnectionStore` SQLite transaction이 쓰기 주체이며 `project_registry`가 소유 검증된 overlay/credential catalog를 합성한다. 원본 registry는 변경하지 않고 base/connection revision CAS를 적용한다. Keychain stage → SQLite active pointer 전환 → 구세대 정리와 재시작 orphan 정리, connected 공개 전제도 명시했다.|
 
 이 세 항목에 대한 추가 필수 수정이나 사용자 질문은 없다. 이는 구현·동작 검증 완료 판정이 아니다. 실제 HTTPS callback의 host/proxy/Origin/Secure 쿠키 경계 수락 및 provider별 실연결은 설계에 적힌 별도 미완 gate로 유지한다.
+
+## 기존 채널 근거 추가의 한정 재검토
+
+2026-10-31. Google/Naver 공식 계약 감사 두 파일과 설계의 revoke 문단·기존 채널 표·마지막 보완절만 대조했다. 전체 설계 재검토나 네트워크·제품 변경은 하지 않았다.
+
+- **Google 기존 발행 grant에 대한 원격 철회 위험: 설계 수준 해결.** 설계는 로컬 연결 해제가 overlay 및 진행 세대만 차단하고 기존 발행 자격·프로필을 변경하지 않는다고 명시한다. 원격 revoke는 별도 동작이며 project/client 분리와 기존 grant 영향이 미확인인 동안 차단한다. 새 client만으로 격리를 보장하지 않는다는 문구도 추가했다. 이는 [Google 감사](2026-10-31-google-oauth-compatibility.md)의 같은 project 내 다른 client token 영향과 일치한다. 해당 감사의 공식 근거는 [Google Web server OAuth](https://developers.google.com/identity/protocols/oauth2/web-server)다. 실제 project 분리나 기존 token 영향이 검증되었다는 뜻은 아니다.
+- **Naver 로그인 성공을 블로그 발행 가능으로 승격할 위험: 설계 수준 해결.** provider 표는 회원 프로필 OAuth와 블로그 게시를 분리하고 글쓰기 API 종료를 명시하며 로그인 성공을 발행 가능으로 표시하지 못하게 한다. 기존 브라우저 세션 경로에는 별도 정책·권한·프로필 잠금 수락을 유지한다. 이는 [Naver 감사](2026-10-31-naver-oauth-compatibility.md), 그 안의 [공식 글쓰기 API 종료 공지](https://developers.naver.com/notice/article/7527) 및 [로그인 API 문서](https://developers.naver.com/docs/login/api/api.md)와 일치한다. 종료 공지를 브라우저 자동화 허용의 근거로 사용하지 않는다.
+
+두 위험에 대한 추가 필수 수정·사용자 질문은 없다. 실제 원격 revoke·블로그 발행·실계정 연결의 수행이나 수락은 계속 별도 미완이다.

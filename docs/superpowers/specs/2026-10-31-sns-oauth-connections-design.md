@@ -69,7 +69,7 @@
 - callback/refresh/revoke는 connection별 직렬화와 generation CAS로 경쟁을 막는다. 중복 callback은 재교환하지 않고, revoke 후 늦은 refresh 응답은 저장하지 않는다.
 - `assert_zero_cost(operation, endpoint, evidence_revision)`는 authorize 시작과 token/장기교환/refresh/revoke/principal 등 모든 외부 호출 직전에 서버가 실행한다. endpoint별 비용 0 증거·허용 범위를 시도에 동결하고 현재 증거로 재검증한다. unknown/paid/credit은 외부 전송 0으로 차단한다. 동의는 결제수단 등록·구매·자동충전·보유 크레딧 소비의 허가가 아니다.
 - `POST /connections/{id}/refresh`와 `/revoke`는 별도 명시 mutation이다. refresh 반환 자격을 원자 교체하고 실패 시 reauth_required로 둔다. 자동 재동의·유료 재시도는 없다.
-- revoke는 먼저 로컬 사용을 차단하고 진행 세대 작업을 무효화한다. provider revoke 지원·실패·원격 해지 미확인을 구별하며 로컬 삭제를 원격 revoke 성공으로 표시하지 않는다.
+- 로컬 연결 해제와 provider 원격 revoke는 다른 동작이다. 로컬 해제는 overlay 사용과 진행 세대만 차단하고 기존 발행 자격·프로필을 삭제/변경하지 않는다. 원격 revoke는 지원·범위·영향받는 기존 연결을 먼저 확인한다. Google은 같은 project의 다른 client token에도 영향을 줄 수 있으므로 project/client 분리와 기존 grant 영향이 미확인인 동안 원격 revoke를 차단한다. 새 client 하나만으로 격리가 보장된다고 표시하지 않는다. 실패·원격 해지 미확인을 구별하고 로컬 삭제를 원격 revoke 성공으로 표시하지 않는다.
 - 응답 allowlist는 상태·안전한 ID/label·scope·기한·오류코드만 허용한다. secret/token/code/verifier/state 원문은 응답·감사·예외·프록시 로그에서 제거한다. callback 후 query 없는 결과 URL로 이동하고 no-store/no-referrer를 적용한다.
 
 ## provider별 정직한 gate
@@ -82,7 +82,8 @@
 |X|OAuth2 PKCE와 scope 묶음을 검증한다. paid_gate_unverified에서는 principal read도 금지한다. 인증 endpoint도 무료로 추정하지 않는다. OAuth 동의가 credit 소비 승인은 아니다.|
 |TikTok|읽기·inbox upload·Direct Post를 분리한다. 내부 utility intended use 적합성 unresolved, app review/audit/creator UX 미완이면 쓰기 차단한다.|
 |Tistory|공식 API 종료로 신규 OAuth 연결 unsupported. 웹 세션·정책·axlock은 별도 흐름이며 비공개 API로 우회하지 않는다.|
-|Naver/Blogger/YouTube|기존 연결 표시를 유지한다. 기존 자격을 새 공용 client로 자동 이식하지 않고 provider별 공식 계약과 실주체 확인이 필요하다.|
+|YouTube/Blogger|Google 웹 client와 Desktop loopback/PKCE 계약을 구별한다. 기존 자격 자동 이식·fallback0, 최소 읽기 scope와 실제 channelId/blogId를 대조한다. Testing 만료·앱 검증·quota/비용은 실 project 확인 전 미확인이다. 기존 발행과 project 공유 영향이 미확인하면 원격 revoke는 차단한다.|
+|Naver|회원 프로필 OAuth와 블로그 게시를 분리한다. 공식 블로그 글쓰기 API는 종료됐으므로 로그인 성공을 블로그 발행 가능으로 표시하지 않는다. 기존 브라우저 세션 경로는 별도 정책·권한·프로필 잠금 수락을 유지한다.|
 
 ## 검증·배포·후속 수락
 
@@ -97,3 +98,7 @@
 ## builder check 보완 기록
 
 - [설계 검토](../../audits/2026-10-31-sns-oauth-design-builder-check.md)의 필수 3건을 반영했다. Strict 쿠키를 유지하는 callback 보관/동일 세션 재개, 모든 외부 인증 호출의 비용 0 gate, SQLite overlay와 Keychain 세대 전환·복구 주체를 명시했다. 검토 원문은 변경하지 않았으며 추가 실계정 동작은 수행하지 않았다.
+
+## 기존 채널 공식 계약 보완
+
+[Google 조사](../../audits/2026-10-31-google-oauth-compatibility.md)와 [네이버 조사](../../audits/2026-10-31-naver-oauth-compatibility.md)를 추가 근거로 사용한다. Google의 프로젝트 단위 grant 철회 영향과 네이버 글쓰기 API 종료를 화면의 연결 해제/권한 안내에 반영한다. 기존 토큰·실제 project·계정은 열람하지 않았으며 플랫폼 quota 코드를 이 문서만으로 변경하지 않는다.
