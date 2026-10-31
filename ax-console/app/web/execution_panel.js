@@ -63,12 +63,15 @@ function validTrigger(trigger) {
     Number.isFinite(Date.parse(trigger.scheduled_at_utc));
 }
 function blocked(state,action,controller) {
+  if(state.reviewing)return '보존 요청의 처리 상태를 읽기 조회 중입니다.';
   if(state.busy)return '다른 요청을 처리 중입니다.';
   if(controller&&typeof controller[action==='refresh'?'getRun':action]!=='function')return '화면 연결이 준비되지 않았습니다.';
   const capability=state.capabilities?.[action];
   if(capability?.available!==true)return reasonLabel(capability?.reason||'unavailable');
   if(action!=='refresh'&&state.enabled!==true)return reasonLabel(state.disabled_reason||'disabled');
   if(action==='refresh')return id(runId(state))?'':'조회할 실행이 없습니다.';
+  if(state.recovery_blocked)return '게시 여부가 불확실하거나 최신 원고 선택이 필요합니다. 로컬 정리는 원격 취소나 새 게시 허가가 아닙니다.';
+  if(Object.entries(state.pending||{}).some(([name,value])=>value&&name!==action))return '다른 보존 요청의 처리 상태를 먼저 확인하세요.';
   if(action==='request') {
     if(!validTrigger(state.trigger))return '등록된 작업과 실행 시각을 먼저 선택하세요.';
     if(state.content_dirty)return '원고 변경을 저장한 뒤 선택 버전을 재조회하고 별도 제작 요청을 하세요.';
@@ -175,7 +178,7 @@ export function renderExecutionPanel(state={}, {document=globalThis.document}={}
 export function bindExecutionPanel(root,controller={}) {
   const initial=views.get(root);if(!initial)throw new TypeError('renderExecutionPanel이 만든 루트가 필요합니다.');
   bound.get(root)?.();
-  const {state,document}=initial;state.draft??={publication_confirmed:false};state.pending??={};
+  const {state,document}=initial;state.draft??={publication_confirmed:false};state.pending??={};state.pending_errors??={};state.attempt_serial??=0;
   let active=true,removeListeners=[],view=initial,heldFocus=null;
   const listen=(node,type,callback)=>{node.addEventListener(type,callback);removeListeners.push(()=>node.removeEventListener(type,callback));};
   const detach=()=>{for(const remove of removeListeners)remove();removeListeners=[];};
@@ -218,7 +221,10 @@ export function bindExecutionPanel(root,controller={}) {
       delete next.status;
       const delivery=next.deliveries?.find(row=>row.id===state.delivery?.id);
       state.run=next;
-      if(delivery&&Number.isSafeInteger(delivery.version)&&delivery.version>=0)state.delivery={...state.delivery,...delivery};
+      if(delivery&&Number.isSafeInteger(delivery.version)&&delivery.version>=0){
+        if(Object.values(state.pending).some(Boolean))state.latest_delivery=delivery;
+        else state.delivery={...state.delivery,...delivery};
+      }
     } else if(name==='observe') {
       if(!id(result.observation_id))throw invalidResponse();
       state.delivery={...state.delivery,observation_id:result.observation_id};
@@ -234,15 +240,15 @@ export function bindExecutionPanel(root,controller={}) {
   }
   async function execute(name) {
     if(!active||blocked(state,name,controller))return;
-    if(name!=='refresh')state.pending[name]??=makePending(name);
+    if(name!=='refresh'){state.pending[name]??=makePending(name);state.pending_errors[name]={status:null,attempt:++state.attempt_serial};}
     state.busy=true;state.error=null;state.message='요청을 처리 중입니다.';paint();notify();
     try {
       const pending=state.pending[name];
       const result=name==='refresh'?await controller.getRun(runId(state)):name==='request'?await controller.request(copy(pending.body)):await controller[name](pending.id,copy(pending.body));
-      if(!active)return;receive(name,result);if(name!=='refresh')delete state.pending[name];
+      if(!active)return;receive(name,result);if(name!=='refresh'){delete state.pending[name];delete state.pending_errors[name];}
       state.message=name==='request'?'실행 요청을 접수했습니다. 접수는 공개 확인이 아닙니다.':name==='approve'?'별도 발행 승인을 기록했습니다. 실제 공개 결과는 실행 상태를 다시 조회하세요.':'조회와 확인 결과를 갱신했습니다.';
     } catch(error) {
-      if(active){state.error={status:Number.isInteger(error?.status)?error.status:0};state.message='입력과 요청을 보존했습니다.';}
+      if(active){state.error={status:Number.isInteger(error?.status)?error.status:0};if(name!=='refresh')state.pending_errors[name]={status:state.error.status,attempt:state.pending_errors[name].attempt};state.message='입력과 요청을 보존했습니다.';}
     } finally {
       if(active){state.busy=false;paint();notify();}
     }

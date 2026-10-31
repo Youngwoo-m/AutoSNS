@@ -54,7 +54,7 @@ test('실제 원고 편집기는 연 상세의 버전을 실행 workspace에 붙
   const editor=createContentEditor({api,writable:()=>true,execution});await editor.open({id:'content-1',revision:2,source:'managed'});
   assert.ok(mounts.length);assert.equal(mounts.at(-1).content.revision,2);assert.equal(mounts.at(-1).options.dirty,false);
   const title=all(editor.element).find(n=>n.tagName==='input'&&n.value==='저장 원고');title.value='아직 저장하지 않은 제목';await title.fire('input');assert.equal(mounts.at(-1).options.dirty,true);
-  execution.isDirty=()=>true;assert.equal(editor.hasUnsavedChanges(),true);execution.isBusy=()=>true;assert.equal(editor.isBusy(),true);
+  execution.isDirty=()=>true;assert.equal(editor.hasUnsavedChanges(),true);await title.fire('input');assert.match(editor.element.textContent,/실행 요청·발행 확인 입력/);execution.isBusy=()=>true;assert.equal(editor.isBusy(),true);
  } finally{for(let i=0;i<10;i++)await Promise.resolve();globalThis.document=previous;}
 });
 
@@ -80,4 +80,58 @@ test('제작 전용 화면은 발행 승인 입력을 보이지 않고 pending �
  const {document}=harness();let fail;const workspace=make({document,api:{status:async()=>discovery,request:()=>new Promise((_,reject)=>fail=reject)},contentApi:{listDeliveries:async()=>({items:[]})}});await workspace.load();const root=workspace.forContent(content);get(root,'production_job').value='produce';await get(root,'production_job').fire('change');
  const production=all(root).find(n=>n.className==='execution-production');assert.equal(field(production,'publication_confirmed'),undefined);assert.equal(action(production,'approve'),undefined);
  const pending=action(production,'request').fire('click');assert.equal(get(root,'production_job').disabled,true);fail(Object.assign(new Error(),{status:503}));await pending;assert.equal(workspace.isDirty(),true);assert.equal(get(root,'production_job').value,'produce');
+});
+
+const publicationRoot=root=>all(root).find(n=>n.className==='execution-publication');
+async function conflictable({admit,approve,request,getRun,getContent}={}) {
+ const {document}=harness();let version=4;const plan=()=>({id:'delivery-1',content_id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,connection_id:'personal.youtube',owner_account_id:'personal',destination_account_id:'personal',version,status:'ready'});
+ const api={status:async()=>discovery,request:request||(async()=>({run_id:'publish-run',state:'queued'})),observe:async()=>({observation_id:'observation-1'}),admit:admit||(async id=>({id,version:1,context_hash:'b'.repeat(64)})),approve:approve||(async id=>({id,version:2,state:'queued'})),getRun:getRun||(async()=>({run_id:'publish-run',state:'queued',deliveries:[]}))};
+ const workspace=make({document,api,contentApi:{listDeliveries:async()=>({items:[plan()]}),getDelivery:async()=>plan(),getContent:getContent||(async()=>content)}});await workspace.load();const root=workspace.forContent(content);
+ await button(root,'배포 계획 다시 조회').fire('click');get(root,'planned_delivery').value='delivery-1';await get(root,'planned_delivery').fire('change');get(root,'publication_job').value='publish';await get(root,'publication_job').fire('change');await action(publicationRoot(root),'request').fire('click');
+ return {workspace,root,setVersion:value=>version=value};
+}
+
+test('실제 plan4→5 admit409는 읽기 조회로 원요청을 보존한 뒤 명시 로컬 종료와 재관측으로 CAS5를 사용한다',async()=>{
+ const sent=[];const fixture=await conflictable({admit:async(id,body)=>{sent.push(structuredClone(body));if(body.expected_version===4)throw Object.assign(new Error(),{status:409});return {id,version:1,context_hash:'c'.repeat(64)};}});const {root}=fixture;
+ await action(publicationRoot(root),'observe').fire('click');fixture.setVersion(5);await action(publicationRoot(root),'admit').fire('click');
+ await action(publicationRoot(root),'refresh').fire('click');await button(root,'배포 계획 다시 조회').fire('click');assert.match(root.textContent,/현재 선택 계획 버전: 4/);assert.match(root.textContent,/조회된 최신 계획 버전: 5/);
+ await action(publicationRoot(root),'admit').fire('click');assert.equal(sent[1].expected_version,4);
+ const inspect=button(root,'발행 의도 확인 처리 상태 조회');assert.ok(inspect);await inspect.fire('click');const close=button(root,'발행 의도 확인 충돌 요청 로컬 종료');assert.equal(close.disabled,true);
+ const check=get(root,'close_publication_admit');check.checked=true;await check.fire('change');await button(root,'발행 의도 확인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,/로컬 종료 이력/);assert.match(root.textContent,/원래 CAS: 4/);assert.equal(action(publicationRoot(root),'admit').disabled,true);
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');assert.equal(sent.at(-1).expected_version,5);assert.equal(sent.at(-1).observation_id,'observation-1');
+});
+
+test('승인 CAS 충돌은 원래 key를 이력에 보존하고 최신 문맥 재확인 뒤에만 새 key를 생성한다',async()=>{
+ const sent=[];const fixture=await conflictable({approve:async(id,body)=>{sent.push(structuredClone(body));if(body.expected_version===1)throw Object.assign(new Error(),{status:409});return {id,version:4,state:'queued'};},getRun:async()=>({run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]})});const {root}=fixture;
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');const oldKey=sent[0].request_key;
+ await action(publicationRoot(root),'refresh').fire('click');assert.match(publicationRoot(root).textContent,/배포: delivery-1 · 버전: 1/);await button(root,'별도 발행 승인 처리 상태 조회').fire('click');assert.equal(field(publicationRoot(root),'publication_confirmed').checked,true);await action(publicationRoot(root),'approve').fire('click');assert.equal(sent[1].request_key,oldKey);assert.equal(sent[1].expected_version,1);
+ // A retry invalidates the previous read: another explicit read is required.
+ assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,new RegExp(oldKey));assert.equal(field(publicationRoot(root),'publication_confirmed').checked,false);assert.equal(action(publicationRoot(root),'approve').disabled,true);
+ check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');assert.equal(sent.at(-1).expected_version,3);assert.equal(sent.at(-1).context_hash,'c'.repeat(64));assert.notEqual(sent.at(-1).request_key,oldKey);
+});
+
+for(const status of [401,503])test(`${status} 불확실 요청은 상태를 조회해도 로컬 종료나 키 자동 변경을 허용하지 않는다`,async()=>{
+ const sent=[];const {root}=await conflictable({approve:async(id,body)=>{sent.push(structuredClone(body));throw Object.assign(new Error(),{status});},getRun:async()=>({run_id:'publish-run',state:'queued',deliveries:[{id:'delivery-1',version:9,state:'queued',context_hash:'c'.repeat(64)}]})});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');const check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');
+ assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료'),undefined);await action(publicationRoot(root),'approve').fire('click');assert.deepEqual(sent[1],sent[0]);assert.equal(get(root,'publication_job').disabled,true);
+});
+
+test('unknown/원격 요청 시작 후 로컬 충돌 정리는 원격 취소나 새 게시 허가가 아니며 새 변이를 차단한다',async()=>{
+ const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>({run_id:'publish-run',state:'unknown',deliveries:[{id:'delivery-1',version:3,state:'unknown',remote_id:'remote-started',remote_uncertain:true,context_hash:'b'.repeat(64)}]})});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,/원격 취소.*새 게시 허가.*아닙니다/);assert.match(root.textContent,/게시 여부.*불확실/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+test('제작 원고 revision 충돌은 기존 요청을 이력에 남기고 명시적으로 최신 원고를 열어 선택한다',async()=>{
+ const {document}=harness();const sent=[],opened=[];const latest={...content,revision:3,manifest_hash:'c'.repeat(64)};const workspace=make({document,api:{status:async()=>discovery,request:async body=>{sent.push(structuredClone(body));if(body.expected_revision===2)throw Object.assign(new Error(),{status:409});return {run_id:'new-production',binding_id:'binding-new',content_id:content.id,content_revision:3,manifest_hash:latest.manifest_hash};}},contentApi:{getContent:async()=>latest},onOpenOutput:(id,revision)=>opened.push({id,revision})});await workspace.load();const root=workspace.forContent(content);get(root,'production_job').value='produce';await get(root,'production_job').fire('change');await action(all(root).find(n=>n.className==='execution-production'),'request').fire('click');
+ await button(root,'제작 요청 처리 상태 조회').fire('click');assert.equal(sent.length,1);const check=get(root,'close_production_request');check.checked=true;await check.fire('change');await button(root,'제작 요청 충돌 요청 로컬 종료').fire('click');assert.match(root.textContent,/원래 원고 버전: 2/);assert.equal(action(all(root).find(n=>n.className==='execution-production'),'request').disabled,true);
+ await button(root,'최신 원고 버전 열어 재검토').fire('click');assert.deepEqual(opened,[{id:content.id,revision:3}]);const next=workspace.forContent(latest);get(next,'production_job').value='produce';await get(next,'production_job').fire('change');await action(all(next).find(n=>n.className==='execution-production'),'request').fire('click');assert.equal(sent.at(-1).expected_revision,3);
+});
+
+test('충돌 처리 상태 조회의 인증 만료도 새 창 로그인과 원래 요청 보존을 제공한다',async()=>{
+ const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>{throw Object.assign(new Error(),{status:401});}});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');const check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');
+ assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);const login=all(root).find(n=>n.tagName==='a'&&n.getAttribute('href')==='/login');assert.ok(login);assert.equal(login.getAttribute('target'),'_blank');assert.equal(get(root,'publication_job').disabled,true);
 });
