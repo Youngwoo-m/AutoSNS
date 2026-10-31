@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {engineerRows,ENGINEER_EXAMS} from '../ax-console/app/web/engineer_panel.js';
+test('four exams include building and preserve supplied account scope',()=>{assert.equal(ENGINEER_EXAMS.length,4);const row={id:'b',title:'[건축시공기술사] 콘크리트',owner_account_id:'personal',destination_account_id:'dept'};const s={contents:[row,{id:'n',title:'재난 뉴스'}],schedule:[{title:'claude.building-daily'}],crossposts:[{title:'측량 하루 한 문제'}]};assert.deepEqual(engineerRows(s,'building').contents,[row]);assert.equal(engineerRows(s,'building').schedule.length,1);assert.equal(engineerRows(s,'civil').contents.length,0);assert.equal(engineerRows(s).routes.length,1);assert.equal(row.destination_account_id,'dept');});
+test('empty snapshots do not invent examples or jobs',()=>assert.deepEqual(engineerRows(),{contents:[],schedule:[],routes:[]}));
+test('safety does not capture unrelated general safety content',()=>assert.equal(engineerRows({contents:[{title:'재난안전 뉴스'}]},'safety').contents.length,0));

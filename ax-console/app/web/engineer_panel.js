@@ -1,0 +1,12 @@
+// 서버가 계정 범위를 적용한 snapshot만 투영한다. 실행·발행 부수효과 없음.
+export const ENGINEER_EXAMS=[['survey','측량및지형공간정보기술사'],['civil','토목시공기술사'],['building','건축시공기술사'],['safety','건설안전기술사']];
+const aliases={survey:/측량|지형공간정보|(?:^|[.\s])survey(?:-|\b)/i,civil:/토목시공|(?:^|[.\s])civil(?:-|\b)/i,building:/건축시공|(?:^|[.\s])building(?:-|\b)/i,safety:/건설안전|(?:^|[.\s])safety(?:-|\b)/i};
+export function engineerRows(snapshot={},exam='all'){
+ const match=row=>{const value=[row.title,row.series,row.job_id,row.job_key].filter(v=>typeof v==='string').join(' ');return ENGINEER_EXAMS.some(([id])=>(exam==='all'||exam===id)&&aliases[id].test(value));};
+ return {contents:(snapshot.contents||[]).filter(match),schedule:(snapshot.schedule||[]).filter(match),routes:(snapshot.crossposts||[]).filter(match)};
+}
+export function renderEngineerPanel({snapshot,exam='all',onSelect,onOpen,h,formatDateTime,accountLabel}){
+ const rows=engineerRows(snapshot,exam);
+ const record=(title,items,render)=>h('section',{class:'panel'},h('div',{class:'panel-head'},h('h2',{},title)),h('div',{class:'panel-body'},items.length?items.map(render):h('p',{},'조회된 기록이 없습니다. 미등록·미수집 여부는 별도 확인이 필요합니다.')));
+ return h('div',{},h('div',{class:'tabs',role:'group','aria-label':'기술사 종목'},[['all','전체 종목'],...ENGINEER_EXAMS].map(([id,label])=>h('button',{'aria-pressed':exam===id,class:exam===id?'active':'',onclick:()=>onSelect(id)},label))),h('p',{class:'inline-note'},'계정 필터가 적용된 기존 자료입니다. 작업 선언·예정표·발행 기록은 실제 실행 활성이나 공개 검증과 다릅니다. 새 발행은 이 화면에서 실행하지 않습니다.'),record('기술사 콘텐츠',rows.contents,row=>h('article',{class:'record-row'},h('button',{class:'title-button',onclick:()=>onOpen(row.id)},row.title||'제목 미확인'),h('p',{},`원본 소유: ${accountLabel(row.owner_account_id,snapshot.accounts)} · ${row.status||'상태 미확인'}`))),record('기술사 일정·작업 관측',rows.schedule,row=>h('article',{class:'record-row'},h('h3',{},row.title||'제목 미확인'),h('p',{},`원본 소유: ${accountLabel(row.owner_account_id,snapshot.accounts)} · 게시 대상: ${accountLabel(row.destination_account_id,snapshot.accounts)} · ${row.channel||row.platform||'채널 미확인'}`),h('p',{},`${formatDateTime(row.scheduled_at)} · ${row.status||'상태 미확인'}`))),record('기술사 교차 발행 경로',rows.routes,row=>h('article',{class:'record-row'},h('h3',{},row.title||'제목 미확인'),h('p',{},`${accountLabel(row.owner_account_id,snapshot.accounts)} → ${accountLabel(row.destination_account_id,snapshot.accounts)} · ${row.destination_channel||'채널 미확인'}`),h('p',{},row.condition||'조건 미확인'))));
+}

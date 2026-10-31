@@ -1,3 +1,4 @@
+import {renderEngineerPanel} from './engineer_panel.js';
 import {createExecutionWorkspace} from './execution_controller.js';
 import {createMetricsApi,createMetricsPanel} from './metrics_panel.js';
 import {createOperationsApi,createOperationsPanel} from './operations_panel.js';
@@ -33,9 +34,11 @@ const tabs=(label,items,selected,onSelect)=>h('div',{class:'tabs','aria-label':l
 const contentButton=(content,label)=>h('button',{class:'title-button','data-content':content.id,onclick:()=>openContent(content.id)},label||text(content.title));
 const titleFor=id=>state.snapshot?.contents.find(c=>c.id===id);
 let state={account:'all',snapshot:null,phase:'idle',error:null};
+let engineerExam='all';
 let view='today',weekOffset=0,calendarMode='week',crosspostTab='rules',issueTab='actions',detailTab='overview',detailId=null,lastFocus=null;
 const filters={query:'',kind:'all',series:'all',status:'all',owner:'all'};
 const views={
+  engineer:['기술사 학습·발행 운영','기술사','측량·토목시공·건축시공·건설안전의 콘텐츠와 운영 관측을 모아 봅니다.'],
   today:['운영 개요','오늘 운영','오늘 일정과 기록을 확인하고 필요한 조치를 찾습니다.'],
   planning:['기획에서 제작까지','콘텐츠 기획','기획 원본과 대상별 변환본을 저장하고 단계별로 확인합니다.'],
   library:['원본과 배포 기록','콘텐츠 보관함','원본의 소유 계정과 채널별 게시 대상을 나누어 확인합니다.'],
@@ -217,7 +220,7 @@ function renderIssues() {
   if(issueTab==='settings')content=panel('시스템 설정',h('div',{class:'panel-body'},muted('실행 서비스 등록과 운영 정책은 위 패널에서 확인합니다. 활성화·정책 변경은 이 화면에서 지원하지 않습니다. 원격 인증은 명시적 대상 읽기 점검으로만 확인합니다.'),h('div',{class:'actions'},h('button',{class:'btn btn-small',onclick:()=>setView('accounts')},'채널 설정 기록 보기'),disabled('설정 변경 미지원'))));
   return h('div',{},execution.renderStatus(),operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
-const renderers={today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
+const renderers={engineer:()=>renderEngineerPanel({snapshot:state.snapshot,exam:engineerExam,onSelect:id=>{engineerExam=id;render();},onOpen:openContent,h,formatDateTime,accountLabel}),today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
 function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
 
 function deliveryDetail(d) {
