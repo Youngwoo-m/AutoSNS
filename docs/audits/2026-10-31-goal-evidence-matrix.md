@@ -1,6 +1,6 @@
 # 전체 목표 증거 지도 — 2026-10-31
 
-이 문서는 **운영 완료 판정이 아닌 남은 개발·수락의 지도**다. 최신 대조 기준은 `18f7e73`까지의 수락 기록이다. 문서 작성자는 서버·브라우저·외부 계정·모델을 실행하지 않았으며 부모의 실행 기록을 근거로 인용한다. toolkit 화면은 8769/8767에 배포됐고 DB 보존을 확인했지만 실제 main 정책은 disabled다. 로컬 도구 사용 활성화 설계는 승인 대기이며 전체 운영 완료와 다르다.
+이 문서는 **운영 완료 판정이 아닌 남은 개발·수락의 지도**다. 최신 대조 기준은 로컬 도구 활성화 후속 수락 기록이다. 문서 작성자는 서버·브라우저·외부 계정·모델을 실행하지 않았으며 부모의 실행 기록을 근거로 인용한다. toolkit 화면은 8769/8767에 배포됐고 DB 보존을 확인했지만 8769의 로컬 정책은 승인된 opt-in으로 활성화했다. renderer/authorizer와 실제 발행은 비활성이며 전체 운영 완료와 다르다.
 
 사용자 목표의 근거는 `docs/superpowers/specs/2026-10-30-account-channel-automation-design.md:11` 및 `:15`, 화면 목표는 `docs/superpowers/specs/2026-10-30-account-web-screens-design.md:12`다. 원본 소유와 게시 대상을 분리하고 기존 교차 게시를 보존한다. 이후 사용자 추가 지시로 기술사 메뉴를 포함한 **9개 메뉴**, 건축시공기술사, Instagram·Threads·X·Tistory·Facebook, 추가 SaaS/API/credit 소비 없는 자체 도구가 포함됐다. 옛 화면 설계의 8개 메뉴 표기는 최신 추가 범위를 취소하지 않는다.
 
@@ -11,7 +11,7 @@
 | 요구 | 현재 구현 경로·근거 | 현재 증거와 한계 | 남은 수락 | 다음 단계·선행조건 |
 |---|---|---|---|---|
 | 개인·학과 원본 소유/게시 대상 분리 | `common/operations/registry.py:25`, `context.py:6`, `content_store.py:76`; 승인 설계 §4 | 등록 연결·불변 대상·소유 검증과 저장 계약 존재. 계정 필터는 인증 증거가 아님 | 잘못된 credential/target/account 조합의 실제 adapter 전 호출 차단, 계정별 인증 확인 | 6B 권한·연결 수명주기. 실제 대상 확인 후 읽기 수락 |
-| 기획·원고·버전·자산·검토 저장 | `content_store.py:47`, `:130`, 웹 editor; 화면 설계 §4 | 기존 full-payload CAS 및 버전별 기록. 격리 UI의 개인v3→학과 변환문 태그→v4 저장과 원문·다른 변환문 보존,401/409/503 입력 보존·복구,320/1280·키보드 이동 확인 | 실제 자료의 저장·복원 및 나머지 실제 운영 분기 수락 | 활성화 설계 승인→실사용 범위 수락·실제 자료 복원 |
+| 기획·원고·버전·자산·검토 저장 | `content_store.py:47`, `:130`, 웹 editor; 화면 설계 §4 | 기존 full-payload CAS 및 버전별 기록. 격리 UI의 개인v3→학과 변환문 태그→v4 저장과 원문·다른 변환문 보존,401/409/503 입력 보존·복구,320/1280·키보드 이동 확인 | 실제 자료의 저장·복원 및 나머지 실제 운영 분기 수락 | 활성화 수락 완료→실제 자료 복원·후속 운영 수락 |
 | 기술사 별도 메뉴·4종 | `ax-console/app/web/engineer_panel.js:2`에 측량/토목시공/건축시공/건설안전; 6A 수락서 §실제 UI | 8769 기술사/건축 필터 표시 증거가 있음. 메뉴가 발행 실행을 의미하지 않음 | 4종별 daily/friend/PDF 실제 제작·검토·배포·후처리 연결 | 건축 workflow를 포함한 6C 작업 계약 |
 | 건축시공 daily·friend·PDF | toolkit 계획 필수 후속 표; `personal/claude-jobs/jobs/building-daily.md`, `building-friend.md`, jobs.json/operations 선언 | 기존 선언 존재, legacy/비활성/활성 미확인과 managed 운영은 별개 | 일차·접수순서·중복·요청없음·출처·수치·PDF 전 페이지·두 블로그·실제 URL/다운로드 검증 | 원문 시각·카테고리·불변 대상 확인→제작/발행 분리→실수락. 기존 잡 임의 활성화 금지 |
 | 실제 제작과 독립 검토 | `common/operations/production.py:99`, `review_runner.py:23`, `:106`, `:158` | 6A fixture의 제작 unit/revision/hash 결속. 실구독·실검산·실출처 수락은 미실행(6A 수락서:48) | 개인 subscription_only, 학과별 허용 정책, 독립 reviewer provenance와 수정 후 재검토 | 6C 구독 전용 실행/검토 등록 확인→실자료 수락. 유료 fallback 금지 |
@@ -24,8 +24,8 @@
 | Instagram·Threads·X·TikTok | `docs/audits/2026-10-31-remaining-channel-entrypoints.md`의 함수·부수효과 표 | 기존 legacy leaf가 있으나 managed adapter/permit 등록 아님. dry도 외부 부수효과 가능 | 채널별 불변 대상/인증·prepare/write/observe 분리·결과 검증·후처리 | 6B 기존 leaf 감사 재사용, 큐 전체를 permit으로 감싸지 않고 단일 write 분리 |
 | Facebook | 같은 leaf 감사의 현재 관리 등록 판정; 화면 설계 추가 채널 범위 | 조사 범위 기존 발행 leaf 없음, 설정/실계정 권한 미확인 | 공식 연결 가능 범위와 비용·권한 확인, adapter 및 원격 결과 검증 | 6B 별도 연결/구현 범위. 없는 연결을 등록됨으로 표시하지 않음 |
 | 홈페이지·Kakao 및 보조 경로 | 승인 계정 설계:104 | 요청 접수/알림과 공개 SNS 게시 구별 요구 | 각 보조 실행의 실제 부수효과·권한·이력 결속 | 6B caller inventory와 T13 참조 이행에 포함 |
-| SNS 도구 사용·관리 및 추가 비용 차단 | `tool_cost_policy.py`, `local_toolkit.py:60`, `:69`, `:78`; 승인 toolkit 설계/계획 | 서버 소유 비용 catalog, paid/credits/unknown 거부, 기본 disabled. vidIQ/Metricool 설치·선호는 웹 실인증 아님 | 미지원/미확인/권한을 사용자에게 정확히 표시, 실서비스 접속은 별도 공식 절차 | toolkit 화면 보호 배포 완료. 사용 활성화 설계 승인 대기; 추가 결제·credit 자동 사용0 유지 |
-| 제목·태그·저장 근거·이미지·CSV | `local_toolkit.py:109`, `:139`, `:148`, `:156`, `:192`; 수락서 최종 판정 | 전체 Python884/87.391sOK·Node216PASS, R1/R2 독립 해결 확인, 실제320/1280·이미지 검사·401/409/503 복구, 화면 배포/DB 보존 확인 | 실제 main은 toolkit disabled·renderer/authorizer None. 실사용 활성화와 실제 성과 수집은 별도 | 활성화 설계 승인→명시 기동 opt-in 계획/구현. 이미지 환경은 별도 수락 |
+| SNS 도구 사용·관리 및 추가 비용 차단 | `tool_cost_policy.py`, `local_toolkit.py:60`, `:69`, `:78`; 승인 toolkit 설계/계획 | 서버 소유 비용 catalog, paid/credits/unknown 거부, 기본 disabled. vidIQ/Metricool 설치·선호는 웹 실인증 아님 | 미지원/미확인/권한을 사용자에게 정확히 표시, 실서비스 접속은 별도 공식 절차 | toolkit 화면 보호 배포 완료. 로컬 사용 활성화 수락 완료; 추가 결제·credit 자동 사용0 유지 |
+| 제목·태그·저장 근거·이미지·CSV | `local_toolkit.py:109`, `:139`, `:148`, `:156`, `:192`; 수락서 최종 판정 | 전체 Python884/87.391sOK·Node216PASS, R1/R2 독립 해결 확인, 실제320/1280·이미지 검사·401/409/503 복구, 화면 배포/DB 보존 확인 | 8769 로컬 도구 활성, renderer/authorizer None. 이미지·실제 성과 수집은 별도 | 명시 기동 opt-in 구현/적용 수락 완료. 이미지 환경은 별도 수락 |
 | 실제 성과 수집 | `common/operations/metrics.py:28`, `:73`, `:93`; 기존 `common/analytics/collect_*`; `web_metrics.py:55` | 공개 검증 원장의 account/target/remote ID 결속 코드와 주입 collector 경계. 웹은 조회/수동 관측/제안 저장이며 실수집 실행 아님 | 계정별 읽기 권한·비용·할당량·신선도·정의/기간/오류/null/실제0 구별하는 managed collector | 6B 읽기 권한→6C 검증된 단일 게시물 실수집부터 연결 |
 | 성과 진실성·기획 순환 | `metrics_store.py:50`, `metrics.py:147`, 저장 제안/연구 규칙; 화면 설계:86 | CSV는 legacy_reported/미배정. `collect_youtube.py:90–98` RSS fallback은 과거값 또는 신규0/공개/길이0 추정과 degraded quota를 반환 | 추정·stale·미수집을 실측0으로 포장하지 않는 normalization, 정의/기간·출처 결속, 원본 제작/대상 실적 귀속, 실제 다음 기획 연결 | 기존 collector 출력 무조건 wrapping 금지. normalization 계약→실수집→기획 제안 provenance 수락 |
 | 계정별 폴더·데이터 물리 이행 | 원계획 T13(`:230`), 승인 계정 설계 §11; layout/import/path 감사 도구 | 이행 계획/참조 분석·가져오기 경계가 있어도 실제 파일 이동과 다름 | 코드·config·content/media/history·키·프로필·venv·launchd/외부 caller 참조·호환 링크 방향·USB 분리 수락 | 6D 대상별 manifest/backup/복원 계획→직렬 이동→shadow 비교→소유권 전환 |
@@ -34,7 +34,7 @@
 
 ## 개발 의존 순서
 
-1. **현재 toolkit 사용 활성화:** 구현·독립 검토·전체 회귀·격리 브라우저·화면 보호 배포는 수락했다. 실제 정책은 비활성이므로 승인 대기인 활성화 설계에 따라 명시 기동 opt-in을 별도로 계획한다. 새 계정 인증·실행 서비스·발행 권한을 함께 활성화하지 않는다.
+1. **현재 toolkit 사용 활성화:** 구현·독립 검토·전체 회귀·격리 브라우저·화면 보호 배포는 수락했다. 승인된 명시 기동 opt-in을 구현·검토·시험하고8769에 적용했다. 수락 근거는 `2026-10-31-local-toolkit-activation-acceptance.md`다. 새 계정 인증·실행 서비스·발행 권한을 함께 활성화하지 않는다.
 2. **6B 연결과 단일 효과:** 정확한 registry connection/target/권한과 기존23경로를 입력으로 각 추가 SNS의 prepare/write/observe 계약을 만든다. Facebook 공백과 TikTok 큐의 복합 부수효과를 별도 범위로 유지한다. 기존 leaf 목록 재조사는 하지 않는다.
 3. **6C 읽기→제작·검토→실대상:** verified 게시물 하나의 실제 읽기 성과와 신선도 normalization을 먼저 수락할 수 있다. 실제 제작/독립검토/미디어·PDF는 별도 축이며 결과를 특정 동결 버전에 결속한 뒤 단계별 비공개/예약/공개·본문 검증을 거친다. 읽기 성공이 쓰기 권한을 승인하지 않는다.
 4. **6D 보호 접속·물리 이행:** 외부 접속 설계는 병렬 준비할 수 있지만 실제 공개/권한 확대는 구체 범위가 필요하다. 데이터·프로필·스케줄 이동은 운영원장/rollback 증거를 갖춘 뒤 직렬로 전환한다.
