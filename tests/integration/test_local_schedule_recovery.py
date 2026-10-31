@@ -81,9 +81,15 @@ class LocalScheduleRecoveryTests(unittest.TestCase):
         self.assertEqual(self.store.get_delivery('d')['state'], 'unknown')
         reopened = RuntimeStore(self.store.root, self.registry, self.store.content_store)
         reopened.initialize()
+        reopened.locks = self.store.locks
+        reopened.execution_policy = self.policy
+        self.store = reopened
         self.assertEqual(reopened.get_delivery('d')['state'], 'unknown')
         submit_calls = []
         service = self.service(self.adapter(lambda *args: submit_calls.append(args)))
+        self.assertIs(service.store, reopened)
+        self.assertEqual(service.ledger.root, reopened.root)
+        self.assertIs(service.ledger.content_store, reopened.content_store)
         # 원래 fixture 회차는 영수증 없는 기존 원장이다. 서비스가 재접수하지 않는다.
         spec = ExecutorSpec('fixture-publisher', ('j',), ('submit',), '/fixture/python', self.root, 'fixture', (), ())
         service.catalog = ExecutionCatalog({'fixture-publisher': spec}, {'console': dict(job_ids=['j'], source='console', legacy_allowed=False)})
@@ -103,11 +109,15 @@ class LocalScheduleRecoveryTests(unittest.TestCase):
         self.assertEqual(one, two)
         self.assertEqual(len(producer.store.list_runs()), 1)
         self.assertEqual(producer.calls, [])
-        self.tick(service)
-        schedule_read = self.toolkit().schedule_inspect({'delivery_id': 'd'})
+        worker = WorkerService(service, clock=lambda: NOW, stop_event=threading.Event())
+        self.assertIs(worker.services.store, reopened)
+        worker.tick()
+        toolkit = self.toolkit()
+        self.assertIs(toolkit.runtime_store, reopened)
+        schedule_read = toolkit.schedule_inspect({'delivery_id': 'd'})
         self.assertEqual(schedule_read['state'], 'unknown')
         self.assertEqual(submit_calls, [])
-        self.assertEqual(len(self.store.attempts('d')), 1)
+        self.assertEqual(len(reopened.attempts('d')), 1)
 
     def test_stop_and_missing_quota_block_before_submit(self):
         calls = []
@@ -119,6 +129,7 @@ class LocalScheduleRecoveryTests(unittest.TestCase):
         self.store.locks.clear_stop(control['version'])
         result = self.tick(service)
         self.assertEqual(result['state'], 'blocked')
+        self.assertEqual(result['reason_code'], 'quota_observation_required')
         self.assertEqual(calls, [])
         self.assertFalse(any(a['request_started'] for a in self.store.attempts('d')))
 
