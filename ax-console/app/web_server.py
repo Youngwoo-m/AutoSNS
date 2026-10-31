@@ -60,6 +60,7 @@ _STATIC = {
     'metrics_panel.js': 'text/javascript; charset=utf-8',
     'execution_panel.js': 'text/javascript; charset=utf-8',
     'execution_controller.js': 'text/javascript; charset=utf-8',
+    'engineer_panel.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
