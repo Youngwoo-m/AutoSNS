@@ -62,3 +62,9 @@ Task8 최초 검증(최종 검토 전)은 artifact editor 모듈을 DOM harness�
 새 격리 서버의 실제 브라우저에서 정상 이미지1280×720 표시, 손상 이미지 ‘이미지를 해석할 수 없습니다’ 표시, 개인→학과 변환문 선택취소 뒤 썸네일 제목 입력에도 태그 버튼 비활성을 확인했다. `ax-console/design/previews/toolkit-fixed-image-inspection.png`에 화면 증거를 저장했다. 이 기록이 앞선 두 오류의 미해결 상태를 대체한다. 최신 독립 검토·나머지 브라우저 수락·보호 배포는 별도로 유지한다. 실제 계정·발행·모델 호출 없음.
 
 독립 선택 상태 회귀 검토: R1/R2 모두 해결, 해당 두 파일 새 잔여 지적 없음. 검토자는 focused58/전체Node216 로그를 확인했으며 suite를 중복 실행하지 않았다. 전체 Python 회귀는 후속 실행 중이므로 아직 통과로 표시하지 않는다.
+
+## 최신 통합 회귀와 반응형 화면
+
+시험 fixture를 실제 Connection 계약으로 보완한 `e58e9d1` 기준 전체 Python **884 tests / 87.391s / OK / skip0**(`/private/tmp/toolkit-latest-full-python-rerun.log`, session65632 exit0). 앞선884 중1error는 fixture 필드 누락이었으며 성공으로 세지 않았다. 전체Node216PASS는 동일 제품 bytes 기준이다.
+
+IAB34 실제 격리 화면에서320×780 기획/편집기 scrollWidth=320, clientWidth=320, Tab으로 원본 버전 선택 이동;1280×800에서 scrollWidth=1280을 확인했다. viewport override는 reset했다. 저장 근거 조사에서 누적 표본3·기간표본1·custom정의별 분리와 근거부족을 표시했다. 가상자료이며 실수집 증거가 아니다. 화면증거 `toolkit-320-editor.png`, `toolkit-research-1280.png`. 보호 배포 및 나머지 오류 상태의 브라우저 수락은 후속으로 남긴다.
