@@ -1,6 +1,6 @@
 # 6A 실행 연결 수락 — 통합 진행 중
 
-2026-10-31 현재 **집중 fixture 검증 단계**다. A8/A9 최종 검토와 전체 Python·Node·release CLI 검증이 남아 있다. `production_ready=false`를 유지하며 실제 계정 로그인·발행·운영 스케줄 전환·폴더 이동은 수행하지 않았다. 이 문서는 6A 오프라인 범위의 근거와 후속 수락 조건을 분리해 기록한다.
+2026-10-31 현재 **집중 fixture 검증 단계**다. A8 fix1(commit 2ced4dc)은 독립 검토를 통과했고 전체 Python 806개가 통과했다. A9 후속 수정과 Node·release CLI·브라우저/배포 확인은 진행 중이다. `production_ready=false`를 유지하며 실제 계정 로그인·발행·운영 스케줄 전환·폴더 이동은 수행하지 않았다. 이 문서는 6A 오프라인 범위의 근거와 후속 수락 조건을 분리해 기록한다.
 
 ## 확인한 범위
 
@@ -53,13 +53,15 @@ A5 fixture의 source checker는 시험 provider다. 실제 출처 응답 bytes·
 
 ## 최종 전체 검증 — 대기
 
-A8/A9 코드 완료·독립 검토 뒤 부모 작업이 다음 명령을 한 번 실행하고 실제 결과를 전달하면 이 절을 갱신한다. 지금은 수행하지 않았다.
+부모 작업이 전달한 실제 결과만 반영한다. HTTP 집중 78개와 전체 Python 806개가 통과했다. A9 반복 새로고침에서 unknown 버전4가 queued 버전3으로 되돌아가는 지적의 후속 수정은 진행 중이다. Node·최종 release CLI·브라우저 최종 확인·배포 확인은 대기이며, 후속 코드 변경이 기존 시험 결과에 영향을 주는지는 최종 통합에서 확인한다.
 
 | 명령 | 현재 실제 결과 |
 |---|---|
-| `python3 -m unittest discover -s tests -p 'test_*.py'` | 대기 — 전체 suite 미실행 |
+| `python3 -m unittest tests.test_web_execution tests.test_web_execution_server tests.test_web_server tests.test_web_operations -v` | 78개 OK, 24.402초, 실패/오류/skip 0. 부모 elevated 실행, 로그 `/private/tmp/phase6a-http-final.log` 확인 |
+| `python3 -m unittest discover -s tests -p 'test_*.py'` | 806개 OK, 90.352초, 실패/오류/skip 0. 부모 elevated 실행 session 29299 exit0, 로그 `/private/tmp/phase6a-python-full.log` 확인 |
 | `node --test tests/*.mjs` | 대기 — 전체 suite 미실행 |
 | `python3 -m common.tools.check_operations_release --evidence /private/tmp/phase6a-offline-evidence.json --mode offline` | 대기 — 최종 evidence 파일 미생성 |
+| 브라우저 최종 확인·배포 확인 | 대기 — HTTP fixture 결과로 대체하지 않음 |
 
 `offline_ready`는 서버 기준선·분리된 시험 선언/fixture 지원 범위와 미전환 차단 근거를 분류한다. 실인증·실발행·배포 승인으로 쓰지 않는다. 현재 `production_ready=false`, `live_ledger_verification_pending` 하드 게이트와 backup/restore 수락 잔여를 유지한다.
 

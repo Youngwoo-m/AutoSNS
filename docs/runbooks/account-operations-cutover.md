@@ -46,7 +46,7 @@ connection_matrix는 블로그 5개와 YouTube 2개의 구현·transport fixture
 
 ## 기록할 최종 결과
 
-부모 작업이 모든 코드 완료 뒤 한 번 실행한 전체 Python/Node/release CLI의 명령·종료 코드·시험/실패/skip 수·evidence hash를 공개 수락 문서에 기록한다. 독립 검토 지적과 회귀시험도 함께 남긴다. 현재 명령 결과는 대기이며 전체 수락 미완료다.
+부모 작업이 모든 코드 완료 뒤 한 번 실행한 전체 Python/Node/release CLI의 명령·종료 코드·시험/실패/skip 수·evidence hash를 공개 수락 문서에 기록한다. 독립 검토 지적과 회귀시험도 함께 남긴다. 현재 HTTP 집중 78개 OK(24.402초)와 전체 Python 806개 OK(90.352초, session 29299 exit0)를 부모 elevated 실행 및 로그로 확인했다. A9 후속 수정·Node·release CLI·브라우저/배포 확인은 대기이며 후속 코드 변경에 대한 결과 유효성은 최종 통합에서 확인한다. 전체 수락 미완료 상태를 유지한다.
 
 실제 구독 실행·독립 검토·음성/영상 장면·PDF safe parser/렌더·출처 bytes·실계정·공식 API/DOM·후처리·외부 접속까지 후속 수락한다. Mac과 휴대폰 외부 접속은 사용자 선택의 최종 요구로 유지한다. localhost 검증으로 대체하지 않는다.
 
