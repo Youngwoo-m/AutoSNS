@@ -39,7 +39,7 @@ def build_research_preview(account_id: str, registry, metrics_store, content_sto
             source = row.get('source', {})
             ref = dict(observation_id=row['id'], owner_account_id=row.get('owner_account_id'),
                        destination_account_id=row['destination_account_id'],
-                       content_id=source.get('content_id'), content_revision=source.get('content_revision'))
+                       content_id=row['content_id'], content_revision=source.get('content_revision'))
             if ref not in refs:
                 refs.append(ref)
     return dict(groups=groups, missing=missing, evidence_refs=refs,
