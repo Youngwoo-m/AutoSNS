@@ -11,6 +11,7 @@ import importlib.util
 import ipaddress
 import json
 import os
+from collections.abc import Mapping
 from pathlib import Path
 import re
 import socket
@@ -687,15 +688,29 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     return server
 
 
+def _toolkit_policy_from_env(env: Mapping[str, str]) -> ToolkitPolicy:
+    """명시 기동 설정만 해석하며 잘못된 값은 서버 생성 전에 거부한다."""
+    value = env.get('AX_LOCAL_TOOLKIT')
+    if value is None or value == '0':
+        return ToolkitPolicy(enabled=False)
+    if value != '1':
+        raise SystemExit('AX_LOCAL_TOOLKIT 기동 설정이 올바르지 않습니다')
+    if not env.get('AX_WORKSPACE_ROOT', '').strip():
+        raise SystemExit('로컬 도구 활성화에는 AX_WORKSPACE_ROOT로 관리 저장소를 지정하세요')
+    return ToolkitPolicy(enabled=True)
+
+
 def main():
     source = os.environ.get('AX_SOURCE_ROOT')
     if not source:
         raise SystemExit('AX_SOURCE_ROOT로 조회할 운영 루트를 지정하세요')
+    toolkit_policy = _toolkit_policy_from_env(os.environ)
     server = create_server(os.environ.get('AX_HOST', '127.0.0.1'),
                            int(os.environ.get('AX_PORT', '8767')),
                            source_root=Path(source), web_root=_APP / 'web',
                            workspace_root=Path(os.environ['AX_WORKSPACE_ROOT']) if os.environ.get('AX_WORKSPACE_ROOT') else None,
-                           operations_registry=Path(os.environ['AX_OPERATIONS_REGISTRY']) if os.environ.get('AX_OPERATIONS_REGISTRY') else None)
+                           operations_registry=Path(os.environ['AX_OPERATIONS_REGISTRY']) if os.environ.get('AX_OPERATIONS_REGISTRY') else None,
+                           toolkit_policy=toolkit_policy)
     try:
         if server.workspace_root is not None:
             server.content_store.initialize()
