@@ -64,6 +64,7 @@ def build_driver(headless):
 
 
 def shot(driver, name):
+    from common import LOGS_DIR
     path = os.path.join(LOGS_DIR, f"{datetime.now():%Y%m%d_%H%M%S}_{name}.png")
     try:
         driver.save_screenshot(path)
@@ -73,6 +74,8 @@ def shot(driver, name):
 
 
 def click_if_present(driver, by, sel, timeout=4):
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
     try:
         el = WebDriverWait(driver, timeout).until(
             EC.element_to_be_clickable((by, sel)))

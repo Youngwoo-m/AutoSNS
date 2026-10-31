@@ -103,7 +103,13 @@ class ExecutionService:
             snapshot=self.store.content_store.get(content_id,expected_revision)
             if snapshot is None:raise StoreError('not_found')
             if request['mode']=='shadow':return dict(check,state='shadow',content_id=content_id,content_revision=expected_revision,manifest_hash=snapshot['manifest_hash'])
-            binding=self.production_store.bind_input(base_id,snapshot,dict(base,id=base_id),self.registry.revision,create=True)
+            try:
+                binding=self.production_store.bind_input(base_id,snapshot,dict(base,id=base_id),self.registry.revision,
+                    create=request['request_kind']!='resume')
+            except StoreError as error:
+                if request['request_kind']=='resume' and error.code=='binding_not_found':
+                    raise StoreError('unknown_occurrence') from None
+                raise
             # 저장 전 검증한 원래 caller/source로 새 binding의 접수만 허용한다.
             pending=pending_receipt(request,caller_id,self.base_registry)
             pending['occurrence']['job_id']=binding['execution_job_id']

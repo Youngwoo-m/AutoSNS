@@ -51,10 +51,19 @@ def run_once(store,registry,adapters,policy,locks,now,*,lease_observer=None):
     eligible={r['id']:r for r in store.list_runs() if (r.get('occurrence') or {}).get('mode')=='live' and (r.get('occurrence') or {}).get('phase')=='submit' and run_is_due(r,current_time()) and (r['state']=='queued' or (r['state']=='running' and r.get('process_identity')==identity))}
     deliveries=[d for d in store.list_operations() if d['run_id'] in eligible and d['state']=='queued' and d['context']['connection_id'] in adapters and eligible[d['run_id']].get('resume_delivery_id') in (None,d['id'])]
     if not deliveries:return None
-    delivery=deliveries[0];run=store.get_run(delivery['run_id'])
     store.registry=registry;store.execution_policy=policy;store.locks=locks
-    ctx=PublicationContext(**delivery['context']);adapter=adapters[ctx.connection_id]
-    require_publication_approval(store,delivery['id'],ctx)
+    # 승인 대기는 대상별 상태다. 유한한 후보 목록에서 다음 승인을 찾되
+    # DB/정책/중단 오류를 승인 대기로 숨기지 않는다. 전부 대기면 기존 사유를 유지한다.
+    for delivery in deliveries:
+        check_worker()
+        ctx=PublicationContext(**delivery['context'])
+        try:require_publication_approval(store,delivery['id'],ctx)
+        except ContractError as error:
+            if error.code!='publication_approval_required':raise
+            continue
+        break
+    else:raise ContractError('publication_approval_required')
+    run=store.get_run(delivery['run_id']);adapter=adapters[ctx.connection_id]
     connection=registry.connections[ctx.connection_id]
     job=registry.jobs.get(run['occurrence']['job_id'])
     if not job or job.get('enabled') is not True or job.get('execution_owner')!='managed':raise ContractError('job_disabled')
