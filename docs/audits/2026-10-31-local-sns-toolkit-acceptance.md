@@ -68,3 +68,11 @@ Task8 최초 검증(최종 검토 전)은 artifact editor 모듈을 DOM harness�
 시험 fixture를 실제 Connection 계약으로 보완한 `e58e9d1` 기준 전체 Python **884 tests / 87.391s / OK / skip0**(`/private/tmp/toolkit-latest-full-python-rerun.log`, session65632 exit0). 앞선884 중1error는 fixture 필드 누락이었으며 성공으로 세지 않았다. 전체Node216PASS는 동일 제품 bytes 기준이다.
 
 IAB34 실제 격리 화면에서320×780 기획/편집기 scrollWidth=320, clientWidth=320, Tab으로 원본 버전 선택 이동;1280×800에서 scrollWidth=1280을 확인했다. viewport override는 reset했다. 저장 근거 조사에서 누적 표본3·기간표본1·custom정의별 분리와 근거부족을 표시했다. 가상자료이며 실수집 증거가 아니다. 화면증거 `toolkit-320-editor.png`, `toolkit-research-1280.png`. 보호 배포 및 나머지 오류 상태의 브라우저 수락은 후속으로 남긴다.
+
+## 개발 서버 화면 배포
+
+2026-10-31 11:06 KST 부모 소유8769/8767만 PID/cwd/명령/포트 확인 후 정상 종료했다. 전체 managed-workspace(WAL/자산 포함)·web-before·manifest·HEAD를 `ax-console/data/deployment-backups/toolkit-20261031T020602792714Z/`에 백업했다. held6와 기술사 label7파일을 일괄 SHA 선검증 후 적용했다. actual==HEAD 확인, git 작업트리 clean.
+
+기존 명령으로 재시작한 managed8769(session60061)·readonly8767(session87379) 모두200 로그인 응답. operations/metrics SQLite의 integrity_check=ok, 백업 대비 전체 logical dump 동일. 원본R/8700/프로필/스케줄/실제 발행 변경 없음.
+
+IAB35 실제8769 채널·계정에서 새 로컬 SNS 도구7기능·한국어 비용라벨·등록 연결을 표시하고, 도구 상태 확인 결과 **로컬 정책 비활성 / 외부 실행 미지원 / 실행 서비스 미연결·기본 비활성**을 확인했다. `toolkit-deployed-accounts.png` 화면 증거. 화면 배포와 toolkit/renderer 활성화는 별개이며 현 main은 정책/renderer를 주입하지 않는다. 실제 작업 사용 활성화·남은 상세 오류상태 수락·6B~D는 아직 미완료다.
