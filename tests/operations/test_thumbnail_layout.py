@@ -33,6 +33,13 @@ class ThumbnailLayoutTests(unittest.TestCase):
         renderer=PillowThumbnailRenderer(REGISTERED_FONT,font_sha256='0'*64)
         self.assertEqual(render_thumbnail({'preset_id':'landscape.v1','title':'x'},renderer=renderer)['status'],'blocked')
 
+    def test_missing_registered_font_is_unavailable_not_policy_violation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            font=Path(tmp).resolve()/'missing.otf'
+            with patch('common.operations.thumbnail_layout.REGISTERED_FONT',font):
+                renderer=PillowThumbnailRenderer(font,font_sha256='0'*64)
+                self.assertEqual(render_thumbnail({'preset_id':'landscape.v1','title':'제목'},renderer=renderer)['status'],'unavailable')
+
     def test_rendered_png_byte_limit_is_enforced(self):
         data=b'x'*(8*1024*1024+1)
         renderer=lambda request: {'status':'completed','reason_code':'rendered','asset':{'data':data,'sha256':hashlib.sha256(data).hexdigest()}}

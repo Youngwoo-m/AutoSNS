@@ -20,8 +20,8 @@ class ToolkitHTTPTests(unittest.TestCase):
     def setUp(self):
         spec=importlib.util.spec_from_file_location('toolkit_http_fixture',APP/'web_server.py');self.module=importlib.util.module_from_spec(spec);spec.loader.exec_module(self.module)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name);self.source=self.root/'source';self.source.mkdir();self.workspace=self.root/'managed'
-        from tests.integration.test_local_toolkit_acceptance import overlay, MANIFEST
-        self.webroot=self.root/'web';shutil.copytree(APP/'web',self.webroot);overlay(self.webroot,json.loads(MANIFEST.read_text()))
+        from tests.integration.test_local_toolkit_acceptance import product_webroot
+        self.webroot=self.root/'web';product_webroot(self.webroot)
         self.registry=Registry('r1',{'personal':{},'dept':{}},{},{},{'c':Connection('c','personal','youtube',target_id='target')},{},{},{})
         self.server=self.module.create_server(source_root=self.source,workspace_root=self.workspace,web_root=self.webroot,auth_backend=Auth(),operations_registry=self.registry,toolkit_policy=ToolkitPolicy(True))
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start();self.addCleanup(self.stop)

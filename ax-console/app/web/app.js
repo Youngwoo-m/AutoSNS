@@ -248,7 +248,7 @@ function renderDetail() {
   let body;
   if(detailTab==='overview')body=h('div',{},h('section',{class:'detail-section'},h('h3',{},'원본 개요'),h('p',{class:'article-preview'},c.summary||'요약이 수집되지 않았습니다.'),h('dl',{class:'detail-kv'},h('dt',{},'형식'),h('dd',{},kindLabel(c.kind)),h('dt',{},'시리즈'),h('dd',{},c.series||'미확인'),h('dt',{},'생성 시각'),h('dd',{},formatDateTime(c.created_at)),h('dt',{},'갱신 시각'),h('dd',{},formatDateTime(c.updated_at)))),h('section',{class:'detail-section'},h('h3',{},'채널별 게시 대상과 상태'),deliveries.length?deliveries.map(deliveryDetail):empty('배포 기록 없음','원본의 채널별 배포 기록이 수집되지 않았습니다.')));
   if(detailTab==='deliveries')body=h('section',{class:'detail-section'},h('h3',{},'채널별 배포'),muted('게시 대상은 원본 소유 계정과 별도입니다. 조회 계정과 관련된 배포만 표시할 수 있습니다.'),deliveries.length?deliveries.map(deliveryDetail):empty('배포 기록 없음','현재 조회 범위에서 연결된 배포 기록이 없습니다.'));
-  if(detailTab==='deliveries')body.append(toolkitSurface('schedule'));
+  if(detailTab==='deliveries')body.append(toolkitSurface('schedule',{deliveries:(state.snapshot?.deliveries||[]).filter(d=>d.content_id===c.id)}));
   if(detailTab==='manuscript')body=empty('전체 원문·채널 변환본 조회 미지원','현재 스냅샷은 요약과 원본 버전만 제공합니다. 원문 편집과 승인 버전 비교는 아직 지원하지 않습니다.');
   if(detailTab==='media')body=empty('미디어 자산 조회 미지원','이미지·영상 자산 정보가 조회 계약에 없습니다. 썸네일이나 파일의 존재를 추정하지 않습니다.');
   if(detailTab==='review')body=empty('검토·출처 자료 미수집','출처와 승인 이력을 조회 계약에서 제공하지 않습니다. 배포 확인 근거는 채널별 배포에서 확인할 수 있습니다.');

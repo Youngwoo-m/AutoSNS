@@ -22,7 +22,7 @@ HTTP는 인증 401, 외부 Origin 403, 중복 query/JSON·NaN 400, 초과 body 4
 
 CSV import는 동일 receipt를 재사용하며 운영 operations.sqlite3 bytes를 보존한다. 변경된 원문/digest는 409이고 관측은 legacy_reported다. HTTP에 내부 import plan과 원본 source provenance를 공개하지 않는다. CAS 저장은 전체 원고 필드를 보존하고 새 revision에 기존 review를 복사하지 않으며 stale expected_revision은 409다.
 
-Node는 실제 Task8 artifact editor 모듈을 DOM harness에서 열어 toolkit-stage CustomEvent→깨끗한 hash/context 재검증→title/선택 본문만 초안 반영→기존 fullpayload(expected_revision 포함) 저장을 실행했다. variants·sources·series·status 보존과 미리보기 후 수정/늦은 응답의 후보 미반영, 타이핑 focus 유지도 확인했다. accounts/planning/analytics/schedule의 도구 범위를 분리하며 render는 HTTP를 보내지 않는다. 기존 9개 nav와 기술사 메뉴를 유지한다.
+Task8 최초 검증(최종 검토 전)은 artifact editor 모듈을 DOM harness에서 열어 toolkit-stage CustomEvent→깨끗한 hash/context 재검증→title/가짜 본문 후보 초안 반영→기존 fullpayload(expected_revision 포함) 저장을 실행했다. 당시 가짜 계약에서 variants·sources·series·status 보존과 미리보기 후 수정/늦은 응답의 후보 미반영, 타이핑 focus 유지도 확인했다. accounts/planning/analytics/schedule의 도구 범위를 분리하며 render는 HTTP를 보내지 않는다. 기존 9개 nav와 기술사 메뉴를 유지한다.
 
 320px용 CSS와 1280px에서도 입력 최대 폭을 제한하는 계약은 자동 검사했지만 **브라우저 실제 크기·focus traversal·console·screenshot은 아직 미확인**이다. 썸네일의 실제 출력 브라우저 수락도 미확인이다. 서버 등록 글꼴 경로의 파일 존재 여부는 True였으나 이것을 renderer 등록·글꼴 SHA/decoder 환경 검증 완료로 승격하지 않았다.
 
@@ -42,3 +42,5 @@ Node는 실제 Task8 artifact editor 모듈을 DOM harness에서 열어 toolkit-
 시작 HEAD와 staged 경로, held6 각각의 actual original SHA 및 artifact SHA는 Task8 manifest에 기록했다. 시작 시 actual held6==desired HEAD였음을 byte 단위 비교했다. 집중 검증은 actual held SHA==original SHA 및 잘못된 원본 hash가 partial overlay 전에 차단됨을 검사했다. 실제 held6 변경·실서버 restart·stage·commit은 작업자가 수행하지 않았다. 별도 기술사 라벨 artifact와 6A audit 수정은 부모/다른 작업자의 소유이며 변경하지 않았다.
 
 신규 최상위 메뉴·발행기·예약 실행·model/provider fallback·credential I/O는 추가하지 않았다. 개인 subscription_only, 기존 23경로·TikTok 큐·STOP·unknown·Blog5/YouTube2·기술사 일차/친구 요청/PDF 경계를 보존한다. 6B~6D 실제 운영 목표와 건축시공 필수 후속, 실인증·실수집·게시 검증은 미완료다.
+
+최종 검토에서 최초 Node 시험의 본문 후보 계약이 실제 서버의 hashtags 계약과 다른 것으로 확인했다. 최종 수정은 실제 서비스 응답 형태를 소비하여 제목과 명시 선택 변환문 태그만 반영하고, original·다른 변환문·sources·series·status를 보존하도록 바꾼다. 수정 후 시험/브라우저/배포 증거는 별도 갱신하며 위 최초 결과를 수정 후 성공 증거로 재사용하지 않는다.

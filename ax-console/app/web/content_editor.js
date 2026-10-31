@@ -44,6 +44,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
   function toolkitContext(){return {account:session.content?.owner_account_id||session.draft.owner_account_id||'all',
     contentId:session.content?.id,revision:session.content?.revision,
     inputHash:JSON.stringify(session.draft),editorDirty:session.dirty(),
+    variants:clone(session.draft.variants),assets:clone(session.content?.assets||[]),deliveries:delivery.getItems(),
     connectionId:toolkitController.getState().inputs.connection_id||null};}
   function syncToolkit(){return toolkit.render({section:'editor',context:toolkitContext(),writable:canWrite()&&!childBlocksRevision()});}
   toolkit.element.addEventListener('toolkit-stage',event=>{
@@ -51,12 +52,12 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     if(!canWrite()||childBlocksRevision()||session.dirty()||context.inputHash!==state.context.inputHash)return;
     // 전달된 patch를 현재 preview의 clean hash·revision·connection으로 다시 결속한다.
     const candidates=state.reports.packaging?.candidates||[];
-    const valid=candidates.some(candidate=>[undefined,...(candidate.variants||[]).map(v=>v.id)].some(variantId=>{
-      try{return JSON.stringify(toolkitController.stageCandidate(candidate.id??candidate.candidate_id,{...context,variantId}))===JSON.stringify(patch);}catch{return false;}
+    const valid=candidates.some(candidate=>[undefined,...session.draft.variants.map((_,index)=>index)].some(variantIndex=>{
+      try{return JSON.stringify(toolkitController.stageCandidate(candidate.id??candidate.candidate_id,{...context,variantIndex}))===JSON.stringify(patch);}catch{return false;}
     }));
     if(!valid)return;
     if(typeof patch.title==='string')session.draft.title=patch.title;
-    if(typeof patch.body==='string')session.draft.original=patch.body;
+    if(patch.variant)session.draft.variants[patch.variant.index].text=patch.variant.text;
     message='후보를 미저장 초안에 반영했습니다. 원본 저장 시 새 버전과 독립 검토가 필요합니다.';
     render();
   });

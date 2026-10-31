@@ -101,5 +101,5 @@ export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onSt
   }
   async function open(next){const token=++generation;content=next;state=createDeliverySession();state.draft=defaultDraft();connections=[];events=[];dirty=false;loadFailed=false;notes='';scheduleDraft={scheduled_at:'',timezone:'Asia/Seoul'};resetBaselines();busy=true;render();if(!content){busy=false;render();return;}
     try{const [registered,list]=await Promise.all([api.listConnections(),api.listDeliveries('all',content.id)]);if(token!==generation)return;connections=registered.items||[];state.items=list.items||[];}catch(error){if(token===generation){loadFailed=true;state.error=error.message;}}finally{if(token===generation){busy=false;render();}}}
-  return {element:root,open,refreshControls:render,hasUnsavedChanges:()=>dirty,isBusy:()=>busy};
+  return {element:root,open,getItems:()=>JSON.parse(JSON.stringify(state.items)),refreshControls:render,hasUnsavedChanges:()=>dirty,isBusy:()=>busy};
 }

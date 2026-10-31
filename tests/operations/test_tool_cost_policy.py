@@ -37,6 +37,12 @@ class CostPolicyTests(unittest.TestCase):
             self.assertFalse(evaluate_tool_action('local.thumbnail.render', self.context(**changes))['allowed'])
         self.assertFalse(evaluate_tool_action('unknown', self.context())['allowed'])
 
+    def test_cross_local_evidence_cannot_grant_external_execution(self):
+        context=self.context(destination_account_id='dept',cross_account_local_authorized=True)
+        self.assertTrue(evaluate_tool_action('local.packaging.preview',context)['allowed'])
+        self.assertFalse(evaluate_tool_action('metricool.publish',context)['allowed'])
+        with self.assertRaises(ValueError):self.context(cross_account_local_authorized=1)
+
     def test_strict_constructors(self):
         for value in (1, 'true', None):
             with self.assertRaises(ValueError):

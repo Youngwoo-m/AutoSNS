@@ -36,6 +36,29 @@ class ToolkitTests(unittest.TestCase):
         self.assertEqual(result['status'],'blocked')
         result=self.service.packaging_preview(dict(self.packaging(),connection_id='n'))
         self.assertIsNone(result['target_id']); self.assertFalse(result['connection_confirmed'])
+    def test_registered_cross_account_local_analysis_and_forgery_fences(self):
+        self.snapshot['variants'].append(dict(destination_account_id='dept',platform='youtube',text='학과 변환문'))
+        rules={'route':dict(owner_account_id='personal',source_connection_id='c',destination_connection_id='d',enabled=False)}
+        self.service.registry=Registry('cross',self.registry.accounts,{},{},self.registry.connections,{},{},rules)
+        body=dict(self.packaging(),connection_id='d')
+        result=self.service.packaging_preview(body)
+        self.assertEqual(result['status'],'completed')
+        self.assertEqual(result['destination_account_id'],'dept')
+        self.assertFalse(self.service.registry.crossposts['route']['enabled'])
+        self.snapshot['variants']=[]
+        self.assertEqual(self.service.packaging_preview(body)['reason_codes'],['destination_variant_missing'])
+        self.snapshot['variants']=[dict(destination_account_id='dept',platform='youtube',text='변환문')]
+        self.service.registry=Registry('bad',self.registry.accounts,{},{},self.registry.connections,{},{},{'route':dict(rules['route'],source_connection_id='d')})
+        self.assertIn('account_mismatch',self.service.packaging_preview(body)['reason_codes'])
+        for field in ('owner_account_id','target_id','cross_account_local_authorized','rule_id'):
+            with self.assertRaises(StoreError):self.service.packaging_preview(dict(body,**{field:'forged'}))
+        runtime=Mock();runtime.get_delivery.return_value=dict(state='unknown',context=dict(owner_account_id='personal',destination_account_id='dept',connection_id='d',target_id='dept-target',platform='youtube'))
+        self.service.registry=Registry('cross',self.registry.accounts,{},{},self.registry.connections,{},{},rules)
+        self.service.runtime_store=runtime
+        observed=self.service.schedule_inspect(dict(delivery_id='delivery'))
+        self.assertNotIn('account_mismatch',observed['reason_codes'])
+        self.assertFalse(observed['execution_enabled'])
+
     def test_credit_and_unknown_cost_never_call_leaf(self):
         with patch('common.operations.local_toolkit.evaluate_tool_action',return_value=dict(allowed=False,reason_codes=['cost_not_zero'],evidence_refs=[])):
             with patch('common.operations.local_toolkit.build_packaging_preview') as leaf:

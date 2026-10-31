@@ -55,6 +55,7 @@ class ToolActionContext:
     runtime_kind: str
     cost_evidence: CostEvidence
     now: datetime
+    cross_account_local_authorized: bool = False
     read_scope_status: str = 'unknown'
     write_scope_status: str = 'unknown'
 
@@ -65,6 +66,8 @@ class ToolActionContext:
                 raise ValueError(name)
         if type(self.policy) is not ToolkitPolicy or type(self.cost_evidence) is not CostEvidence:
             raise ValueError('invalid_nested_contract')
+        if type(self.cross_account_local_authorized) is not bool:
+            raise ValueError('cross_account_local_authorized')
         _aware(self.now)
         if type(self.runtime_kind) is not str or self.runtime_kind not in ('local', 'codex_assisted', 'unavailable'):
             raise ValueError('runtime_kind')
@@ -86,7 +89,7 @@ def evaluate_tool_action(action_id: str, context: ToolActionContext, *, catalog=
         reasons.append('toolkit_disabled')
     if not context.owner_account_id or not context.destination_account_id:
         reasons.append('account_required')
-    elif context.owner_account_id != context.destination_account_id:
+    elif context.owner_account_id != context.destination_account_id and not context.cross_account_local_authorized:
         reasons.append('account_mismatch')
     if capability is not None:
         if capability.runtime_kind != 'local' or capability.implementation_status != 'implemented' or capability.effect == 'external_write':

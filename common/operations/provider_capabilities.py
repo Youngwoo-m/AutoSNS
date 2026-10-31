@@ -53,7 +53,7 @@ def capabilities_snapshot(account_id: str, registry, *, policy) -> dict:
     for connection in registry.connections.values():
         if connection.account_id == account_id:
             connections.append(dict(account_id=account_id, connection_id=connection.id,
-                target_id=connection.target_id, auth_status=connection.auth_status,
+                target_id=connection.target_id, platform=connection.platform, target_label=connection.target_label, auth_status=connection.auth_status,
                 read_scope_status='unknown', write_scope_status='unknown',
                 checked_at=connection.auth_checked_at, last_failure=None))
     return dict(account_id=account_id, toolkit_enabled=policy.enabled,

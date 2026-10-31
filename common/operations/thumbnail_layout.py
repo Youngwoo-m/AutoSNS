@@ -80,6 +80,8 @@ class PillowThumbnailRenderer:
     def __call__(self, request: Mapping) -> dict:
         try:
             font_bytes = self._font_bytes()
+        except FileNotFoundError:
+            return _result('unavailable','font_validation_failed')
         except (OSError, ValueError):
             return _result('blocked','font_validation_failed')
         try:

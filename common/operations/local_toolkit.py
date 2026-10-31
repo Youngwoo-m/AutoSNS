@@ -75,10 +75,10 @@ class LocalToolkitService:
             for c in capabilities_snapshot(account,self.registry,policy=self.policy)['connections']]
         return result
 
-    def _gate(self, action, owner, destination=_DEFAULT_DESTINATION, connection=None, target=None):
+    def _gate(self, action, owner, destination=_DEFAULT_DESTINATION, connection=None, target=None, *, cross_authorized=False):
         decision=evaluate_tool_action('local.'+action,ToolActionContext(
             owner,owner if destination is _DEFAULT_DESTINATION else destination,connection,target,self.policy,
-            'local',LOCAL_COST_EVIDENCE,self.clock()))
+            'local',LOCAL_COST_EVIDENCE,self.clock(),cross_account_local_authorized=cross_authorized))
         if not decision['allowed']:
             return dict(status='blocked',reason_codes=decision['reason_codes'])
         return None
@@ -92,6 +92,20 @@ class LocalToolkitService:
         _account(snapshot['owner_account_id'])
         return snapshot
 
+    def _cross_route_authorized(self, owner, connection):
+        # 읽기 전용 로컬 분석 범위의 등록 경로 증거다. 발행/인증 권한은 부여하지 않는다.
+        if owner == connection.account_id:
+            return True
+        if connection.target_id is None:
+            return False
+        for rule in self.registry.crossposts.values():
+            source = self.registry.connections.get(rule.get('source_connection_id'))
+            if (rule.get('owner_account_id') == owner
+                    and rule.get('destination_connection_id') == connection.id
+                    and source is not None and source.account_id == owner):
+                return True
+        return False
+
     def packaging_preview(self, body):
         _fields(body,('content_id','revision','connection_id','keywords'))
         _id(body['connection_id'])
@@ -101,7 +115,8 @@ class LocalToolkitService:
         snapshot=self._snapshot(body)
         connection=self.registry.connections.get(body['connection_id'])
         if connection is None: raise StoreError('invalid')
-        blocked=self._gate('packaging.preview',snapshot['owner_account_id'],connection.account_id,connection.id,connection.target_id)
+        blocked=self._gate('packaging.preview',snapshot['owner_account_id'],connection.account_id,connection.id,connection.target_id,
+            cross_authorized=self._cross_route_authorized(snapshot['owner_account_id'],connection))
         if blocked: return blocked
         if not any(v['destination_account_id']==connection.account_id and v['platform']==connection.platform for v in snapshot.get('variants',())):
             return dict(status='blocked',reason_codes=['destination_variant_missing'])
@@ -205,7 +220,9 @@ class LocalToolkitService:
         delivery=self.runtime_store.get_delivery(body['delivery_id'])
         if delivery is None: raise StoreError('not_found')
         context=delivery['context']
-        blocked=self._gate('schedule.inspect',context.get('owner_account_id'),context.get('destination_account_id'),context.get('connection_id'),context.get('target_id'))
+        blocked=self._gate('schedule.inspect',context.get('owner_account_id'),context.get('destination_account_id'),context.get('connection_id'),context.get('target_id'),
+            cross_authorized=(self.registry.connections.get(context.get('connection_id')) is not None and
+                self._cross_route_authorized(context.get('owner_account_id'),self.registry.connections[context.get('connection_id')])))
         reasons=list(blocked['reason_codes']) if blocked else []
         connection=self.registry.connections.get(context.get('connection_id'))
         if connection is None or connection.account_id!=context.get('destination_account_id') or connection.target_id!=context.get('target_id') or connection.platform!=context.get('platform'):
