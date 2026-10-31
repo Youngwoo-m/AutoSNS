@@ -8,6 +8,10 @@
 
 ## 현재 연결과 기본값
 
+### 새 승인 활성화 계획 / 적용 대기
+
+2026-10-31 사용자가 [활성화 계획](../superpowers/plans/2026-10-31-local-toolkit-activation.md)의 구현을 승인했다. 실제8769 적용은 Task1 기동 설정 구현·독립 검토 후 부모가 백업과 데이터 보존 확인을 거쳐 직렬 수행한다. 아직 이 절은 활성화 완료 기록이 아니다. 이전 수락 결과는 새 설정의 PASS를 대신하지 않는다. 현재 Python3.15·renderer/authorizer 미주입·실행 비활성 경계를 유지하며 `AX_LOCAL_TOOLKIT=1`만 추가하는 범위다. 원복은 이 값 제거 또는0 후 같은 서버 재시작이며 과거 DB를 자동 복원하지 않는다. 기존 반례와 추가 집중 검증 대상은 [Task2 준비 기록](../../.superpowers/sdd/2026-10-31-local-toolkit-activation/task-2-preflight.md)에 정리했다.
+
 기존 9개 메뉴를 유지한다. 채널·계정에는 SNS 도구 상태, 콘텐츠 기획에는 저장 근거 조사, 관리 원본 편집기에는 제목·태그 후보와 이미지 검사·고정 썸네일, 성과 패널 옆에는 수동 CSV, 배포 상세와 편집기에는 예약 상태 조회를 조합한다. 기존 성과 패널과 연동 선호 설정 모듈은 수정하지 않는다.
 
 `create_server`의 추가 인자는 kw-only `toolkit_policy=None`, `toolkit_renderer=None`, `toolkit_asset_authorizer=None`다. 기본 ToolkitPolicy는 비활성이고 renderer/authorizer는 미등록이다. 별도 관리 저장소가 없거나 명시적으로 초기화되지 않았다면 tools POST는 503이다. factory·GET·선호 저장은 외부 호출·credential 조회/refresh·subprocess를 수행하지 않는다. 새 도구의 활성화가 실행 서비스나 발행 정책을 활성화하지 않는다.

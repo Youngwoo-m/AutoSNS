@@ -1,5 +1,7 @@
 """임시 loopback·등록부만 사용하는 로컬 SNS 도구 HTTP 경계."""
 import http.client
+import base64
+import builtins
 import importlib.util
 import json
 import shutil
@@ -84,3 +86,36 @@ class ToolkitHTTPTests(unittest.TestCase):
                 try:
                     conn.request('GET','/web/'+name,headers={'Cookie':Auth.COOKIE+'=fixture'} if authed else {});response=conn.getresponse();self.assertEqual(response.status,want);response.read()
                 finally:conn.close()
+
+    def test_enabled_thumbnail_render_without_renderer_is_unavailable(self):
+        c=self.initialize()
+        self.assertTrue(self.server.toolkit_service.policy.enabled)
+        self.assertIsNone(self.server.toolkit_service.thumbnail_renderer)
+        status,result=self.request('/api/v2/tools/thumbnail-render','POST',dict(content_id=c['id'],revision=c['revision'],asset_id=None,preset_id='landscape.v1',title='제목'))
+        self.assertEqual(status,200)
+        self.assertEqual(result,dict(status='unavailable',reason_codes=['renderer_unavailable']))
+        self.assertFalse(self.server.execution_policy.enabled)
+
+    def test_enabled_thumbnail_inspect_without_decoder_is_unavailable(self):
+        c=self.initialize()
+        # 실제 저장소의 hash/자산 읽기 경로를 통과하는 고정 PNG다.
+        png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a1ZkAAAAASUVORK5CYII=')
+        c=self.server.content_store.add_asset(c['id'],c['revision'],'fixture.png','image/png',png)
+        body=dict(content_id=c['id'],revision=c['revision'],asset_id=c['assets'][0]['id'])
+        def assert_unavailable():
+            status,result=self.request('/api/v2/tools/thumbnail-inspect','POST',body)
+            self.assertEqual(status,200)
+            self.assertEqual(result['status'],'unavailable')
+            self.assertEqual(result['findings'],['decoder_unavailable'])
+            self.assertEqual(result['sha256'],c['assets'][0]['sha256'])
+            self.assertIsNone(result['width']);self.assertIsNone(result['height'])
+        # Python3.15의 실제 decoder 부재도 별도로 확인한다. Pillow 환경에서는
+        # 아래 import 경계 반례로 같은 응답 계약을 skip 없이 검증한다.
+        if importlib.util.find_spec('PIL') is None:
+            with self.subTest(decoder='environment_absent'):assert_unavailable()
+        original_import=builtins.__import__
+        def without_pillow(name,*args,**kwargs):
+            if name=='PIL' or name.startswith('PIL.'):raise ImportError('fixture decoder absent')
+            return original_import(name,*args,**kwargs)
+        with self.subTest(decoder='import_boundary_absent'),patch('builtins.__import__',side_effect=without_pillow):
+            assert_unavailable()
