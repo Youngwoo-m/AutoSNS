@@ -38,17 +38,32 @@ export function createToolkitPanel({controller,document}) {
    if(name==='connection_id') {
     current={...current,context:{...controller.getState().context,connectionId:input.value||null}};
     controller.setContext(current.context);render(current);
-   }
+   }else refreshControls();
   });
   element.append(title,input);return input;
  }
- function stageButton(label,id,variantIndex){
+ function selectedVariantIndex() {
+  const s=controller.getState(),selected=s.inputs.variant_index,report=s.reports.packaging;
+  if(selected===undefined||selected===null||selected==='')return null;
+  const index=Number(selected),variant=s.context.variants?.[index];
+  return Number.isInteger(index)&&index>=0&&variant&&variant.destination_account_id===report?.destination_account_id&&variant.platform===report?.platform?index:null;
+ }
+ function canStage(withTags=false) {
+  return current.writable&&controller.getState().context.editorDirty===false&&!controller.isBusy()&&(!withTags||selectedVariantIndex()!==null);
+ }
+ function canInspectImage() {
+  const s=controller.getState();
+  return !s.busy&&!!s.context.contentId&&(s.context.assets||[]).some(a=>a.id===s.inputs.asset_id&&['image/png','image/jpeg','image/webp'].includes(a.media_type));
+ }
+ function stageButton(label,id,withTags=false){
   const n=button(label,()=>{
    const context=controller.getState().context;
+   if(!canStage(withTags))return;
+   const variantIndex=withTags?selectedVariantIndex():undefined;
    const patch=controller.stageCandidate(id,{...context,variantIndex});
    element.dispatchEvent?.(new CustomEvent('toolkit-stage',{detail:patch}));
-  },!current.writable||controller.getState().context.editorDirty!==false||controller.isBusy());
-  n.setAttribute('data-toolkit-stage','');return n;
+  },!canStage(withTags));
+  n.setAttribute('data-toolkit-stage',withTags?'tags':'title');return n;
  }
  function renderSchedule(report) {
   for(const [key,caption] of [['delivery_id','배포 ID'],['state','예약 상태'],['target_id','대상 ID'],['remote_id','원격 ID'],['scheduled_at','예약 시각']])element.append(node('p',`${caption}: ${key==='state'?label(report[key]):scalar(report[key])}`));
@@ -98,10 +113,7 @@ export function createToolkitPanel({controller,document}) {
     element.append(node('h4',`후보 ${index+1}`),node('p',candidate.title||''),node('p',(candidate.hashtags||[]).join(' ')));
     findings(candidate.reasons);
     element.append(stageButton(`후보 ${index+1} 제목을 초안에 반영`,candidate.id));
-    const selected=controller.getState().inputs.variant_index;
-    const valid=selected!==undefined&&selected!==''&&variants.some(v=>v.index===Number(selected));
-    const tagsButton=stageButton(`후보 ${index+1} 제목·태그를 선택 변환문에 반영`,candidate.id,Number(selected));
-    tagsButton.disabled=tagsButton.disabled||!valid;element.append(tagsButton);
+    element.append(stageButton(`후보 ${index+1} 제목·태그를 선택 변환문에 반영`,candidate.id,true));
    }
   }
   if(kind==='research') {
@@ -159,7 +171,9 @@ export function createToolkitPanel({controller,document}) {
    selectField('asset_id','첨부 이미지',(context?.assets||[]).filter(a=>['image/png','image/jpeg','image/webp'].includes(a.media_type)).map(a=>[a.id,a.filename||'첨부 이미지']),{empty:'배경 이미지 없이 만들기'});
    selectField('preset_id','썸네일 형태',[['landscape.v1','가로 1280 × 720'],['portrait.v1','세로 1080 × 1920']],{empty:null,defaultValue:'landscape.v1'});field('title','썸네일 제목');
    element.append(node('p','고정 템플릿·서버 등록 한글 글꼴이 없으면 출력할 수 없습니다. 입력 경로나 글꼴 파일을 실행하지 않습니다.'));
-   element.append(button('이미지 기술 검사',()=>controller.preview('thumbnailInspect',{asset_id:controller.getState().inputs.asset_id}),s.busy||!context?.contentId||!s.inputs.asset_id),button('고정 템플릿 PNG 미리보기',()=>{const i=controller.getState().inputs;return controller.preview('thumbnailRender',{asset_id:i.asset_id||null,preset_id:i.preset_id,title:i.title});},s.busy||!context?.contentId));
+   const inspectButton=button('이미지 기술 검사',()=>canInspectImage()?controller.preview('thumbnailInspect',{asset_id:controller.getState().inputs.asset_id}):null,!canInspectImage());
+   inspectButton.setAttribute('data-toolkit-inspect','');
+   element.append(inspectButton,button('고정 템플릿 PNG 미리보기',()=>{const i=controller.getState().inputs;return controller.preview('thumbnailRender',{asset_id:i.asset_id||null,preset_id:i.preset_id,title:i.title});},s.busy||!context?.contentId));
    for(const kind of ['thumbnailInspect','thumbnailRender'])renderReport(kind,s.reports[kind]);
   }
   if(all||section==='schedule'||section==='editor'){
@@ -179,7 +193,8 @@ export function createToolkitPanel({controller,document}) {
   const previousDeliveries=JSON.stringify(controller.getState().context.deliveries||[]);
   current={...current,...options};if(options.context)controller.setContext(options.context);
   if(previousDeliveries!==JSON.stringify(options.context?.deliveries||[])){render(current);return;}
-  element.querySelectorAll?.('[data-toolkit-stage]').forEach(n=>n.disabled=!current.writable||controller.getState().context.editorDirty!==false||controller.isBusy());
+  element.querySelectorAll?.('[data-toolkit-stage]').forEach(n=>n.disabled=!canStage(n.getAttribute('data-toolkit-stage')==='tags'));
+  element.querySelectorAll?.('[data-toolkit-inspect]').forEach(n=>n.disabled=!canInspectImage());
  }
  return {render,refreshControls,element,isBusy:()=>controller.isBusy(),isDirty:()=>controller.isDirty()};
 }

@@ -45,3 +45,35 @@ test('schedule inspection displays safe root fields and unknown reason without a
  assert.doesNotMatch(p.element.textContent,/SECRET|게시 성공/);assert.equal(calls,1);
 });
 test('CSV read rejection preserves draft and displays sanitized error',async()=>{const c=createToolkitController({api:{}});const p=createToolkitPanel({controller:c,document});p.render({context:ctx});c.updateInput('csv_text','original');const file=nodes(p.element).find(n=>n.name==='toolkit_csv_file');file.files=[{text:async()=>{throw new Error('SECRET');}}];await file.fire('change');assert.equal(c.getState().inputs.csv_text,'original');assert.match(p.element.textContent,/CSV 파일을 읽지 못했습니다.*보존/);assert.doesNotMatch(p.element.textContent,/SECRET/);});
+
+// Editor uses refreshControls on input notifications, not a complete render.
+const {harness,all}=await import('./helpers/execution_dom.mjs');
+async function selectionFixture(){
+ const {document}=harness();let panel;const staged=[],inspections=[];
+ const context={...ctx,assets:[{id:'img',filename:'image.png',media_type:'image/png'}],variants:[{destination_account_id:'personal',platform:'youtube',text:'첫 변환문'},{destination_account_id:'personal',platform:'youtube',text:'두번째 변환문'}]};
+ const c=createToolkitController({api:{packagingPreview:async()=>({destination_account_id:'personal',platform:'youtube',candidates:[{id:'a',title:'후보',hashtags:['#현장']}]}),thumbnailInspect:async body=>{inspections.push(body);return {status:'ok',width:100,height:100,findings:[]};}},onChange:()=>panel?.refreshControls({context,writable:true})});
+ panel=createToolkitPanel({controller:c,document});panel.render({section:'editor',context,writable:true});panel.element.dispatchEvent=event=>staged.push(event.detail);
+ await c.preview('packaging');panel.render({section:'editor',context,writable:true});
+ return {c,panel,context,staged,inspections,field:name=>all(panel.element).find(n=>n.name===`toolkit_${name}`),button:text=>all(panel.element).find(n=>n.textContent===text)};
+}
+test('cleared variant stays blocked after unrelated input and stale click emits no patch',async()=>{
+ const f=await selectionFixture();let choice=f.field('variant_index');choice.value='0';await choice.fire('change');
+ const oldButton=f.button('후보 1 제목·태그를 선택 변환문에 반영');
+ choice=f.field('variant_index');choice.value='';await choice.fire('change');
+ const title=f.field('title');title.value='썸네일';await title.fire('input');
+ const current=f.button('후보 1 제목·태그를 선택 변환문에 반영');assert.equal(current.disabled,true);
+ await current.fire('click');await oldButton.fire('click');assert.deepEqual(f.staged,[]);
+});
+test('explicit variant zero stages only its current text',async()=>{
+ const f=await selectionFixture();const choice=f.field('variant_index');choice.value='0';await choice.fire('change');
+ await f.button('후보 1 제목·태그를 선택 변환문에 반영').fire('click');
+ assert.deepEqual(f.staged,[{title:'후보',variant:{index:0,destination_account_id:'personal',platform:'youtube',text:'첫 변환문\n\n#현장'}}]);
+ assert.equal(f.c.getState().context.variants[1].text,'두번째 변환문');
+});
+test('asset selection enables inspection immediately and clearing disables it',async()=>{
+ const f=await selectionFixture();assert.equal(f.button('이미지 기술 검사').disabled,true);
+ const image=f.field('asset_id');image.value='img';await image.fire('change');assert.equal(f.button('이미지 기술 검사').disabled,false);
+ await f.button('이미지 기술 검사').fire('click');assert.deepEqual(f.inspections,[{content_id:'c',revision:1,asset_id:'img'}]);
+ const cleared=f.field('asset_id');cleared.value='';await cleared.fire('change');assert.equal(f.button('이미지 기술 검사').disabled,true);
+ await f.button('이미지 기술 검사').fire('click');assert.equal(f.inspections.length,1);
+});
