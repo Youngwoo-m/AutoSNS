@@ -76,3 +76,9 @@ IAB34 실제 격리 화면에서320×780 기획/편집기 scrollWidth=320, clien
 기존 명령으로 재시작한 managed8769(session60061)·readonly8767(session87379) 모두200 로그인 응답. operations/metrics SQLite의 integrity_check=ok, 백업 대비 전체 logical dump 동일. 원본R/8700/프로필/스케줄/실제 발행 변경 없음.
 
 IAB35 실제8769 채널·계정에서 새 로컬 SNS 도구7기능·한국어 비용라벨·등록 연결을 표시하고, 도구 상태 확인 결과 **로컬 정책 비활성 / 외부 실행 미지원 / 실행 서비스 미연결·기본 비활성**을 확인했다. `toolkit-deployed-accounts.png` 화면 증거. 화면 배포와 toolkit/renderer 활성화는 별개이며 현 main은 정책/renderer를 주입하지 않는다. 실제 작업 사용 활성화·남은 상세 오류상태 수락·6B~D는 아직 미완료다.
+
+## 오류 복구 추가 브라우저 수락
+
+실제 격리 서버54082에서 개인 CSV의177자 원문·미리보기를 준비한 뒤 fixture 인증만 만료시켰다. CSV 가져오기에서401 로그인 안내와 원문/미리보기 보존을 확인했다. 별도 가상 로그인 후 기존 탭의 동일 요청 재시도로 추가1/중복0을 확인했다. 증거 `toolkit-csv-401-preserved.png`, `toolkit-csv-relogin-retry.png`. 실제 세션·키·계정 변경 없음.
+
+같은 임시 ContentStore 원고v3를 편집하는 동안 다른 store 인스턴스로 v4를 저장한 후 UI의 v3 저장을 실행했다. 실제409 안내와 미저장 제목 '[가상 QA] 충돌에도 보존할 제목' 보존을 확인했다. 증거 `toolkit-editor-409-preserved.png`. DB는 임시 fixture만 변경했고 실제 관리workspace는 변경하지 않았다.503은 기존controller/HTTP시험 증거가 있으며 최신실브라우저 검증은 아직 별도다.
