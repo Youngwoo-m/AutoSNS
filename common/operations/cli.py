@@ -118,5 +118,17 @@ def build_cli_services(service, *, caller_ids):
     return cli_services(service, caller_ids=caller_ids)
 
 
+def module_main(argv=None):
+    """실제 -m 진입은 정적 서버 bootstrap을 소비한다. 요청/env에서 설정을 고르지 않는다."""
+    from .bootstrap_config import build_default_cli_services
+    import sqlite3
+    try:
+        services=build_default_cli_services()
+    except (StoreError,ContractError,OSError,sqlite3.Error):
+        # 구성 실패는 기존 명시 unconfigured 경로로 제한한다.
+        services=None
+    return main(argv,services=services)
+
+
 if __name__ == '__main__':
-    raise SystemExit(main())
+    raise SystemExit(module_main())

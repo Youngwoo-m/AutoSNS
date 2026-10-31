@@ -22,26 +22,39 @@ class WorkerService:
         self.stop_event=stop_event if stop_event is not None else threading.Event()
         self.heartbeat_interval=heartbeat_interval;self.active_lease=None
         self._mutex=threading.RLock();self._lease_lost=False;self._heartbeat_stop=None;self._thread=None
+        self._pending_fences=[]
 
     def handle_signal(self,signum,frame):
         self.stop_event.set()
 
     def check(self):
         if self.stop_event.is_set():raise ContractError('worker_stopping')
-        if self._lease_lost:raise ContractError('heartbeat_lost')
+        if self._lease_lost and self.active_lease is not None:raise ContractError('heartbeat_lost')
         self.services.require_enabled()
 
     def __call__(self,lease):
         if lease is None:
             if self._heartbeat_stop:self._heartbeat_stop.set()
             if self._thread:self._thread.join(timeout=6)
-            with self._mutex:self.active_lease=None
-            self._thread=None;return
+            with self._mutex:
+                lease=self.active_lease
+                if lease is not None and self._lease_lost:self._pending_fences.append(lease)
+                self.active_lease=None;self._lease_lost=False
+            self._thread=None
+            try:self._drain_fences()
+            except (StoreError,ContractError):pass  # DB 복구 후 다음 claim 전에 다시 격리한다.
+            return
         with self._mutex:
             self.active_lease=lease;self._lease_lost=False
         self._heartbeat_stop=threading.Event()
         self._thread=threading.Thread(target=self._heartbeat_loop,name='managed-heartbeat',daemon=True)
         self._thread.start()
+
+    def _drain_fences(self):
+        while self._pending_fences:
+            lease=self._pending_fences[0]
+            self.services.store.fence_lost_lease(lease,self.clock())
+            self._pending_fences.pop(0)
 
     def _heartbeat_loop(self):
         while not self._heartbeat_stop.wait(self.heartbeat_interval):
@@ -78,6 +91,7 @@ class WorkerService:
     def _production_request(self,run):
         occurrence=run['occurrence'];job=self.services.registry.jobs.get(occurrence['job_id'])
         if not job or job.get('kind')!='production' or not job.get('binding_id'):raise StoreError('invalid_binding')
+        self.services.assert_run_authority(run)
         policy=resolve_job_provider_policy(dict(job,id=occurrence['job_id']),self.services.registry,self.services.policy)
         binding=next((b for b in self.services.production_store.list_bindings() if b['binding_id']==job['binding_id']),None)
         if not binding:raise StoreError('binding_not_found')
@@ -143,7 +157,11 @@ class WorkerService:
         for run in self.services.store.list_runs('running'):
             occurrence=run.get('occurrence') or {}
             if occurrence.get('mode')!='live' or occurrence.get('phase')!='prepare':continue
-            request,policy=self._production_request(run)
+            try:request,policy=self._production_request(run)
+            except (ContractError,StoreError) as error:
+                if error.code=='storage_error':raise
+                # 과거 실행의 불확실 상태를 보존하면서 다른 회차의 처리는 계속한다.
+                continue
             attempt=self.services.production_store.get(request.production_unit_id)
             if not attempt or not attempt['result'] or attempt['state']=='running':continue
             result=attempt['result']
@@ -167,7 +185,9 @@ class WorkerService:
                 and delivery['context']['connection_id'] in connections
                 and delivery['state'] in ('uploaded','scheduled','published','unknown','needs_review')):targets.append(delivery)
         if not targets:
-            return {'state':'idle'}
+            result=dict(status='completed',reason_code='no_verification_targets',deliveries=[])
+            self.services.store.finish_service_run(run['id'],run['version'],result)
+            return dict(state='completed',run_id=run['id'],noop=True)
         resources=[]
         for delivery in targets:
             connection=self.services.registry.connections[delivery['context']['connection_id']]
@@ -212,17 +232,29 @@ class WorkerService:
         try:
             self.check()
             with self.services.locks.hold(['service:managed-worker'],job='managed-worker',wait=0):
+                self._drain_fences()
                 self.check();self.services.refresh_registry()
                 restored=self._restore_completed_production()
                 if restored:return restored
+                last_result=None
                 for run in self.services.store.list_runs('queued'):
                     occurrence=run.get('occurrence') or {}
-                    if occurrence.get('mode')=='live' and run_is_due(run,self.clock()):
-                        if occurrence.get('phase')=='prepare':return self._prepare(run)
-                        if occurrence.get('phase')=='verify':return self._verify(run)
+                    if occurrence.get('mode')!='live' or not run_is_due(run,self.clock()):continue
+                    phase=occurrence.get('phase')
+                    if phase not in ('prepare','verify'):continue
+                    try:
+                        result=self._prepare(run) if phase=='prepare' else self._verify(run)
+                        if not result.get('noop'):return result
+                        last_result=result
+                    except (ContractError,StoreError) as error:
+                        if error.code in ('storage_error','control_blocked','worker_stopping','heartbeat_lost'):raise
+                        current=self.services.store.get_run(run['id'])
+                        if current['state']!='queued':raise
+                        self.services.store.finish_service_run(run['id'],current['version'],dict(status='blocked',reason_code=error.code))
+                        last_result=dict(state='blocked',run_id=run['id'],reason_code=error.code)
                 delivery=run_once(self.services.store,self.services.registry,self.services.adapters,self.services.policy,
                     self.services.locks,self.clock(),lease_observer=self)
-                return dict(state='processed',delivery_id=delivery) if delivery else {'state':'idle'}
+                return dict(state='processed',delivery_id=delivery) if delivery else last_result or {'state':'idle'}
         except Timeout:return {'state':'busy'}
         except ControlBlocked:return {'state':'blocked','reason_code':'control_blocked'}
         except (ContractError,StoreError) as error:return {'state':'blocked','reason_code':error.code}

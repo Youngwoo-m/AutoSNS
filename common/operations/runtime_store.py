@@ -408,20 +408,30 @@ class RuntimeStore:
                         self._event(c,d['id'],'unstarted_reservation_released',dict(evidence,reservation_id=reservation_id,confirmed_not_submitted=True))
             return self._run(c,run_id)
 
-    def submit_occurrence(self,request,request_hash=None):
+    def submit_occurrence(self,request,request_hash=None,*,execution_receipt=None):
         required={'job_id','scheduled_at_utc','phase','source','request_kind','mode'}
         if not isinstance(request,dict) or set(request)!=required or request['mode'] not in ('live','dry'):raise StoreError('invalid')
         request=dict(request,scheduled_at_utc=stamp(request['scheduled_at_utc']));hashed=digest(request)
         if request_hash is not None and request_hash!=hashed:raise ConflictError()
         key=tuple(request[k] for k in ('job_id','scheduled_at_utc','phase'))
+        if execution_receipt is not None:
+            if (not isinstance(execution_receipt,dict) or set(execution_receipt)!={'caller_id','request_source','base_job_id','registry_revision'}
+                or any(not isinstance(value,str) or not value for value in execution_receipt.values())
+                or execution_receipt['request_source'] not in ('console','launchd')):raise StoreError('invalid_execution_receipt')
         with self._db(True) as c:
             old=c.execute('SELECT * FROM runs WHERE job_id=? AND scheduled_at_utc=? AND phase=?',key).fetchone()
             if old:
                 runtime=c.execute('SELECT id FROM runtime_runs WHERE id=?',(old['id'],)).fetchone()
                 if old['request_hash']!=hashed or runtime is None:raise ConflictError()
+                if execution_receipt is not None and not c.execute('SELECT 1 FROM execution_receipts WHERE run_id=?',(old['id'],)).fetchone():raise StoreError('execution_receipt_required')
+                # 최초 접수 신원은 다른 허용 caller의 재전송으로 바꾸지 않는다.
                 return dict(json.loads(old['payload']),runtime=self._run(c,old['id']))
             id=ident('run');payload=dict(request,id=id)
-            c.execute('INSERT INTO runs VALUES(?,?,?,?,?,?)',(id,*key,hashed,_json(payload)));c.execute("INSERT INTO runtime_runs(id,state,version) VALUES(?,'queued',1)",(id,));return dict(payload,runtime=self._run(c,id))
+            c.execute('INSERT INTO runs VALUES(?,?,?,?,?,?)',(id,*key,hashed,_json(payload)))
+            c.execute("INSERT INTO runtime_runs(id,state,version) VALUES(?,'queued',1)",(id,))
+            if execution_receipt is not None:
+                c.execute('INSERT INTO execution_receipts VALUES(?,?,?,?,?,?)',(id,execution_receipt['caller_id'],execution_receipt['request_source'],execution_receipt['base_job_id'],execution_receipt['registry_revision'],_json(request)))
+            return dict(payload,runtime=self._run(c,id))
     def observe_bucket(self,bucket_id,limit,observed_usage,observed_at,expires_at):
         positive(limit)
         if type(observed_usage) not in (int,float) or not math.isfinite(observed_usage) or observed_usage<0 or utc(expires_at)<=utc(observed_at):raise StoreError('invalid')
@@ -847,3 +857,41 @@ class RuntimeStore:
         with self._db(True) as c:
             self._lease(c,lease,now)
             c.execute('INSERT OR REPLACE INTO service_run_results VALUES(?,?)',(lease.run_id,_json(serial(result))))
+
+    def list_execution_receipts(self):
+        with self._db() as c:
+            if not self._v3(c) or not c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='execution_receipts'").fetchone():return []
+            result=[]
+            for row in c.execute('SELECT * FROM execution_receipts ORDER BY rowid'):
+                receipt=dict(row,occurrence=json.loads(row['occurrence']))
+                run=self._run(c,row['run_id'])
+                actual={key:value for key,value in run['occurrence'].items() if key!='id'}
+                if receipt['occurrence']!=actual:raise StoreError('invalid_execution_receipt')
+                result.append(receipt)
+            return result
+
+    def get_execution_receipt(self,run_id):
+        return next((row for row in self.list_execution_receipts() if row['run_id']==run_id),None)
+
+    def fence_lost_lease(self,lease,now):
+        """drain된 실행의 권한을 격리한다. unknown/remote ID/예산을 재전송 상태로 돌리지 않는다."""
+        with self._db(True) as c:
+            run=self._run(c,lease.run_id)
+            if run['worker_id']!=lease.worker_id or run['generation']!=lease.generation:raise ConflictError()
+            deliveries=[self._delivery(c,row[0]) for row in c.execute('SELECT id FROM runtime_deliveries WHERE run_id=?',(lease.run_id,))]
+            for delivery in deliveries:
+                if delivery['state'] not in ('queued','running','retry_wait','submitting'):continue
+                unresolved=[self._attempt(c,row[0]) for row in c.execute('SELECT id FROM attempts WHERE delivery_id=? AND resolved=0',(delivery['id'],))]
+                started=any(attempt['request_started'] for attempt in unresolved)
+                for attempt in unresolved:
+                    if attempt['request_started'] and attempt['outcome'] is None:
+                        result=dict(outcome='unknown',evidence={'reason':'heartbeat_lost'},recorded_at=stamp(now))
+                        c.execute("UPDATE attempts SET outcome='unknown',result=? WHERE id=?",(_json(result),attempt['id']))
+                self._state(c,delivery['id'],'unknown' if started else 'needs_review')
+                self._event(c,delivery['id'],'heartbeat_lost',dict(reason='heartbeat_lost',request_started=started))
+            c.execute('UPDATE submission_permits SET invalidated=1 WHERE run_id=?',(lease.run_id,))
+            if not deliveries:
+                c.execute("UPDATE runtime_runs SET state='waiting',version=version+1 WHERE id=?",(lease.run_id,))
+            # 명시 복구가 만료 lease/원래 process를 대조할 수 있도록 이력을 보존한다.
+            c.execute('UPDATE runtime_runs SET lease_expires_at=?,version=version+1 WHERE id=?',(stamp(now),lease.run_id))
+            return self._run(c,lease.run_id)

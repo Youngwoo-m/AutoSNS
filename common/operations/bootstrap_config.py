@@ -85,3 +85,13 @@ def cli_services(service,*,caller_ids):
     worker=WorkerService(service,clock=service.clock)
     return dict(caller_ids=dict(caller_ids),submit=service.submit,worker_once=worker.tick,status=service.status,
         reconcile=service.reconcile,guard_legacy=lambda caller,job:resolve_entrypoint(caller,job,service.registry,service.catalog))
+
+
+def build_default_cli_services():
+    """실제 모듈 CLI의 정적 조립. 관리전환이 승인된 CLI job은 아직 없다."""
+    from .execution_catalog import ExecutionCatalog
+    caller_ids={'console':'cli.console','launchd':'cli.launchd'}
+    catalog=ExecutionCatalog(callers={caller_id:dict(job_ids=(),source=source,legacy_allowed=False)
+        for source,caller_id in caller_ids.items()})
+    service=build_execution_service(config=default_bootstrap_config(),catalog=catalog,initialize=False)
+    return cli_services(service,caller_ids=caller_ids)

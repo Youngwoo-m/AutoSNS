@@ -7,6 +7,7 @@ from .content_store import StoreError, ConflictError
 from .runtime_models import ExecutionPolicy, utc
 from .runtime_store import digest
 from .dispatch import _FIELDS
+from .execution_receipts import ReceiptDispatchStore,receipt_context,pending_receipt,validate_receipt,permits_binding
 from .entrypoints import submit_registered, resolve_entrypoint
 from .provider_policy import resolve_job_provider_policy
 from .admission_context import AdmissionReadContext, validate_admission_read
@@ -23,7 +24,7 @@ def _safe_options(value):
         for item in value:_safe_options(item)
 
 
-def resolve_execution_registry(base_registry, bindings, catalog):
+def resolve_execution_registry(base_registry, bindings, catalog,*,receipts=()):
     if not isinstance(base_registry,Registry):raise StoreError('invalid_registry')
     jobs={key:thaw(value) for key,value in base_registry.jobs.items() if not value.get('base_job_id')}
     for binding in bindings:
@@ -43,7 +44,7 @@ def resolve_execution_registry(base_registry, bindings, catalog):
             or binding['base_job_id'] not in catalog.production_jobs):continue
         spec=catalog.executors.get(base.get('executor_id'))
         if not spec or binding['base_job_id'] not in spec.job_ids or 'prepare' not in spec.phases:continue
-        if not any(binding['base_job_id'] in caller['job_ids'] for caller in catalog.callers.values()):continue
+        if not any(permits_binding(receipt,base_registry,catalog,binding) for receipt in receipts):continue
         jobs[binding['execution_job_id']]=dict(base,id=binding['execution_job_id'],base_job_id=binding['base_job_id'],binding_id=binding['binding_id'])
     return replace(base_registry,jobs=jobs)
 
@@ -57,13 +58,26 @@ class ExecutionService:
         self.refresh_registry()
         for item in (store,production_store):item.execution_policy=policy;item.locks=locks
 
-    def refresh_registry(self):
-        self.registry=resolve_execution_registry(self.base_registry,self.production_store.list_bindings(),self.catalog)
+    def refresh_registry(self,*,pending=None):
+        receipts=self.store.list_execution_receipts()
+        if pending is not None:receipts.append(pending)
+        self.registry=resolve_execution_registry(self.base_registry,self.production_store.list_bindings(),self.catalog,receipts=receipts)
         self.store.registry=self.registry;self.production_store.registry=self.registry;self.ledger.registry_source=self.registry
         for adapter in self.adapters.values():
             if hasattr(adapter,'registry'):adapter.registry=self.registry
             if hasattr(adapter,'bridge'):adapter.bridge.registry=self.registry
         return self.registry
+
+    def assert_run_authority(self,run):
+        receipt=self.store.get_execution_receipt(run['id'])
+        return validate_receipt(receipt,self.base_registry,self.catalog,execution_job_id=run['occurrence']['job_id'])
+
+    def _dispatch(self,request,caller_id):
+        receipt=receipt_context(request,caller_id,self.registry)
+        result=submit_registered(request,caller_id=caller_id,store=ReceiptDispatchStore(self.store,receipt),
+            registry=self.registry,policy=self.policy,catalog=self.catalog,production_policy_resolver=resolve_job_provider_policy)
+        if result.get('id'):self.assert_run_authority(self.store.get_run(result['id']))
+        return result
 
     def require_enabled(self):
         if not isinstance(self.policy,ExecutionPolicy) or not self.policy.enabled:raise ContractError('execution_disabled')
@@ -90,13 +104,15 @@ class ExecutionService:
             if snapshot is None:raise StoreError('not_found')
             if request['mode']=='shadow':return dict(check,state='shadow',content_id=content_id,content_revision=expected_revision,manifest_hash=snapshot['manifest_hash'])
             binding=self.production_store.bind_input(base_id,snapshot,dict(base,id=base_id),self.registry.revision,create=True)
-            self.refresh_registry()
+            # 저장 전 검증한 원래 caller/source로 새 binding의 접수만 허용한다.
+            pending=pending_receipt(request,caller_id,self.base_registry)
+            pending['occurrence']['job_id']=binding['execution_job_id']
+            self.refresh_registry(pending=pending)
             if binding['execution_job_id'] not in self.registry.jobs:raise StoreError('invalid_binding')
-            result=submit_registered(dict(request,job_id=binding['execution_job_id']),caller_id=caller_id,store=self.store,
-                registry=self.registry,policy=self.policy,catalog=self.catalog,production_policy_resolver=resolve_job_provider_policy)
+            result=self._dispatch(dict(request,job_id=binding['execution_job_id']),caller_id)
             return dict(run_id=result['id'],**{key:binding[key] for key in ('binding_id','base_job_id','execution_job_id','content_id','content_revision','manifest_hash')})
         if content_id is not None or expected_revision is not None:raise StoreError('invalid_request')
-        result=submit_registered(request,caller_id=caller_id,store=self.store,registry=self.registry,policy=self.policy,catalog=self.catalog,production_policy_resolver=resolve_job_provider_policy)
+        result=self._dispatch(request,caller_id)
         return dict(result,**({'run_id':result['id']} if 'id' in result else {}))
 
     def _plan(self,delivery_id,run_id,version):

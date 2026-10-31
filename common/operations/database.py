@@ -86,6 +86,7 @@ OPERATIONS_DDL = (
 
 
 RUNTIME_DDL = (
+    "CREATE TABLE IF NOT EXISTS execution_receipts(run_id TEXT PRIMARY KEY REFERENCES runtime_runs(id), caller_id TEXT NOT NULL, request_source TEXT NOT NULL, base_job_id TEXT NOT NULL, registry_revision TEXT NOT NULL, occurrence TEXT NOT NULL)",
     "CREATE TABLE IF NOT EXISTS admission_observations(id TEXT PRIMARY KEY, planned_delivery_id TEXT NOT NULL REFERENCES deliveries(id), run_id TEXT NOT NULL REFERENCES runtime_runs(id), plan_version INTEGER NOT NULL, registry_revision TEXT NOT NULL, observation TEXT NOT NULL, checked_at TEXT NOT NULL)",
     "CREATE TABLE IF NOT EXISTS publication_approval_requests(delivery_id TEXT NOT NULL REFERENCES runtime_deliveries(id), request_key TEXT NOT NULL, request_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(delivery_id,request_key))",
     "CREATE TABLE IF NOT EXISTS service_run_results(run_id TEXT PRIMARY KEY REFERENCES runtime_runs(id), result TEXT NOT NULL)",
