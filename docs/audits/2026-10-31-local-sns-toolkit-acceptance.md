@@ -82,3 +82,7 @@ IAB35 실제8769 채널·계정에서 새 로컬 SNS 도구7기능·한국어 �
 실제 격리 서버54082에서 개인 CSV의177자 원문·미리보기를 준비한 뒤 fixture 인증만 만료시켰다. CSV 가져오기에서401 로그인 안내와 원문/미리보기 보존을 확인했다. 별도 가상 로그인 후 기존 탭의 동일 요청 재시도로 추가1/중복0을 확인했다. 증거 `toolkit-csv-401-preserved.png`, `toolkit-csv-relogin-retry.png`. 실제 세션·키·계정 변경 없음.
 
 같은 임시 ContentStore 원고v3를 편집하는 동안 다른 store 인스턴스로 v4를 저장한 후 UI의 v3 저장을 실행했다. 실제409 안내와 미저장 제목 '[가상 QA] 충돌에도 보존할 제목' 보존을 확인했다. 증거 `toolkit-editor-409-preserved.png`. DB는 임시 fixture만 변경했고 실제 관리workspace는 변경하지 않았다.503은 기존controller/HTTP시험 증거가 있으며 최신실브라우저 검증은 아직 별도다.
+
+## 실제 저장 실패503 브라우저 수락
+
+격리54082의 CSV178자 미리보기 후 **임시 fixture metrics.sqlite3만** 별도sqlite 연결의 BEGIN IMMEDIATE로 잠갔다. 실제 가져오기 쓰기 timeout이503으로 반환되어 ‘도구를 사용할 수 없습니다. 입력과 요청키는 보존됩니다.’ 안내와 원문보존을 확인했다. 잠금release marker를 만들고 process68132의 정상 exit0/rollback·close를 확인한 뒤 기존 CSV 요청을 재시도해 추가1/중복0으로 성공했다. 증거 `toolkit-csv-503-preserved.png`. 제품·실제관리DB·키·원본운영은 변경하지 않았다. 앞선503 최신브라우저 미확인 항목을 이 수락으로 대체한다.
