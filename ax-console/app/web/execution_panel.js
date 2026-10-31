@@ -37,6 +37,7 @@ const safeProduction = raw => {
 const safeRuntimeDelivery = raw => {
   const row=pick(raw,[...deliveryFields,'remote_id']);
   Object.assign(row,normalizedState(raw,['state','execution_state']));
+  if(typeof raw.remote_uncertain==='boolean')row.remote_uncertain=raw.remote_uncertain;
   const actions=['thumbnail','playlist','comment','caption','public_switch','tiktok'];
   row.followup_intents=(Array.isArray(raw.followup_intents)?raw.followup_intents:[]).filter(item=>actions.includes(item?.action)&&item.state==='not_started'&&item.required===true&&item.separate_approval_required===true).map(item=>({action:item.action,state:'not_started',required:true,separate_approval_required:true}));
   row.followup_completion=row.followup_intents.length?'pending':'not_required';return row;
@@ -143,6 +144,7 @@ function draw(root,state,document,controller) {
   const followupNames={thumbnail:'썸네일',playlist:'재생목록',comment:'댓글',caption:'자막',public_switch:'공개 전환',tiktok:'틱톡 교차 게시'};
   for(const delivery of state.run?.deliveries||[]) {
     body.push(node('p',`대상 실행: ${text(delivery.id)} · ${stateLabel(delivery.state)}`));
+    if(delivery.remote_uncertain)body.push(node('p','게시 여부 불확실 · 원격 요청 기록을 먼저 확인하세요.'));
     if(delivery.remote_id)body.push(node('p',`원격 게시물 ID: ${text(delivery.remote_id)}`));
     for(const intent of delivery.followup_intents||[])body.push(node('p',`${followupNames[intent.action]||'후처리'} · 필수 · 미시작 · 별도 승인 필요`));
   }
@@ -178,7 +180,7 @@ export function renderExecutionPanel(state={}, {document=globalThis.document}={}
 export function bindExecutionPanel(root,controller={}) {
   const initial=views.get(root);if(!initial)throw new TypeError('renderExecutionPanel이 만든 루트가 필요합니다.');
   bound.get(root)?.();
-  const {state,document}=initial;state.draft??={publication_confirmed:false};state.pending??={};state.pending_errors??={};state.attempt_serial??=0;
+  const {state,document}=initial;state.draft??={publication_confirmed:false};state.pending??={};state.pending_errors??={};state.attempt_serial??=0;state.read_generation??=0;
   let active=true,removeListeners=[],view=initial,heldFocus=null;
   const listen=(node,type,callback)=>{node.addEventListener(type,callback);removeListeners.push(()=>node.removeEventListener(type,callback));};
   const detach=()=>{for(const remove of removeListeners)remove();removeListeners=[];};
@@ -241,6 +243,7 @@ export function bindExecutionPanel(root,controller={}) {
   async function execute(name) {
     if(!active||blocked(state,name,controller))return;
     if(name!=='refresh'){state.pending[name]??=makePending(name);state.pending_errors[name]={status:null,attempt:++state.attempt_serial};}
+    if(name==='refresh')state.read_generation++;
     state.busy=true;state.error=null;state.message='요청을 처리 중입니다.';paint();notify();
     try {
       const pending=state.pending[name];

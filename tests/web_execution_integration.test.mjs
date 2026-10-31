@@ -135,3 +135,27 @@ test('충돌 처리 상태 조회의 인증 만료도 새 창 로그인과 원�
  await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');const check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');
  assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);const login=all(root).find(n=>n.tagName==='a'&&n.getAttribute('href')==='/login');assert.ok(login);assert.equal(login.getAttribute('target'),'_blank');assert.equal(get(root,'publication_job').disabled,true);
 });
+
+test('R1 검토 queued3 뒤 일반 refresh unknown4는 이전 확인을 무효화하고 더 오래된 재검토로도 변이를 허용하지 않는다',async()=>{
+ let reads=0;const sent=[];const {root}=await conflictable({approve:async(id,body)=>{sent.push(structuredClone(body));throw Object.assign(new Error(),{status:409});},getRun:async()=>{reads++;return reads===2?{run_id:'publish-run',state:'unknown',version:4,deliveries:[{id:'delivery-1',version:4,state:'unknown',remote_id:'remote-started',remote_uncertain:true,context_hash:'d'.repeat(64)}]}:{run_id:'publish-run',state:'waiting',version:3,deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]};}});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');const original=structuredClone(sent[0]);
+ await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,false);
+ await action(publicationRoot(root),'refresh').fire('click');assert.match(root.textContent,/remote-started/);assert.match(root.textContent,/게시 여부 불확실/);assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);assert.equal(get(root,'close_publication_approve').checked,false);assert.equal(get(root,'close_publication_approve').disabled,true);
+ await action(publicationRoot(root),'approve').fire('click');assert.deepEqual(sent[1],original);
+ // Even if a subsequent read is older/queued, currently known unknown4 wins at close.
+ await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');
+ assert.match(root.textContent,new RegExp(original.request_key));assert.match(publicationRoot(root).textContent,/배포: delivery-1 · 버전: 4/);for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});
+
+test('R1 처리 상태 검토 뒤 계획 재조회도 이전 확인을 무효화하며 원래 승인 CAS와 키는 유지한다',async()=>{
+ const sent=[];const fixture=await conflictable({approve:async(id,body)=>{sent.push(structuredClone(body));throw Object.assign(new Error(),{status:409});},getRun:async()=>({run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]})});const {root}=fixture;
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');
+ fixture.setVersion(5);await button(root,'배포 계획 다시 조회').fire('click');assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);assert.equal(get(root,'close_publication_approve').checked,false);assert.match(root.textContent,/현재 선택 계획 버전: 4/);assert.match(root.textContent,/조회된 최신 계획 버전: 5/);
+ await action(publicationRoot(root),'approve').fire('click');assert.deepEqual(sent[1],sent[0]);assert.equal(sent[1].expected_version,1);
+});
+
+test('R1 원격 ID 없이 remote_uncertain만 관측해도 오래된 검토로 새 변이를 허용하지 않는다',async()=>{
+ let reads=0;const {root}=await conflictable({approve:async()=>{throw Object.assign(new Error(),{status:409});},getRun:async()=>++reads===2?{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:4,state:'queued',remote_uncertain:true,context_hash:'d'.repeat(64)}]}:{run_id:'publish-run',state:'waiting',deliveries:[{id:'delivery-1',version:3,state:'queued',context_hash:'c'.repeat(64)}]}});
+ await action(publicationRoot(root),'observe').fire('click');await action(publicationRoot(root),'admit').fire('click');let check=field(publicationRoot(root),'publication_confirmed');check.checked=true;await check.fire('change');await action(publicationRoot(root),'approve').fire('click');await button(root,'별도 발행 승인 처리 상태 조회').fire('click');await action(publicationRoot(root),'refresh').fire('click');
+ assert.match(root.textContent,/게시 여부 불확실/);assert.equal(button(root,'별도 발행 승인 충돌 요청 로컬 종료').disabled,true);await button(root,'별도 발행 승인 처리 상태 조회').fire('click');check=get(root,'close_publication_approve');check.checked=true;await check.fire('change');await button(root,'별도 발행 승인 충돌 요청 로컬 종료').fire('click');for(const name of ['request','observe','admit','approve'])assert.equal(action(publicationRoot(root),name).disabled,true);
+});

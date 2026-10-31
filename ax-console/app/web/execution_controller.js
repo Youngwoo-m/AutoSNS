@@ -8,7 +8,7 @@ const labels={request:'제작 요청',observe:'대상 읽기 점검',admit:'발�
 const pick=(row,keys)=>Object.fromEntries(keys.filter(key=>row?.[key]!==undefined).map(key=>[key,row[key]]));
 const planSnapshot=row=>pick(row,['id','content_id','revision','manifest_hash','connection_id','owner_account_id','destination_account_id','version','status']);
 const deliverySnapshot=row=>pick(row,['id','version','run_id','context_hash','state','execution_state','remote_id','remote_uncertain']);
-const token=(s,action)=>JSON.stringify([s.pending[action],s.pending_errors?.[action]?.attempt]);
+const token=(s,action)=>JSON.stringify([s.pending[action],s.pending_errors?.[action]?.attempt,s.read_generation||0]);
 const uncertain=(run,delivery)=>['unknown','submitting','submitted','running'].includes(run?.state)||!!delivery?.remote_id||delivery?.remote_uncertain===true||['unknown','uploaded','published','scheduled','verified','submitting'].includes(delivery?.state||delivery?.execution_state);
 const empty=mode=>({mode,enabled:false,capabilities:{},run:null,delivery:null,draft:{publication_confirmed:false},pending:{}});
 
@@ -111,6 +111,7 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
   }
   async function inspectPending(r,mode,action) {
     const s=r[mode];if(busy()||!s.pending[action])return;
+    s.read_generation=(s.read_generation||0)+1;
     const expected=token(s,action);r.loadingReview=true;s.reviewing=true;paint(r);notify();
     try {
       let plan=null,content=null,run=null,delivery=null;
@@ -132,16 +133,20 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
   function closeConflict(r,mode,action) {
     const s=r[mode],review=r.reviews[mode][action];
     if(busy()||s.pending_errors?.[action]?.status!==409||!review||review.token!==token(s,action)||review.confirmed!==true)return;
-    s.closed_requests??=[];s.closed_requests.push({action,request:copy(s.pending[action]),status:409,review:copy(pick(review,['plan','content','run','delivery']))});
+    const matching=s.run?.deliveries?.find(row=>row.id===s.delivery?.id);
+    const latestDelivery=[review.delivery,s.latest_delivery,matching].filter(row=>row&&row.id===s.delivery?.id).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
+    const latestPlan=[review.plan,...(r.latestPlans||[]).filter(row=>row.id===r.plan?.id)].filter(Boolean).sort((a,b)=>(b.version??-1)-(a.version??-1))[0];
+    const unsafe=uncertain(review.run,review.delivery)||uncertain(s.run,s.latest_delivery)||uncertain(s.run,matching);
+    s.closed_requests??=[];s.closed_requests.push({action,request:copy(s.pending[action]),status:409,review:copy(pick(review,['plan','content','run','delivery'])),latest_known:{read_generation:s.read_generation||0,...(latestDelivery?{delivery:copy(deliverySnapshot(latestDelivery))}:{})}});
     delete s.pending[action];delete s.pending_errors[action];delete r.reviews[mode][action];
     s.error=null;s.draft={publication_confirmed:false,confirmation_key:null};s.message='충돌 요청을 로컬 종료했습니다. 원래 요청은 이력에 보존했습니다. 원격 취소나 새 게시 허가가 아닙니다.';
     if(mode==='production') {
       s.recovery_blocked=true;s.next_content=review.content;s.trigger=null;r.productionJob='';
     } else {
-      const latest=review.plan,changed=latest.revision!==r.content.revision||latest.manifest_hash!==r.content.manifest_hash||latest.connection_id!==r.plan.connection_id;
+      const latest=latestPlan,changed=latest.revision!==r.content.revision||latest.manifest_hash!==r.content.manifest_hash||latest.connection_id!==r.plan.connection_id;
       r.plan=latest;r.plans=r.plans.map(row=>row.id===latest.id?latest:row);
-      s.delivery=action==='approve'?{...s.delivery,...review.delivery,plan_version:latest.version}:{id:latest.id,version:latest.version,plan_version:latest.version,run_id:s.run.run_id,state:latest.status};
-      if(changed||latest.status==='cancelled'||uncertain(review.run,review.delivery)) {
+      s.delivery=(action==='approve'||unsafe&&latestDelivery)?{...s.delivery,...latestDelivery,plan_version:latest.version}:{id:latest.id,version:latest.version,plan_version:latest.version,run_id:s.run.run_id,state:latest.status};
+      if(changed||latest.status==='cancelled'||unsafe) {
         s.recovery_blocked=true;r.blockedPlans.add(latest.id);
         if(changed)s.next_content={id:latest.content_id,revision:latest.revision};
       }
@@ -150,7 +155,8 @@ export function createExecutionWorkspace({api,contentApi,document=globalThis.doc
   }
   async function loadPlans(r) {
     if(r.loadingPlans||r.loadingReview||r.production.busy||r.publication.busy)return;
-    r.loadingPlans=true;notify();
+    r.publication.read_generation=(r.publication.read_generation||0)+1;
+    r.loadingPlans=true;renderRecovery(r,'publication');notify();
     try {
       const data=await contentApi.listDeliveries('all',r.content.id);
       r.latestPlans=(data.items||[]).filter(plan=>plan.content_id===r.content.id&&plan.revision===r.content.revision&&plan.manifest_hash===r.content.manifest_hash&&plan.status!=='cancelled').map(planSnapshot);
