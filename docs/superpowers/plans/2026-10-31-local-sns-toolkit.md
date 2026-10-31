@@ -195,13 +195,13 @@ Task1 완료 뒤 Task2/3/4를 가능한 최대 병렬로 진행한다. Task6은 
 - [ ] **자체검토:** 개인 측량·토목·건설안전·건축시공의 기존 blog daily/friend 지시문·PDF·구독·검토 경계가 유지되는지 정적 보존 시험으로만 확인한다. 기존 선언 존재가 managed 활성/실제 운영 증거가 아님을 보고한다.
 - [ ] **커밋:** 시험 파일만 add 후 `git commit -m "test: preserve local scheduler and engineer workflow boundaries"`.
 
-### Task 8: 서버·기존 8메뉴 통합과 보호 수락
+### Task 8: 서버·기존 9메뉴 통합과 보호 수락
 
 **Files:** Modify `ax-console/app/web_server.py`, `ax-console/app/read_model.py`; held6는 D2 artifact로만 편집. Create `tests/test_web_toolkit_server.py`, `tests/integration/test_local_toolkit_acceptance.py`, `tests/web_toolkit_integration.test.mjs`, `docs/audits/2026-10-31-local-sns-toolkit-acceptance.md`, `docs/runbooks/local-sns-toolkit.md`, `.superpowers/sdd/2026-10-31-local-sns-toolkit/web-artifacts/manifest.json`. `ax-console/app/web/metrics_panel.js`·`ax-console/app/web/integration_settings.js`는 수정하지 않고 새 toolkit 패널을 옆에 조합한다.
 
 **Interfaces:** Consumes Task5 handle/서비스, Task6 panel/API, Task7 수락. `create_server(...,toolkit_policy=None,toolkit_renderer=None,toolkit_asset_authorizer=None)` kw-only 인자만 추가하며 default는 disabled/미등록이다. 기존 서비스/metrics_registry/content_store와 동일 객체를 LocalToolkitService에 주입한다. `_STATIC`에 새 모듈3개를 추가하고 `_validated_target`에 capabilities의 account query만 허용한다. 모든 tools 경로는 기존 auth/Host/Origin·중복 header/JSON 검사 뒤 handle로 보낸다.
 
-- [ ] **RED 작성:** 실제 loopback HTTP로 `test_tools_auth_origin_body_limits_and_readonly`, `test_csv_import_receipt_keeps_operations_unchanged`, `test_cost_and_target_tampering_never_calls_leaf`, `test_full_cas_save_after_staging_requires_new_review`를 작성한다. Node 통합은 기존 accounts/planning/analytics/detail에서 panel mount·8개 nav 유지·320/1280폭·dirty/focus·stale response를 검사한다. held 실제 bytes 보존/manifest 원본 hash 불일치 차단도 assert한다.
+- [ ] **RED 작성:** 실제 loopback HTTP로 `test_tools_auth_origin_body_limits_and_readonly`, `test_csv_import_receipt_keeps_operations_unchanged`, `test_cost_and_target_tampering_never_calls_leaf`, `test_full_cas_save_after_staging_requires_new_review`를 작성한다. Node 통합은 기존 accounts/planning/analytics/detail에서 panel mount·9개 nav 유지·320/1280폭·dirty/focus·stale response를 검사한다. held 실제 bytes 보존/manifest 원본 hash 불일치 차단도 assert한다.
   ```python
   self.assertEqual(unauthenticated_status, 401)
   self.assertEqual(stale_revision_status, 409)
@@ -211,7 +211,7 @@ Task1 완료 뒤 Task2/3/4를 가능한 최대 병렬로 진행한다. Task6은 
 - [ ] **RED 실행:** `python3 -m unittest tests.test_web_toolkit_server tests.integration.test_local_toolkit_acceptance -v`, `node --test tests/web_toolkit_integration.test.mjs` → 신규 route/mount 미연결 FAIL. 소켓 sandbox 거부는 제품 실패와 구분해 부모에게 격리 loopback 검사 권한을 요청하며 같은 거부를 반복하지 않는다.
 - [ ] **구현:** 서버 helper를 연결하고 read_model 후보를 Task1 기능별 투영으로 표시하되 snapshot 기본 계약/schema를 깨지 않는다. SNS 도구는 accounts 안, 규칙/기획은 planning·editor 안, CSV는 analytics 옆, schedule은 배포 상세에 조합한다. 기존 editor의 busy/dirty·하위 배포계획 guard를 보존한다. 후보는 draft에만 반영하고 기존 fullpayload PUT에서 revision 충돌409/새 revision·재검토를 확인한다. 실행·리뷰·발행 버튼을 새 도구가 대체하지 않는다.
 - [ ] **GREEN 실행:** 위 집중 시험→OK/pass. `python3 -m unittest discover -s tests -p 'test_*.py'`, `node --test tests/*.test.mjs`를 실행해 전체 결과를 새 근거로 기록한다. `python3 -m py_compile common/operations/provider_capabilities.py common/operations/tool_cost_policy.py common/operations/local_toolkit.py ax-console/app/web_tools.py ax-console/app/web_server.py`와 `git diff --check`도 확인한다. 과거6A806/다른 단계 숫자를 이번 결과로 복사하지 않는다.
-- [ ] **브라우저 수락:** D3 임시 webroot/auth에서8메뉴·SNS도구·규칙 적용→기존CAS저장·CSV오류/0/미배정/중복·썸네일 실제출력/미등록 안내·예약 unknown 표시·401/409/503 입력 보존·계정전환/늦은응답·320/1280폭·키보드/focus를 확인하고 screenshot/console 결과를 남긴다. 계정 호출/실제 모델/실발행은0이다.
+- [ ] **브라우저 수락:** D3 임시 webroot/auth에서9메뉴·SNS도구·규칙 적용→기존CAS저장·CSV오류/0/미배정/중복·썸네일 실제출력/미등록 안내·예약 unknown 표시·401/409/503 입력 보존·계정전환/늦은응답·320/1280폭·키보드/focus를 확인하고 screenshot/console 결과를 남긴다. 계정 호출/실제 모델/실발행은0이다.
 - [ ] **자체검토·수락 문서:** local_rules_ready/manual_csv_ready/thumbnail_environment_ready/local_toolkit_enabled/live_collection_ready/production_ready를 분리한다. 실제 미수집/발행/인증·6B~D·아래 건축시공 필수 후속은 미완료로 남긴다. 기본 disabled·개인 구독·23경로 보존과 추가비용0 증거, 테스트/환경제약·held SHA를 runbook/audit에 기록한다.
 - [ ] **커밋:** 신규 모듈/시험/문서·server/read_model만 경로별 add하고 held6는 D4 index-only로 stage한다. `git diff --cached --name-only`로 타인 staged 변경을 제외했는지 확인 후 `git commit -m "feat: integrate zero-cost local SNS toolkit with protected rollout"`. 부모의 coordinated deployment·allowlist refresh/restart 전 실제 held6는 덮지 않는다. 배포가 남으면 code_ready와 deployed_ready를 구분해 보고한다.
 

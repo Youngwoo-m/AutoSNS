@@ -1,6 +1,8 @@
-# 6A 실행 연결 수락 — 통합 진행 중
+# 6A 코드·정적 배포 수락 — 최신 전체 검증은 대기
 
-2026-10-31 현재 **집중 fixture 검증 단계**다. A8 fix1(commit 2ced4dc)은 독립 검토를 통과했고 전체 Python 806개·Node 182개가 통과했다. 로컬 release CLI는 offline_ready=true/production_ready=false다. 브라우저·배포 확인과 최종 전체 계획 검토는 진행 중이다. `production_ready=false`를 유지하며 실제 계정 로그인·발행·운영 스케줄 전환·폴더 이동은 수행하지 않았다. 이 문서는 6A 오프라인 범위의 근거와 후속 수락 조건을 분리해 기록한다.
+2026-10-31. 6A 최종 코드 수정 `8954516`은 독립 재검토 Approved이며 테스트 프로필 격리 `88ff634`도 독립 PASS다. 기존 Pillow 설치 Python3.12 전체 시험872개가 통과했고, 실제8769/8767 정적 배포와 사용자 기술사 메뉴·건축 필터 확인까지 수행했다. 실제 모델·인증·발행은0이며 기본 실행 정책은 비활성이다.
+
+현재 전체 작업 사본에는 병행 툴킷 Task8 통합이 진행 중이다. 이전 전체 Node195개와 후속 Task6 집중20개를 최신 전체 Node 성공으로 합치지 않는다. 따라서 최신 로컬 evidence는 `offline_ready=false`, `production_ready=false`로 전체 검증 대기를 표시한다. 6A의 코드·메뉴 배포 근거와 전체 작업 사본의 최종 준비 판정을 구분한다. [결정·보류 원문 보존](2026-10-31-phase6a-rulings.md)에 당시 결정과 잘못됐을 때 비용을 남겼다.
 
 ## 확인한 범위
 
@@ -51,21 +53,39 @@ A5 fixture의 source checker는 시험 provider다. 실제 출처 응답 bytes·
 
 이미지 재사용 근거·영상 1080×1920/20초·장면/글꼴·음성·AI 고지 계약과 누락 차단은 코드/fixture 범위다. 실제 Voicebox 음성, Remotion 결과, 사람의 장면별 품질 확인은 미실행이다. PDF는 기본 등록 safe parser가 없으므로 실제 안전 파싱·페이지 렌더·내용 확인을 완료했다고 표시하지 않는다. PDF 필수 작업은 검증 근거가 없으면 blocked를 유지한다.
 
-## 최종 전체 검증 — 대기
+## 실제 검증 결과와 최신 전체 판정
 
-부모 작업이 전달한 실제 결과와 허용된 로컬 evidence/CLI 실행만 반영한다. HTTP 집중 78개·전체 Python 806개·Node 182개가 통과했다. HEAD 7780b5878ba0ef81a31441319d6bd819684a418a에서 evidence를 만들고 release CLI exit0을 확인했다. 브라우저 최종 확인·배포·최종 전체 계획 검토는 대기다. 서버 정적 자산 allowlist 등 후속 코드 변경이 기존 결과에 영향을 주는지는 최종 통합에서 확인하며, 이번 evidence가 아직 진행 중인 변경까지 수락했다고 해석하지 않는다.
-
-| 명령 | 현재 실제 결과 |
+| 범위·명령 | 실제 결과와 한계 |
 |---|---|
-| `python3 -m unittest tests.test_web_execution tests.test_web_execution_server tests.test_web_server tests.test_web_operations -v` | 78개 OK, 24.402초, 실패/오류/skip 0. 부모 elevated 실행, 로그 `/private/tmp/phase6a-http-final.log` 확인 |
-| `python3 -m unittest discover -s tests -p 'test_*.py'` | 806개 OK, 90.352초, 실패/오류/skip 0. 부모 elevated 실행 session 29299 exit0, 로그 `/private/tmp/phase6a-python-full.log` 확인 |
-| `node --test tests/*.mjs` | 182개 pass, fail/cancelled/skipped/todo 0, 914.944149ms, 부모 실행 exit0. 로그 `/private/tmp/phase6a-node-full.log` 확인 |
-| `python3 -m common.tools.check_operations_release --evidence /private/tmp/phase6a-offline-evidence.json --mode offline` | 로컬 evidence 생성 후 exit0, offline_ready=true/production_ready=false. 실제 인증·발행·복구·legacy 전환 blocker 유지 |
-| 브라우저 최종 확인·배포·최종 전체 계획 검토 | 대기 — HTTP/Node fixture·release CLI로 대체하지 않음 |
+| 기존 Pillow 설치 Python3.12의 `-m unittest discover -s tests -p 'test_*.py'` | 872개 OK, 102.148초, 실패/오류/skip0. 부모 session1429 exit0, `/private/tmp/autosns-full-python-pillow.log` 직접 확인 |
+| 기존 Python3.15 전체 실행 | 실제 로그인 브라우저 프로필 대기로 중단. session90765 exit130이며 성공 근거에서 제외 |
+| `node --test tests/*.mjs` 이전 전체 결과 | 195개 pass, fail/cancelled/skipped/todo0, 2249.221225ms. `/private/tmp/phase6a-final-node-full.log` 직접 확인. 그 뒤 Task6 JS 수정이 있어 최신 전체 결과는 아님 |
+| `node --test tests/web_toolkit.test.mjs` 후속 집중 결과 | Task6 fix1 보고의20개 pass, 실패/취소/skip/todo0, 152.804785ms. 전체 Node 대체 아님 |
+| HTTP 집중 회귀 | 78개 OK, 24.402초, 실패/오류/skip0. `/private/tmp/phase6a-http-final.log`의 이전 보조 근거 유지 |
+| 최신 Task8 통합 뒤 전체 Python/Node | 아직 미실행. 부모가 마지막 코드 commit 뒤 한 번 실행해 결과를 갱신할 예정 |
+| `python3 -m common.tools.check_operations_release --evidence /private/tmp/phase6a-offline-evidence.json --mode offline` | 이번 로컬 실행 exit1. offline_ready=false/production_ready=false. 명시한 최신 전체 시험 대기 행으로 `offline:test_results_incomplete` 유지 |
 
-evidence SHA-256: `bafc87df0cb6dca254bb3e09bba84af827534f465dc0db70db2ac245a60e7a47`. 기록된 code_revision은 `7780b5878ba0ef81a31441319d6bd819684a418a`다.
+최신 evidence의 code_revision은 생성 순간 HEAD `9295a54819e23bd7b8fd7f72eccd9bce34f4489f`, SHA-256은 `a0232828ce962ee1fc46481029968d6b5189fc77897b3036afea36d5c2f01268`이다. 전체23행 fixture/등록부와 source hash를 읽어 대조했고 stale 파일0이다. 이미 통과한 Python872·이전Node195·집중20·HTTP78은 그대로 보존하고 최종 Node 대기 행을 추가했으며 수치나 상태를 위조해 통과시키지 않았다.
 
-`offline_ready`는 서버 기준선·분리된 시험 선언/fixture 지원 범위와 미전환 차단 근거를 분류한다. 실인증·실발행·배포 승인으로 쓰지 않는다. 현재 `production_ready=false`, `live_ledger_verification_pending` 하드 게이트와 backup/restore 수락 잔여를 유지한다.
+production blocker는 전체 caller inventory, live_auth/live_publish 미수집, live 원장 결속 미완료, 실제 backup restore 미수락, CLI 실제 runtime store 부재, legacy owner다. 이 offlinefalse는 병행 Task8을 포함한 최신 전체 검증 대기이고, productionfalse는 실제 운영 권한/증거 미완료다. 두 사유를 구분한다. 최종 code_revision은 HEAD이며 모든 미커밋 파일의 무결성 인증은 아니다.
+
+## 실제 UI·배포 확인과 미확인
+
+| 확인 범위 | 근거·판정 |
+|---|---|
+| 최신 격리 fixture 승인/unknown | 부모 IAB22에서 원고v1/계획v1/명시 작업·회차→읽기→의도확인→체크박스→별도 승인. unknown_remote/v3 주입 뒤 원격ID/미확인/필수댓글 미시작, 변이4종 비활성·refresh 활성 DOM 확인 |
+| 제작 입력v1/산출v2·Escape | 부모 IAB23에서 input hash/버전 유지, 별도 outputv2, 사용량 미확인·독립 검토 필요 확인. 선택 원고 자동 교체0, Escape 뒤 dialog0·원래 원고 버튼 포커스 복원 |
+| 실제 계획 CAS409 | 부모 격리65416에서 별도 SQLite Ledger.cancel로 planv2를 만든 뒤 화면v1의 읽기 요청이 실제 CAS409. 원고/계획/요청 보존과 명시 복구 선택지 표시 확인. 전체 복구 closure 성공까지 수락한 것은 아님 |
+| 실제 사용자8769 메뉴 | 부모 새 탭25에서 기술사 메뉴·건축 필터·실자료 표시 확인. [배포 화면](../../ax-console/design/previews/phase6a-deployed-engineer.png) |
+| 아직 최신 브라우저에서 미확인 | 최신401/503 입력 보존, 상태 재선택의 모든 복구 분기,320px 전체 화면 overflow, 실제8767 화면 전부. 이전 QA/Node 결과를 최신 브라우저 PASS로 대체하지 않음 |
+
+격리 UI 근거: [별도 승인](../../ax-console/design/previews/phase6a-final-approval.png), [unknown](../../ax-console/design/previews/phase6a-final-unknown.png), [제작v1/v2](../../ax-console/design/previews/phase6a-final-production.png), [계획 CAS충돌](../../ax-console/design/previews/phase6a-real-plan-conflict.png). 브라우저 수락은 부모의 실제 관찰과 `task-9-final-browser-qa.md` 기록이며 이 문서 담당자가 재실행하지 않았다. fixture UI는 실플랫폼/worker 성공이 아니다.
+
+부모는 기존 PID13057/13063의 명령·포트를 확인해 정지한 뒤 quiesced backup `ax-console/data/deployment-backups/phase6a-quiesced-20261031T012252315404Z`를 만들었다. manifest6개를 확인해 실제 W에 적용했고 새8769 session57014/읽기전용8767 session61922를 시작했다. 이번 문서 갱신에서도6개 실제 파일이 HEAD·artifact SHA와 모두 같음을 읽기 전용으로 확인했다. 발행 서비스는 기본 미주입/비활성이며 실제 SNS 발행은0이다.
+
+부모의 배포 전후 DB 대조: operations 기존26개 테이블의 행수가 모두0으로 동일, user_version3 유지, 추가8개 empty table(`production_bindings`, `production_attempts`, `production_output_links`, `execution_receipts`, `admission_observations`, `publication_approval_requests`, `service_run_results`, `bridge_redemptions`), integrity_check=ok. metrics는 논리 내용 동일·user_version1·integrity_check=ok다. 기존 빈 자료 보존의 실제 근거이며, 비어 있지 않은 운영 DB 복원 시험이나 원격 이력 복구 완료를 입증하지 않는다.
+
+후속 툴킷 Task8은 현재 actual==HEAD를 새 original 기준선으로 manifest를 작성해야 한다. 예전6A original SHA를 재적용하면 이미 배포된 화면을 되돌릴 수 있다. 원래 계획 작업공간은 아직 참조가 남아 있으므로 삭제하지 않았다.
 
 ## 6B–6D 및 운영 필수 잔여
 
@@ -74,4 +94,4 @@ evidence SHA-256: `bafc87df0cb6dca254bb3e09bba84af827534f465dc0db70db2ac245a60e7
 - 외부 접속: 사용자 선택의 Mac·휴대폰 외부 접속은 필수 최종 요구다. localhost fixture/웹 검증으로 완료하거나 삭제하지 않는다.
 - 롤백: 새 remote ID·unknown·attempt·quota·제작 unit 이력과 요청 receipt를 잊는 과거 DB 덮어쓰기/legacy 재개를 거부한다. 실제 복구 시험과 양쪽 원장 보존 대조는 다음 운영 체크포인트다.
 
-근거: `tests/integration/test_phase6a_acceptance.py`, `tests/integration/fixtures/phase6a-crosspost-events.json`, `docs/audits/2026-10-30-live-entrypoint-readiness.md`, `docs/runbooks/execution-entrypoint-inventory.json`, `.superpowers/sdd/2026-10-30-web-phase6a/task-6-report.md`, `task-7-report.md`, `task-10-preparation-report.md`. 이 문서의 상태는 실제 전체 결과와 독립 검토 전까지 진행 중이다.
+근거: `tests/integration/test_phase6a_acceptance.py`, `tests/integration/fixtures/phase6a-crosspost-events.json`, `docs/audits/2026-10-30-live-entrypoint-readiness.md`, `docs/runbooks/execution-entrypoint-inventory.json`, `.superpowers/sdd/2026-10-30-web-phase6a/task-6-report.md`, `task-7-report.md`, `task-10-preparation-report.md`. 6A 코드 독립 수락·정적 배포와 제한된 UI 확인을 기록했으며, 최신 전체 작업 사본 검증과 실운영 필수 잔여는 계속 분리한다.

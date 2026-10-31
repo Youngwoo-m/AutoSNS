@@ -1,6 +1,6 @@
 # 계정 운영 실행 전환 절차 — 6A에서는 전환 금지
 
-2026-10-31 현재 6A 통합/검토 진행 중이다. 기본 실행 정책은 비활성이고 production-ready 판정은 false다. 이 문서는 이후 작업별 전환 체크포인트의 조건을 기록한다. 문서대로 읽는 것만으로 운영 등록부 변경·launchd 재등록·실계정 로그인·발행·백업 복원 권한이 생기지 않는다.
+2026-10-31 현재 6A 코드 최종 재검토와 정적 배포를 마쳤고 일부 실제 UI를 확인했다. 기본 실행 정책은 비활성이고 production-ready 판정은 false다. 병행 Task8의 최신 전체 검증 대기로 현재 전체 작업 사본 offline-ready도 false다. 이 문서는 이후 작업별 전환 체크포인트의 조건을 기록한다. 문서대로 읽는 것만으로 운영 등록부 변경·launchd 재등록·실계정 로그인·발행·백업 복원 권한이 생기지 않는다.
 
 ## 현재 확인과 판단
 
@@ -15,7 +15,7 @@
 
 connection_matrix는 블로그 5개와 YouTube 2개의 구현·transport fixture·순수 검사·실인증·실발행·공개·내용·성과·후처리를 분리한다. 비어 있는 live 증거는 미확인이다. fixture/실자료를 같은 통과 칸에 합치지 않는다.
 
-실제 전체 Python/Node 결과를 확인한 뒤 부모가 허용한 로컬 evidence를 `/private/tmp/phase6a-offline-evidence.json`에 생성했다. code_revision은 7780b5878ba0ef81a31441319d6bd819684a418a이며 release CLI는 offline_ready=true/production_ready=false를 반환했다. 분류기 단위시험의 임시 입력과 이 실제 결과 파일을 구분한다. 브라우저·배포·최종 전체 계획 검토와 진행 중인 서버 후속 변경까지 수락한 결과는 아니다.
+부모가 허용한 로컬 evidence를 `/private/tmp/phase6a-offline-evidence.json`에 갱신했다. 실제 Python872·이전Node195·후속집중20·HTTP78과 최신 전체 Node 대기를 구분한다. code_revision은 생성 시점9295a54819e23bd7b8fd7f72eccd9bce34f4489f이며 release CLI는 exit1/offline_ready=false/production_ready=false다. 이전 Node 결과를 이후 수정까지 포함한 전체 통과로 바꾸지 않는다. 분류기 단위시험의 임시 입력,6A 정적 배포 근거, 전체 작업 사본의 최종 검증을 구분한다.
 
 ## 작업 하나의 전환 전 조건
 
@@ -42,12 +42,16 @@ connection_matrix는 블로그 5개와 YouTube 2개의 구현·transport fixture
 
 분류기에 허용하는 rollback 선언은 `strategy=forward_preserving_ledger`, `preserve_remote_ids=true`, `preserve_unknown=true`, `preserve_quota=true`, `resume_legacy=false`다. 이것은 실제 복원 시험의 통과를 대신하지 않는다. restore_test, 복구 전후 모든 신규 이력 대조, 중복 submit 0, unknown/quota hold 유지 증거가 별도로 필요하다. 현재 snapshot hash만으로 실제 원격 이력 보존을 인증하지 않는다.
 
-운영 체크포인트에서 소유 worker를 drain한 뒤 SQLite backup API와 콘텐츠/성과 자료를 함께 보존한다. 복원안은 별도 임시 위치에 적용하고 업데이트 뒤 추가된 원격·로컬 이력과 receipt를 비교한다. 살아 있는 운영 DB 덮어쓰기·원격 삭제·대기열 시도 초기화·일괄 retry·자동 legacy 재개를 제공하지 않는다. 실제 백업/복구는 아직 실행하지 않았다.
+운영 체크포인트에서 소유 worker를 drain한 뒤 SQLite backup API와 콘텐츠/성과 자료를 함께 보존한다. 복원안은 별도 임시 위치에 적용하고 업데이트 뒤 추가된 원격·로컬 이력과 receipt를 비교한다. 살아 있는 운영 DB 덮어쓰기·원격 삭제·대기열 시도 초기화·일괄 retry·자동 legacy 재개를 제공하지 않는다. 정적 배포 전 quiesced backup은 완료했지만 실제 복원 시험은 아직 실행하지 않았다.
 
 ## 기록할 최종 결과
 
-부모 작업이 모든 코드 완료 뒤 한 번 실행한 전체 Python/Node/release CLI의 명령·종료 코드·시험/실패/skip 수·evidence hash를 공개 수락 문서에 기록한다. 독립 검토 지적과 회귀시험도 함께 남긴다. 현재 HTTP 집중 78개 OK(24.402초)·전체 Python 806개 OK(90.352초, session 29299 exit0)·Node 182개 pass(914.944149ms, 실패/skip/취소/todo0)를 부모 실행 및 로그로 확인했다. 로컬 evidence 생성 후 release CLI exit0, offline_ready=true/production_ready=false를 확인했다. 브라우저/배포·최종 전체 계획 검토는 대기이며 진행 중인 서버 후속 변경에 대한 결과 유효성은 최종 통합에서 확인한다. 전체 수락 미완료 상태를 유지한다.
+6A 코드 최종 수정8954516/독립 재검토 Approved, 테스트 프로필 격리88ff634/PASS, 기존 Pillow Python3.12 전체872개 OK(102.148초, session1429 exit0)를 확인했다. Python3.15의 프로필 대기 중단130은 성공이 아니다. 이전 전체 Node195 pass와 이후 Task6 집중20 pass는 별도로 기록하며, Task8 마지막 코드 뒤 전체 Python/Node를 한 번 실행할 때 최종 evidence를 재산출한다. 현재 CLI는 최신 전체 검증 미완료로 offlinefalse, 실제 운영 증거 미완료로 productionfalse다.
+
+부모가 원PID13057/13063을 확인·정지하고 만든 quiesced backup은 `ax-console/data/deployment-backups/phase6a-quiesced-20261031T012252315404Z`다. manifest6개를 실제 W에 적용해 actual==HEAD를 확인했으며 새8769/8767 세션은57014/61922다. 사용자8769에서 기술사 메뉴·건축 필터·실자료를 확인했으나 발행 service는 미주입/비활성이다. 기존 operations26테이블 행수0 동일·schema3·추가8empty·integrityok, metrics논리동일·schema1·integrityok라는 부모 DB 대조를 보존한다. 실제 복원/원격 이력 보존 수락은 별도다.
+
+최신 격리 승인·unknown·inputv1/outputv2·Escape/포커스·실제 planCAS409 입력보존 근거와 최신401/503·320px·전체복구closure 미확인은 [수락 현황](../audits/2026-10-30-web-phase6a-acceptance.md)에 구분했다. 후속Task8은 지금 배포된 actual==HEAD를 새 original로 삼고 옛6A manifest 원본hash를 재적용하지 않는다. 원래 계획 작업공간은 참조가 남아 있으므로 삭제하지 않는다.
 
 실제 구독 실행·독립 검토·음성/영상 장면·PDF safe parser/렌더·출처 bytes·실계정·공식 API/DOM·후처리·외부 접속까지 후속 수락한다. Mac과 휴대폰 외부 접속은 사용자 선택의 최종 요구로 유지한다. localhost 검증으로 대체하지 않는다.
 
-연결 문서: [6A 수락 현황](../audits/2026-10-30-web-phase6a-acceptance.md), [진입점 근거](execution-entrypoint-inventory.json), [실행 경계 감사](../audits/2026-10-30-live-entrypoint-readiness.md), [운영 웹 사용법](../../ax-console/docs/운영웹_사용법.md).
+연결 문서: [결정·보류 원문 보존](../audits/2026-10-31-phase6a-rulings.md), [6A 수락 현황](../audits/2026-10-30-web-phase6a-acceptance.md), [진입점 근거](execution-entrypoint-inventory.json), [실행 경계 감사](../audits/2026-10-30-live-entrypoint-readiness.md), [운영 웹 사용법](../../ax-console/docs/운영웹_사용법.md).
