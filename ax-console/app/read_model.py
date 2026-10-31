@@ -108,11 +108,25 @@ def _integration_catalog(local_platforms):
     if local_platforms:
         candidates.append(('local_publishers', '기존 발행기', 'local_adapter', sorted(local_platforms),
                            '자동 작업 설정에 선언된 채널 목록입니다. 실제 연결·실행 가능 여부는 별도 확인이 필요합니다.'))
-    return [{'id': key, 'label': label, 'kind': kind,
+    result = [{'id': key, 'label': label, 'kind': kind,
              'platforms': [{'id': platform, 'label': LABELS.get(platform, platform)} for platform in platforms],
              'availability': 'unknown', 'connection_status': 'unknown', 'execution_status': 'not_connected',
              'description': description}
             for key, label, kind, platforms, description in candidates]
+    from common.operations.provider_capabilities import DEFAULT_CAPABILITIES
+    labels = {'local.packaging.preview':'제목·본문 규칙', 'local.research.preview':'저장 근거 조사',
+              'local.thumbnail.inspect':'이미지 기술 검사', 'local.thumbnail.render':'고정 썸네일',
+              'local.metrics.csv.preview':'CSV 미리보기', 'local.metrics.csv.import':'CSV 관측 가져오기',
+              'local.schedule.inspect':'예약 상태 조회'}
+    for candidate in result:
+        provider = {'local_publishers':'local'}.get(candidate['id'], candidate['id'])
+        candidate['capabilities'] = [dict(action_id=item.action_id,
+            label=labels.get(item.action_id,item.action_id), effect=item.effect,
+            implementation_status=item.implementation_status,
+            runtime_kind=item.runtime_kind, cost_kind=item.cost_kind)
+            for item in DEFAULT_CAPABILITIES.values() if item.provider_id==provider]
+    # 기존 카탈로그 id·availability·연결 상태와 snapshot schema는 보존한다.
+    return result
 
 
 class _Reader:

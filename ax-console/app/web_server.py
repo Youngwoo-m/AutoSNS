@@ -30,6 +30,9 @@ from common.operations.content_store import ContentStore, StoreError, MAX_ASSET_
 from common.operations.integration_store import IntegrationStore
 from common.operations.ledger import Ledger
 from common.operations.models import ContractError
+from web_tools import handle as handle_tools, recognizes as tools_path
+from common.operations.local_toolkit import LocalToolkitService
+from common.operations.tool_cost_policy import ToolkitPolicy
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
 from common.operations.metrics_store import MetricsStore
 from common.operations.registry import load_registry
@@ -61,6 +64,9 @@ _STATIC = {
     'execution_panel.js': 'text/javascript; charset=utf-8',
     'execution_controller.js': 'text/javascript; charset=utf-8',
     'engineer_panel.js': 'text/javascript; charset=utf-8',
+    'toolkit_api.js': 'text/javascript; charset=utf-8',
+    'toolkit_controller.js': 'text/javascript; charset=utf-8',
+    'toolkit_panel.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -285,7 +291,7 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(400, '올바르지 않은 조회 조건입니다')
             return None
-        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics'):
+        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -351,6 +357,19 @@ class _Handler(BaseHTTPRequestHandler):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
             deliveries = path == '/api/v2/connections' or path == '/api/v2/deliveries' or path.startswith('/api/v2/deliveries/')
+            if tools_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                # 모든 POST는 명시적으로 초기화한 별도 관리 저장소를 요구한다.
+                # factory/GET가 원장이나 receipt 저장소를 생성하지 않는다.
+                if method == 'POST' and not getattr(self.server.content_store, '_initialized', False):
+                    # 읽기 전용에서도 JSON 경계는 먼저 검사한다.
+                    self._read_body(1024*1024, json_body=True)
+                    raise StoreError('storage_error')
+                self.server.toolkit_service.registry = self.server.metrics_registry()
+                result = handle_tools(self.server.toolkit_service, method, path, query,
+                                      lambda: self._read_body(1024*1024, json_body=True))
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200, result)
             if execution_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 body = self._read_body(1024*1024, json_body=True) if method == 'POST' else None
@@ -602,7 +621,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   web_root: Path, auth_backend=None, snapshot_builder=None,
                   workspace_root: Path | None = None, operations_registry=None, execution_policy=None,
                   recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None,
-                  execution_service=None, execution_status_info=None, operations_locks=None) -> ThreadingHTTPServer:
+                  execution_service=None, execution_status_info=None, operations_locks=None,
+                  toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -610,6 +630,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다') from None
     if not address.is_loopback:
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다')
+    if toolkit_policy is not None and type(toolkit_policy) is not ToolkitPolicy:
+        raise ValueError('서버 소유 로컬 도구 정책이 필요합니다')
     source_root, web_root = Path(source_root).resolve(), Path(web_root).resolve()
     workspace_root = Path(workspace_root).resolve() if workspace_root is not None else None
     if workspace_root is not None and (workspace_root.is_relative_to(source_root) or source_root.is_relative_to(workspace_root)):
@@ -650,6 +672,11 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.process_probe = process_probe
     server.lock_probe = lock_probe
     server.operations_clock = operations_clock if operations_clock is not None else lambda: datetime.now(timezone.utc)
+    server.toolkit_service = LocalToolkitService(registry=server.metrics_registry(),
+        content_store=server.content_store, metrics_store=server.metrics_store,
+        runtime_store=server.runtime_store, policy=toolkit_policy if toolkit_policy is not None else ToolkitPolicy(),
+        thumbnail_renderer=toolkit_renderer, thumbnail_authorizer=toolkit_asset_authorizer,
+        clock=server.operations_clock)
     server.web_root = web_root
     server.auth_backend = backend
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot

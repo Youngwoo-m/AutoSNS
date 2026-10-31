@@ -46,3 +46,12 @@
 .execution-production select,.execution-publication select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
 .execution-panel p{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:480px){.execution-production,.execution-publication{padding:8px}.execution-panel button,.execution-service button{display:block;width:100%;margin-inline:0}}
+
+/* 기존 화면 안에 배치하는 로컬 도구: 좁은 화면에서도 입력 폭 보존 */
+.toolkit-panel { padding: 1rem; margin-block: 1rem; border: 1px solid var(--line, #d8dde3); border-radius: 12px; min-width: 0; overflow-wrap: anywhere; }
+.toolkit-panel input, .toolkit-panel textarea, .toolkit-panel select { display:block; box-sizing:border-box; width:100%; max-width:100%; margin-block:.4rem .8rem; font:inherit; }
+.toolkit-panel textarea { min-height: 7rem; }
+.toolkit-panel button { max-width:100%; margin:.25rem; white-space:normal; }
+.toolkit-panel label { display:block; }
+.toolkit-panel :focus-visible { outline: 3px solid #2764c5; outline-offset: 2px; }
+@media (max-width: 400px) { .toolkit-panel { padding:.6rem; } .toolkit-panel button { display:block; width:100%; margin:.4rem 0; } }

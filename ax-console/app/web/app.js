@@ -1,3 +1,6 @@
+import {createToolkitApi} from './toolkit_api.js';
+import {createToolkitController} from './toolkit_controller.js';
+import {createToolkitPanel} from './toolkit_panel.js';
 import {renderEngineerPanel} from './engineer_panel.js';
 import {createExecutionWorkspace} from './execution_controller.js';
 import {createMetricsApi,createMetricsPanel} from './metrics_panel.js';
@@ -55,9 +58,18 @@ const editor=createContentEditor({api:contentApi,writable,execution,onSaved:()=>
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
 const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
 const operations=createOperationsPanel({api:createOperationsApi(),execution,onChange:()=>{renderStatus();}});
+// 화면별 컨트롤러를 분리하여 계정·원고·CSV 입력의 범위를 유지한다.
+const toolkitSurfaces=new Map();
+function toolkitSurface(section,extra={}) {
+  let surface=toolkitSurfaces.get(section);
+  if(!surface){const controller=createToolkitController({api:createToolkitApi()});surface={controller,panel:createToolkitPanel({controller,document})};toolkitSurfaces.set(section,surface);}
+  return surface.panel.render({section,context:{account:state.account,...extra},writable:writable()});
+}
+const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
+const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty());
+  if(execution.isBusy()||operations.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty()||toolkitDirty());
   if(accepted&&operations.isDirty())operations.discard();return accepted;
 }
 function pageHead() {
@@ -147,6 +159,7 @@ function renderContentResults() {
 }
 function renderContents() {
   const root=h('div',{},filterControls(),muted('관련 계정 기준으로 조회합니다. 위의 원본 소유 계정 필터는 게시 대상 계정과 별개입니다.'),h('div',{id:'content-results'}));
+  if(view==='planning') root.append(toolkitSurface('planning'));
   if(view==='planning') root.append(panel('AI 기획 제안 기록',state.snapshot.proposals.length?h('div',{class:'entry-list'},state.snapshot.proposals.map(p=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(p.owner_account_id),badge(p.status)),h('h3',{},text(p.title)),h('p',{},text(p.summary)),disabled('채택·반려 미지원')))):empty('수집된 제안이 없습니다','기획 제안 자료가 없으면 예시 제안을 만들지 않습니다.')));
   if(view==='planning') {
     const proposals=state.snapshot.metric_proposals||[];
@@ -207,10 +220,10 @@ function renderAccounts() {
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
   if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
-  return h('div',{},execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),h('div',{class:'integration-channel-section'},channels));
+  return h('div',{},execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
-  return metrics.render({account:state.account,writable:writable()});
+  return h('div',{},metrics.render({account:state.account,writable:writable()}),toolkitSurface('analytics'));
 }
 function renderIssues() {
   const s=state.snapshot;let content;
@@ -235,6 +248,7 @@ function renderDetail() {
   let body;
   if(detailTab==='overview')body=h('div',{},h('section',{class:'detail-section'},h('h3',{},'원본 개요'),h('p',{class:'article-preview'},c.summary||'요약이 수집되지 않았습니다.'),h('dl',{class:'detail-kv'},h('dt',{},'형식'),h('dd',{},kindLabel(c.kind)),h('dt',{},'시리즈'),h('dd',{},c.series||'미확인'),h('dt',{},'생성 시각'),h('dd',{},formatDateTime(c.created_at)),h('dt',{},'갱신 시각'),h('dd',{},formatDateTime(c.updated_at)))),h('section',{class:'detail-section'},h('h3',{},'채널별 게시 대상과 상태'),deliveries.length?deliveries.map(deliveryDetail):empty('배포 기록 없음','원본의 채널별 배포 기록이 수집되지 않았습니다.')));
   if(detailTab==='deliveries')body=h('section',{class:'detail-section'},h('h3',{},'채널별 배포'),muted('게시 대상은 원본 소유 계정과 별도입니다. 조회 계정과 관련된 배포만 표시할 수 있습니다.'),deliveries.length?deliveries.map(deliveryDetail):empty('배포 기록 없음','현재 조회 범위에서 연결된 배포 기록이 없습니다.'));
+  if(detailTab==='deliveries')body.append(toolkitSurface('schedule'));
   if(detailTab==='manuscript')body=empty('전체 원문·채널 변환본 조회 미지원','현재 스냅샷은 요약과 원본 버전만 제공합니다. 원문 편집과 승인 버전 비교는 아직 지원하지 않습니다.');
   if(detailTab==='media')body=empty('미디어 자산 조회 미지원','이미지·영상 자산 정보가 조회 계약에 없습니다. 썸네일이나 파일의 존재를 추정하지 않습니다.');
   if(detailTab==='review')body=empty('검토·출처 자료 미수집','출처와 승인 이력을 조회 계약에서 제공하지 않습니다. 배포 확인 근거는 채널별 배포에서 확인할 수 있습니다.');
@@ -271,9 +285,9 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 });
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
+document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;for(const surface of toolkitSurfaces.values())surface.panel.refreshControls({context:{account:button.dataset.scope}});operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
 $('#refresh').addEventListener('click',()=>{if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()){event.preventDefault();event.returnValue='';}});
+window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
 operations.load('all');
 loader.select('all');

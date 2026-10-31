@@ -1,3 +1,6 @@
+import {createToolkitApi} from './toolkit_api.js';
+import {createToolkitController} from './toolkit_controller.js';
+import {createToolkitPanel} from './toolkit_panel.js';
 import {createDeliveryEditor} from './delivery_editor.js';
 import {accountLabel,kindLabel,statusLabel,formatDateTime,safeUrl} from './view_helpers.js';
 const fields=['title','kind','series','status','original','variants','sources'];
@@ -36,20 +39,41 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
   };
   const button=(label,fn,disabled=false)=>el('button',{type:'button',class:'btn btn-small',disabled,onclick:fn},label);
   const canWrite=()=>writable()===true&&!historical&&!busy&&!loadFailed;
+  const toolkitController=createToolkitController({api:createToolkitApi(),onChange:()=>updateRevisionControls()});
+  const toolkit=createToolkitPanel({controller:toolkitController,document});
+  function toolkitContext(){return {account:session.content?.owner_account_id||session.draft.owner_account_id||'all',
+    contentId:session.content?.id,revision:session.content?.revision,
+    inputHash:JSON.stringify(session.draft),editorDirty:session.dirty(),
+    connectionId:toolkitController.getState().inputs.connection_id||null};}
+  function syncToolkit(){return toolkit.render({section:'editor',context:toolkitContext(),writable:canWrite()&&!childBlocksRevision()});}
+  toolkit.element.addEventListener('toolkit-stage',event=>{
+    const patch=event.detail,context=toolkitContext(),state=toolkitController.getState();
+    if(!canWrite()||childBlocksRevision()||session.dirty()||context.inputHash!==state.context.inputHash)return;
+    // 전달된 patch를 현재 preview의 clean hash·revision·connection으로 다시 결속한다.
+    const candidates=state.reports.packaging?.candidates||[];
+    const valid=candidates.some(candidate=>[undefined,...(candidate.variants||[]).map(v=>v.id)].some(variantId=>{
+      try{return JSON.stringify(toolkitController.stageCandidate(candidate.id??candidate.candidate_id,{...context,variantId}))===JSON.stringify(patch);}catch{return false;}
+    }));
+    if(!valid)return;
+    if(typeof patch.title==='string')session.draft.title=patch.title;
+    if(typeof patch.body==='string')session.draft.original=patch.body;
+    message='후보를 미저장 초안에 반영했습니다. 원본 저장 시 새 버전과 독립 검토가 필요합니다.';
+    render();
+  });
   let deliveryKey='';
   const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved,onStateChange:()=>updateRevisionControls()});
-  const childBlocksRevision=()=>delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
-  function updateRevisionControls(){const blocked=childBlocksRevision();root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;const notice=root.querySelector('[data-child-block]');if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.'):'';}
-  const hasChanges=()=>!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
+  const childBlocksRevision=()=>toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
+  function updateRevisionControls(){const blocked=childBlocksRevision();toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!blocked});root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;const notice=root.querySelector('[data-child-block]');if(notice)notice.textContent=blocked?(toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.'):'';}
+  const hasChanges=()=>toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength}={}) {
     const input=el(type,{...(maxLength?{maxlength:maxLength}:{}),disabled:!canWrite(),oninput:e=>{onChange(e.target.value);updateNotice();}});
     if(options)for(const [id,text] of options)input.append(el('option',{value:id},text));
     input.value=value;return el('label',{class:'editor-field'},el('span',{},label),input);
   }
-  function updateNotice(){if(session.content&&execution)execution.forContent(session.content,{dirty:session.dirty(),readOnly:!canWrite()});delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
+  function updateNotice(){toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!childBlocksRevision()});if(session.content&&execution)execution.forContent(session.content,{dirty:session.dirty(),readOnly:!canWrite()});delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
   function notice(){return el('p',{class:'editor-message',role:'status','aria-live':'polite'},session.error||message|| (session.phase==='saved'?'저장했습니다.':busy?'처리 중입니다.':''));}
   async function action(task) {
-    if(delivery.isBusy()||execution?.isBusy())return;
+    if(delivery.isBusy()||execution?.isBusy()||toolkit.isBusy())return;
     busy=true;message='';session.error='';render();
     try {await task();}catch(error){session.error=error.message;session.phase=error.status===401?'unauthorized':error.status===409?'conflict':'error';}
     finally {busy=false;render();}
@@ -94,12 +118,13 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     }
     const reviewButton=[...form.querySelectorAll('button')].find(node=>node.textContent==='이 버전의 수동 검토 기록 저장');if(reviewButton)reviewButton.setAttribute('data-needs-clean','');
     root.replaceChildren(form);
+    root.append(syncToolkit());
     if(c&&!historical){root.append(delivery.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==deliveryKey){deliveryKey=key;delivery.open(c);}else delivery.refreshControls();}
     if(c&&execution)root.append(execution.forContent(c,{dirty:session.dirty(),readOnly:!canWrite()}));
     updateRevisionControls();
   }
   async function open(content=null) {
-    const token=++generation;deliveryKey='';delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];session=createEditSession();busy=true;render();
+    const token=++generation;deliveryKey='';delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];session=createEditSession();busy=true;toolkitController.setContext(toolkitContext());render();
     try {
       if(content?.source==='managed'){const [full,history]=await Promise.all([api.getContent(content.id,content.revision),api.listRevisions(content.id)]);if(token!==generation)return;session=createEditSession(full);revisions=history.items||[];historical=full.revision<Math.max(full.revision,...revisions.map(item=>item.revision));}
       else if(content){session.draft=copyLegacySummary(content);session.baseline=JSON.stringify(emptyDraft());message='기존 자료의 수집 요약만 복사했습니다. 전체 원문은 제공되지 않았습니다. 새 원본 소유 계정을 선택해 저장하세요.';}
@@ -107,5 +132,5 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     finally {if(token===generation){busy=false;render();}}
   }
   execution?.subscribe?.(()=>updateRevisionControls());
-  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||delivery.isBusy()||!!execution?.isBusy()};
+  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||delivery.isBusy()||!!execution?.isBusy()||toolkit.isBusy()};
 }
