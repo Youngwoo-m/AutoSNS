@@ -15,7 +15,7 @@
 
 connection_matrix는 블로그 5개와 YouTube 2개의 구현·transport fixture·순수 검사·실인증·실발행·공개·내용·성과·후처리를 분리한다. 비어 있는 live 증거는 미확인이다. fixture/실자료를 같은 통과 칸에 합치지 않는다.
 
-최종 evidence는 A8/A9 완료·독립 검토·전체 Python/Node 검증 결과를 받은 후 만든다. 그 전에는 `/private/tmp/phase6a-offline-evidence.json`을 생성하거나 최종 오프라인 수락을 주장하지 않는다. 분류기 단위시험의 임시 입력은 이 최종 파일과 다르다.
+실제 전체 Python/Node 결과를 확인한 뒤 부모가 허용한 로컬 evidence를 `/private/tmp/phase6a-offline-evidence.json`에 생성했다. code_revision은 7780b5878ba0ef81a31441319d6bd819684a418a이며 release CLI는 offline_ready=true/production_ready=false를 반환했다. 분류기 단위시험의 임시 입력과 이 실제 결과 파일을 구분한다. 브라우저·배포·최종 전체 계획 검토와 진행 중인 서버 후속 변경까지 수락한 결과는 아니다.
 
 ## 작업 하나의 전환 전 조건
 
@@ -46,7 +46,7 @@ connection_matrix는 블로그 5개와 YouTube 2개의 구현·transport fixture
 
 ## 기록할 최종 결과
 
-부모 작업이 모든 코드 완료 뒤 한 번 실행한 전체 Python/Node/release CLI의 명령·종료 코드·시험/실패/skip 수·evidence hash를 공개 수락 문서에 기록한다. 독립 검토 지적과 회귀시험도 함께 남긴다. 현재 HTTP 집중 78개 OK(24.402초)와 전체 Python 806개 OK(90.352초, session 29299 exit0)를 부모 elevated 실행 및 로그로 확인했다. A9 후속 수정·Node·release CLI·브라우저/배포 확인은 대기이며 후속 코드 변경에 대한 결과 유효성은 최종 통합에서 확인한다. 전체 수락 미완료 상태를 유지한다.
+부모 작업이 모든 코드 완료 뒤 한 번 실행한 전체 Python/Node/release CLI의 명령·종료 코드·시험/실패/skip 수·evidence hash를 공개 수락 문서에 기록한다. 독립 검토 지적과 회귀시험도 함께 남긴다. 현재 HTTP 집중 78개 OK(24.402초)·전체 Python 806개 OK(90.352초, session 29299 exit0)·Node 182개 pass(914.944149ms, 실패/skip/취소/todo0)를 부모 실행 및 로그로 확인했다. 로컬 evidence 생성 후 release CLI exit0, offline_ready=true/production_ready=false를 확인했다. 브라우저/배포·최종 전체 계획 검토는 대기이며 진행 중인 서버 후속 변경에 대한 결과 유효성은 최종 통합에서 확인한다. 전체 수락 미완료 상태를 유지한다.
 
 실제 구독 실행·독립 검토·음성/영상 장면·PDF safe parser/렌더·출처 bytes·실계정·공식 API/DOM·후처리·외부 접속까지 후속 수락한다. Mac과 휴대폰 외부 접속은 사용자 선택의 최종 요구로 유지한다. localhost 검증으로 대체하지 않는다.
 

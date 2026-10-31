@@ -8,14 +8,14 @@
 
 **Tech Stack:** 기존 Python3·unittest·SQLite, ES modules·Node 내장 test, 기존 Pillow/로컬 폰트가 가용할 때의 이미지 leaf. 신규 SaaS·유료 API·패키지 자동 설치 없음.
 
-**Spec:** [승인 설계](../specs/2026-10-31-local-sns-toolkit-design.md), [공급자 검토](../../audits/2026-10-31-vidiq-metricool-replacement-review.md). 2026-10-31 사용자 설계·계획 작성 승인. **이 실행계획의 구현은 사용자 검토·승인 대기**다. 최대 병렬 SDD 방식은 이미 선택됐으며 다시 선택받지 않는다.
+**Spec:** [승인 설계](../specs/2026-10-31-local-sns-toolkit-design.md), [공급자 검토](../../audits/2026-10-31-vidiq-metricool-replacement-review.md). 2026-10-31 사용자 설계·계획 작성 승인. **2026-10-31 사용자 실행 계획 승인·개발 시작 지시를 받았다.** 최대 병렬 SDD 방식은 이미 선택됐으며 다시 선택받지 않는다.
 
 ## Global Constraints
 
 - 비용0은 **추가 SaaS 결제·유료 API·credit 소비0**이다. 기존 승인 구독·로컬 운영자원은 사용하되 총운영비0이라고 표시하지 않는다. vidIQ에 포함된150 credit도 자동 사용하지 않는다.
 - 유료이거나 비용이 미확인이면 차단한다. 플랫폼 API의 실제 비용·기존 scope·할당량은 별도 확인하며 무료라고 추정하지 않는다. 신규 결제·가입·인증·권한 추가·외부 계정 호출·발행·스케줄 전환0이다.
 - 무료 MCP는 Codex에서 승인된 연결의 비용0 읽기 보조로만 사용한다. 대화 쿠키·토큰·Metricool hash를 추출해 웹 runtime에 재사용하지 않는다. 유료 모델·학교 gateway·다른 provider/계정으로 자동 fallback하지 않는다.
-- 별도 사이트나 새 최상위 메뉴를 만들지 않는다. 기존 8개 메뉴를 유지한다. 현재 SNS 도구는 `accounts`의 `renderIntegrations()` 하위 패널이며 기획/성과/배포 상세와 함께 확장한다.
+- 별도 사이트나 toolkit 전용 최상위 메뉴를 만들지 않는다. 사용자 추가 지시로 기술사 메뉴가 추가된 기존 9개 메뉴를 유지한다. 현재 SNS 도구는 `accounts`의 `renderIntegrations()` 하위 패널이며 기획/성과/배포 상세와 함께 확장한다.
 - 개인 `subscription_only`와 학과 작업별 기존 ProviderPolicy, 독립 calc/source 검토, revision/hash 결속을 유지한다. 기술사 블로그·친구 요청·PDF도 같은 경계를 적용한다. 새 기술사 원고를 생성하지 않는다.
 - CSV는 `legacy_reported` 또는 미배정 관측으로 보존한다. CSV·기술 검사·사용 선호로 승인·verified_delivery·게시 검증·실인증을 합성하지 않는다. owner/destination·불변 target ID·읽기/쓰기 권한을 분리한다.
 - startup/GET/preference 저장은 무쓰기·credential 조회/refresh·subprocess·외부 호출0이다. 실행은 계속 disabled이며 toolkit 기본 정책도 disabled다. 명시 주입한 로컬 정책만 격리 QA에서 활성화한다.
