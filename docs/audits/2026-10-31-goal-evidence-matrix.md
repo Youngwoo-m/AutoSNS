@@ -44,3 +44,6 @@
 ## 2026-11-01 OAuth 통합 갱신
 
 개인·학과별 OAuth 준비/결과/대상 확인/수명주기 코드는 격리 HTTP·SQLite·MemoryVault와 실제 JS 제어기로 검증했다. 기본 main은 서비스 미주입이며 실제 동의·OS 자격·발행은 비활성이다. [OAuth 수락 기록](2026-11-01-oauth-connections-acceptance.md)에서 코드 시험·화면 적용·실인증·발행 준비를 구별한다. 실인증 전 명시 orphan crash recovery와 실 Keychain/앱 등록/HTTPS/cost0 수락이 필수이며, lease/명시 비활성 자격의 projection 차단은 후속 코드·62개 서비스/23개 HTTP 시험으로 보완했다. 실제 실행 어댑터 연결에는 최신 세대·scope·기한·permit에 결속한 resolver가 여전히 필요하다. 전체 목표와6B~D는 계속 미완료다.
+
+
+2026-11-01 후속: 동일 snapshot의 catalog/registry 각 활성 행에서 현재 자격 참조·정수 세대·계정/연결 소유를 함께 검증하는 코드를 보완했다(서비스64/HTTP23 통과). 최신 DB/action/permit에 결속한 실제 runtime 조립과 실성과→다음기획은 각각 `2026-11-01-oauth-runtime-assembly-contract.md`, `2026-11-01-youtube-metrics-binding-contract.md`의 미구현 계약으로 남는다. 복구 실행 계획 확인 응답을 기다리는 동안에도 승인된 연결 소유 경계 보완은 진행했으며, 전체 운영 목표의 완료 범위를 바꾸지 않는다.

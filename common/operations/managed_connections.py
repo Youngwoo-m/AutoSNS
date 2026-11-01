@@ -32,12 +32,23 @@ def _credential_blocked(row):
     return bool(row.get('operation_lease')) or (authorization is not None and authorization['credential_status'] != 'active')
 
 
+def _validate_credential_binding(identifier,row,ref,key):
+    if (not isinstance(ref,CredentialRef) or key!=_credential_key(ref)
+            or row is None or row['state']!='connected'
+            or identifier!=ref.connection_id or row.get('connection_id')!=identifier
+            or row['account_id']!=ref.account_id or row['platform']!=ref.platform
+            or row.get('credential_ref')!=ref or ref.kind!='token' or ref.namespace!='autosns.oauth'
+            or type(row.get('credential_generation')) is not int or row['credential_generation']!=ref.generation):
+        raise StoreError('credential_owner_mismatch')
+    _check_provider_platform(row.get('provider_id'),row['platform'])
+
+
 def credential_catalog(snapshot):
     result={}
     for key,ref in snapshot.credential_refs.items():
+        if not isinstance(ref,CredentialRef): raise StoreError('credential_owner_mismatch')
         row=snapshot.connections.get(ref.connection_id)
-        if row is None or row['state']!='connected' or row['account_id']!=ref.account_id or row['platform']!=ref.platform or ref.kind!='token' or ref.namespace!='autosns.oauth': raise StoreError('credential_owner_mismatch')
-        _check_provider_platform(row.get('provider_id'),row['platform'])
+        _validate_credential_binding(ref.connection_id,row,ref,key)
         if _credential_blocked(row): continue
         result[key]=dict(id=key,account_id=ref.account_id,platform=ref.platform,credential_ref=ref)
     return result
@@ -231,7 +242,11 @@ def project_registry(base_registry,managed_snapshot):
             elif row['state']=='connected' and blocked:
                 connections[identifier]=Connection(id=identifier,account_id=row['account_id'],platform=row['platform'],target_id=row['target_id'],target_label=row.get('target_label',''),credential_ref=None,enabled=False,auth_checked_at=row['checked_at'],expected_login_subject=row['provider_subject'],auth_status='unknown')
             continue
-        ref=row['credential_ref']; key=_credential_key(ref)
+        ref=row['credential_ref']
+        if not isinstance(ref,CredentialRef): raise StoreError('credential_owner_mismatch')
+        key=_credential_key(ref)
+        _validate_credential_binding(identifier,row,ref,key)
+        if key not in catalog: raise StoreError('credential_owner_mismatch')
         credentials[key]=catalog[key]
         connections[identifier]=Connection(id=identifier,account_id=row['account_id'],platform=row['platform'],target_id=row['target_id'],target_label=row.get('target_label',''),credential_ref=key,enabled=False,auth_checked_at=row['checked_at'],expected_login_subject=row['provider_subject'],auth_status='connected',capabilities=old.capabilities if old else ())
     return replace(base_registry,connections=connections,credentials=credentials)

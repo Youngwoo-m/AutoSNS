@@ -54,3 +54,12 @@
 검증: 임시SQLite의 refresh/revoke lease2반례 RED 확인 후 GREEN, explicit unknown/pending/stored/reauth_required catalog4반례는 baseline module에서 RED 확인, 신규 진단 연결과 inactive metadata 회귀도 검증했다. 부모 managed/service **62개 OK**, HTTP/실제 service 통합 **23개 OK**, skip0. 독립 검토에서 inactive 상태를 unknown으로 덮던 중간 회귀를 찾아 수정했으며 해당 회귀 독립 시험1개 PASS. 같은 시험 수를 합산하지 않는다. 로그 `/private/tmp/oauth-credential-boundary.log`, `/private/tmp/oauth-boundary-http.log`.
 
 이 보완은 코드에 반영했으며 현재8769 PID69193은 기존 mainNone 오프라인 모드로 계속 실행 중이다. 서버 재기동·실 Keychain/계정/API/발행0. 이 변경을 실제 OAuth runtime 조립 또는 최신 세대·scope·permit 결속 resolver 완료로 해석하지 않는다. [runtime 경계 감사](2026-11-01-oauth-runtime-credential-boundary.md), [복구 실행 전 계획](../superpowers/plans/2026-11-01-oauth-crash-recovery.md), [다음 실제 연결 산출물](2026-11-01-sns-next-deliverables.md)을 따른다.
+
+
+## 동일 snapshot의 자격 세대·연결 소유 결속
+
+후속 코드에서는 catalog와 registry 각 활성 행 양쪽에 동일 validator를 적용했다. canonical key·map ID·connection ID·account/platform/provider·현재 CredentialRef·정확한 int generation이 모두 일치해야 한다. 현재 catalog 항목 누락도 고정 StoreError로 거절한다. 한 연결의 유효 catalog를 다른 개인/학과 연결이 빌리거나, generation2 key 아래 generation1 ref를 넣는 조합을 차단한다. 실제 vault/provider 조회·원본 registry/DB mutation은 없다.
+
+RED: stale/key/현재ref 불일치4개와 2행 alias3개를 순수/임시SQLite 시험으로 확인했다. 최종 부모 managed/service **64개 OK**, HTTP+실제 service integration **23개 OK**, skip0. 기존 lease/nonactive 차단, 정식 refresh 후 generation2만 사용, 원본 registry 보존을 포함한다. 독립 검토는 16개 거절 조합이 모두 credential_owner_mismatch이고 정상generation2가 성공함을 별도 probe로 확인했다. 로그 `/private/tmp/oauth-generation-boundary.log`, `/private/tmp/oauth-generation-http.log`, [독립 검토](2026-11-01-oauth-generation-boundary.md).
+
+이것은 전달된 snapshot 내부 정합성 검증이다. 자격 사용 직전 최신 DB 재검증, runtime action/permit CAS, 실제 OAuth 공급과 publisher child 조립은 아직 구현되지 않았으며 [조립 계약 조사](2026-11-01-oauth-runtime-assembly-contract.md)에 구분했다. 실제 성과의 수집 요청 멱등·원격 ID/목적지 결속·누락값 보존과 다음 기획 연결은 [성과 접합부 조사](2026-11-01-youtube-metrics-binding-contract.md)에 정리했다. 두 조사 문서는 구현/설계 승인/실수집 증거가 아니다. 현재 복구 실행 계획 검토 질문은 답변 대기이며 복구 신규 구현·실계정/발행은 시작하지 않았다.

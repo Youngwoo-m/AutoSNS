@@ -280,3 +280,54 @@ class ManagedTests(unittest.TestCase):
                 self.assertEqual(status, projected.auth_status)
                 self.assertIsNone(projected.credential_ref)
                 self.assertFalse(projected.enabled)
+
+
+    def test_catalog_rejects_stale_generation_or_mismatched_current_ref(self):
+        from dataclasses import replace
+        from common.operations.models import freeze
+        self.confirm(self.proposal(), 'base', 0)
+        snapshot = self.store.snapshot()
+        old_ref = snapshot.connections['conn']['credential_ref']
+        new_ref = CredentialRef('autosns.oauth', 'personal', 'youtube', 'conn', 2, 'token')
+        cases = (
+            dict(snapshot.connections['conn'], credential_generation=2),
+            dict(snapshot.connections['conn'], credential_generation=True),
+            dict(snapshot.connections['conn'], credential_generation=2, credential_ref=new_ref),
+            dict(snapshot.connections['conn'], connection_id='different'),
+        )
+        for row in cases:
+            with self.subTest(row_generation=row['credential_generation'], connection_id=row['connection_id']):
+                stale = replace(snapshot, connections=freeze({'conn': row}))
+                with self.assertRaises(StoreError): credential_catalog(stale)
+                with self.assertRaises(StoreError): project_registry(self.base, stale)
+        forged_key = replace(snapshot, credential_refs=freeze({'oauth:personal:youtube:conn:999': old_ref}))
+        with self.assertRaises(StoreError): credential_catalog(forged_key)
+        aliased = replace(snapshot, credential_refs=freeze({'oauth:personal:youtube:conn:2': old_ref}),
+            connections=freeze({'conn': dict(snapshot.connections['conn'], credential_ref=new_ref, credential_generation=2)}))
+        with self.assertRaises(StoreError): credential_catalog(aliased)
+        with self.assertRaises(StoreError): project_registry(self.base, aliased)
+        missing = replace(snapshot, credential_refs=freeze({}))
+        with self.assertRaises(StoreError): project_registry(self.base, missing)
+        self.assertEqual(1, self.store.snapshot().connections['conn']['credential_generation'])
+        self.assertEqual('legacy', self.base.connections['conn'].credential_ref)
+        lease = self.store.claim_connection_operation('conn', 'base', 1, 'refresh')
+        current = self.store.finish_connection_operation(lease, new_ref=new_ref)
+        catalog = credential_catalog(current)
+        self.assertEqual({'oauth:personal:youtube:conn:2'}, set(catalog))
+        self.assertEqual(new_ref, catalog['oauth:personal:youtube:conn:2']['credential_ref'])
+        self.assertEqual('oauth:personal:youtube:conn:2', project_registry(self.base, current).connections['conn'].credential_ref)
+
+
+    def test_each_projected_connection_must_own_its_credential_even_if_catalog_is_valid(self):
+        from dataclasses import replace
+        from common.operations.models import freeze
+        self.confirm(self.proposal(), 'base', 0)
+        snapshot = self.store.snapshot()
+        for account, generation in (('personal', 1), ('personal', 3), ('dept', 1)):
+            with self.subTest(account=account, generation=generation):
+                other = dict(snapshot.connections['conn'], connection_id='other',
+                    account_id=account, credential_generation=generation)
+                mixed = replace(snapshot, connections=freeze(dict(snapshot.connections, other=other)))
+                self.assertEqual(credential_catalog(snapshot), credential_catalog(mixed))
+                with self.assertRaises(StoreError): project_registry(self.base, mixed)
+        self.assertEqual('legacy', self.base.connections['conn'].credential_ref)
