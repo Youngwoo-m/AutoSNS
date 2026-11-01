@@ -28,7 +28,7 @@ def validate_ref(ref, account_id=None):
     if (not isinstance(ref.connection_id, str) or len(ref.connection_id) > 200
             or not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*', ref.connection_id)):
         raise CredentialError('credential_invalid_ref')
-    if type(ref.generation) is not int or ref.generation <= 0 or ref.kind not in ('client','code','verifier','ticket','token'):
+    if type(ref.generation) is not int or ref.generation <= 0 or ref.kind not in ('client','code','verifier','ticket','token','state_key'):
         raise CredentialError('credential_invalid_ref')
     return (ref.namespace, ref.account_id, ref.platform, ref.connection_id, ref.generation, ref.kind)
 

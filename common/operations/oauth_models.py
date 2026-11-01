@@ -149,7 +149,7 @@ class CredentialRef(_Private):
                  generation: int, kind: str):
         for value in (namespace, account_id, platform, connection_id, kind):
             _text(value)
-        if namespace != 'autosns.oauth' or account_id not in ('personal', 'dept') or type(generation) is not int or generation < 1 or kind not in ('client', 'code', 'verifier', 'ticket', 'token'):
+        if namespace != 'autosns.oauth' or account_id not in ('personal', 'dept') or type(generation) is not int or generation < 1 or kind not in ('client', 'code', 'verifier', 'ticket', 'token', 'state_key'):
             _invalid()
         for name, value in dict(namespace=namespace, account_id=account_id, platform=platform,
                                 connection_id=connection_id, generation=generation, kind=kind).items():

@@ -86,6 +86,17 @@ class CredentialBackendTests(unittest.TestCase):
         self.assertIsNone(ctx.exception.__cause__)
 
 
+    def test_state_signing_key_is_private_and_scoped(self):
+        key_ref = CredentialRef('autosns.oauth', 'personal', 'youtube', 'personal.youtube', 1, 'state_key')
+        for backend in (MemoryCredentialBackend(account_id='personal'), MacKeychainBackend(FakeBridge(), account_id='personal')):
+            backend.put(key_ref, b'private-state-signing-key')
+            self.assertEqual(backend.get(key_ref), b'private-state-signing-key')
+            self.assertNotIn('signing', repr(key_ref))
+            self.assertEqual(key_ref.to_dict(public=True), {})
+            backend.delete(key_ref)
+            with self.assertRaises(CredentialError):
+                backend.put(CredentialRef('autosns.oauth', 'dept', 'youtube', 'personal.youtube', 1, 'state_key'), b'x')
+
 class NativeOwnershipTests(unittest.TestCase):
     def bridge(self, status=0, wrong_type=False):
         import ctypes
