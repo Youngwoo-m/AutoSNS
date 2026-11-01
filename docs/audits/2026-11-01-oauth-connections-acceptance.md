@@ -63,3 +63,8 @@
 RED: stale/key/현재ref 불일치4개와 2행 alias3개를 순수/임시SQLite 시험으로 확인했다. 최종 부모 managed/service **64개 OK**, HTTP+실제 service integration **23개 OK**, skip0. 기존 lease/nonactive 차단, 정식 refresh 후 generation2만 사용, 원본 registry 보존을 포함한다. 독립 검토는 16개 거절 조합이 모두 credential_owner_mismatch이고 정상generation2가 성공함을 별도 probe로 확인했다. 로그 `/private/tmp/oauth-generation-boundary.log`, `/private/tmp/oauth-generation-http.log`, [독립 검토](2026-11-01-oauth-generation-boundary.md).
 
 이것은 전달된 snapshot 내부 정합성 검증이다. 자격 사용 직전 최신 DB 재검증, runtime action/permit CAS, 실제 OAuth 공급과 publisher child 조립은 아직 구현되지 않았으며 [조립 계약 조사](2026-11-01-oauth-runtime-assembly-contract.md)에 구분했다. 실제 성과의 수집 요청 멱등·원격 ID/목적지 결속·누락값 보존과 다음 기획 연결은 [성과 접합부 조사](2026-11-01-youtube-metrics-binding-contract.md)에 정리했다. 두 조사 문서는 구현/설계 승인/실수집 증거가 아니다. 현재 복구 실행 계획 검토 질문은 답변 대기이며 복구 신규 구현·실계정/발행은 시작하지 않았다.
+
+
+## 복구 계획 구현 승인 및 기초 검증 — 2026-11-02
+
+사용자가 ‘계획 확인, 구현 시작’을 선택해 계획 검토 대기가 해소됐다. 실제 Keychain·SNS 로그인·운영 자격 삭제·발행을 제외하는 승인 범위다. 소유 모델/명시marker/scoped backend 기초는 d40f3da, durable fake crash 도구는4df8f32에 구현했다. 부모 집중33개 시험과 각 독립검토를 통과했다. 이는 운영 OAuth 연결이나 실제 cleanup 수락이 아니다. 저장소/operation/graph/guard/service 복구 통합은 계속 구현 중이다.

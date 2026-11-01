@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**상태: 실행 전 사용자 검토본.** 2026-11-01. 검토받은 OAuth 설계의 필수 crash/orphan 경계 중 빠진 항목을 보완하는 후속 실행 계획이다. 현재 구현 완료·실제 Keychain 접근·실인증 활성화 승인을 뜻하지 않는다. 이 문서 작성 단계에서는 코드·schema·계정·자격을 변경하지 않는다.
+**상태: 사용자 승인 후 구현 중.** 계획일 2026-11-01, 구현 승인 2026-11-02. 검토받은 OAuth 설계의 필수 crash/orphan 경계 중 빠진 항목을 보완하는 후속 실행 계획이다. 현재 구현 완료·실제 Keychain 접근·실인증 활성화 승인을 뜻하지 않는다. 실제 Keychain 접근·SNS 로그인·운영 자격 삭제·발행은 이번 구현에서 실행하지 않는다.
 
 **Goal:** 명시 recovery 명령으로만, 현재 workspace가 직접 stage했고 소유가 입증되며 어떤 유효·불명확 참조에도 연결되지 않은 자격만 안전하게 정리한다.
 
@@ -10,7 +10,7 @@
 
 **Tech Stack:** 기존 Python3.15/SQLite/unittest, 표준 라이브러리 fcntl·threading·HMAC·secrets, MemoryCredentialBackend와 fake native bridge. 신규 패키지·서비스0.
 
-**Spec:** [승인 OAuth 설계](../specs/2026-10-31-sns-oauth-connections-design.md)의 자격 stage→pointer CAS·unknown 보존·자기 namespace orphan 명시 정리 요구를 보완한다. [기존 구현 계획](2026-10-31-sns-oauth-connections.md) Task2/3/5와 [운영 안내](../../runbooks/oauth-connections.md)를 함께 읽는다. 신규 workspace identity/journal/schema 계약은 아직 구현되지 않았으며 기존 schema1 계약과 구별한다. 현재 API 대조 결과를 아래 확정 계약에 반영했다.
+**Spec:** [승인 OAuth 설계](../specs/2026-10-31-sns-oauth-connections-design.md)의 자격 stage→pointer CAS·unknown 보존·자기 namespace orphan 명시 정리 요구를 보완한다. [기존 구현 계획](2026-10-31-sns-oauth-connections.md) Task2/3/5와 [운영 안내](../../runbooks/oauth-connections.md)를 함께 읽는다. 신규 workspace identity/journal/schema 계약은 전체 통합 구현 중이며 기존 schema1 계약과 구별한다. 현재 API 대조 결과를 아래 확정 계약에 반영했다.
 
 ## 현재 확인된 결손
 
@@ -100,10 +100,10 @@ journal identity만으로 소유가 증명되지 않는다. 삭제하려면 **�
 
 **Interfaces:** `initialize_workspace_owner(root) -> OAuthWorkspaceContext`는 명시 초기화만 수행한다. `load_workspace_owner(root) -> OAuthWorkspaceContext`는 검증만 하며 누락/권한/format/root 불일치 오류에서 생성하지 않는다. `OwnedStageBackend(context, raw_backend)`가 제공하는 `put_owned(owned_ref, payload) -> None`, `read_owned(owned_ref) -> bytes`, `delete_owned(owned_ref) -> None`는 정확한 scoped 주소와 envelope/tag를 검사한다. put은 create-only이고 duplicate를 성공으로 취급하지 않는다. native adapter는 explicit injection만 허용한다.
 
-- [ ] `test_constructor_and_owner_load_never_create_marker`, `test_copied_marker_root_binding_is_rejected`, `test_same_legacy_ref_different_workspaces_have_distinct_scoped_identity`, `test_missing_marker_or_invalid_tag_never_deletes`, `test_duplicate_put_does_not_adopt_or_delete_existing_item`, `test_legacy_item_is_never_auto_wrapped`를 먼저 작성한다. marker/key/tag/payload의 repr·오류·로그 비노출도 단언한다.
-- [ ] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_stage_backend -v` RED를 확인한다.
-- [ ] Memory/fake-native로만 위 계약을 구현한다. scoped 주소 전체 일치 query를 사용하며 backend namespace 전체 열거/기존 Keychain 탐색은 추가하지 않는다. duplicate 항목은 owned라고 추정하지 않으며 보존한다.
-- [ ] 같은 명령 GREEN/skip0을 확인한다. 기존 credential backend 시험으로 legacy exact-key 의미 보존을 확인하고 이 범위만 검토한다.
+- [x] `test_constructor_and_owner_load_never_create_marker`, `test_copied_marker_root_binding_is_rejected`, `test_same_legacy_ref_different_workspaces_have_distinct_scoped_identity`, `test_missing_marker_or_invalid_tag_never_deletes`, `test_duplicate_put_does_not_adopt_or_delete_existing_item`, `test_legacy_item_is_never_auto_wrapped`를 먼저 작성한다. marker/key/tag/payload의 repr·오류·로그 비노출도 단언한다.
+- [x] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_stage_backend -v` RED를 확인한다.
+- [x] Memory/fake-native로만 위 계약을 구현한다. scoped 주소 전체 일치 query를 사용하며 backend namespace 전체 열거/기존 Keychain 탐색은 추가하지 않는다. duplicate 항목은 owned라고 추정하지 않으며 보존한다.
+- [x] 같은 명령 GREEN/skip0을 확인한다. 기존 credential backend 시험으로 legacy exact-key 의미 보존을 확인하고 이 범위만 검토한다.
 
 ### Task2: durable stage journal·schema2·참조 graph
 
@@ -151,6 +151,14 @@ journal identity만으로 소유가 증명되지 않는다. 삭제하려면 **�
 
 ## 실행 순서와 자체 검토
 
-Task1→Task2→Task3→Task4→Task5 순서다. 새 소유 모델/잠금/graph에 강한 의존이 있어 동시에 service/store를 변경하지 않는다. 구현 착수 시 선택된 실행 방식과 파일 소유권을 별도 원장에 기록한다. 현재 단계는 문서 검토이며, 코드 구현·운영 migration·실인증은 시작하지 않는다.
+Task1→Task2→Task3→Task4→Task5 순서다. 새 소유 모델/잠금/graph에 강한 의존이 있어 동시에 service/store를 변경하지 않는다. 구현 착수 시 선택된 실행 방식과 파일 소유권을 별도 원장에 기록한다. 2026-11-02 사용자 승인으로 격리 코드 구현을 시작했다. 운영 migration·실인증은 실행하지 않는다.
 
 자체 검토: durable journal(Task2), workspace/stage envelope 소유 증명과 현재 namespace 결손(Task1), writer/recovery 배타 lock(Task3), active/unknown/attempt/proposal/receipt/lease 보호graph(Task2/4), explicit-only recovery/GET 순수성(Task4/5), crash·다른W·duplicate·no-marker 보존(Task5)을 모두 대응했다. legacy 자동 이식/삭제·lease 자동 해제·실 provider 재전송은 범위 밖이다. schema2/StoredCredentialRef codec·operation record·graph revision·전체 store guard·delete intent 계약을 실제 schema1/기존 CredentialRef가 이미 제공한다고 주장하지 않는다. 자체 검토에서 드러난 API 결손9건을 위 상세 계약으로 보완했다.
+
+
+## 구현 진행 기록 — 2026-11-02
+
+- Task1 소유 모델/codec/marker/scoped backend는 d40f3da에서 구현하고 독립 검토를 통과했다. 신규17개+기존 fake backend10개 시험 통과. 실제 OS 자격 접근 수락이 아니다.
+- Task5용 durable fake 시험 도구는4df8f32에서 선행 구현했다. 임시SQLite/Pipe/SIGKILL 네 경계와6개 시험/독립검토를 통과했다. Task5 전체 crash matrix나 journal/recovery 검증 완료로 합산하지 않는다.
+- 부모가 위 두 범위를 함께33개 집중 시험으로 재검증했다. 전체 suite는 아직 실행하지 않았다.
+- Task2 저장 형식/operation/journal/graph와 Task3A 공용 잠금 코어를 파일 소유가 겹치지 않도록 병렬 구현 중이다. Task3의 전체 writer/service 결합과 Task4 명시 recovery는 그 뒤 진행한다. 운영 DB/schema 전환이나실계정 활성화는 하지 않았다.
