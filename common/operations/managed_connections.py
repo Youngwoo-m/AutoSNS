@@ -4,8 +4,9 @@ from types import MappingProxyType
 import json
 from uuid import uuid4
 from .oauth_store import OAuthAttemptStore, _time
-from .oauth_store import OAuthDatabase, _ref, _dump, _provider_platform, _validate_context_ref
-from .oauth_models import CredentialRef, validate_authorization
+from .oauth_store import OAuthDatabase, _ref, _dump, _provider_platform, _validate_context_ref, _logical
+from .oauth_models import validate_authorization
+from .oauth_stage_models import OwnedCredentialRef, logical_ref
 from .oauth_catalog import provider_catalog
 from .models import Connection, Registry, freeze, thaw
 from .content_store import StoreError, ConflictError
@@ -16,9 +17,11 @@ class ManagedSnapshot:
     connections: object
     credential_refs: object
     generation: int
+    workspace_owner: object = None
 
 
 def _credential_key(ref):
+    ref=logical_ref(ref)
     return f'oauth:{ref.account_id}:{ref.platform}:{ref.connection_id}:{ref.generation}'
 
 
@@ -33,11 +36,12 @@ def _credential_blocked(row):
 
 
 def _validate_credential_binding(identifier,row,ref,key):
-    if (not isinstance(ref,CredentialRef) or key!=_credential_key(ref)
+    stored_ref=ref; ref=_logical(ref)
+    if (key!=_credential_key(ref)
             or row is None or row['state']!='connected'
             or identifier!=ref.connection_id or row.get('connection_id')!=identifier
             or row['account_id']!=ref.account_id or row['platform']!=ref.platform
-            or row.get('credential_ref')!=ref or ref.kind!='token' or ref.namespace!='autosns.oauth'
+            or row.get('credential_ref')!=stored_ref or ref.kind!='token' or ref.namespace!='autosns.oauth'
             or type(row.get('credential_generation')) is not int or row['credential_generation']!=ref.generation):
         raise StoreError('credential_owner_mismatch')
     _check_provider_platform(row.get('provider_id'),row['platform'])
@@ -46,11 +50,12 @@ def _validate_credential_binding(identifier,row,ref,key):
 def credential_catalog(snapshot):
     result={}
     for key,ref in snapshot.credential_refs.items():
-        if not isinstance(ref,CredentialRef): raise StoreError('credential_owner_mismatch')
-        row=snapshot.connections.get(ref.connection_id)
-        _validate_credential_binding(ref.connection_id,row,ref,key)
+        logical=_logical(ref)
+        if isinstance(ref,OwnedCredentialRef) and (snapshot.workspace_owner is None or (ref.workspace_id,ref.root_binding)!=(snapshot.workspace_owner.workspace_id,snapshot.workspace_owner.root_binding)): raise StoreError('credential_owner_mismatch')
+        row=snapshot.connections.get(logical.connection_id)
+        _validate_credential_binding(logical.connection_id,row,ref,key)
         if _credential_blocked(row): continue
-        result[key]=dict(id=key,account_id=ref.account_id,platform=ref.platform,credential_ref=ref)
+        result[key]=dict(id=key,account_id=logical.account_id,platform=logical.platform,credential_ref=ref)
     return result
 
 
@@ -60,26 +65,36 @@ class ManagedConnectionStore(OAuthDatabase):
         with self._db() as db:
             generation=db.execute('SELECT generation FROM oauth_meta WHERE id=1').fetchone()[0]
             rows={row['id']:json.loads(row['payload']) for row in db.execute('SELECT * FROM oauth_connections')}
-        bases={row['base_revision'] for row in rows.values()}
-        if len(bases)>1: raise StoreError('base_revision_mismatch')
-        refs={}
-        for row in rows.values():
-            row['authorization']=validate_authorization(row['authorization']) if row.get('authorization') is not None else None
-            if row.get('credential_ref'):
-                row['credential_ref']=CredentialRef(**row['credential_ref'])
-                if row['state']=='connected' and not _credential_blocked(row): refs[_credential_key(row['credential_ref'])]=row['credential_ref']
-        return ManagedSnapshot(next(iter(bases),None),freeze(rows),MappingProxyType(refs),generation)
+            owner=None
+            if db.execute('PRAGMA user_version').fetchone()[0]==2:
+                from .oauth_stage_store import validate_database_owner
+                owner=validate_database_owner(db,self.root)
+            bases={row['base_revision'] for row in rows.values()}
+            if len(bases)>1: raise StoreError('base_revision_mismatch')
+            refs={}
+            for row in rows.values():
+                row['authorization']=validate_authorization(row['authorization']) if row.get('authorization') is not None else None
+                if row.get('operation_lease'):
+                    row['operation_lease']=dict(row['operation_lease'],credential_ref=self._decode_stored_ref(row['operation_lease']['credential_ref']))
+                    if row['operation_lease'].get('new_ref') is not None:
+                        row['operation_lease']['new_ref']=self._decode_stored_ref(row['operation_lease']['new_ref'])
+                if row.get('credential_ref'):
+                    row['credential_ref']=self._decode_stored_ref(row['credential_ref'])
+                    owned=row['credential_ref']
+                    if isinstance(owned,OwnedCredentialRef) and (owner is None or (owned.workspace_id,owned.root_binding)!=(owner.workspace_id,owner.root_binding)): raise StoreError('credential_owner_mismatch')
+                    if row['state']=='connected' and not _credential_blocked(row): refs[_credential_key(row['credential_ref'])]=row['credential_ref']
+            return ManagedSnapshot(next(iter(bases),None),freeze(rows),MappingProxyType(refs),generation,owner)
     def _commit_target(self,db,proposal,expected_base_revision,expected_connection_revision,provider_id):
         if type(expected_connection_revision) is not int or expected_connection_revision<0: raise StoreError('invalid')
         required={'connection_id','account_id','platform','base_revision','target_id','provider_subject','credential_ref','scopes','checked_at'}
-        if not isinstance(proposal,dict) or not required<=proposal.keys() or set(proposal)-required-{'target_label','authorization'}: raise StoreError('invalid_proposal')
+        if not isinstance(proposal,dict) or not required<=proposal.keys() or set(proposal)-required-{'target_label','authorization','operation_id','payload_version'}: raise StoreError('invalid_proposal')
         p=dict(proposal)
         p['authorization']=validate_authorization(p['authorization']) if p.get('authorization') is not None else None
         if p['authorization'] is not None: p['authorization']['credential_status']='active'
         if p['account_id'] not in ('personal','dept') or not all(isinstance(p[x],str) and p[x] for x in ('connection_id','platform','base_revision','target_id','provider_subject','checked_at')): raise StoreError('invalid_proposal')
         _check_provider_platform(provider_id,p['platform'])
         ref=_ref(p['credential_ref'])
-        if any(ref[x]!=p[x] for x in ('account_id','platform','connection_id')) or ref['kind']!='token' or ref['namespace']!='autosns.oauth': raise StoreError('credential_owner_mismatch')
+        if any(getattr(_logical(ref),x)!=p[x] for x in ('account_id','platform','connection_id')) or _logical(ref).kind!='token' or _logical(ref).namespace!='autosns.oauth': raise StoreError('credential_owner_mismatch')
         if p['base_revision']!=expected_base_revision: raise ConflictError()
         if not isinstance(p['scopes'],(list,tuple)) or not all(isinstance(x,str) for x in p['scopes']): raise StoreError('invalid_proposal')
         existing=db.execute('SELECT payload FROM oauth_connections WHERE id=?',(p['connection_id'],)).fetchone()
@@ -89,8 +104,8 @@ class ManagedConnectionStore(OAuthDatabase):
         if old and (old['base_revision']!=expected_base_revision or any(old[x]!=p[x] for x in ('account_id','platform','target_id'))): raise ConflictError()
         bases={json.loads(row[0])['base_revision'] for row in db.execute('SELECT payload FROM oauth_connections')}
         if bases and bases!={expected_base_revision}: raise ConflictError()
-        if old and ref['generation']<=old['credential_generation']: raise ConflictError()
-        p.update(provider_id=provider_id,credential_ref=ref,credential_generation=ref['generation'],revision=expected_connection_revision+1,state='connected',execution_enabled=False)
+        if old and _logical(ref).generation<=old['credential_generation']: raise ConflictError()
+        p.update(provider_id=provider_id,credential_ref=ref,credential_generation=_logical(ref).generation,revision=expected_connection_revision+1,state='connected',execution_enabled=False)
         db.execute('INSERT OR REPLACE INTO oauth_connections VALUES(?,?)',(p['connection_id'],_dump(p)))
         db.execute('UPDATE oauth_meta SET generation=generation+1 WHERE id=1')
 
@@ -119,7 +134,7 @@ class ManagedConnectionStore(OAuthDatabase):
         with self._db() as db:
             row=db.execute('SELECT * FROM oauth_proposals WHERE id=? AND session_binding=?',(proposal_id,session_binding)).fetchone()
             if row is None: raise StoreError('not_found')
-            p=json.loads(row['payload']); p['credential_ref']=CredentialRef(**p['credential_ref'])
+            p=json.loads(row['payload']); p['credential_ref']=self._decode_stored_ref(p['credential_ref'])
             p['authorization']=validate_authorization(p['authorization']) if p.get('authorization') is not None else None
             return freeze(dict(p,proposal_id=proposal_id,session_binding=session_binding,attempt_id=row['attempt_id'],consumed=bool(row['consumed'])))
     def confirm_target(self,proposal,expected_base_revision,expected_connection_revision):
@@ -133,7 +148,7 @@ class ManagedConnectionStore(OAuthDatabase):
             attempt=db.execute('SELECT * FROM oauth_attempts WHERE id=?',(row['attempt_id'],)).fetchone()
             if attempt['state']!='target_confirmation': raise ConflictError()
             if _time(attempt['expires_at'])<=_time(self.clock()): raise StoreError('expired')
-            p=json.loads(row['payload']); p['credential_ref']=CredentialRef(**p['credential_ref'])
+            p=json.loads(row['payload']); p['credential_ref']=self._decode_stored_ref(p['credential_ref'])
             item=OAuthAttemptStore(self.root,self.clock)._decode(attempt)
             context=item['context']
             if (any(p.get(key)!=getattr(context,key) for key in ('account_id','connection_id','base_revision'))
@@ -163,8 +178,8 @@ class ManagedConnectionStore(OAuthDatabase):
                     or p['base_revision']!=expected_base_revision or p.get('operation_lease')): raise ConflictError()
             if p['state'] not in ('connected','reauth_required','unknown') or not p.get('credential_ref'): raise ConflictError()
             _check_provider_platform(p.get('provider_id'),p['platform'])
-            ref=CredentialRef(**p['credential_ref'])
-            if any(getattr(ref,k)!=p[k] for k in ('account_id','platform','connection_id')) or ref.kind!='token': raise StoreError('credential_owner_mismatch')
+            ref=self._decode_stored_ref(p['credential_ref'])
+            if any(getattr(_logical(ref),k)!=p[k] for k in ('account_id','platform','connection_id')) or _logical(ref).kind!='token': raise StoreError('credential_owner_mismatch')
             lease=dict(lease_id=uuid4().hex,operation=operation,provider_id=p['provider_id'],connection_id=connection_id,base_revision=p['base_revision'],connection_revision=p['revision']+1,credential_ref=p['credential_ref'],credential_generation=p['credential_generation'],account_id=p['account_id'],platform=p['platform'])
             p.update(revision=p['revision']+1,operation_lease=lease)
             db.execute('UPDATE oauth_connections SET payload=? WHERE id=?',(_dump(p),connection_id))
@@ -175,6 +190,7 @@ class ManagedConnectionStore(OAuthDatabase):
         if authorization is not None: authorization=validate_authorization(authorization)
         if not hasattr(lease,'get'): raise StoreError('invalid')
         supplied=dict(lease); supplied['credential_ref']=_ref(supplied.get('credential_ref'))
+        if supplied.get('new_ref') is not None: supplied['new_ref']=_ref(supplied['new_ref'])
         with self._db(True) as db:
             row=db.execute('SELECT payload FROM oauth_connections WHERE id=?',(supplied.get('connection_id'),)).fetchone()
             if row is None: raise StoreError('not_found')
@@ -186,9 +202,9 @@ class ManagedConnectionStore(OAuthDatabase):
             if new_ref is not None:
                 ref=_ref(new_ref)
                 if supplied['operation']!='refresh' or state!='connected': raise StoreError('invalid')
-                if ref['kind']!='token' or any(ref[k]!=p[k] for k in ('account_id','platform','connection_id')): raise StoreError('credential_owner_mismatch')
-                if ref['generation']<=p['credential_generation']: raise ConflictError()
-                p.update(credential_ref=ref,credential_generation=ref['generation'])
+                if _logical(ref).kind!='token' or any(getattr(_logical(ref),k)!=p[k] for k in ('account_id','platform','connection_id')): raise StoreError('credential_owner_mismatch')
+                if _logical(ref).generation<=p['credential_generation']: raise ConflictError()
+                p.update(credential_ref=ref,credential_generation=_logical(ref).generation)
             elif state=='connected': raise StoreError('invalid')
             if state=='revoked':
                 if supplied['operation']!='revoke': raise StoreError('invalid')
@@ -243,7 +259,7 @@ def project_registry(base_registry,managed_snapshot):
                 connections[identifier]=Connection(id=identifier,account_id=row['account_id'],platform=row['platform'],target_id=row['target_id'],target_label=row.get('target_label',''),credential_ref=None,enabled=False,auth_checked_at=row['checked_at'],expected_login_subject=row['provider_subject'],auth_status='unknown')
             continue
         ref=row['credential_ref']
-        if not isinstance(ref,CredentialRef): raise StoreError('credential_owner_mismatch')
+        _logical(ref)
         key=_credential_key(ref)
         _validate_credential_binding(identifier,row,ref,key)
         if key not in catalog: raise StoreError('credential_owner_mismatch')

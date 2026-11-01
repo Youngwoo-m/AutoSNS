@@ -1,5 +1,6 @@
 """명시 초기화하는 별도 OAuth 저장소. 비밀 원문은 받지 않는다."""
 from contextlib import contextmanager, closing
+from contextvars import ContextVar
 from dataclasses import asdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -10,7 +11,11 @@ from uuid import uuid4
 from .content_store import StoreError, ConflictError
 from .oauth_models import AttemptContext, CallbackClaim, CredentialRef, validate_authorization
 from .oauth_catalog import provider_catalog
+from .oauth_stage_models import OwnedCredentialRef, encode_stored_ref, decode_stored_ref, logical_ref
+from .credential_backend import CredentialError
 
+
+_ACTIVE_OWNER=ContextVar('oauth_database_owner',default=None)
 
 def _time(value):
     try:
@@ -21,8 +26,18 @@ def _time(value):
 
 
 def _ref(value):
-    if not isinstance(value,CredentialRef): raise StoreError('invalid_credential_ref')
-    return {key:getattr(value,key) for key in ('namespace','account_id','platform','connection_id','generation','kind')}
+    try: return encode_stored_ref(value)
+    except CredentialError: raise StoreError('invalid_credential_ref') from None
+
+
+def _logical(value):
+    try: return logical_ref(decode_stored_ref(value) if isinstance(value,dict) else value)
+    except CredentialError: raise StoreError('invalid_credential_ref') from None
+
+
+def _decode_ref(value):
+    try: return decode_stored_ref(value)
+    except CredentialError: raise StoreError('invalid_credential_ref') from None
 
 
 def _provider_platform(context):
@@ -33,25 +48,73 @@ def _provider_platform(context):
 
 
 def _validate_context_ref(context, ref):
-    if (ref['account_id'] != context.account_id
-            or ref['connection_id'] != context.connection_id
-            or ref['platform'] != _provider_platform(context)):
+    ref=_logical(ref)
+    if (ref.account_id != context.account_id
+            or ref.connection_id != context.connection_id
+            or ref.platform != _provider_platform(context)):
         raise StoreError('credential_owner_mismatch')
 
 
 def _dump(value): return json.dumps(value,separators=(',',':'),sort_keys=True,allow_nan=False)
 
 
+def _validate_receipt_result(safe_result):
+    allowed={'attempt_id','revision','state','proposal_id','connection_id','base_revision','connection_revision','generation','account_id','provider_id','platform','expires_at','execution_enabled','reason_codes','provider_subject','target_proposal','authorization'}
+    states={'registration_blocked','consent_pending','callback_staged','resume_pending','token_exchanged','principal_pending','target_confirmation','connected','denied','expired','error','revoked','disconnected','unknown','reauth_required'}
+    if not isinstance(safe_result,dict) or set(safe_result)-allowed: raise StoreError('invalid_receipt_result')
+    for key,value in safe_result.items():
+        if key=='authorization':
+            if value is not None: safe_result=dict(safe_result,authorization=validate_authorization(value))
+        elif key in ('revision','connection_revision','generation'):
+            if type(value) is not int or value<0: raise StoreError('invalid_receipt_result')
+        elif key=='execution_enabled':
+            if value is not False: raise StoreError('invalid_receipt_result')
+        elif key=='account_id':
+            if value not in ('personal','dept'): raise StoreError('invalid_receipt_result')
+        elif key=='provider_id':
+            if not isinstance(value,str) or value not in {p.id for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
+        elif key=='platform':
+            if not isinstance(value,str) or value not in {p.platform for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
+        elif key=='expires_at':
+            _time(value)
+            if not isinstance(value,str): raise StoreError('invalid_receipt_result')
+        elif key=='reason_codes':
+            if not isinstance(value,list) or len(value)>32 or any(v not in ('stage_failed','denied','expired','storage_failed','callback_failed','exchange_failed','inspect_failed','manual_review') for v in value): raise StoreError('invalid_receipt_result')
+        elif key=='target_proposal':
+            fields={'proposal_id','target_id','target_label','expected_base_revision','expected_connection_revision'}
+            if not isinstance(value,dict) or set(value)!=fields: raise StoreError('invalid_receipt_result')
+            if type(value['expected_connection_revision']) is not int or value['expected_connection_revision']<0: raise StoreError('invalid_receipt_result')
+            for field in fields-{'expected_connection_revision'}:
+                text=value[field]
+                if not isinstance(text,str) or len(text)>500 or any(ord(c)<32 for c in text) or (field!='target_label' and not text): raise StoreError('invalid_receipt_result')
+        elif key=='state':
+            if not isinstance(value,str) or value not in states: raise StoreError('invalid_receipt_result')
+        elif not isinstance(value,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',value): raise StoreError('invalid_receipt_result')
+    return safe_result
+
+
 class OAuthDatabase:
     def __init__(self,root,clock=None):
         self.root=Path(root); self.path=self.root/'oauth.sqlite3'
         self.clock=clock or (lambda:datetime.now(timezone.utc))
+    def _decode_stored_ref(self,value):
+        ref=_decode_ref(value)
+        if isinstance(ref,OwnedCredentialRef):
+            active=_ACTIVE_OWNER.get()
+            if active is None or active[0]!=self.root.resolve() or active[1] is None: raise StoreError('credential_owner_mismatch')
+            owner=active[1]
+            if (ref.workspace_id,ref.root_binding)!=(owner.workspace_id,owner.root_binding): raise StoreError('credential_owner_mismatch')
+        return ref
+
     def initialize(self):
         self.root.mkdir(parents=True,exist_ok=True)
         with closing(sqlite3.connect(self.path)) as db, db:
+            # Version decision and legacy repairs share one transaction with DDL.
+            db.execute('BEGIN IMMEDIATE')
             version=db.execute('PRAGMA user_version').fetchone()[0]
-            if version not in (0,1): raise StoreError('schema_mismatch')
-            db.executescript('''CREATE TABLE IF NOT EXISTS oauth_attempts (
+            if version not in (0,1,2): raise StoreError('schema_mismatch')
+            if version==2: return
+            statements='''CREATE TABLE IF NOT EXISTS oauth_attempts (
                 id TEXT PRIMARY KEY,state_hash TEXT UNIQUE NOT NULL,provider TEXT NOT NULL,
                 session_binding TEXT NOT NULL,context TEXT NOT NULL,state TEXT NOT NULL,
                 revision INTEGER NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL);
@@ -61,7 +124,10 @@ class OAuthDatabase:
                 CREATE TABLE IF NOT EXISTS oauth_generations(namespace TEXT NOT NULL,account_id TEXT NOT NULL,platform TEXT NOT NULL,connection_id TEXT NOT NULL,generation INTEGER NOT NULL,PRIMARY KEY(namespace,account_id,platform,connection_id));
                 CREATE TABLE IF NOT EXISTS oauth_meta(id INTEGER PRIMARY KEY CHECK(id=1),generation INTEGER NOT NULL);
                 INSERT OR IGNORE INTO oauth_meta VALUES(1,0);
-                PRAGMA user_version=1;''')
+                PRAGMA user_version=1;'''
+            # executescript would implicitly commit and reopen the migration race.
+            for statement in statements.split(';'):
+                if statement.strip(): db.execute(statement.strip())
     def _receipt(self,row,*,claimed=False):
         return dict(id=row['id'],revision=row['revision'],status=('claimed' if claimed else 'in_progress') if row['status']=='pending' else row['status'],result=json.loads(row['result']) if row['result'] else None)
 
@@ -76,41 +142,11 @@ class OAuthDatabase:
                 if row['request_hash']!=request_hash: raise ConflictError()
                 return self._receipt(row)
             identifier=uuid4().hex
-            db.execute('INSERT INTO oauth_request_receipts VALUES(?,?,?,?,?,1,?,NULL,NULL)',(identifier,session_binding,operation,request_key,request_hash,'pending'))
+            db.execute('INSERT INTO oauth_request_receipts(id,session_binding,operation,request_key,request_hash,revision,status,result,attempt_id) VALUES(?,?,?,?,?,1,?,NULL,NULL)',(identifier,session_binding,operation,request_key,request_hash,'pending'))
             return self._receipt(db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone(),claimed=True)
 
     def finish_request(self,identifier,expected_revision,safe_result):
-        allowed={'attempt_id','revision','state','proposal_id','connection_id','base_revision','connection_revision','generation','account_id','provider_id','platform','expires_at','execution_enabled','reason_codes','provider_subject','target_proposal','authorization'}
-        states={'registration_blocked','consent_pending','callback_staged','resume_pending','token_exchanged','principal_pending','target_confirmation','connected','denied','expired','error','revoked','disconnected','unknown','reauth_required'}
-        if not isinstance(safe_result,dict) or set(safe_result)-allowed: raise StoreError('invalid_receipt_result')
-        for key,value in safe_result.items():
-            if key=='authorization':
-                if value is not None: safe_result=dict(safe_result,authorization=validate_authorization(value))
-            elif key in ('revision','connection_revision','generation'):
-                if type(value) is not int or value<0: raise StoreError('invalid_receipt_result')
-            elif key=='execution_enabled':
-                if value is not False: raise StoreError('invalid_receipt_result')
-            elif key=='account_id':
-                if value not in ('personal','dept'): raise StoreError('invalid_receipt_result')
-            elif key=='provider_id':
-                if not isinstance(value,str) or value not in {p.id for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
-            elif key=='platform':
-                if not isinstance(value,str) or value not in {p.platform for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
-            elif key=='expires_at':
-                _time(value)
-                if not isinstance(value,str): raise StoreError('invalid_receipt_result')
-            elif key=='reason_codes':
-                if not isinstance(value,list) or len(value)>32 or any(v not in ('stage_failed','denied','expired','storage_failed','callback_failed','exchange_failed','inspect_failed','manual_review') for v in value): raise StoreError('invalid_receipt_result')
-            elif key=='target_proposal':
-                fields={'proposal_id','target_id','target_label','expected_base_revision','expected_connection_revision'}
-                if not isinstance(value,dict) or set(value)!=fields: raise StoreError('invalid_receipt_result')
-                if type(value['expected_connection_revision']) is not int or value['expected_connection_revision']<0: raise StoreError('invalid_receipt_result')
-                for field in fields-{'expected_connection_revision'}:
-                    text=value[field]
-                    if not isinstance(text,str) or len(text)>500 or any(ord(c)<32 for c in text) or (field!='target_label' and not text): raise StoreError('invalid_receipt_result')
-            elif key=='state':
-                if not isinstance(value,str) or value not in states: raise StoreError('invalid_receipt_result')
-            elif not isinstance(value,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',value): raise StoreError('invalid_receipt_result')
+        safe_result=_validate_receipt_result(safe_result)
         with self._db(True) as db:
             row=db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone()
             if row is None: raise StoreError('not_found')
@@ -127,7 +163,7 @@ class OAuthDatabase:
             row=db.execute('SELECT generation FROM oauth_generations WHERE namespace=? AND account_id=? AND platform=? AND connection_id=?',key).fetchone()
             maximum=row[0] if row else 0
             # Include references written before the reservation API existed.
-            for table in ('oauth_attempts','oauth_connections'):
+            for table in ('oauth_attempts','oauth_connections','oauth_proposals'):
                 for stored in db.execute('SELECT payload FROM '+table):
                     payload=json.loads(stored[0])
                     if (table=='oauth_connections'
@@ -135,9 +171,20 @@ class OAuthDatabase:
                         high_water=payload.get('credential_generation')
                         if type(high_water) is int and high_water>0:
                             maximum=max(maximum,high_water)
-                    for ref in payload.values():
-                        if isinstance(ref,dict) and tuple(ref.get(k) for k in ('namespace','account_id','platform','connection_id'))==key:
-                            maximum=max(maximum,ref['generation'])
+                    def references(value):
+                        if isinstance(value,dict):
+                            if 'namespace' in value or 'format' in value:
+                                yield _logical(value)
+                            else:
+                                for nested in value.values(): yield from references(nested)
+                    for ref in references(payload):
+                        if tuple(getattr(ref,k) for k in ('namespace','account_id','platform','connection_id'))==key:
+                            maximum=max(maximum,ref.generation)
+            if db.execute('PRAGMA user_version').fetchone()[0]==2:
+                for stored in db.execute('SELECT owned_ref FROM oauth_stages'):
+                    ref=_logical(json.loads(stored[0]))
+                    if tuple(getattr(ref,k) for k in ('namespace','account_id','platform','connection_id'))==key:
+                        maximum=max(maximum,ref.generation)
             generation=maximum+1
             db.execute('INSERT OR REPLACE INTO oauth_generations VALUES(?,?,?,?,?)',(*key,generation))
             return generation
@@ -147,14 +194,30 @@ class OAuthDatabase:
         if not self.path.is_file(): raise StoreError('not_initialized')
         db=sqlite3.connect(self.path.as_uri()+('?mode=rw' if write else '?mode=ro'),uri=True,timeout=10)
         db.row_factory=sqlite3.Row
+        owner=None; token=None
         try:
-            if db.execute('PRAGMA user_version').fetchone()[0]!=1: raise StoreError('schema_mismatch')
+            db.execute('PRAGMA foreign_keys=ON')
+            # A concurrent migration must be visible before deciding guard policy.
             db.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
+            version=db.execute('PRAGMA user_version').fetchone()[0]
+            if version not in (1,2): raise StoreError('schema_mismatch')
+            if version==2:
+                from .oauth_stage_store import validate_database_owner
+                owner=validate_database_owner(db,self.root)
+                if write:
+                    from .oauth_workspace import require_oauth_write_guard
+                    require_oauth_write_guard(self.root,owner)
+            token=_ACTIVE_OWNER.set((self.root.resolve(),owner))
             yield db
+            if write:
+                from .oauth_stage_store import validate_owned_pointers
+                validate_owned_pointers(db,owner)
             db.commit()
         except sqlite3.Error: db.rollback(); raise StoreError('storage_unavailable') from None
         except Exception: db.rollback(); raise
-        finally: db.close()
+        finally:
+            if token is not None: _ACTIVE_OWNER.reset(token)
+            db.close()
 
 
 class OAuthAttemptStore(OAuthDatabase):
@@ -165,7 +228,7 @@ class OAuthAttemptStore(OAuthDatabase):
         item.update(json.loads(item.pop('payload')))
         item['authorization']=validate_authorization(item['authorization']) if item.get('authorization') is not None else None
         for field in ('code_ref','ticket_ref','verifier_ref','token_ref','state_key_ref'):
-            if item.get(field): item[field]=CredentialRef(**item[field])
+            if item.get(field): item[field]=self._decode_stored_ref(item[field])
         return item
     def create_attempt(self,context,state_hash,expires_at):
         if not isinstance(context,AttemptContext) or context.account_id not in ('personal','dept'): raise StoreError('invalid')
@@ -179,7 +242,7 @@ class OAuthAttemptStore(OAuthDatabase):
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(identifier,)).fetchone())
     def bind_state_key(self,attempt_id,session_binding,expected_revision,state_key_ref,request_receipt_id):
         ref=_ref(state_key_ref)
-        if ref['kind']!='state_key': raise StoreError('invalid_credential_ref')
+        if _logical(ref).kind!='state_key': raise StoreError('invalid_credential_ref')
         with self._db(True) as db:
             row=db.execute('SELECT * FROM oauth_attempts WHERE id=? AND session_binding=?',(attempt_id,session_binding)).fetchone()
             item=self._decode(row)
@@ -197,7 +260,7 @@ class OAuthAttemptStore(OAuthDatabase):
 
     def bind_verifier(self,attempt_id,session_binding,expected_revision,verifier_ref):
         ref=_ref(verifier_ref)
-        if ref['kind']!='verifier': raise StoreError('invalid_credential_ref')
+        if _logical(ref).kind!='verifier': raise StoreError('invalid_credential_ref')
         with self._db(True) as db:
             row=db.execute('SELECT * FROM oauth_attempts WHERE id=? AND session_binding=?',(attempt_id,session_binding)).fetchone()
             item=self._decode(row)
@@ -230,7 +293,7 @@ class OAuthAttemptStore(OAuthDatabase):
             refs={'code_ref':_ref(code_ref),'ticket_ref':_ref(ticket_ref),'ticket_expires_at':expiry.isoformat()}
             for name,kind in (('code_ref','code'),('ticket_ref','ticket')):
                 ref=refs[name]; context=claim.context
-                if ref['kind']!=kind: raise StoreError('credential_owner_mismatch')
+                if _logical(ref).kind!=kind: raise StoreError('credential_owner_mismatch')
                 _validate_context_ref(context,ref)
             payload=json.loads(row['payload']); payload.update(refs)
             db.execute("UPDATE oauth_attempts SET state='callback_staged',revision=revision+1,payload=? WHERE id=?",(_dump(payload),claim.attempt_id))
@@ -276,7 +339,7 @@ class OAuthAttemptStore(OAuthDatabase):
             if key=='authorization': clean[key]=validate_authorization(value) if value is not None else None
             elif key.endswith('_ref'):
                 clean[key]=_ref(value)
-                if clean[key]['kind']!=key.removesuffix('_ref'): raise StoreError('invalid_credential_ref')
+                if _logical(clean[key]).kind!=key.removesuffix('_ref'): raise StoreError('invalid_credential_ref')
             elif value in ('exchange_failed','inspect_failed','storage_failed','manual_review'): clean[key]=value
             else: raise StoreError('invalid')
         with self._db(True) as db:
