@@ -43,3 +43,14 @@
 실제 IAB43에서 개인 YouTube **로그인 준비 안 됨 / 비용 미확인 호출 차단 / 동의 시작 disabled**를 확인했다. 화면 `ax-console/design/previews/oauth-deployed-preparation.png`. 실제 동의 버튼 클릭·계정 권한 부여·모델/API/크레딧 소비·원격 게시0. 기존 관리자료2개는 백업 대비 DB logicaldump/schema/user_version/integrity 동일, 비DB SHA 동일이며 OAuth DB 생성0. 백업 before/after.json에 보존 근거를 저장했다.
 
 이 수락은 오프라인 준비 화면 적용까지만 포함한다. 실인증 준비·crash cleanup·실제 실행/성과/외부 접속/물리 이행 등 전체 목표는 완료되지 않았다.
+
+
+## 후속 자격 projection 경계 보완
+
+복구 계획의 실제 API 대조와 별개로, pending 갱신·해지 lease가 남은 자격이 실행용 catalog/projected registry에 들어가는 경계를 수정했다. durable connection row·lease·자격 ref는 보존하되 실행용 credential_refs와 catalog에서는 제외한다. connected이면서 명시 credential_status가 active가 아닌 경우도 제외한다. 기존 authorization=None 기록의 조회 호환은 유지하며 이것을 실제 실행 수락으로 승격하지 않는다.
+
+기존 연결은 credential/profile fallback 없이 unknown 진단으로, 새 managed 연결도 자격 없는 unknown 진단으로 남아 수동 확인·로컬 해제 경로를 유지한다. disconnected/revoked/reauth_required는 각 상태를 그대로 유지한다. 원본 registry·unmanaged 연결·DB는 변경하지 않는다.
+
+검증: 임시SQLite의 refresh/revoke lease2반례 RED 확인 후 GREEN, explicit unknown/pending/stored/reauth_required catalog4반례는 baseline module에서 RED 확인, 신규 진단 연결과 inactive metadata 회귀도 검증했다. 부모 managed/service **62개 OK**, HTTP/실제 service 통합 **23개 OK**, skip0. 독립 검토에서 inactive 상태를 unknown으로 덮던 중간 회귀를 찾아 수정했으며 해당 회귀 독립 시험1개 PASS. 같은 시험 수를 합산하지 않는다. 로그 `/private/tmp/oauth-credential-boundary.log`, `/private/tmp/oauth-boundary-http.log`.
+
+이 보완은 코드에 반영했으며 현재8769 PID69193은 기존 mainNone 오프라인 모드로 계속 실행 중이다. 서버 재기동·실 Keychain/계정/API/발행0. 이 변경을 실제 OAuth runtime 조립 또는 최신 세대·scope·permit 결속 resolver 완료로 해석하지 않는다. [runtime 경계 감사](2026-11-01-oauth-runtime-credential-boundary.md), [복구 실행 전 계획](../superpowers/plans/2026-11-01-oauth-crash-recovery.md), [다음 실제 연결 산출물](2026-11-01-sns-next-deliverables.md)을 따른다.

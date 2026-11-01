@@ -12,13 +12,14 @@ class ManagedTests(unittest.TestCase):
         self.base=Registry('base',{'personal':{},'dept':{}},{'legacy':{'account_id':'personal'}},{},{'conn':Connection('conn','personal','youtube',target_id='target',credential_ref='legacy')},{},{},{})
     def proposal(self):
         return dict(connection_id='conn',account_id='personal',platform='youtube',base_revision='base',target_id='target',target_label='Target',provider_subject='subject',credential_ref=CredentialRef('autosns.oauth','personal','youtube','conn',1,'token'),scopes=('read',),checked_at='2026-01-01T00:00:00+00:00')
-    def confirm(self,p,base,revision,provider="youtube"):
+    def confirm(self,p,base,revision,provider="youtube",store=None):
+        store = store or self.store
         from common.operations.oauth_store import OAuthAttemptStore
         from common.operations.oauth_models import AttemptContext
         from datetime import datetime,timezone,timedelta
         from uuid import uuid4
         import hashlib
-        now=datetime.now(timezone.utc); attempts=OAuthAttemptStore(self.tmp.name)
+        now=datetime.now(timezone.utc); attempts=OAuthAttemptStore(store.root)
         context=AttemptContext('user','binding','personal',provider,'conn',base,revision,('read',),'https://test/cb','client',1,'ev')
         digest=hashlib.sha256(uuid4().bytes).hexdigest()
         item=attempts.create_attempt(context,digest,(now+timedelta(minutes=10)).isoformat())
@@ -29,8 +30,8 @@ class ManagedTests(unittest.TestCase):
         staged=attempts.finalize_callback(claim,ref('code'),ref('ticket'),(now+timedelta(minutes=1)).isoformat())
         resumed=attempts.claim_resume(item['attempt_id'],'binding',staged['revision'])
         exchanged=attempts.update_attempt(item['attempt_id'],'binding',resumed['revision'],'token_exchanged',{'token_ref':ref('token')})
-        saved=self.store.create_target_proposal(item['attempt_id'],'binding',exchanged['revision'],p)
-        return self.store.confirm_target(saved,base,revision)
+        saved=store.create_target_proposal(item['attempt_id'],'binding',exchanged['revision'],p)
+        return store.confirm_target(saved,base,revision)
     def test_confirm_snapshot_projection_and_disconnect_preserves_base(self):
         self.confirm(self.proposal(),'base',0)
         snap=self.store.snapshot(); projected=project_registry(self.base,snap)
@@ -198,3 +199,84 @@ class ManagedTests(unittest.TestCase):
         self.assertEqual('unknown',failed['authorization']['read_status'])
         disconnected=self.store.disconnect_local('conn','base',failed['revision']).connections['conn']
         self.assertEqual('unknown',disconnected['authorization']['credential_status'])
+
+
+    def test_pending_lifecycle_credentials_never_reach_projected_resolver(self):
+        from dataclasses import replace
+        from pathlib import Path
+        from common.operations.models import freeze
+        for operation in ('refresh', 'revoke'):
+            with self.subTest(operation=operation):
+                # 각 operation은 독립 durable DB에서 완료 연결 이후 claim한다.
+                with TemporaryDirectory() as root:
+                    store = ManagedConnectionStore(root); store.initialize()
+                    self.confirm(self.proposal(), 'base', 0, store=store)
+                    lease = store.claim_connection_operation('conn', 'base', 1, operation)
+                    before = Path(root, 'oauth.sqlite3').read_bytes()
+                    snapshot = ManagedConnectionStore(root).snapshot()
+                    self.assertEqual('connected', snapshot.connections['conn']['state'])
+                    self.assertEqual(self.proposal()['credential_ref'], snapshot.connections['conn']['credential_ref'])
+                    self.assertEqual({}, dict(snapshot.credential_refs))
+                    self.assertEqual({}, credential_catalog(snapshot))
+                    base = replace(self.base, connections=dict(self.base.connections,
+                        conn=replace(self.base.connections['conn'], profile_ref='legacy-profile'),
+                        untouched=Connection('untouched', 'personal', 'youtube', credential_ref='legacy')))
+                    projected = project_registry(base, snapshot)
+                    row = projected.connections['conn']
+                    self.assertIsNone(row.credential_ref); self.assertIsNone(row.profile_ref)
+                    self.assertEqual('unknown', row.auth_status); self.assertFalse(row.enabled)
+                    self.assertEqual(base.connections['untouched'], projected.connections['untouched'])
+                    new_base = replace(base, connections={'untouched': base.connections['untouched']})
+                    diagnostic = project_registry(new_base, snapshot).connections.get('conn')
+                    self.assertIsNotNone(diagnostic)
+                    self.assertIsNone(diagnostic.credential_ref)
+                    self.assertEqual('unknown', diagnostic.auth_status)
+                    self.assertEqual('legacy', base.connections['conn'].credential_ref)
+                    # 조합된 snapshot도 lease 자격을 재허용하지 않는다.
+                    key = 'oauth:personal:youtube:conn:1'
+                    forged = replace(snapshot, credential_refs=freeze({key: self.proposal()['credential_ref']}))
+                    self.assertEqual({}, credential_catalog(forged))
+                    self.assertEqual(before, Path(root, 'oauth.sqlite3').read_bytes())
+                    # durable lease를 보존하고 원래 작업만 확정할 수 있다.
+                    if operation == 'refresh':
+                        store.finish_connection_operation(lease, new_ref=CredentialRef('autosns.oauth', 'personal', 'youtube', 'conn', 2, 'token'))
+                        self.assertEqual(1, len(credential_catalog(store.snapshot())))
+                    else:
+                        store.finish_connection_operation(lease, state='revoked')
+                        self.assertEqual({}, credential_catalog(store.snapshot()))
+
+
+
+    def test_explicit_nonactive_authorization_is_not_a_usable_credential(self):
+        from dataclasses import replace
+        from common.operations.models import freeze
+        self.confirm(self.proposal(), 'base', 0)
+        snapshot = self.store.snapshot()
+        for status in ('unknown', 'pending', 'stored', 'reauth_required'):
+            with self.subTest(status=status):
+                authorization = dict(observed_scopes=None, credential_expires_at=None,
+                    read_status='unknown', publication_status='blocked', credential_status=status)
+                row = dict(snapshot.connections['conn'], authorization=authorization)
+                guarded = replace(snapshot, connections=freeze({'conn': row}))
+                self.assertEqual({}, credential_catalog(guarded))
+                projected = project_registry(self.base, guarded)
+                self.assertIsNone(projected.connections['conn'].credential_ref)
+                self.assertEqual('unknown', projected.connections['conn'].auth_status)
+                self.assertEqual('legacy', self.base.connections['conn'].credential_ref)
+
+
+    def test_inactive_authorization_keeps_exact_lifecycle_status(self):
+        from dataclasses import replace
+        from common.operations.models import freeze
+        self.confirm(self.proposal(), 'base', 0)
+        snapshot = self.store.snapshot()
+        for status in ('unknown', 'reauth_required', 'disconnected', 'revoked'):
+            with self.subTest(status=status):
+                authorization = dict(observed_scopes=['read'], credential_expires_at=None,
+                    read_status='unknown', publication_status='blocked', credential_status='unknown')
+                row = dict(snapshot.connections['conn'], state=status, authorization=authorization)
+                inactive = replace(snapshot, connections=freeze({'conn': row}), credential_refs=freeze({}))
+                projected = project_registry(self.base, inactive).connections['conn']
+                self.assertEqual(status, projected.auth_status)
+                self.assertIsNone(projected.credential_ref)
+                self.assertFalse(projected.enabled)

@@ -27,12 +27,18 @@ def _check_provider_platform(provider_id,platform):
     if provider is None or provider.platform!=platform: raise StoreError('credential_owner_mismatch')
 
 
+def _credential_blocked(row):
+    authorization = row.get('authorization')
+    return bool(row.get('operation_lease')) or (authorization is not None and authorization['credential_status'] != 'active')
+
+
 def credential_catalog(snapshot):
     result={}
     for key,ref in snapshot.credential_refs.items():
         row=snapshot.connections.get(ref.connection_id)
         if row is None or row['state']!='connected' or row['account_id']!=ref.account_id or row['platform']!=ref.platform or ref.kind!='token' or ref.namespace!='autosns.oauth': raise StoreError('credential_owner_mismatch')
         _check_provider_platform(row.get('provider_id'),row['platform'])
+        if _credential_blocked(row): continue
         result[key]=dict(id=key,account_id=ref.account_id,platform=ref.platform,credential_ref=ref)
     return result
 
@@ -50,7 +56,7 @@ class ManagedConnectionStore(OAuthDatabase):
             row['authorization']=validate_authorization(row['authorization']) if row.get('authorization') is not None else None
             if row.get('credential_ref'):
                 row['credential_ref']=CredentialRef(**row['credential_ref'])
-                if row['state']=='connected': refs[_credential_key(row['credential_ref'])]=row['credential_ref']
+                if row['state']=='connected' and not _credential_blocked(row): refs[_credential_key(row['credential_ref'])]=row['credential_ref']
         return ManagedSnapshot(next(iter(bases),None),freeze(rows),MappingProxyType(refs),generation)
     def _commit_target(self,db,proposal,expected_base_revision,expected_connection_revision,provider_id):
         if type(expected_connection_revision) is not int or expected_connection_revision<0: raise StoreError('invalid')
@@ -219,8 +225,11 @@ def project_registry(base_registry,managed_snapshot):
         if row['account_id'] not in base_registry.accounts: raise StoreError('unknown_account')
         if old and (old.account_id!=row['account_id'] or old.platform!=row['platform']): raise StoreError('credential_owner_mismatch')
         if old and old.target_id is not None and old.target_id!=row['target_id']: raise ConflictError()
-        if row['state']!='connected':
-            if old: connections[identifier]=replace(old,enabled=False,auth_status=row['state'],credential_ref=None,profile_ref=None)
+        blocked = _credential_blocked(row)
+        if row['state']!='connected' or blocked:
+            if old: connections[identifier]=replace(old,enabled=False,auth_status='unknown' if row['state']=='connected' and blocked else row['state'],credential_ref=None,profile_ref=None)
+            elif row['state']=='connected' and blocked:
+                connections[identifier]=Connection(id=identifier,account_id=row['account_id'],platform=row['platform'],target_id=row['target_id'],target_label=row.get('target_label',''),credential_ref=None,enabled=False,auth_checked_at=row['checked_at'],expected_login_subject=row['provider_subject'],auth_status='unknown')
             continue
         ref=row['credential_ref']; key=_credential_key(ref)
         credentials[key]=catalog[key]

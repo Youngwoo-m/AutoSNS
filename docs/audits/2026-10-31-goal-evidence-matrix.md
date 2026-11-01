@@ -43,4 +43,4 @@
 
 ## 2026-11-01 OAuth 통합 갱신
 
-개인·학과별 OAuth 준비/결과/대상 확인/수명주기 코드는 격리 HTTP·SQLite·MemoryVault와 실제 JS 제어기로 검증했다. 기본 main은 서비스 미주입이며 실제 동의·OS 자격·발행은 비활성이다. [OAuth 수락 기록](2026-11-01-oauth-connections-acceptance.md)에서 코드 시험·화면 적용·실인증·발행 준비를 구별한다. 실인증 전 명시 orphan crash recovery와 실 Keychain/앱 등록/HTTPS/cost0 수락이 필수이며, 실행 어댑터 연결 전 lease/unknown credential의 resolver 차단도 필요하다. 전체 목표와6B~D는 계속 미완료다.
+개인·학과별 OAuth 준비/결과/대상 확인/수명주기 코드는 격리 HTTP·SQLite·MemoryVault와 실제 JS 제어기로 검증했다. 기본 main은 서비스 미주입이며 실제 동의·OS 자격·발행은 비활성이다. [OAuth 수락 기록](2026-11-01-oauth-connections-acceptance.md)에서 코드 시험·화면 적용·실인증·발행 준비를 구별한다. 실인증 전 명시 orphan crash recovery와 실 Keychain/앱 등록/HTTPS/cost0 수락이 필수이며, lease/명시 비활성 자격의 projection 차단은 후속 코드·62개 서비스/23개 HTTP 시험으로 보완했다. 실제 실행 어댑터 연결에는 최신 세대·scope·기한·permit에 결속한 resolver가 여전히 필요하다. 전체 목표와6B~D는 계속 미완료다.

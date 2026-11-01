@@ -31,4 +31,4 @@
 
 강제 종료 후 비활성 orphan을 정리하는 명시 recovery는 아직 구현되지 않았다. 실제 인증을 활성화하기 전에 stage journal, workspace/stage 소유 증명, 공통 배타 잠금, 활성·결과불명 참조 보존, 명시 정리와 crash 회귀 검증을 완료해야 한다. 표식 없는 기존 자격은 자동 삭제하지 않는다. 이 항목이 남은 상태에서는 실제 OAuth/Keychain 서비스를 운영 main에 주입하지 않는다.
 
-실행 어댑터로 관리 자격 projection을 연결하기 전 operation_lease/unknown 자격을 resolver에서 차단하는 검증도 필수다. 현재 관리 Connection.enabled는 false이며 실제 실행기로 자동 전달하지 않는다.
+관리 자격 projection은 operation_lease/명시 비활성 자격을 실행용 catalog에서 제외하도록 보완했다. 실행 어댑터를 연결할 때는 별도로 최신 snapshot/세대·scope·기한·permit 결속 resolver 검증이 필수다. 현재 관리 Connection.enabled는 false이며 실제 실행기로 자동 전달하지 않는다.
