@@ -151,3 +151,22 @@ class AttemptTests(unittest.TestCase):
         receipt=self.store.claim_request('binding','continue:'+item['attempt_id'],'meta-request','b'*64)
         result={'attempt_id':item['attempt_id'],'authorization':authorization}
         self.assertEqual(result,self.store.finish_request(receipt['id'],receipt['revision'],result)['result'])
+
+    def test_reservation_respects_inactive_legacy_high_water_after_initialize(self):
+        from common.operations.oauth_store import _dump
+        import sqlite3
+        from contextlib import closing
+        for state in ('disconnected','revoked'):
+            with self.subTest(state=state), TemporaryDirectory() as root:
+                store=OAuthAttemptStore(root); store.initialize()
+                with closing(sqlite3.connect(store.path)) as db, db:
+                    db.execute('DROP TABLE oauth_generations')
+                    db.execute('INSERT INTO oauth_connections VALUES(?,?)',('conn',_dump(dict(connection_id='conn',account_id='personal',platform='youtube',credential_generation=7,credential_ref=None,state=state))))
+                reopened=OAuthAttemptStore(root); reopened.initialize()
+                self.assertEqual(8,reopened.reserve_generation('autosns.oauth','personal','youtube','conn'))
+                self.assertEqual(9,OAuthAttemptStore(root).reserve_generation('autosns.oauth','personal','youtube','conn'))
+                with ThreadPoolExecutor(4) as pool:
+                    reserved=list(pool.map(lambda _:OAuthAttemptStore(root).reserve_generation('autosns.oauth','personal','youtube','conn'),range(4)))
+                self.assertEqual([10,11,12,13],sorted(reserved))
+                self.assertEqual(1,reopened.reserve_generation('autosns.oauth','dept','youtube','conn'))
+                self.assertEqual(1,reopened.reserve_generation('autosns.oauth','personal','instagram','conn'))

@@ -130,6 +130,11 @@ class OAuthDatabase:
             for table in ('oauth_attempts','oauth_connections'):
                 for stored in db.execute('SELECT payload FROM '+table):
                     payload=json.loads(stored[0])
+                    if (table=='oauth_connections'
+                            and tuple(payload.get(k) for k in ('account_id','platform','connection_id'))==key[1:]):
+                        high_water=payload.get('credential_generation')
+                        if type(high_water) is int and high_water>0:
+                            maximum=max(maximum,high_water)
                     for ref in payload.values():
                         if isinstance(ref,dict) and tuple(ref.get(k) for k in ('namespace','account_id','platform','connection_id'))==key:
                             maximum=max(maximum,ref['generation'])
