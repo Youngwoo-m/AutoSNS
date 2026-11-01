@@ -83,3 +83,27 @@ class ManagedTests(unittest.TestCase):
         self.assertEqual('target',saved['target_id'])
         reopened.confirm_target_proposal(proposal['proposal_id'],'binding','base',0)
         with self.assertRaises(StoreError): reopened.confirm_target_proposal(proposal['proposal_id'],'binding','base',0)
+
+    def test_wrong_platform_proposal_and_persisted_confirmation_are_rejected(self):
+        from common.operations.oauth_store import OAuthAttemptStore, _dump, _ref
+        from common.operations.oauth_models import AttemptContext
+        from datetime import datetime,timezone,timedelta
+        now=datetime.now(timezone.utc); attempts=OAuthAttemptStore(self.tmp.name)
+        context=AttemptContext('user','binding','personal','youtube','conn','base',0,('read',),'https://test/cb','client',1,'ev')
+        item=attempts.create_attempt(context,'f'*64,(now+timedelta(minutes=10)).isoformat())
+        claim=attempts.claim_callback('f'*64,'youtube')
+        ref=lambda k:CredentialRef('autosns.oauth','personal','youtube','conn',1,k)
+        staged=attempts.finalize_callback(claim,ref('code'),ref('ticket'),(now+timedelta(minutes=1)).isoformat())
+        resumed=attempts.claim_resume(item['attempt_id'],'binding',staged['revision'])
+        exchanged=attempts.update_attempt(item['attempt_id'],'binding',resumed['revision'],'token_exchanged',{'token_ref':ref('token')})
+        wrong=self.proposal(); wrong['platform']='facebook'
+        with self.assertRaises(StoreError): self.store.create_target_proposal(item['attempt_id'],'binding',exchanged['revision'],wrong)
+        self.assertEqual(exchanged,attempts.read_owned(item['attempt_id'],'binding'))
+        saved=self.store.create_target_proposal(item['attempt_id'],'binding',exchanged['revision'],self.proposal())
+        # A persisted pre-fix proposal must also be checked at final commit.
+        wrong['credential_ref']=_ref(CredentialRef('autosns.oauth','personal','facebook','conn',1,'token'))
+        with self.store._db(True) as db: db.execute('UPDATE oauth_proposals SET payload=? WHERE id=?',(_dump(wrong),saved['proposal_id']))
+        with self.assertRaises(StoreError): self.store.confirm_target(saved,'base',0)
+        self.assertEqual(0,self.store.snapshot().generation)
+        self.assertFalse(self.store.read_target_proposal(saved['proposal_id'],'binding')['consumed'])
+        self.assertEqual('target_confirmation',attempts.read_owned(item['attempt_id'],'binding')['state'])

@@ -4,7 +4,7 @@ from types import MappingProxyType
 import json
 from uuid import uuid4
 from .oauth_store import OAuthAttemptStore, _time
-from .oauth_store import OAuthDatabase, _ref, _dump
+from .oauth_store import OAuthDatabase, _ref, _dump, _provider_platform, _validate_context_ref
 from .oauth_models import CredentialRef
 from .models import Connection, Registry, freeze, thaw
 from .content_store import StoreError, ConflictError
@@ -74,7 +74,9 @@ class ManagedConnectionStore(OAuthDatabase):
             if _time(item['expires_at'])<=_time(self.clock()): raise StoreError('expired')
             context=item['context']; p=dict(proposal)
             if any(p.get(key)!=getattr(context,key) for key in ('account_id','connection_id','base_revision')): raise StoreError('credential_owner_mismatch')
+            if p.get('platform')!=_provider_platform(context): raise StoreError('credential_owner_mismatch')
             if p.get('credential_ref')!=item.get('token_ref'): raise StoreError('credential_owner_mismatch')
+            _validate_context_ref(context,_ref(p['credential_ref']))
             # Validate the proposed shape without changing the active pointer.
             db.execute('SAVEPOINT proposal_validation')
             try: self._commit_target(db,p,context.base_revision,context.connection_revision)
@@ -101,6 +103,12 @@ class ManagedConnectionStore(OAuthDatabase):
             if attempt['state']!='target_confirmation': raise ConflictError()
             if _time(attempt['expires_at'])<=_time(self.clock()): raise StoreError('expired')
             p=json.loads(row['payload']); p['credential_ref']=CredentialRef(**p['credential_ref'])
+            item=OAuthAttemptStore(self.root,self.clock)._decode(attempt)
+            context=item['context']
+            if (any(p.get(key)!=getattr(context,key) for key in ('account_id','connection_id','base_revision'))
+                    or p.get('platform')!=_provider_platform(context)
+                    or p['credential_ref']!=item.get('token_ref')): raise StoreError('credential_owner_mismatch')
+            _validate_context_ref(context,_ref(p['credential_ref']))
             self._commit_target(db,p,expected_base_revision,expected_connection_revision)
             db.execute('UPDATE oauth_proposals SET consumed=1 WHERE id=?',(proposal_id,))
             db.execute("UPDATE oauth_attempts SET state='connected',revision=revision+1 WHERE id=?",(row['attempt_id'],))

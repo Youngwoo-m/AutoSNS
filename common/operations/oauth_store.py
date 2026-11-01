@@ -9,6 +9,7 @@ import sqlite3
 from uuid import uuid4
 from .content_store import StoreError, ConflictError
 from .oauth_models import AttemptContext, CallbackClaim, CredentialRef
+from .oauth_catalog import provider_catalog
 
 
 def _time(value):
@@ -22,6 +23,20 @@ def _time(value):
 def _ref(value):
     if not isinstance(value,CredentialRef): raise StoreError('invalid_credential_ref')
     return {key:getattr(value,key) for key in ('namespace','account_id','platform','connection_id','generation','kind')}
+
+
+def _provider_platform(context):
+    for provider in provider_catalog():
+        if provider.id == context.provider_id:
+            return provider.platform
+    raise StoreError('unknown_provider')
+
+
+def _validate_context_ref(context, ref):
+    if (ref['account_id'] != context.account_id
+            or ref['connection_id'] != context.connection_id
+            or ref['platform'] != _provider_platform(context)):
+        raise StoreError('credential_owner_mismatch')
 
 
 def _dump(value): return json.dumps(value,separators=(',',':'),sort_keys=True,allow_nan=False)
@@ -71,6 +86,7 @@ class OAuthAttemptStore(OAuthDatabase):
         return item
     def create_attempt(self,context,state_hash,expires_at):
         if not isinstance(context,AttemptContext) or context.account_id not in ('personal','dept'): raise StoreError('invalid')
+        _provider_platform(context)
         if not isinstance(state_hash,str) or not re.fullmatch('[0-9a-f]{64}',state_hash): raise StoreError('invalid_state_hash')
         now=_time(self.clock()); expiry=_time(expires_at)
         if not 0<(expiry-now).total_seconds()<=600: raise StoreError('invalid_expiry')
@@ -98,7 +114,8 @@ class OAuthAttemptStore(OAuthDatabase):
             refs={'code_ref':_ref(code_ref),'ticket_ref':_ref(ticket_ref),'ticket_expires_at':expiry.isoformat()}
             for name,kind in (('code_ref','code'),('ticket_ref','ticket')):
                 ref=refs[name]; context=claim.context
-                if ref['kind']!=kind or ref['account_id']!=context.account_id or ref['connection_id']!=context.connection_id: raise StoreError('credential_owner_mismatch')
+                if ref['kind']!=kind: raise StoreError('credential_owner_mismatch')
+                _validate_context_ref(context,ref)
             db.execute("UPDATE oauth_attempts SET state='callback_staged',revision=revision+1,payload=? WHERE id=?",(_dump(refs),claim.attempt_id))
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(claim.attempt_id,)).fetchone())
     def fail_callback(self,claim,reason):
@@ -142,7 +159,7 @@ class OAuthAttemptStore(OAuthDatabase):
             if item['revision']!=expected_revision or state not in transitions.get(item['state'],set()): raise ConflictError()
             old=json.loads(row['payload'])
             for key,value in clean.items():
-                if key.endswith('_ref') and (value['account_id']!=item['context'].account_id or value['connection_id']!=item['context'].connection_id): raise StoreError('credential_owner_mismatch')
+                if key.endswith('_ref'): _validate_context_ref(item['context'],value)
             old.update(clean)
             db.execute('UPDATE oauth_attempts SET state=?,revision=revision+1,payload=? WHERE id=?',(state,_dump(old),attempt_id))
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(attempt_id,)).fetchone())
