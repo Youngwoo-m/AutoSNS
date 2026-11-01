@@ -3,15 +3,21 @@
 No constructor or ordinary load creates a marker. Writer/recovery locking is
 implemented separately from this owner and key boundary.
 """
-from dataclasses import dataclass
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+import errno
+import fcntl
 import hashlib
 import hmac
 import json
+import math
 import os
 from pathlib import Path
 import re
 import secrets
 import stat
+import threading
+import time
 from typing import Protocol
 import uuid
 
@@ -48,6 +54,7 @@ class OAuthWorkspaceContext:
     root: Path
     owner: WorkspaceOwner
     key_provider: WorkspaceKeyProvider
+    _created_pid: int = field(default_factory=os.getpid, init=False, compare=False)
 
     def __repr__(self):
         return 'OAuthWorkspaceContext(<private>)'
@@ -175,3 +182,181 @@ def validate_workspace_context(context: OAuthWorkspaceContext) -> OAuthWorkspace
     if not valid:
         raise WorkspaceError('oauth_workspace_owner_mismatch')
     return current
+
+
+# Every writer in a canonical root shares both levels of exclusion. Registry
+# entries intentionally survive individual context/service lifetimes.
+_GUARD_LOCK_NAME = '.oauth-workspace.lock'
+_guard_registry_lock = threading.Lock()
+_guard_locks = {}
+_guard_tokens = {}
+_guard_local = threading.local()
+_guard_fds = set()
+_guard_fd_lock = threading.Lock()
+
+
+@dataclass(repr=False)
+class _HeldWriteGuard:
+    context: OAuthWorkspaceContext
+    pid: int
+    thread_id: int
+    token: object
+
+
+def _prepare_guards_for_fork():
+    # Only the fd-lifetime lock is acquired here: never wait for a workspace
+    # RLock or the registry while forking. Writers hold it only across open +
+    # registration or unregister + close, never while waiting for flock.
+    _guard_fd_lock.acquire()
+
+
+def _resume_guards_after_fork():
+    _guard_fd_lock.release()
+
+
+def _reset_guards_after_fork():
+    global _guard_registry_lock, _guard_locks, _guard_tokens, _guard_local, _guard_fds, _guard_fd_lock
+    # A fork inherits open-file descriptions, so never LOCK_UN here: that would
+    # unlock the parent's flock. Closing only the child's fd leaves it intact.
+    for fd in _guard_fds:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+    _guard_registry_lock = threading.Lock()
+    _guard_locks = {}
+    _guard_tokens = {}
+    _guard_local = threading.local()
+    _guard_fds = set()
+    _guard_fd_lock = threading.Lock()
+
+
+os.register_at_fork(before=_prepare_guards_for_fork,
+                    after_in_parent=_resume_guards_after_fork,
+                    after_in_child=_reset_guards_after_fork)
+
+
+def _held_write_guard():
+    held = getattr(_guard_local, 'held', None)
+    if (held is None or held.pid != os.getpid()
+            or held.thread_id != threading.get_ident()
+            or _guard_tokens.get(held.token) is not held):
+        return None
+    return held
+
+
+def _validate_guard_context(context):
+    if (type(context) is not OAuthWorkspaceContext
+            or context._created_pid != os.getpid()):
+        raise WorkspaceError('oauth_workspace_invalid_context')
+    return validate_workspace_context(context)
+
+
+def require_oauth_write_guard(root, owner) -> OAuthWorkspaceContext:
+    """Return this thread's live guard, revalidating ownership before a write.
+
+    This read-only check never creates the lock or marker. The guard must wrap
+    the complete writer operation, with database transactions kept inside it.
+    """
+    held = _held_write_guard()
+    if held is None:
+        raise WorkspaceError('oauth_guard_required')
+    try:
+        canonical = Path(root).resolve(strict=True)
+    except (OSError, ValueError, TypeError, RuntimeError):
+        raise WorkspaceError('oauth_guard_required') from None
+    if canonical != held.context.root or owner != held.context.owner:
+        raise WorkspaceError('oauth_guard_required')
+    _validate_guard_context(held.context)
+    return held.context
+
+
+def _open_guard_file(root_fd):
+    try:
+        fd = os.open(_GUARD_LOCK_NAME, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK,
+                     0o600, dir_fd=root_fd)
+    except OSError:
+        raise WorkspaceError('oauth_workspace_lock_unavailable') from None
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600:
+            raise WorkspaceError('oauth_workspace_invalid_permissions')
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+@contextmanager
+def oauth_write_guard(context: OAuthWorkspaceContext, timeout: float = 10):
+    """Serialize explicit writers by root with one monotonic timeout budget.
+
+    Equivalent contexts may reenter on the owning thread without opening a
+    second flock descriptor. Forked children must explicitly reload context.
+    """
+    if type(timeout) not in (int, float):
+        raise WorkspaceError('oauth_workspace_invalid_timeout')
+    try:
+        timeout = float(timeout)
+    except (OverflowError, ValueError):
+        raise WorkspaceError('oauth_workspace_invalid_timeout') from None
+    if not math.isfinite(timeout) or timeout < 0:
+        raise WorkspaceError('oauth_workspace_invalid_timeout')
+    deadline = time.monotonic() + timeout
+    current = _validate_guard_context(context)
+    held = _held_write_guard()
+    if held is not None:
+        prior = _validate_guard_context(held.context)
+        if (prior.root != current.root or prior.owner != current.owner
+                or not hmac.compare_digest(prior.key_provider.get_key(),
+                                           current.key_provider.get_key())):
+            raise WorkspaceError('oauth_workspace_invalid_context')
+        yield context
+        return
+
+    with _guard_registry_lock:
+        local_lock = _guard_locks.setdefault(current.root, threading.RLock())
+    remaining = max(0.0, deadline - time.monotonic())
+    if not local_lock.acquire(timeout=min(remaining, threading.TIMEOUT_MAX)):
+        raise WorkspaceError('oauth_workspace_busy')
+    fd = None
+    token = None
+    pid = os.getpid()
+    try:
+        _validate_guard_context(context)
+        _, root_fd = _root_fd(current.root)
+        try:
+            with _guard_fd_lock:
+                fd = _open_guard_file(root_fd)
+                _guard_fds.add(fd)
+        finally:
+            os.close(root_fd)
+        while True:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except OSError as error:
+                if error.errno not in (errno.EAGAIN, errno.EACCES, errno.EINTR):
+                    raise WorkspaceError('oauth_workspace_lock_unavailable') from None
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise WorkspaceError('oauth_workspace_busy') from None
+                threading.Event().wait(min(remaining, 0.05))
+        _validate_guard_context(context)
+        token = object()
+        held = _HeldWriteGuard(context, pid, threading.get_ident(), token)
+        _guard_tokens[token] = held
+        _guard_local.held = held
+        yield context
+    finally:
+        # A child's inherited generator must not release the parent's lock or
+        # a recycled descriptor. Its at-fork callback already closed child fds.
+        if os.getpid() == pid:
+            if token is not None:
+                _guard_tokens.pop(token, None)
+                _guard_local.held = None
+            if fd is not None:
+                with _guard_fd_lock:
+                    _guard_fds.discard(fd)
+                    os.close(fd)
+            local_lock.release()
