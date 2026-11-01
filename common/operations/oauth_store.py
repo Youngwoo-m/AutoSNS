@@ -57,9 +57,84 @@ class OAuthDatabase:
                 revision INTEGER NOT NULL,expires_at TEXT NOT NULL,payload TEXT NOT NULL);
                 CREATE TABLE IF NOT EXISTS oauth_proposals(id TEXT PRIMARY KEY,attempt_id TEXT NOT NULL,session_binding TEXT NOT NULL,payload TEXT NOT NULL,consumed INTEGER NOT NULL DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS oauth_connections(id TEXT PRIMARY KEY,payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS oauth_request_receipts(id TEXT PRIMARY KEY,session_binding TEXT NOT NULL,operation TEXT NOT NULL,request_key TEXT NOT NULL,request_hash TEXT NOT NULL,revision INTEGER NOT NULL,status TEXT NOT NULL,result TEXT,attempt_id TEXT,UNIQUE(session_binding,operation,request_key));
+                CREATE TABLE IF NOT EXISTS oauth_generations(namespace TEXT NOT NULL,account_id TEXT NOT NULL,platform TEXT NOT NULL,connection_id TEXT NOT NULL,generation INTEGER NOT NULL,PRIMARY KEY(namespace,account_id,platform,connection_id));
                 CREATE TABLE IF NOT EXISTS oauth_meta(id INTEGER PRIMARY KEY CHECK(id=1),generation INTEGER NOT NULL);
                 INSERT OR IGNORE INTO oauth_meta VALUES(1,0);
                 PRAGMA user_version=1;''')
+    def _receipt(self,row,*,claimed=False):
+        return dict(id=row['id'],revision=row['revision'],status=('claimed' if claimed else 'in_progress') if row['status']=='pending' else row['status'],result=json.loads(row['result']) if row['result'] else None)
+
+    def claim_request(self,session_binding,operation,request_key,request_hash):
+        if (not isinstance(session_binding,str) or not session_binding
+                or not isinstance(operation,str) or not re.fullmatch(r'(?:start|continue|inspect|confirm|refresh|disconnect|revoke)(?::[A-Za-z0-9_.:-]{1,200})?',operation)
+                or not isinstance(request_key,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,160}',request_key)
+                or not isinstance(request_hash,str) or not re.fullmatch(r'[0-9a-f]{64}',request_hash)): raise StoreError('invalid')
+        with self._db(True) as db:
+            row=db.execute('SELECT * FROM oauth_request_receipts WHERE session_binding=? AND operation=? AND request_key=?',(session_binding,operation,request_key)).fetchone()
+            if row:
+                if row['request_hash']!=request_hash: raise ConflictError()
+                return self._receipt(row)
+            identifier=uuid4().hex
+            db.execute('INSERT INTO oauth_request_receipts VALUES(?,?,?,?,?,1,?,NULL,NULL)',(identifier,session_binding,operation,request_key,request_hash,'pending'))
+            return self._receipt(db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone(),claimed=True)
+
+    def finish_request(self,identifier,expected_revision,safe_result):
+        allowed={'attempt_id','revision','state','proposal_id','connection_id','base_revision','connection_revision','generation','account_id','provider_id','platform','expires_at','execution_enabled','reason_codes','provider_subject','target_proposal'}
+        states={'registration_blocked','consent_pending','callback_staged','resume_pending','token_exchanged','principal_pending','target_confirmation','connected','denied','expired','error','revoked','disconnected','unknown','reauth_required'}
+        if not isinstance(safe_result,dict) or set(safe_result)-allowed: raise StoreError('invalid_receipt_result')
+        for key,value in safe_result.items():
+            if key in ('revision','connection_revision','generation'):
+                if type(value) is not int or value<0: raise StoreError('invalid_receipt_result')
+            elif key=='execution_enabled':
+                if value is not False: raise StoreError('invalid_receipt_result')
+            elif key=='account_id':
+                if value not in ('personal','dept'): raise StoreError('invalid_receipt_result')
+            elif key=='provider_id':
+                if not isinstance(value,str) or value not in {p.id for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
+            elif key=='platform':
+                if not isinstance(value,str) or value not in {p.platform for p in provider_catalog()}: raise StoreError('invalid_receipt_result')
+            elif key=='expires_at':
+                _time(value)
+                if not isinstance(value,str): raise StoreError('invalid_receipt_result')
+            elif key=='reason_codes':
+                if not isinstance(value,list) or len(value)>32 or any(v not in ('stage_failed','denied','expired','storage_failed','callback_failed','exchange_failed','inspect_failed','manual_review') for v in value): raise StoreError('invalid_receipt_result')
+            elif key=='target_proposal':
+                fields={'proposal_id','target_id','target_label','expected_base_revision','expected_connection_revision'}
+                if not isinstance(value,dict) or set(value)!=fields: raise StoreError('invalid_receipt_result')
+                if type(value['expected_connection_revision']) is not int or value['expected_connection_revision']<0: raise StoreError('invalid_receipt_result')
+                for field in fields-{'expected_connection_revision'}:
+                    text=value[field]
+                    if not isinstance(text,str) or len(text)>500 or any(ord(c)<32 for c in text) or (field!='target_label' and not text): raise StoreError('invalid_receipt_result')
+            elif key=='state':
+                if not isinstance(value,str) or value not in states: raise StoreError('invalid_receipt_result')
+            elif not isinstance(value,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}',value): raise StoreError('invalid_receipt_result')
+        with self._db(True) as db:
+            row=db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone()
+            if row is None: raise StoreError('not_found')
+            if type(expected_revision) is not int or row['revision']!=expected_revision or row['status']!='pending': raise ConflictError()
+            db.execute("UPDATE oauth_request_receipts SET status='completed',revision=revision+1,result=? WHERE id=?",(_dump(safe_result),identifier))
+            return self._receipt(db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone())
+
+    def reserve_generation(self,namespace,account_id,platform,connection_id):
+        try: CredentialRef(namespace,account_id,platform,connection_id,1,'token')
+        except (TypeError,ValueError): raise StoreError('invalid_credential_ref') from None
+        if platform not in {p.platform for p in provider_catalog()}: raise StoreError('unknown_provider')
+        key=(namespace,account_id,platform,connection_id)
+        with self._db(True) as db:
+            row=db.execute('SELECT generation FROM oauth_generations WHERE namespace=? AND account_id=? AND platform=? AND connection_id=?',key).fetchone()
+            maximum=row[0] if row else 0
+            # Include references written before the reservation API existed.
+            for table in ('oauth_attempts','oauth_connections'):
+                for stored in db.execute('SELECT payload FROM '+table):
+                    payload=json.loads(stored[0])
+                    for ref in payload.values():
+                        if isinstance(ref,dict) and tuple(ref.get(k) for k in ('namespace','account_id','platform','connection_id'))==key:
+                            maximum=max(maximum,ref['generation'])
+            generation=maximum+1
+            db.execute('INSERT OR REPLACE INTO oauth_generations VALUES(?,?,?,?,?)',(*key,generation))
+            return generation
+
     @contextmanager
     def _db(self,write=False):
         if not self.path.is_file(): raise StoreError('not_initialized')
@@ -81,7 +156,7 @@ class OAuthAttemptStore(OAuthDatabase):
         item=dict(row); item['attempt_id']=item.pop('id'); item.pop('state_hash')
         item['context']=AttemptContext(**json.loads(item['context']))
         item.update(json.loads(item.pop('payload')))
-        for field in ('code_ref','ticket_ref','verifier_ref','token_ref'):
+        for field in ('code_ref','ticket_ref','verifier_ref','token_ref','state_key_ref'):
             if item.get(field): item[field]=CredentialRef(**item[field])
         return item
     def create_attempt(self,context,state_hash,expires_at):
@@ -94,6 +169,39 @@ class OAuthAttemptStore(OAuthDatabase):
         with self._db(True) as db:
             db.execute('INSERT INTO oauth_attempts VALUES(?,?,?,?,?,?,?,?,?)',(identifier,state_hash,context.provider_id,context.session_binding,_dump(asdict(context)),'consent_pending',1,expiry.isoformat(),'{}'))
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(identifier,)).fetchone())
+    def bind_state_key(self,attempt_id,session_binding,expected_revision,state_key_ref,request_receipt_id):
+        ref=_ref(state_key_ref)
+        if ref['kind']!='state_key': raise StoreError('invalid_credential_ref')
+        with self._db(True) as db:
+            row=db.execute('SELECT * FROM oauth_attempts WHERE id=? AND session_binding=?',(attempt_id,session_binding)).fetchone()
+            item=self._decode(row)
+            if type(expected_revision) is not int or item['revision']!=expected_revision or item['state']!='consent_pending': raise ConflictError()
+            if _time(item['expires_at'])<=_time(self.clock()): raise StoreError('expired')
+            _validate_context_ref(item['context'],ref)
+            receipt=db.execute('SELECT * FROM oauth_request_receipts WHERE id=? AND session_binding=?',(request_receipt_id,session_binding)).fetchone()
+            if receipt is None or receipt['operation']!='start' or receipt['status']!='pending' or receipt['attempt_id'] is not None: raise ConflictError()
+            payload=json.loads(row['payload'])
+            if payload.get('state_key_ref'): raise ConflictError()
+            payload.update(state_key_ref=ref,request_receipt_id=request_receipt_id)
+            db.execute('UPDATE oauth_request_receipts SET attempt_id=? WHERE id=?',(attempt_id,request_receipt_id))
+            db.execute('UPDATE oauth_attempts SET payload=?,revision=revision+1 WHERE id=?',(_dump(payload),attempt_id))
+            return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(attempt_id,)).fetchone())
+
+    def bind_verifier(self,attempt_id,session_binding,expected_revision,verifier_ref):
+        ref=_ref(verifier_ref)
+        if ref['kind']!='verifier': raise StoreError('invalid_credential_ref')
+        with self._db(True) as db:
+            row=db.execute('SELECT * FROM oauth_attempts WHERE id=? AND session_binding=?',(attempt_id,session_binding)).fetchone()
+            item=self._decode(row)
+            if type(expected_revision) is not int or item['revision']!=expected_revision or item['state']!='consent_pending': raise ConflictError()
+            if _time(item['expires_at'])<=_time(self.clock()): raise StoreError('expired')
+            _validate_context_ref(item['context'],ref)
+            payload=json.loads(row['payload'])
+            if payload.get('verifier_ref'): raise ConflictError()
+            payload['verifier_ref']=ref
+            db.execute('UPDATE oauth_attempts SET payload=?,revision=revision+1 WHERE id=?',(_dump(payload),attempt_id))
+            return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(attempt_id,)).fetchone())
+
     def claim_callback(self,state_hash,provider):
         with self._db(True) as db:
             row=db.execute('SELECT * FROM oauth_attempts WHERE state_hash=? AND provider=?',(state_hash,provider)).fetchone()
@@ -116,7 +224,8 @@ class OAuthAttemptStore(OAuthDatabase):
                 ref=refs[name]; context=claim.context
                 if ref['kind']!=kind: raise StoreError('credential_owner_mismatch')
                 _validate_context_ref(context,ref)
-            db.execute("UPDATE oauth_attempts SET state='callback_staged',revision=revision+1,payload=? WHERE id=?",(_dump(refs),claim.attempt_id))
+            payload=json.loads(row['payload']); payload.update(refs)
+            db.execute("UPDATE oauth_attempts SET state='callback_staged',revision=revision+1,payload=? WHERE id=?",(_dump(payload),claim.attempt_id))
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(claim.attempt_id,)).fetchone())
     def fail_callback(self,claim,reason):
         with self._db(True) as db:

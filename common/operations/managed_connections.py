@@ -56,7 +56,7 @@ class ManagedConnectionStore(OAuthDatabase):
         if not isinstance(p['scopes'],(list,tuple)) or not all(isinstance(x,str) for x in p['scopes']): raise StoreError('invalid_proposal')
         existing=db.execute('SELECT payload FROM oauth_connections WHERE id=?',(p['connection_id'],)).fetchone()
         old=json.loads(existing[0]) if existing else None
-        if (old['revision'] if old else 0)!=expected_connection_revision: raise ConflictError()
+        if (old['revision'] if old else 0)!=expected_connection_revision or (old and old.get('operation_lease')): raise ConflictError()
         if old and (old['base_revision']!=expected_base_revision or any(old[x]!=p[x] for x in ('account_id','platform','target_id'))): raise ConflictError()
         bases={json.loads(row[0])['base_revision'] for row in db.execute('SELECT payload FROM oauth_connections')}
         if bases and bases!={expected_base_revision}: raise ConflictError()
@@ -113,6 +113,60 @@ class ManagedConnectionStore(OAuthDatabase):
             db.execute('UPDATE oauth_proposals SET consumed=1 WHERE id=?',(proposal_id,))
             db.execute("UPDATE oauth_attempts SET state='connected',revision=revision+1 WHERE id=?",(row['attempt_id'],))
         return self.snapshot()
+    def proposal_for_attempt(self,attempt_id,session_binding):
+        with self._db() as db:
+            row=db.execute('SELECT id FROM oauth_proposals WHERE attempt_id=? AND session_binding=? AND consumed=0',(attempt_id,session_binding)).fetchone()
+        return self.read_target_proposal(row['id'],session_binding) if row else None
+
+    def claim_connection_operation(self,connection_id,expected_base_revision,expected_connection_revision,operation):
+        if operation not in ('refresh','revoke'): raise StoreError('invalid')
+        with self._db(True) as db:
+            row=db.execute('SELECT payload FROM oauth_connections WHERE id=?',(connection_id,)).fetchone()
+            if row is None: raise StoreError('not_found')
+            p=json.loads(row[0])
+            if (type(expected_connection_revision) is not int or p['revision']!=expected_connection_revision
+                    or p['base_revision']!=expected_base_revision or p.get('operation_lease')): raise ConflictError()
+            if p['state'] not in ('connected','reauth_required','unknown') or not p.get('credential_ref'): raise ConflictError()
+            ref=CredentialRef(**p['credential_ref'])
+            if any(getattr(ref,k)!=p[k] for k in ('account_id','platform','connection_id')) or ref.kind!='token': raise StoreError('credential_owner_mismatch')
+            lease=dict(lease_id=uuid4().hex,operation=operation,connection_id=connection_id,base_revision=p['base_revision'],connection_revision=p['revision']+1,credential_ref=p['credential_ref'],credential_generation=p['credential_generation'],account_id=p['account_id'],platform=p['platform'])
+            p.update(revision=p['revision']+1,operation_lease=lease)
+            db.execute('UPDATE oauth_connections SET payload=? WHERE id=?',(_dump(p),connection_id))
+            db.execute('UPDATE oauth_meta SET generation=generation+1 WHERE id=1')
+        return freeze(dict(lease,credential_ref=ref))
+
+    def _finish_operation(self,lease,new_ref,state):
+        if not hasattr(lease,'get'): raise StoreError('invalid')
+        supplied=dict(lease); supplied['credential_ref']=_ref(supplied.get('credential_ref'))
+        with self._db(True) as db:
+            row=db.execute('SELECT payload FROM oauth_connections WHERE id=?',(supplied.get('connection_id'),)).fetchone()
+            if row is None: raise StoreError('not_found')
+            p=json.loads(row[0])
+            if (p.get('operation_lease')!=supplied or p['revision']!=supplied.get('connection_revision')
+                    or p['state'] not in ('connected','reauth_required','unknown')): raise ConflictError()
+            if new_ref is not None:
+                ref=_ref(new_ref)
+                if supplied['operation']!='refresh' or state!='connected': raise StoreError('invalid')
+                if ref['kind']!='token' or any(ref[k]!=p[k] for k in ('account_id','platform','connection_id')): raise StoreError('credential_owner_mismatch')
+                if ref['generation']<=p['credential_generation']: raise ConflictError()
+                p.update(credential_ref=ref,credential_generation=ref['generation'])
+            elif state=='connected': raise StoreError('invalid')
+            if state=='revoked':
+                if supplied['operation']!='revoke': raise StoreError('invalid')
+                p['credential_ref']=None
+            p.pop('operation_lease'); p.update(state=state,revision=p['revision']+1,execution_enabled=False)
+            db.execute('UPDATE oauth_connections SET payload=? WHERE id=?',(_dump(p),p['connection_id']))
+            db.execute('UPDATE oauth_meta SET generation=generation+1 WHERE id=1')
+        return self.snapshot()
+
+    def finish_connection_operation(self,lease,new_ref=None,state=None):
+        if state not in (None,'revoked') or (new_ref is None and state is None): raise StoreError('invalid')
+        return self._finish_operation(lease,new_ref,'connected' if new_ref is not None and state is None else state)
+
+    def fail_connection_operation(self,lease,state='unknown'):
+        if state not in ('unknown','reauth_required'): raise StoreError('invalid')
+        return self._finish_operation(lease,None,state)
+
     def disconnect_local(self,connection_id,expected_base_revision,expected_connection_revision):
         if type(expected_connection_revision) is not int or expected_connection_revision<1: raise StoreError('invalid')
         with self._db(True) as db:
@@ -120,6 +174,7 @@ class ManagedConnectionStore(OAuthDatabase):
             if row is None: raise StoreError('not_found')
             p=json.loads(row[0])
             if p['revision']!=expected_connection_revision or p['base_revision']!=expected_base_revision: raise ConflictError()
+            p.pop('operation_lease',None)
             p.update(state='disconnected',revision=p['revision']+1,credential_ref=None,execution_enabled=False)
             db.execute('UPDATE oauth_connections SET payload=? WHERE id=?',(_dump(p),connection_id))
             db.execute('UPDATE oauth_meta SET generation=generation+1 WHERE id=1')

@@ -83,3 +83,55 @@ class AttemptTests(unittest.TestCase):
         from dataclasses import replace
         self.store.initialize()
         with self.assertRaises(StoreError): self.store.create_attempt(replace(self.context,provider_id='google'),'e'*64,(self.now+timedelta(minutes=10)).isoformat())
+
+    def test_generation_reservation_concurrent_and_reopen(self):
+        self.store.initialize()
+        def reserve(_): return self.store.reserve_generation('autosns.oauth','personal','youtube','conn')
+        with ThreadPoolExecutor(4) as pool: values=list(pool.map(reserve,range(12)))
+        self.assertEqual(list(range(1,13)),sorted(values))
+        self.assertEqual(13,OAuthAttemptStore(self.tmp.name).reserve_generation('autosns.oauth','personal','youtube','conn'))
+        with self.assertRaises(StoreError): self.store.reserve_generation('other','personal','youtube','conn')
+
+    def test_bind_verifier_is_owned_cas_and_survives_callback_reopen(self):
+        item=self.create()
+        wrong=CredentialRef('autosns.oauth','personal','facebook','conn',1,'verifier')
+        with self.assertRaises(StoreError): self.store.bind_verifier(item['attempt_id'],'binding',1,wrong)
+        with self.assertRaises(StoreError): self.store.bind_verifier(item['attempt_id'],'other',1,self.ref('verifier'))
+        bound=self.store.bind_verifier(item['attempt_id'],'binding',1,self.ref('verifier'))
+        with self.assertRaises(StoreError): self.store.bind_verifier(item['attempt_id'],'binding',1,self.ref('verifier'))
+        claim=self.store.claim_callback('a'*64,'youtube')
+        staged=self.store.finalize_callback(claim,self.ref('code'),self.ref('ticket'),(self.now+timedelta(minutes=1)).isoformat())
+        self.assertEqual(self.ref('verifier'),OAuthAttemptStore(self.tmp.name).read_owned(item['attempt_id'],'binding')['verifier_ref'])
+        self.assertEqual(bound['revision']+2,staged['revision'])
+        with self.assertRaises(StoreError): self.store.bind_verifier(item['attempt_id'],'binding',staged['revision'],self.ref('verifier'))
+
+    def test_request_receipt_reopen_hash_conflict_and_safe_result_cas(self):
+        self.store.initialize()
+        first=self.store.claim_request('binding','start','request-1','a'*64)
+        self.assertEqual('claimed',first['status'])
+        reopened=OAuthAttemptStore(self.tmp.name)
+        self.assertEqual('in_progress',reopened.claim_request('binding','start','request-1','a'*64)['status'])
+        with self.assertRaises(StoreError): reopened.claim_request('binding','start','request-1','b'*64)
+        with self.assertRaises(StoreError): reopened.finish_request(first['id'],first['revision'],{'authorize_url':'https://secret'})
+        with self.assertRaises(StoreError): reopened.finish_request(first['id'],first['revision'],{'target_proposal':{'token':'secret'}})
+        with self.assertRaises(StoreError): reopened.finish_request(first['id'],first['revision'],{'execution_enabled':True})
+        for field in ('provider_id','platform','state'):
+            with self.assertRaises(StoreError): reopened.finish_request(first['id'],first['revision'],{field:[]})
+        done=reopened.finish_request(first['id'],first['revision'],{'attempt_id':'abc','account_id':'personal','provider_id':'youtube','connection_id':'conn','revision':1,'state':'consent_pending','expires_at':self.now.isoformat(),'execution_enabled':False})
+        self.assertEqual('completed',done['status'])
+        self.assertEqual(done,reopened.claim_request('binding','start','request-1','a'*64))
+        with self.assertRaises(StoreError): reopened.finish_request(first['id'],first['revision'],{'state':'error'})
+
+    def test_state_key_binding_receipt_owned_and_callback_preserves_ref(self):
+        item=self.create()
+        receipt=self.store.claim_request('binding','start','request-2','a'*64)
+        ref=CredentialRef('autosns.oauth','personal','youtube','conn',1,'state_key')
+        with self.assertRaises(StoreError): self.store.bind_state_key(item['attempt_id'],'other',1,ref,receipt['id'])
+        foreign=self.store.claim_request('other','start','request-2','a'*64)
+        with self.assertRaises(StoreError): self.store.bind_state_key(item['attempt_id'],'binding',1,ref,foreign['id'])
+        bound=self.store.bind_state_key(item['attempt_id'],'binding',1,ref,receipt['id'])
+        claim=self.store.claim_callback('a'*64,'youtube')
+        staged=self.store.finalize_callback(claim,self.ref('code'),self.ref('ticket'),(self.now+timedelta(minutes=1)).isoformat())
+        self.assertEqual(ref,staged['state_key_ref'])
+        self.assertEqual(receipt['id'],staged['request_receipt_id'])
+        with self.assertRaises(StoreError): self.store.bind_state_key(item['attempt_id'],'binding',bound['revision'],ref,receipt['id'])
