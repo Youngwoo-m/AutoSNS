@@ -5,7 +5,7 @@
 **Goal:** 기존 9개 메뉴의 채널·계정에서 개인/학과별 OAuth 시작·복귀·대상확인·연결수명주기를 통합하고 공식 provider adapter를 비활성 상태로 검증한다.
 **Architecture:** 서버 소유 catalog/cost gate, 별도 OAuth SQLite, Keychain backend와 provider transport를 명시 주입한다. 세션 결속 시도→callback 임시보관→same-origin continue→주체 조회→target CAS를 조합하며 원본 registry와 실행 권한은 바꾸지 않는다.
 **Tech Stack:** 기존 Python3.15/unittest/SQLite/ES modules/Node test, 표준 라이브러리 macOS Security.framework binding. 새 패키지·SaaS 설치0.
-**Spec:** [승인 설계](../specs/2026-10-31-sns-oauth-connections-design.md), [시안](../../../ax-console/design/oauth-connections-preview.html). 사용자2026-10-31 설계·화면 승인/계획작성 지시. 기존 최대병렬 SDD 방식 유지. 실제 구현은 이 계획의 사용자 검토 후 시작한다.
+**Spec:** [승인 설계](../specs/2026-10-31-sns-oauth-connections-design.md), [시안](../../../ax-console/design/oauth-connections-preview.html). 사용자2026-10-31 설계·화면 승인/계획작성 지시. 기존 최대병렬 SDD 방식 유지. 설계 승인과 목표 계속 실행 지시에 따라 원장에 근거를 남기고 가역적인 구현을 진행한다. 실제 외부 행위는 승인 범위에 포함하지 않는다.
 
 ## Global Constraints
 
@@ -48,7 +48,7 @@
 - `ProviderDefinition(id, platform, login_method, operations, read_scopes, publication_scopes, pkce_mode, redirect_policy, policy_reasons)`: operations/scopes/reasons는불변tuple, pkce_mode는s256/unsupported/unconfirmed, 미확인은준비차단.
 - `AttemptContext(actor, session_binding, account_id, provider_id, connection_id, base_revision, connection_revision, requested_scopes, redirect_uri, client_ref, client_revision, evidence_revision)`: revision은서버현재값, connection_revision은정수,나머지는고정문자열/tuple. 요청body의동명주장은신뢰하지않는다.
 - `TokenBundle(access_token, refresh_token, token_type, expires_at, scopes)`: token은private문자열, refresh/expiry는None허용,repr/JSON공개금지. scope는provider실응답을정규화한tuple.
-- `CredentialRef(namespace, account_id, platform, connection_id, generation, kind)`: namespace는autosns.oauth, generation은양의정수, kind는client/code/verifier/ticket/token 중하나. public projection에서는ref전체제외.
+- `CredentialRef(namespace, account_id, platform, connection_id, generation, kind)`: namespace는autosns.oauth, generation은양의정수, kind는client/code/verifier/ticket/token/state_key 중하나. public projection에서는ref전체제외.
 - `OAuthClientRegistration(provider_id,client_id,client_secret_ref,redirect_uri,client_revision,approved_scopes,cost_evidence_revision,expected_project_id)`: 서버가 명시 주입한 등록값만 사용한다. secret값은없고private Keychainref만허용,정수client_revision과None허용project_id를구분한다. 요청/Host/선호설정/Keychain전체탐색으로자동구성0, main미주입이면registration_blocked.
 - `CallbackClaim(attempt_id,lease_revision,expires_at,context)`: state원문없는서버전용수신lease이며finalize/fail은동일revision에서한번만허용.
 - `OAuthPolicy(live_enabled=False)`: 실제실행허용만제어하며비용증거·provider등록gate를대체하지않는다. fake transport시험에서만명시True주입,production main은None유지.
@@ -139,3 +139,11 @@ Task1·2·3은고정위계인터페이스아래독립파일로병렬(실제 3개
 자체검토: spec의callback/세션·비용·Keychain/SQLite·provider제약·UI·원복은각Task로대응했다. DB분리는기존schema3하드코딩을불필요하게변경하지않는계획상구체화다.제공자별미완계약은readiness문서로보존하며없는지원/비용0을발명하지않는다.이 계획은 구현 전 검토 대기 상태다.
 
 작성자 최종 자체검토: backend/UI 접점 대조에서 발견한 동일 ManagedSnapshot projection, 서버 소유 client 등록 입력, callback claim→stage→finalize, staged_web helper 소유권을 반영했다. 각 task의 소비/산출 이름과 HTTP body를 대조했으며 새 구현·실계정 호출은 하지 않았다. 실제 provider별 미확인 operation은 readiness tracker에 남기고 실연결 완료로 표시하지 않는다.
+
+## 구현 중 계약 구체화
+
+서버 재시작·동시성·동일 요청 재시도를 만족하려면 generation 예약/PKCE ref 결속/lifecycle lease와 안전한 public 응답 receipt가 필요하다. 별도 OAuth DB 안에서 이 API를 추가하며 실제 연결·발행 권한을 확장하지 않는다. `CredentialRef.kind=state_key`는 OAuth state 원문 대신 Keychain의 서명 키만 가리킨다. HMAC 입력은 durable receipt ID와 동결 context이며 state는 hash로만 DB 저장한다. authorize URL은 저장하지 않고 유효한 동일 요청에서 재구성한다. 이 구체화와 비용은 구현 원장에 기록한다.
+
+인증 관측 공개 metadata는 observed_scopes/credential_expires_at/read_status/publication_status/credential_status의 strict authorization 구조로 고정한다. 값이 없으면 미확인, 요청 scope로 실제 동의를 합성하지 않는다. 미완 시도는 같은 세션에 결속하고 완료 연결의 수명주기는 새 로그인 후에도 동일 서버 actor의 완료 근거·현재 포인터를 검증해 관리한다. 실제 계정 권한의 자동 확대는 없다.
+
+Task8 시험 의존 소유권 구체화: tests/web_app_focus.test.mjs의 새 guard VM context와 tests/integration/test_local_toolkit_acceptance.py의 product_webroot optional overlay 선택도 갱신한다. 최신 OAuth artifact 우선·배포 후 desired actual 허용·artifact 없는 tracked checkout 재현성을 함께 보존한다. 실제 old/desired fixture의 부분 복사 차단 검증은 제거하지 않는다.
