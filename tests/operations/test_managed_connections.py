@@ -12,18 +12,20 @@ class ManagedTests(unittest.TestCase):
         self.base=Registry('base',{'personal':{},'dept':{}},{'legacy':{'account_id':'personal'}},{},{'conn':Connection('conn','personal','youtube',target_id='target',credential_ref='legacy')},{},{},{})
     def proposal(self):
         return dict(connection_id='conn',account_id='personal',platform='youtube',base_revision='base',target_id='target',target_label='Target',provider_subject='subject',credential_ref=CredentialRef('autosns.oauth','personal','youtube','conn',1,'token'),scopes=('read',),checked_at='2026-01-01T00:00:00+00:00')
-    def confirm(self,p,base,revision):
+    def confirm(self,p,base,revision,provider="youtube"):
         from common.operations.oauth_store import OAuthAttemptStore
         from common.operations.oauth_models import AttemptContext
         from datetime import datetime,timezone,timedelta
         from uuid import uuid4
         import hashlib
         now=datetime.now(timezone.utc); attempts=OAuthAttemptStore(self.tmp.name)
-        context=AttemptContext('user','binding','personal','youtube','conn',base,revision,('read',),'https://test/cb','client',1,'ev')
+        context=AttemptContext('user','binding','personal',provider,'conn',base,revision,('read',),'https://test/cb','client',1,'ev')
         digest=hashlib.sha256(uuid4().bytes).hexdigest()
         item=attempts.create_attempt(context,digest,(now+timedelta(minutes=10)).isoformat())
-        claim=attempts.claim_callback(digest,'youtube')
-        ref=lambda k:CredentialRef('autosns.oauth','personal','youtube','conn',1,k)
+        claim=attempts.claim_callback(digest,provider)
+        from common.operations.oauth_catalog import provider_catalog
+        platform=next(d.platform for d in provider_catalog() if d.id==provider)
+        ref=lambda k:CredentialRef('autosns.oauth','personal',platform,'conn',p['credential_ref'].generation,k)
         staged=attempts.finalize_callback(claim,ref('code'),ref('ticket'),(now+timedelta(minutes=1)).isoformat())
         resumed=attempts.claim_resume(item['attempt_id'],'binding',staged['revision'])
         exchanged=attempts.update_attempt(item['attempt_id'],'binding',resumed['revision'],'token_exchanged',{'token_ref':ref('token')})
@@ -33,6 +35,7 @@ class ManagedTests(unittest.TestCase):
         self.confirm(self.proposal(),'base',0)
         snap=self.store.snapshot(); projected=project_registry(self.base,snap)
         self.assertFalse(projected.connections['conn'].enabled)
+        self.assertIsNone(snap.connections['conn']['authorization'])
         self.assertEqual(1,len(credential_catalog(snap)))
         self.assertEqual('legacy',self.base.connections['conn'].credential_ref)
         self.store.disconnect_local('conn','base',1)
@@ -141,3 +144,57 @@ class ManagedTests(unittest.TestCase):
         with self.assertRaises(StoreError): self.store.finish_connection_operation(refresh_lease,new_ref=CredentialRef('autosns.oauth','personal','youtube','conn',2,'token'))
         self.assertEqual(1,revoked.connections['conn']['credential_generation'])
         with self.assertRaises(StoreError): self.store.finish_connection_operation(lease,state='revoked')
+
+    def test_instagram_provider_is_server_derived_persisted_and_not_switchable(self):
+        p=self.proposal(); p['platform']='instagram'
+        p['credential_ref']=CredentialRef('autosns.oauth','personal','instagram','conn',1,'token')
+        snap=self.confirm(p,'base',0,provider='instagram_login')
+        self.assertEqual('instagram_login',snap.connections['conn']['provider_id'])
+        reopened=ManagedConnectionStore(self.tmp.name)
+        self.assertEqual('instagram_login',reopened.snapshot().connections['conn']['provider_id'])
+        other=dict(p,credential_ref=CredentialRef('autosns.oauth','personal','instagram','conn',2,'token'))
+        with self.assertRaises(StoreError): self.confirm(other,'base',1,provider='instagram_facebook')
+        self.assertEqual(1,reopened.snapshot().connections['conn']['credential_generation'])
+        lease=reopened.claim_connection_operation('conn','base',1,'refresh')
+        self.assertEqual('instagram_login',lease['provider_id'])
+        refreshed=reopened.finish_connection_operation(lease,new_ref=other['credential_ref'])
+        self.assertEqual('instagram_login',refreshed.connections['conn']['provider_id'])
+        spoofed=dict(p,provider_id='instagram_facebook')
+        with self.assertRaises(StoreError): self.confirm(spoofed,'base',refreshed.connections['conn']['revision'],provider='instagram_login')
+
+    def test_inactive_projection_has_no_legacy_fallback_and_preserves_state(self):
+        from dataclasses import replace
+        from common.operations.models import freeze
+        self.confirm(self.proposal(),'base',0)
+        base=replace(self.base,connections=dict(self.base.connections,conn=replace(self.base.connections['conn'],profile_ref='legacy-profile'),untouched=Connection('untouched','personal','youtube',credential_ref='legacy',profile_ref='legacy-profile')))
+        for state in ('disconnected','unknown','reauth_required','revoked'):
+            snapshot=self.store.snapshot(); row=dict(snapshot.connections['conn'],state=state,credential_ref=None)
+            projected=project_registry(base,replace(snapshot,connections=freeze({'conn':row}),credential_refs=freeze({})))
+            connection=projected.connections['conn']
+            self.assertIsNone(connection.credential_ref); self.assertIsNone(connection.profile_ref)
+            self.assertEqual(state,connection.auth_status); self.assertFalse(connection.enabled)
+            self.assertEqual(base.connections['untouched'],projected.connections['untouched'])
+        self.assertEqual('legacy',base.connections['conn'].credential_ref)
+        self.assertEqual('legacy-profile',base.connections['conn'].profile_ref)
+
+    def test_authorization_confirm_refresh_and_failure_are_atomic(self):
+        authorization=dict(observed_scopes=['observed'],credential_expires_at='2030-01-01T09:00:00+09:00',read_status='verified',publication_status='blocked',credential_status='stored')
+        p=dict(self.proposal(),authorization=authorization)
+        snap=self.confirm(p,'base',0)
+        self.assertEqual('active',snap.connections['conn']['authorization']['credential_status'])
+        self.assertEqual('2030-01-01T00:00:00+00:00',snap.connections['conn']['authorization']['credential_expires_at'])
+        from common.operations.oauth_store import OAuthAttemptStore
+        self.assertEqual('active',OAuthAttemptStore(self.tmp.name).list_owned('binding')[0]['authorization']['credential_status'])
+        lease=self.store.claim_connection_operation('conn','base',1,'refresh')
+        updated=dict(authorization,observed_scopes=['reduced'],credential_status='active')
+        ref=CredentialRef('autosns.oauth','personal','youtube','conn',2,'token')
+        with self.assertRaises(StoreError): self.store.finish_connection_operation(lease,new_ref=ref,authorization=dict(updated,access_token='secret'))
+        self.assertEqual(1,self.store.snapshot().connections['conn']['credential_generation'])
+        refreshed=self.store.finish_connection_operation(lease,new_ref=ref,authorization=updated)
+        row=refreshed.connections['conn']; self.assertEqual(('reduced',),row['authorization']['observed_scopes'])
+        lease=self.store.claim_connection_operation('conn','base',row['revision'],'refresh')
+        failed=self.store.fail_connection_operation(lease,'reauth_required').connections['conn']
+        self.assertEqual('reauth_required',failed['authorization']['credential_status'])
+        self.assertEqual('unknown',failed['authorization']['read_status'])
+        disconnected=self.store.disconnect_local('conn','base',failed['revision']).connections['conn']
+        self.assertEqual('unknown',disconnected['authorization']['credential_status'])

@@ -8,7 +8,7 @@ import re
 import sqlite3
 from uuid import uuid4
 from .content_store import StoreError, ConflictError
-from .oauth_models import AttemptContext, CallbackClaim, CredentialRef
+from .oauth_models import AttemptContext, CallbackClaim, CredentialRef, validate_authorization
 from .oauth_catalog import provider_catalog
 
 
@@ -80,11 +80,13 @@ class OAuthDatabase:
             return self._receipt(db.execute('SELECT * FROM oauth_request_receipts WHERE id=?',(identifier,)).fetchone(),claimed=True)
 
     def finish_request(self,identifier,expected_revision,safe_result):
-        allowed={'attempt_id','revision','state','proposal_id','connection_id','base_revision','connection_revision','generation','account_id','provider_id','platform','expires_at','execution_enabled','reason_codes','provider_subject','target_proposal'}
+        allowed={'attempt_id','revision','state','proposal_id','connection_id','base_revision','connection_revision','generation','account_id','provider_id','platform','expires_at','execution_enabled','reason_codes','provider_subject','target_proposal','authorization'}
         states={'registration_blocked','consent_pending','callback_staged','resume_pending','token_exchanged','principal_pending','target_confirmation','connected','denied','expired','error','revoked','disconnected','unknown','reauth_required'}
         if not isinstance(safe_result,dict) or set(safe_result)-allowed: raise StoreError('invalid_receipt_result')
         for key,value in safe_result.items():
-            if key in ('revision','connection_revision','generation'):
+            if key=='authorization':
+                if value is not None: safe_result=dict(safe_result,authorization=validate_authorization(value))
+            elif key in ('revision','connection_revision','generation'):
                 if type(value) is not int or value<0: raise StoreError('invalid_receipt_result')
             elif key=='execution_enabled':
                 if value is not False: raise StoreError('invalid_receipt_result')
@@ -156,6 +158,7 @@ class OAuthAttemptStore(OAuthDatabase):
         item=dict(row); item['attempt_id']=item.pop('id'); item.pop('state_hash')
         item['context']=AttemptContext(**json.loads(item['context']))
         item.update(json.loads(item.pop('payload')))
+        item['authorization']=validate_authorization(item['authorization']) if item.get('authorization') is not None else None
         for field in ('code_ref','ticket_ref','verifier_ref','token_ref','state_key_ref'):
             if item.get(field): item[field]=CredentialRef(**item[field])
         return item
@@ -167,7 +170,7 @@ class OAuthAttemptStore(OAuthDatabase):
         if not 0<(expiry-now).total_seconds()<=600: raise StoreError('invalid_expiry')
         identifier=uuid4().hex
         with self._db(True) as db:
-            db.execute('INSERT INTO oauth_attempts VALUES(?,?,?,?,?,?,?,?,?)',(identifier,state_hash,context.provider_id,context.session_binding,_dump(asdict(context)),'consent_pending',1,expiry.isoformat(),'{}'))
+            db.execute('INSERT INTO oauth_attempts VALUES(?,?,?,?,?,?,?,?,?)',(identifier,state_hash,context.provider_id,context.session_binding,_dump(asdict(context)),'consent_pending',1,expiry.isoformat(),_dump({'authorization':validate_authorization(dict(observed_scopes=None,credential_expires_at=None,read_status='not_checked',publication_status='blocked',credential_status='pending'))})))
             return self._decode(db.execute('SELECT * FROM oauth_attempts WHERE id=?',(identifier,)).fetchone())
     def bind_state_key(self,attempt_id,session_binding,expected_revision,state_key_ref,request_receipt_id):
         ref=_ref(state_key_ref)
@@ -253,11 +256,12 @@ class OAuthAttemptStore(OAuthDatabase):
     def update_attempt(self,attempt_id,session_binding,expected_revision,state,payload):
         if type(expected_revision) is not int or expected_revision<1: raise StoreError('invalid')
         transitions={'resume_pending':{'token_exchanged','unknown','error'},'token_exchanged':{'principal_pending','target_confirmation','error','unknown'},'principal_pending':{'target_confirmation','error','unknown'},'target_confirmation':{'connected','error'}}
-        allowed={'token_ref','verifier_ref','reason'}
+        allowed={'token_ref','verifier_ref','reason','authorization'}
         if not isinstance(payload,dict) or set(payload)-allowed: raise StoreError('invalid')
         clean={}
         for key,value in payload.items():
-            if key.endswith('_ref'):
+            if key=='authorization': clean[key]=validate_authorization(value) if value is not None else None
+            elif key.endswith('_ref'):
                 clean[key]=_ref(value)
                 if clean[key]['kind']!=key.removesuffix('_ref'): raise StoreError('invalid_credential_ref')
             elif value in ('exchange_failed','inspect_failed','storage_failed','manual_review'): clean[key]=value

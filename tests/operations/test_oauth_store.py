@@ -135,3 +135,19 @@ class AttemptTests(unittest.TestCase):
         self.assertEqual(ref,staged['state_key_ref'])
         self.assertEqual(receipt['id'],staged['request_receipt_id'])
         with self.assertRaises(StoreError): self.store.bind_state_key(item['attempt_id'],'binding',bound['revision'],ref,receipt['id'])
+
+    def test_authorization_update_receipt_validation_and_unobserved_start(self):
+        item=self.create()
+        self.assertIsNone(item['authorization']['observed_scopes'])
+        self.assertIsNone(item['authorization']['credential_expires_at'])
+        self.assertEqual('pending',item['authorization']['credential_status'])
+        claim=self.store.claim_callback('a'*64,'youtube')
+        staged=self.store.finalize_callback(claim,self.ref('code'),self.ref('ticket'),(self.now+timedelta(minutes=1)).isoformat())
+        resumed=self.store.claim_resume(item['attempt_id'],'binding',staged['revision'])
+        authorization=dict(observed_scopes=[],credential_expires_at='2030-01-01T00:00:00+00:00',read_status='not_checked',publication_status='blocked',credential_status='stored')
+        with self.assertRaises(StoreError): self.store.update_attempt(item['attempt_id'],'binding',resumed['revision'],'token_exchanged',{'authorization':dict(authorization,publication_status='verified')})
+        exchanged=self.store.update_attempt(item['attempt_id'],'binding',resumed['revision'],'token_exchanged',{'authorization':authorization})
+        self.assertEqual(authorization,exchanged['authorization'])
+        receipt=self.store.claim_request('binding','continue:'+item['attempt_id'],'meta-request','b'*64)
+        result={'attempt_id':item['attempt_id'],'authorization':authorization}
+        self.assertEqual(result,self.store.finish_request(receipt['id'],receipt['revision'],result)['result'])
