@@ -1,3 +1,6 @@
+import {createOAuthApi} from './oauth_api.js';
+import {createOAuthController} from './oauth_controller.js';
+import {createOAuthPanel} from './oauth_panel.js';
 import {createToolkitApi} from './toolkit_api.js';
 import {createToolkitController} from './toolkit_controller.js';
 import {createToolkitPanel} from './toolkit_panel.js';
@@ -52,13 +55,30 @@ const views={
   issues:['필요한 예외에 집중','문제·복구','조치 필요 기록과 대상별 배포 기록을 확인합니다.']
 };
 const writable=()=>state.snapshot?.workspace_writable===true;
-let editorActive=false,integrationAccount=null;
+let editorActive=false,integrationAccount=null,detailMode='legacy';
 const execution=createExecutionWorkspace({api:createExecutionApi(),contentApi,onChange:()=>renderStatus(),onOpenOutput:(id,revision)=>openEditor({id,revision,source:'managed'})});
 const editor=createContentEditor({api:contentApi,writable,execution,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
 const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
 const operations=createOperationsPanel({api:createOperationsApi(),execution,onChange:()=>{renderStatus();}});
 // 화면별 컨트롤러를 분리하여 계정·원고·CSV 입력의 범위를 유지한다.
+const oauth=createOAuthController({api:createOAuthApi()});
+const oauthBusy=()=>oauth.isBusy();
+const oauthDirty=()=>oauth.hasUnsavedChanges();
+function guardOAuth(){return !oauthBusy()&&(!oauthDirty()||globalThis.confirm('대기 중인 연결 요청을 보존하지 않고 이동할까요?'));}
+const oauthPanel=createOAuthPanel({controller:oauth,document,onClose:guardOAuth,
+  onContextChange:()=>guardOAuth(),onClosed:()=>finishDetailClose()});
+function openOAuth(accountId=state.account,result=false){
+  if(!result&&!confirmLeave())return;
+  if($('#detail-dialog').open&&!closeDetail())return;
+  editorActive=false;detailMode='oauth';lastFocus=document.activeElement;
+  oauth.setContext({account_id:accountId});
+  $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},'채널·계정 연결'));
+  $('#drawer-content').replaceChildren(oauthPanel.open());
+  $('.drawer-foot span').textContent='동의·읽기 검증·발행 권한·실행 활성은 별개입니다.';
+  if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';
+  oauth.load().then(()=>{if(result&&detailMode==='oauth')oauth.reloadOwnedResult();});
+}
 const toolkitSurfaces=new Map();
 function toolkitSurface(section,extra={}) {
   let surface=toolkitSurfaces.get(section);
@@ -68,8 +88,8 @@ function toolkitSurface(section,extra={}) {
 const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
 const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(execution.isBusy()||operations.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty()||toolkitDirty());
+  if(oauthBusy()||execution.isBusy()||operations.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty());
   if(accepted&&operations.isDirty())operations.discard();return accepted;
 }
 function pageHead() {
@@ -220,7 +240,7 @@ function renderAccounts() {
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
   if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
-  return h('div',{},execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
+  return h('div',{},h('button',{class:'btn btn-primary',onclick:()=>openOAuth()},'공식 OAuth 연결·준비 상태'),execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   return h('div',{},metrics.render({account:state.account,writable:writable()}),toolkitSurface('analytics'));
@@ -234,7 +254,7 @@ function renderIssues() {
   return h('div',{},execution.renderStatus(),operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={engineer:()=>renderEngineerPanel({snapshot:state.snapshot,exam:engineerExam,onSelect:id=>{engineerExam=id;render();},onOpen:openContent,h,formatDateTime,accountLabel}),today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
-function setView(id) {if(!views[id]||!confirmLeave())return;view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
+function setView(id) {if(!views[id]||!confirmLeave())return;if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)setView(id);});return;}view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
 
 function deliveryDetail(d) {
   const url=safeUrl(d.url);
@@ -256,27 +276,37 @@ function renderDetail() {
   $('#drawer-content').replaceChildren(tabbar,body,...(writable()?[h('div',{class:'detail-section'},muted('기존 자료는 직접 편집할 수 없습니다. 새 초안에는 수집 요약만 복사합니다.'),h('button',{class:'btn btn-small',onclick:()=>openEditor(c)},'수집 요약을 새 관리 초안으로 복사'))]:[]));
 }
 function openEditor(content=null){
+  if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)openEditor(content);});return;}
   if(!writable()&&content?.source!=='managed')return;
   if(!confirmLeave())return;
-  editorActive=true;lastFocus=document.activeElement;
+  detailMode='content';editorActive=true;lastFocus=document.activeElement;
   $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},content?.source==='managed'?'관리 원본 편집':'새 기획 저장'));
   $('#drawer-content').replaceChildren(editor.element);
   $('.drawer-foot span').textContent='관리 원본 · 계획 승인과 별도 발행 승인 구분 · 실행은 서버 정책에 따름';
   editor.open(content);if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
 function openContent(id) {
+  if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)openContent(id);});return;}
   if(!titleFor(id))return;
   if(titleFor(id).source==='managed'){openEditor(titleFor(id));return;}
-  editorActive=false;$('.drawer-foot span').textContent='기존 자료 읽기 전용 · 원문 편집 및 배포 변경 미지원';
+  if(!confirmLeave()||($('#detail-dialog').open&&!closeDetail()))return;
+  detailMode='legacy';editorActive=false;$('.drawer-foot span').textContent='기존 자료 읽기 전용 · 원문 편집 및 배포 변경 미지원';
   detailId=id;detailTab='overview';lastFocus=document.activeElement;renderDetail();
   $('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
-function closeDetail(confirmed=false) {if(editorActive&&editor.isBusy())return false;if(confirmed!==true&&editorActive&&editor.hasUnsavedChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 닫을까요?'))return false;if($('#detail-dialog').open)$('#detail-dialog').close();editorActive=false;return true;}
+function finishDetailClose(){if($('#detail-dialog').open)$('#detail-dialog').close();editorActive=false;detailMode='legacy';return true;}
+function closeDetail(confirmed=false) {
+  if(detailMode==='oauth'){oauthPanel.close();return false;}
+  if(editorActive&&editor.isBusy())return false;
+  if(confirmed!==true&&editorActive&&editor.hasUnsavedChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 닫을까요?'))return false;
+  return finishDetailClose();
+}
 $('#drawer-close').addEventListener('click',closeDetail);
 $('#detail-dialog').addEventListener('click',e=>{if(e.target===$('#detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDetail();}});
 $('#detail-dialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
 $('#detail-dialog').addEventListener('close',()=>{document.body.style.overflow='';if(lastFocus?.isConnected)lastFocus.focus();else $('[data-view][aria-current="page"]')?.focus();detailId=null;});
 $('#detail-dialog').addEventListener('keydown',e=>{
+  if(detailMode==='oauth')return;
   if(e.key!=='Tab')return;
   const nodes=[...$('#detail-dialog').querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(el=>el.getClientRects().length);
   const first=nodes[0],last=nodes[nodes.length-1];
@@ -285,10 +315,11 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 });
 const loader=createSnapshotLoader(next=>{state=next;render();});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',()=>{if(!confirmLeave())return;if($('#detail-dialog').open&&!closeDetail(true))return;for(const surface of toolkitSurfaces.values())surface.panel.refreshControls({context:{account:button.dataset.scope}});operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>{if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
+document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',async()=>{if(!confirmLeave())return;if(detailMode==='oauth'){if(!await oauthPanel.close())return;}else if($('#detail-dialog').open&&!closeDetail(true))return;for(const surface of toolkitSurfaces.values())surface.panel.refreshControls({context:{account:button.dataset.scope}});operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
+$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+window.addEventListener('beforeunload',event=>{if((typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
 operations.load('all');
 loader.select('all');
+if(globalThis.location?.pathname==='/connections/oauth-result')openOAuth('all',true);
 setInterval(renderStatus,60000);

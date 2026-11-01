@@ -3,7 +3,7 @@ const accounts = new Set(['all', 'personal', 'dept']);
 const requestKey = () => globalThis.crypto.randomUUID();
 const clean = account_id => ({account_id, provider_id: '', connection_id: '', base_revision: null, connection_revision: 0,
   catalog: [], connections: [], ownedResults: [], attempt: null, pending: null, requested_scopes: [], live_enabled: false,
-  busy: false, message: '계정과 연결 방식을 선택하세요.', errorStatus: null});
+  connectionsStale: false, busy: false, message: '계정과 연결 방식을 선택하세요.', errorStatus: null});
 export function matchesOAuthConnection(row, provider) {
   if (!row || !provider) return false;
   return row.provider_id != null ? row.provider_id === provider.provider_id : row.platform === provider.platform;
@@ -22,7 +22,7 @@ export function createOAuthController({api, onChange = () => {}}) {
   const blocked = row => !row || !providerIds.includes(row.provider_id) || row.login_method === 'unsupported' ||
     row.registration_status !== 'ready' || row.cost_gate !== 'no_additional_cost' || row.policy_gate !== 'allowed' ||
     (row.blockers || []).length > 0 || (row.policy_reasons || []).length > 0;
-  const canStart = () => state.account_id !== 'all' && state.live_enabled && !blocked(provider()) && !state.busy;
+  const canStart = () => state.account_id !== 'all' && state.live_enabled && !blocked(provider()) && !state.busy && !state.connectionsStale;
   function setContext(context = {}) {
     const value = context.account_id ?? context.account ?? 'all';
     if (!accounts.has(value)) throw new Error('계정 범위가 올바르지 않습니다.');
@@ -58,7 +58,7 @@ export function createOAuthController({api, onChange = () => {}}) {
       state.catalog = (catalog.items || []).filter(row => providerIds.includes(row.provider_id));
       state.live_enabled = catalog.live_enabled === true;
       state.connections = (connections.items || []).filter(row => state.account_id === 'all' || row.account_id === state.account_id);
-      state.base_revision = connections.base_revision;
+      state.base_revision = connections.base_revision; state.connectionsStale = false;
       const selectedConnection = connection();
       if (selectedConnection) state.connection_revision = selectedConnection.connection_revision ?? selectedConnection.revision ?? 0;
       loaded = true;
@@ -120,6 +120,21 @@ export function createOAuthController({api, onChange = () => {}}) {
       }
       state.message = operation === 'disconnect' ? '로컬 연결을 해제했습니다. 제공자의 원격 권한 해지는 수행하지 않았습니다.' :
         operation === 'revoke' ? '원격 권한 해지 결과를 확인하세요. 다른 연결의 영향은 별도입니다.' : '서버 결과를 확인하세요. 발행 실행은 비활성입니다.';
+      if (['confirmTarget', 'refresh', 'disconnect', 'revoke'].includes(operation)) {
+        state.connectionsStale = true;
+        // POST receipt는 이미 성공했다. 후속 조회 실패가 mutation 재전송을 만들면 안 된다.
+        try {
+          const listing = assertSafeOAuthResponse(await api.connections(state.account_id));
+          if (current !== generation || selected !== selection) return;
+          state.connections = (listing.items || []).filter(row => row.account_id === state.account_id);
+          state.base_revision = listing.base_revision; state.connectionsStale = false;
+          const row = connection();
+          state.connection_revision = row?.connection_revision ?? row?.revision ?? 0;
+        } catch {
+          if (current !== generation || selected !== selection) return;
+          state.message += ' 요청은 성공했습니다. 최신 연결 조회에 실패했으니 등록·연결 상태 조회를 직접 누르세요.';
+        }
+      }
     } catch (error) { if (current === generation && selected === selection) feedback(error); }
     finally { if (current === generation && selected === selection) { state.busy = false; emit(); } }
   }
@@ -170,6 +185,7 @@ export function createOAuthController({api, onChange = () => {}}) {
     return mutate('confirmTarget', proposal.proposal_id, {expected_base_revision: proposal.expected_base_revision, expected_connection_revision: proposal.expected_connection_revision});
   }
   function connectionAction(operation) {
+    if (state.connectionsStale) {state.message = '성공한 요청의 현재 연결 revision을 먼저 조회하세요. 등록·연결 상태 조회가 필요합니다.'; emit(); return;}
     const row = connection();
     if (!row || state.account_id === 'all') return;
     if (operation !== 'disconnect' && (!row.available_actions?.includes(operation) || blocked(provider()))) return;

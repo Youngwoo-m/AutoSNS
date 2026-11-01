@@ -538,5 +538,59 @@ class OAuthServiceTests(unittest.TestCase):
         result=self.service.revoke(session,'personal.youtube',dict(request_key='new-login-revoke',expected_base_revision='base',expected_connection_revision=1))
         self.assertEqual('revoked',result['state']); self.assertFalse(result['execution_enabled'])
 
+    def assert_pending_operation_is_read_only_unknown_after_reopen(self,operation):
+        self.use_provider('threads'); self.connected()
+        lease=self.connections_store.claim_connection_operation('personal.youtube','base',1,operation)
+        before=self.connections_store.snapshot().connections['personal.youtube']
+        self.assertEqual('connected',before['state'])
+        self.assertEqual('active',before['authorization']['credential_status'])
+        db_path=Path(self.tmp.name)/'oauth.sqlite3'
+        db_bytes=db_path.read_bytes(); calls=list(self.provider.calls)
+        reopened=self.make_service(client_registrations={'threads':self.registration},providers={'threads':self.provider},
+            attempt_store=OAuthAttemptStore(self.tmp.name,self.clock),
+            connection_store=ManagedConnectionStore(self.tmp.name,self.clock))
+        # 프로세스가 lease를 남긴 채 종료된 경우를 재현한다. GET은 복구 쓰기나 secret 조회가 아니다.
+        with patch.object(self.vault,'get',side_effect=AssertionError('GET vault read')), \
+             patch.object(self.vault,'put',side_effect=AssertionError('GET vault write')), \
+             patch.object(self.vault,'delete',side_effect=AssertionError('GET vault delete')):
+            for session in (self.session,SessionContext('console_user','new-login-session')):
+                row=next(r for r in reopened.connections(session,'personal')['items'] if r['id']=='personal.youtube')
+                self.assertEqual('unknown',row['state'])
+                self.assertEqual('unknown',row['auth_status'])
+                self.assertEqual('unknown',row['read_status'])
+                self.assertEqual('unknown',row['authorization']['read_status'])
+                self.assertEqual('unknown',row['authorization']['credential_status'])
+                self.assertEqual('blocked',row['authorization']['publication_status'])
+                self.assertEqual(['oauth_operation_pending_manual_check'],row['reason_codes'])
+                self.assertFalse(row['execution_enabled'])
+                self.assertEqual(['disconnect'],row['available_actions'])
+                self.assertEqual(lease['connection_revision'],row['connection_revision'])
+                self.assert_public(row)
+        self.assertEqual(calls,self.provider.calls)
+        self.assertEqual(db_bytes,db_path.read_bytes())
+        after=self.connections_store.snapshot().connections['personal.youtube']
+        self.assertEqual(before,after)
+        # 조회 projection은 lease/ref/CAS를 바꾸지 않아 중복 외부작업은 계속 차단된다.
+        with self.assertRaises(StoreError):
+            self.connections_store.claim_connection_operation('personal.youtube','base',after['revision'],operation)
+        self.assertEqual(before,self.connections_store.snapshot().connections['personal.youtube'])
+
+    def test_pending_refresh_lease_is_unknown_read_only_after_reopen(self):
+        self.assert_pending_operation_is_read_only_unknown_after_reopen('refresh')
+
+    def test_pending_revoke_lease_is_unknown_read_only_after_reopen(self):
+        self.assert_pending_operation_is_read_only_unknown_after_reopen('revoke')
+
+    def test_catalog_without_endpoints_never_claims_zero_cost(self):
+        before=list(self.provider.calls)
+        with patch.object(self.vault,'get',side_effect=AssertionError('catalog vault read')):
+            row=next(r for r in self.service.catalog(self.session,'personal')['items'] if r['provider_id']=='tistory')
+        self.assertEqual('unknown',row['cost_gate'])
+        self.assertFalse(row['ready'])
+        self.assertEqual('blocked',row['policy_gate'])
+        self.assertEqual('registration_blocked',row['registration_status'])
+        self.assertIn('cost_evidence_unverified',row['blockers'])
+        self.assertEqual(before,self.provider.calls)
+
 
 if __name__=='__main__': unittest.main()

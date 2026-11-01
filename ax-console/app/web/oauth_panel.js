@@ -4,7 +4,7 @@ const providerNames = {instagram_login: 'Instagram Login', instagram_facebook: '
 const stateNames = {registration_blocked: '로그인 준비 안 됨', consent_pending: '공식 서비스 동의 대기', callback_staged: '돌아오기 수신 · 연결 계속 필요', resume_pending: '같은 사이트 연결 계속 대기', token_exchanged: '주체 조회 필요', principal_pending: '주체 조회 대기', target_confirmation: '대상 확인 필요', connected: '서버에서 연결 확인', denied: '동의 거부 · 기존 연결 유지', expired: '시도 만료 · 기존 연결 유지', error: '연결 오류 · 기존 연결 유지', revoked: '권한 해지', unknown: '결과 불확실 · 자동 재전송 없음', disconnected: '로컬 연결 해제'};
 const accountName = value => ({personal: '개인', dept: '학과', all: '전체 · 조회 전용'})[value] || '미확인';
 const reasons = {cost_evidence_unverified: '추가 비용 0원 근거 미확인', app_registration_unverified: '앱 등록 미확인', https_callback_unaccepted: 'HTTPS 복귀 경계 미수락', paid_gate_unverified: '유료 사용 차단', profile_only: '회원 프로필만 지원', blog_publication_unsupported: '블로그 API 글쓰기 미지원', official_api_discontinued: '공식 API 종료', remote_revoke_project_impact_unverified: '프로젝트의 다른 연결에 미치는 해지 영향 미확인'};
-export function createOAuthPanel({controller, document, onClose = () => true, onContextChange = () => true}) {
+export function createOAuthPanel({controller, document, onClose = () => true, onContextChange = () => true, onClosed = () => {}}) {
   const root = document.createElement('section');
   root.className = 'oauth-panel';
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', '채널·계정 OAuth 연결');
@@ -40,12 +40,13 @@ export function createOAuthPanel({controller, document, onClose = () => true, on
     const current = ++guardGeneration;
     if (await onClose(controller.getState()) !== true || current !== guardGeneration) return false;
     controller.close(); opened = false; root.hidden = true;
+    onClosed();
     if (opener?.isConnected !== false) opener?.focus();
     return true;
   }
   async function changeAccount(value) {
     const current = ++guardGeneration;
-    if (await onContextChange({account_id: value}, controller.getState()) === true && current === guardGeneration) controller.setContext({account_id: value});
+    if (await onContextChange({account_id: value}, controller.getState()) === true && current === guardGeneration) {controller.setContext({account_id: value}); await controller.load(); await controller.reloadOwnedResult();}
     paint();
   }
   root.addEventListener('keydown', event => {
@@ -119,6 +120,7 @@ export function createOAuthPanel({controller, document, onClose = () => true, on
     const connection = state.connections.find(row => (row.connection_id || row.id) === state.connection_id);
     if (connection && state.account_id !== 'all') {
       const lifecycle = node('section'); lifecycle.append(node('h3', '연결 수명주기')); authorizationDetails(lifecycle, connection.authorization); lifecycle.append(node('p', '로컬 연결 해제는 이 콘솔의 관리 연결 사용만 중단합니다. 원격 권한 해지와 기존 발행 자격 삭제는 별개입니다.'));
+      if (connection.reason_codes?.includes('oauth_operation_pending_manual_check')) lifecycle.append(node('p', '이전 갱신·해지 결과를 확인할 수 없습니다. 자동 재시도하지 말고 수동 확인하세요.'));
       button(lifecycle, 'disconnect', '로컬 연결만 해제', controller.disconnect, busy);
       button(lifecycle, 'refresh', '명시적으로 자격 갱신', controller.refresh, busy || !connection.available_actions?.includes('refresh'));
       button(lifecycle, 'revoke', '제공자 원격 권한 해지', controller.revoke, busy || !connection.available_actions?.includes('revoke'));

@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
+OAUTH_MANIFEST=ROOT/'.superpowers/sdd/2026-11-01-sns-oauth-connections/web-artifacts/manifest.json'
 MANIFEST=ROOT/'.superpowers/sdd/2026-10-31-local-sns-toolkit/web-artifacts/manifest.json'
 def overlay(webroot,manifest,*,source_root=ROOT):
     for entry in manifest['entries']:
@@ -18,7 +19,8 @@ def overlay(webroot,manifest,*,source_root=ROOT):
     for entry in manifest['entries']:shutil.copyfile(source_root/entry['artifact'],webroot/Path(entry['target']).name)
 def product_webroot(webroot):
     shutil.copytree(ROOT/'ax-console/app/web',webroot)
-    if MANIFEST.exists():overlay(webroot,json.loads(MANIFEST.read_text()))
+    manifest=OAUTH_MANIFEST if OAUTH_MANIFEST.exists() else MANIFEST
+    if manifest.exists():overlay(webroot,json.loads(manifest.read_text()))
 class ProtectedAcceptance(unittest.TestCase):
     def fixture(self,root):
         web=root/'web';web.mkdir();art=root/'art';art.mkdir();entries=[]

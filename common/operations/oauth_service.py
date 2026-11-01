@@ -215,8 +215,8 @@ class OAuthConnectionService:
             row=definition.to_dict(); blockers=[]
             try: self._registration(definition.id)
             except StoreError: blockers.append('registration_blocked')
-            cost=all(r.cost_kind=='no_additional_cost' for r in definition.operations if r.endpoint)
-            if not cost or not any(r.endpoint for r in definition.operations): blockers.append('cost_evidence_unverified')
+            cost=any(r.endpoint for r in definition.operations) and all(r.cost_kind=='no_additional_cost' for r in definition.operations if r.endpoint)
+            if not cost: blockers.append('cost_evidence_unverified')
             row.update(registration_status='registration_blocked' if 'registration_blocked' in blockers else 'ready',
                 cost_gate='no_additional_cost' if cost else 'unknown',policy_gate='allowed' if not definition.policy_reasons else 'blocked',
                 blockers=blockers,ready=not blockers and not definition.policy_reasons and self.policy.live_enabled)
@@ -243,6 +243,10 @@ class OAuthConnectionService:
                         row['available_actions']=['disconnect']
                         if managed['state']=='connected' and not managed.get('operation_lease'):
                             row['available_actions']+=self._available_remote_actions(context)
+                if managed.get('operation_lease'):
+                    # 기동 중단 뒤에도 lease는 남는다. GET은 복구/재시도하지 않고 불확실성만 투영한다.
+                    row.update(state='unknown',auth_status='unknown',read_status='unknown',reason_codes=['oauth_operation_pending_manual_check'])
+                    row['authorization'].update(read_status='unknown',credential_status='unknown',publication_status='blocked')
             items.append(row)
         return dict(items=items,base_revision=base.revision)
 

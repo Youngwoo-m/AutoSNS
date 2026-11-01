@@ -213,3 +213,15 @@ test('DOM displays only safe authorization metadata and keeps publication unveri
  const api=createOAuthApi(async()=>({ok:true,json:async()=>({authorization})}));assert.deepEqual(await api.attempt('a1'),{authorization});
  const unsafe=createOAuthApi(async()=>({ok:true,json:async()=>({authorization:{...authorization,access_token:'secret'}})}));await assert.rejects(()=>unsafe.attempt('a1'));
 });
+
+
+test('pending lifecycle lease projection shows explicit manual check without enabling remote retry',async()=>{
+ const metadata={observed_scopes:['profile'],credential_expires_at:null,read_status:'unknown',publication_status:'blocked',credential_status:'unknown'};
+ const f=await ready({connections:async()=>({base_revision:'b1',items:[{connection_id:'c1',account_id:'personal',provider_id:'naver',connection_revision:3,state:'unknown',authorization:metadata,available_actions:['disconnect'],reason_codes:['oauth_operation_pending_manual_check']}]})});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ assert.match(panel.render().textContent,/이전 갱신·해지 결과를 확인할 수 없습니다/);
+ assert.match(panel.render().textContent,/자동 재시도하지 말고 수동 확인하세요/);
+ assert.match(panel.render().textContent,/자격 상태: 불확실/);
+ assert.equal(click(panel.render(),'refresh').disabled,true);assert.equal(click(panel.render(),'revoke').disabled,true);
+ assert.equal(click(panel.render(),'disconnect').disabled,false);
+});

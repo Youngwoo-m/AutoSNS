@@ -21,7 +21,7 @@ function harness(){
   const pending=[];
   const request=()=>new Promise((resolve,reject)=>pending.push({resolve,reject}));
   const app=vm.runInNewContext(`
-    let state={account:'all',snapshot:null,phase:'idle'},view='today';
+    let state={account:'all',snapshot:null,phase:'idle'},view='today',detailMode='legacy';
     const views={today:[],planning:[]};
     const renderers={today:()=>({}),planning:()=>({})};
     ${render}
