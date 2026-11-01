@@ -133,8 +133,10 @@ def migrate_to_owned_schema(context):
         db.execute('INSERT INTO oauth_graph_meta VALUES(1,0,0)')
         for table in ('oauth_attempts','oauth_proposals','oauth_connections','oauth_request_receipts','oauth_generations','oauth_meta','oauth_operations','oauth_stages','oauth_recovery_events'):
             for event in ('INSERT','UPDATE','DELETE'):
-                journal=',journal_revision=journal_revision+1' if table in ('oauth_stages','oauth_recovery_events') else ''
-                db.execute(f'CREATE TRIGGER {table}_{event.lower()}_graph AFTER {event} ON {table} BEGIN UPDATE oauth_graph_meta SET graph_revision=graph_revision+1{journal} WHERE id=1; END')
+                # Recovery evidence changes the journal, never the reference graph.
+                changes=('journal_revision=journal_revision+1' if table=='oauth_recovery_events'
+                         else 'graph_revision=graph_revision+1'+(',journal_revision=journal_revision+1' if table=='oauth_stages' else ''))
+                db.execute(f'CREATE TRIGGER {table}_{event.lower()}_graph AFTER {event} ON {table} BEGIN UPDATE oauth_graph_meta SET {changes} WHERE id=1; END')
         db.execute('PRAGMA user_version=2'); db.commit()
     except sqlite3.Error:
         db.rollback(); raise StoreError('storage_unavailable') from None
