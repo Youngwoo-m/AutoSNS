@@ -79,6 +79,7 @@ class OAuthConnectionService:
 
     def _session(self,session):
         if not isinstance(session,SessionContext): raise StoreError('oauth_session_required')
+        SessionContext(session.actor,session.session_binding)
         return session
 
     def _registration(self,provider_id):
@@ -226,7 +227,7 @@ class OAuthConnectionService:
         self._session(session)
         if account not in ('all','personal','dept'): raise StoreError('invalid')
         base,snapshot,projected=self._snapshot(); items=[]
-        owned=self.attempt_store.list_owned(session.session_binding)
+        completed=self.attempt_store.list_completed_for_actor(session.actor)
         for key,connection in projected.connections.items():
             if account!='all' and connection.account_id!=account: continue
             row=connection.to_dict(public=True); managed=snapshot.connections.get(key)
@@ -236,20 +237,24 @@ class OAuthConnectionService:
                 row['authorization']=self._public_authorization(managed.get('authorization'))
                 if managed.get('provider_id'):
                     row['provider_id']=managed['provider_id']
-                    contexts=[item['context'] for item in owned if item['state']=='connected' and
-                              item['context'].actor==session.actor and item['context'].connection_id==key and
-                              item['context'].provider_id==managed['provider_id']]
-                    if contexts:
+                    try: context=self._completed_context(session,managed,completed)
+                    except StoreError: context=None
+                    if context is not None:
                         row['available_actions']=['disconnect']
                         if managed['state']=='connected' and not managed.get('operation_lease'):
-                            row['available_actions']+=self._available_remote_actions(managed['provider_id'])
+                            row['available_actions']+=self._available_remote_actions(context)
             items.append(row)
         return dict(items=items,base_revision=base.revision)
 
-    def _available_remote_actions(self,provider_id):
+    def _available_remote_actions(self,context):
         if not self.policy.live_enabled: return []
+        provider_id=context.provider_id
         try: client,definition=self._registration(provider_id)
         except StoreError: return []
+        if (context.client_revision!=client.client_revision or context.redirect_uri!=client.redirect_uri or
+                context.client_ref!=client.client_id or context.evidence_revision!=client.cost_evidence_revision or
+                not set(context.requested_scopes)<=set(client.approved_scopes)):
+            return []
         return [rule.operation for rule in definition.operations if rule.operation in ('refresh','revoke') and
                 rule.contract_status=='verified' and rule.endpoint and rule.cost_kind=='no_additional_cost' and
                 rule.evidence_revision==client.cost_evidence_revision and
@@ -509,17 +514,26 @@ class OAuthConnectionService:
         base,snapshot,projected=self._snapshot(); row=snapshot.connections.get(connection_id)
         if row is None: raise StoreError('not_found')
         if body['expected_base_revision']!=base.revision or body['expected_connection_revision']!=row['revision']: raise ConflictError()
-        owned=[item for item in self.attempt_store.list_owned(session.session_binding)
-               if item['context'].actor==session.actor and item['context'].connection_id==connection_id and item['state']=='connected']
-        if not owned: raise StoreError('not_found')
+        context=self._completed_context(session,row)
+        return replace(context,connection_revision=row['revision']),row
+
+    def _completed_context(self,session,row,completed=None):
+        """완료 연결만 actor에 귀속한다. 미완 시도의 세션 결속에는 사용하지 않는다."""
         if not row.get('provider_id'): raise StoreError('oauth_provider_unconfirmed')
-        owned=[item for item in owned if item['context'].provider_id==row['provider_id']]
-        if not owned: raise StoreError('credential_owner_mismatch')
-        latest=max(owned,key=lambda item:item.get('token_ref').generation if item.get('token_ref') else 0)
-        context=replace(latest['context'],connection_revision=row['revision'])
-        if context.account_id!=row['account_id'] or self.definitions[context.provider_id].platform!=row['platform']:
-            raise StoreError('credential_owner_mismatch')
-        return context,row
+        records=completed if completed is not None else self.attempt_store.list_completed_for_actor(session.actor)
+        candidates=[]
+        for item in records:
+            context=item['context']; ref=item.get('token_ref')
+            if (item['state']!='connected' or context.actor!=session.actor or
+                    context.connection_id!=row['connection_id'] or context.account_id!=row['account_id'] or
+                    context.provider_id!=row['provider_id'] or context.base_revision!=row['base_revision'] or
+                    self.definitions[context.provider_id].platform!=row['platform']):
+                continue
+            self._checked_ref(context,ref,'token')
+            # refresh는 active 세대만 교체한다. 이전 완료 시도는 그 현재 포인터를 해석하는 근거다.
+            if ref.generation<=row['credential_generation']: candidates.append(item)
+        if not candidates: raise StoreError('not_found')
+        return max(candidates,key=lambda item:item['token_ref'].generation)['context']
 
     def _public_connection(self,connection_id):
         row=self.connection_store.snapshot().connections[connection_id]

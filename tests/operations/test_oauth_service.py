@@ -458,5 +458,85 @@ class OAuthServiceTests(unittest.TestCase):
         self.assertEqual(result['authorization'],row['authorization'])
         self.assertEqual('verified',row['authorization']['read_status']); self.assertEqual('blocked',row['authorization']['publication_status'])
 
+    def test_same_actor_new_login_manages_completed_connection_after_reopen(self):
+        self.connected(); self.service=self.make_service()
+        new_session=SessionContext('console_user','new-login-session')
+        row=next(row for row in self.service.connections(new_session,'personal')['items'] if row['id']=='personal.youtube')
+        self.assertIn('disconnect',row['available_actions']); self.assertIn('refresh',row['available_actions'])
+        result=self.service.disconnect_local(new_session,'personal.youtube',dict(request_key='new-login-disconnect',expected_base_revision='base',expected_connection_revision=row['connection_revision']))
+        self.assertEqual('disconnected',result['state']); self.assertFalse(result['execution_enabled'])
+        self.assertEqual([],self.service.result_for_session(new_session)['items'])
+
+    def test_new_session_cannot_read_or_continue_unfinished_attempt(self):
+        item=self.staged(); new_session=SessionContext('console_user','new-login-session')
+        self.assertEqual([],self.service.result_for_session(new_session)['items'])
+        with self.assertRaises(StoreError): self.service.read_attempt(new_session,item['attempt_id'])
+        with self.assertRaises(StoreError): self.service.resume_exchange(new_session,item['attempt_id'],dict(request_key='new-continue',expected_revision=item['revision']))
+        self.assertNotIn('exchange',self.provider.calls)
+        self.assertEqual('callback_staged',self.service.read_attempt(self.session,item['attempt_id'])['state'])
+
+    def test_expired_flow_does_not_expire_durable_completed_management_or_use_old_ref(self):
+        self.connected()
+        self.service.refresh(self.session,'personal.youtube',dict(request_key='first-refresh',expected_base_revision='base',expected_connection_revision=1))
+        active=self.connections_store.snapshot().connections['personal.youtube']
+        self.now+=timedelta(minutes=11); self.service=self.make_service(); new_session=SessionContext('console_user','new-login-session')
+        captured=[]
+        def refresh(wrapper,bundle,secret):
+            captured.append(bundle.access_token)
+            return TokenBundle('newest-access','newest-refresh','Bearer',None,bundle.scopes)
+        with patch.object(self.provider,'refresh',side_effect=refresh):
+            result=self.service.refresh(new_session,'personal.youtube',dict(request_key='new-login-refresh',expected_base_revision='base',expected_connection_revision=active['revision']))
+        self.assertEqual(['rotated-access'],captured); self.assertEqual('connected',result['state'])
+        current=self.connections_store.snapshot().connections['personal.youtube']
+        self.assertGreater(current['credential_generation'],active['credential_generation'])
+        self.assertIn(b'newest-access',self.vault.get(current['credential_ref']))
+
+    def test_other_actor_cannot_manage_completed_connection_even_with_forged_session_object(self):
+        self.connected()
+        with self.assertRaises(StoreError): SessionContext('other_actor','other-session')
+        forged=SessionContext('console_user','other-session'); object.__setattr__(forged,'actor','other_actor')
+        with self.assertRaises(StoreError): self.service.connections(forged,'personal')
+        with self.assertRaises(StoreError): self.service.disconnect_local(forged,'personal.youtube',dict(request_key='other-actor',expected_base_revision='base',expected_connection_revision=1))
+        self.assertEqual('connected',self.connections_store.snapshot().connections['personal.youtube']['state'])
+
+    def test_new_login_uses_latest_completed_registration_context(self):
+        self.connected(); self.registration=replace(self.registration,client_revision=2); self.service=self.make_service()
+        body=self.body('new-registration'); body['expected_connection_revision']=1
+        started=self.service.start(self.session,body)
+        state=parse_qs(urlsplit(started['authorize_url']).query)['state'][0]
+        self.service.receive_callback('youtube',{'state':state,'code':'secret-code'},self.callback)
+        item=self.service.read_attempt(self.session,started['attempt_id'])
+        item=self.service.resume_exchange(self.session,item['attempt_id'],dict(request_key='second-continue',expected_revision=item['revision']))
+        item=self.service.inspect(self.session,item['attempt_id'],dict(request_key='second-inspect',expected_revision=item['revision']))
+        self.service.confirm_target(self.session,item['target_proposal']['proposal_id'],dict(request_key='second-confirm',expected_base_revision='base',expected_connection_revision=1))
+        self.service=self.make_service(); session=SessionContext('console_user','new-login-session')
+        current=self.connections_store.snapshot().connections['personal.youtube']; revisions=[]
+        original=self.provider.refresh
+        def refresh(wrapper,bundle,secret):
+            revisions.append(wrapper['context'].client_revision)
+            return original(wrapper,bundle,secret)
+        with patch.object(self.provider,'refresh',side_effect=refresh):
+            result=self.service.refresh(session,'personal.youtube',dict(request_key='new-registration-refresh',expected_base_revision='base',expected_connection_revision=current['revision']))
+        self.assertEqual([2],revisions); self.assertEqual('connected',result['state'])
+
+    def test_new_login_rechecks_registration_and_cost_before_remote_lifecycle(self):
+        self.connected(); session=SessionContext('console_user','new-login-session')
+        rotated=self.make_service(client_registrations={'youtube':replace(self.registration,client_revision=2)})
+        row=next(row for row in rotated.connections(session,'personal')['items'] if row['id']=='personal.youtube')
+        self.assertEqual(['disconnect'],row['available_actions'])
+        body=dict(request_key='rotated-registration',expected_base_revision='base',expected_connection_revision=1)
+        with self.assertRaises(StoreError): rotated.refresh(session,'personal.youtube',body)
+        strict=self.make_service(cost_guard=None)
+        with self.assertRaises(StoreError): strict.refresh(session,'personal.youtube',dict(body,request_key='cost-unconfirmed'))
+        self.assertNotIn('refresh',self.provider.calls)
+        self.assertEqual('connected',self.connections_store.snapshot().connections['personal.youtube']['state'])
+
+    def test_new_login_can_revoke_completed_non_google_connection(self):
+        self.use_provider('threads'); self.connected(); self.now+=timedelta(minutes=11)
+        self.service=self.make_service(client_registrations={'threads':self.registration},providers={'threads':self.provider})
+        session=SessionContext('console_user','new-login-session')
+        result=self.service.revoke(session,'personal.youtube',dict(request_key='new-login-revoke',expected_base_revision='base',expected_connection_revision=1))
+        self.assertEqual('revoked',result['state']); self.assertFalse(result['execution_enabled'])
+
 
 if __name__=='__main__': unittest.main()
