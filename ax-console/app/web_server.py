@@ -14,6 +14,7 @@ import os
 from collections.abc import Mapping
 from pathlib import Path
 import re
+import secrets
 import socket
 import sqlite3
 import sys
@@ -32,6 +33,8 @@ from common.operations.integration_store import IntegrationStore
 from common.operations.ledger import Ledger
 from common.operations.models import ContractError
 from web_tools import handle as handle_tools, recognizes as tools_path
+from web_oauth import (handle as handle_oauth, recognizes as oauth_path,
+                       query_fields as oauth_query_fields, OAuthCallbackPolicy)
 from common.operations.local_toolkit import LocalToolkitService
 from common.operations.tool_cost_policy import ToolkitPolicy
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
@@ -68,6 +71,9 @@ _STATIC = {
     'toolkit_api.js': 'text/javascript; charset=utf-8',
     'toolkit_controller.js': 'text/javascript; charset=utf-8',
     'toolkit_panel.js': 'text/javascript; charset=utf-8',
+    'oauth_api.js': 'text/javascript; charset=utf-8',
+    'oauth_controller.js': 'text/javascript; charset=utf-8',
+    'oauth_panel.js': 'text/javascript; charset=utf-8',
 }
 _SETUP_NOTICE = '''<!doctype html><html lang="ko"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -267,16 +273,24 @@ class _Handler(BaseHTTPRequestHandler):
             self._error(400, '올바르지 않은 경로입니다')
             return None
         for name in ('Host', 'Origin', 'Cookie', 'X-AX-Internal', 'Content-Length', 'Content-Type', 'Sec-Fetch-Site',
-                     'X-AX-Filename', 'X-AX-Expected-Revision'):
+                     'X-AX-Filename', 'X-AX-Expected-Revision', 'X-CSRF-Token',
+                     'X-Forwarded-Proto', 'X-Forwarded-Host', 'Forwarded'):
             if len(self.headers.get_all(name, [])) > 1:
                 self._error(400, '중복된 요청 머리글입니다')
                 return None
         host = self.headers.get('Host', '')
-        if host not in self.server.allowed_hosts:
+        callback = parsed.path.startswith('/oauth/callback/')
+        callback_allowed = (callback and self.command == 'GET' and
+            self.server.oauth_callback_policy is not None and
+            self.server.oauth_callback_policy.accepts(self, parsed.path))
+        if callback and not callback_allowed:
+            self._error(403, '허용되지 않은 callback 경계입니다')
+            return None
+        if not callback_allowed and host not in self.server.allowed_hosts:
             self._error(403, '허용되지 않은 호스트입니다')
             return None
         origin = self.headers.get('Origin')
-        if ((origin is not None and origin != 'http://' + host)
+        if not callback_allowed and ((origin is not None and origin != 'http://' + host)
                 or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
             self._error(403, '같은 출처에서만 접근할 수 있습니다')
             return None
@@ -292,7 +306,12 @@ class _Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError):
             self._error(400, '올바르지 않은 조회 조건입니다')
             return None
-        if parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities'):
+        if oauth_path(parsed.path):
+            if (set(query) - oauth_query_fields(parsed.path) or any(len(v)!=1 for v in query.values())
+                    or ('account' in query and query['account'][0] not in ('all','personal','dept'))):
+                self._error(400, '올바르지 않은 조회 조건입니다')
+                return None
+        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -354,6 +373,8 @@ class _Handler(BaseHTTPRequestHandler):
             if validated is None:
                 return
             path, query = validated
+            if oauth_path(path):
+                return handle_oauth(self, method, path, query)
             if method == 'POST' and path in ('/api/auth/login', '/api/auth/logout'):
                 return self._post(path)
             managed = path == '/api/v2/integrations/settings' or path == '/api/v2/contents' or path.startswith('/api/v2/contents/')
@@ -394,6 +415,8 @@ class _Handler(BaseHTTPRequestHandler):
                 if result is None:return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200,result)
             if deliveries:
+                if path == '/api/v2/connections' and self.server.oauth_service is not None:
+                    return handle_oauth(self, method, '/api/v2/oauth/connections', query)
                 if not self._authed():
                     return self._error(401, '로그인이 필요합니다')
                 if self.server.workspace_root is None:
@@ -623,7 +646,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   workspace_root: Path | None = None, operations_registry=None, execution_policy=None,
                   recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None,
                   execution_service=None, execution_status_info=None, operations_locks=None,
-                  toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None) -> ThreadingHTTPServer:
+                  toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
+                  oauth_service=None, oauth_callback_policy=None, oauth_test_only=False) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -633,6 +657,10 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다')
     if toolkit_policy is not None and type(toolkit_policy) is not ToolkitPolicy:
         raise ValueError('서버 소유 로컬 도구 정책이 필요합니다')
+    if (type(oauth_test_only) is not bool or
+            (oauth_callback_policy is not None and type(oauth_callback_policy) is not OAuthCallbackPolicy) or
+            (oauth_callback_policy is not None and oauth_callback_policy.test_only and not oauth_test_only)):
+        raise ValueError('명시된 OAuth callback 정책과 시험 경계가 필요합니다')
     source_root, web_root = Path(source_root).resolve(), Path(web_root).resolve()
     workspace_root = Path(workspace_root).resolve() if workspace_root is not None else None
     if workspace_root is not None and (workspace_root.is_relative_to(source_root) or source_root.is_relative_to(workspace_root)):
@@ -680,6 +708,10 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         clock=server.operations_clock)
     server.web_root = web_root
     server.auth_backend = backend
+    server.oauth_service = oauth_service
+    server.oauth_callback_policy = oauth_callback_policy
+    server.oauth_test_only = oauth_test_only
+    server.oauth_csrf_key = secrets.token_bytes(32)
     server.snapshot_builder = snapshot_builder if snapshot_builder is not None else _build_snapshot
     explicit_agents = os.environ.get('AX_LAUNCHAGENTS_DIR')
     server.launchagents_dir = Path(explicit_agents).resolve() if explicit_agents else None
@@ -712,6 +744,8 @@ def main():
                            operations_registry=Path(os.environ['AX_OPERATIONS_REGISTRY']) if os.environ.get('AX_OPERATIONS_REGISTRY') else None,
                            toolkit_policy=toolkit_policy)
     try:
+        if getattr(server, 'oauth_test_only', False) is True or getattr(getattr(server, 'oauth_callback_policy', None), 'test_only', False) is True:
+            raise SystemExit('운영 기동에는 시험용 OAuth callback을 사용할 수 없습니다')
         if server.workspace_root is not None:
             server.content_store.initialize()
             server.integration_store.initialize()
