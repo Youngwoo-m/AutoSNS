@@ -56,14 +56,14 @@ test('multi-tab results require explicit selection, same-account binding and exp
 });
 test('actual DOM controls select, clear, start and Escape closes with focus restoration',async()=>{
  const f=await ready();const {document}=harness();const opener=document.createElement('button');opener.focus();let closed=0;
- const panel=createOAuthPanel({controller:f.controller,document,onClose:()=>closed++});panel.open();let root=panel.render();
+ const panel=createOAuthPanel({controller:f.controller,document,onClose:()=>{closed++;return true;}});panel.open();let root=panel.render();
  assert.equal(root.getAttribute('role'),'dialog');assert.match(root.textContent,/읽기|권한/);assert.match(root.textContent,/발행.*비활성/);
  const selector=field(root,'provider_id');selector.value='';await selector.fire('change');assert.equal(f.controller.getState().provider_id,'');
  field(root,'provider_id').value='naver';await field(root,'provider_id').fire('change');await click(root,'start').fire('click');assert.equal(f.calls[0][0],'start');
  await root.fire('keydown',{key:'Escape'});assert.equal(closed,1);assert.equal(document.activeElement,opener);
 });
 test('target confirmation uses frozen proposal CAS; local disconnect is distinct from revoke',async()=>{
- const attempt={attempt_id:'a1',account_id:'personal',provider_id:'naver',state:'target_confirmation',revision:4,target_proposal:{proposal_id:'p1',expected_base_revision:'frozen',expected_connection_revision:7,target_id:'remote',target_label:'대상'}};
+ const attempt={attempt_id:'a1',account_id:'personal',provider_id:'naver',connection_id:'c1',connection_revision:2,base_revision:'b1',state:'target_confirmation',revision:4,target_proposal:{proposal_id:'p1',expected_base_revision:'frozen',expected_connection_revision:7,target_id:'remote',target_label:'대상'}};
  const f=await ready({result:async()=>({items:[attempt]}),attempt:async()=>attempt});await f.controller.reloadOwnedResult();await f.controller.selectOwnedAttempt('a1');await f.controller.confirmTarget();
  assert.equal(f.calls[0][0],'confirmTarget');assert.equal(f.calls[0][2].expected_base_revision,'frozen');assert.equal(f.calls[0][2].expected_connection_revision,7);
  await f.controller.disconnect();assert.equal(f.calls[1][0],'disconnect');await f.controller.revoke();assert.equal(f.calls.length,2);
@@ -121,4 +121,95 @@ test('private credential references are blocked recursively',async()=>{
  for(const name of ['code_ref','ticket_ref','client_ref','token_ref']) {
   const api=createOAuthApi(async()=>({ok:true,json:async()=>({details:{[name]:{namespace:'private'}}})}));await assert.rejects(()=>api.result());
  }
+});
+test('host close guard sees pending and can reject Escape and close without discarding it',async()=>{
+ const f=await ready({start:async()=>{throw Object.assign(new Error(),{status:503});}});await f.controller.start();
+ const {document}=harness();let observed=0;
+ const panel=createOAuthPanel({controller:f.controller,document,onClose:()=>{observed++;assert.equal(f.controller.hasUnsavedChanges(),true);return false;}});
+ panel.open();const pending=f.controller.getState().pending;
+ await panel.root.fire('keydown',{key:'Escape'});assert.deepEqual(f.controller.getState().pending,pending);assert.equal(panel.root.hidden,false);
+ await click(panel.root,'close').fire('click');assert.deepEqual(f.controller.getState().pending,pending);assert.equal(observed,2);
+});
+test('host account guard observes pending input and rejects account change before cleanup',async()=>{
+ const f=await ready({start:async()=>{throw Object.assign(new Error(),{status:503});}});await f.controller.start();
+ const {document}=harness();let observed=false;
+ const panel=createOAuthPanel({controller:f.controller,document,onContextChange:()=>{observed=f.controller.hasUnsavedChanges();return false;}});panel.open();
+ const pending=f.controller.getState().pending;
+ field(panel.root,'account_id').value='dept';await field(panel.root,'account_id').fire('change');
+ assert.equal(observed,true);assert.equal(f.controller.getState().account_id,'personal');assert.equal(field(panel.root,'account_id').value,'personal');assert.deepEqual(f.controller.getState().pending,pending);
+});
+test('busy close guard sees mutation in progress and can refuse cleanup',async()=>{
+ let resolve;const f=await ready({start:()=>new Promise(r=>resolve=r)});const work=f.controller.start();
+ const {document}=harness();let observed=false;
+ const panel=createOAuthPanel({controller:f.controller,document,onClose:()=>{observed=f.controller.isBusy();return false;}});panel.open();
+ await click(panel.root,'close').fire('click');assert.equal(observed,true);assert.equal(f.controller.isBusy(),true);
+ resolve({attempt_id:'a1',account_id:'personal',provider_id:'naver',state:'consent_pending',revision:1});await work;
+ assert.equal(f.controller.getState().attempt.attempt_id,'a1');
+});
+test('public platform connections remain selectable but managed provider never aliases another flow',async()=>{
+ const row={id:'legacy',account_id:'personal',platform:'naver_blog',connection_revision:7,target_label:'기존 연결'};
+ const f=await ready({connections:async()=>({items:[row,{...row,id:'wrong',provider_id:'instagram_login'}],base_revision:'b1'})});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ const options=field(panel.root,'connection_id').children.map(n=>n.value);assert.ok(options.includes('legacy'));assert.ok(!options.includes('wrong'));
+ field(panel.root,'connection_id').value='legacy';await field(panel.root,'connection_id').fire('change');assert.equal(f.controller.getState().connection_revision,7);
+});
+test('owned-result DOM selection replaces connection context before continue',async()=>{
+ const returned={attempt_id:'a2',account_id:'personal',provider_id:'naver',connection_id:'c2',base_revision:'b2',connection_revision:8,state:'callback_staged',revision:3};
+ const f=await ready({result:async()=>({items:[returned]}),attempt:async()=>returned,continue:async()=>({...returned,state:'token_exchanged',revision:4})});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ await click(panel.root,'owned-results').fire('click');field(panel.root,'attempt_id').value='a2';await field(panel.root,'attempt_id').fire('change');
+ assert.equal(f.controller.getState().connection_id,'c2');assert.equal(f.controller.getState().connection_revision,8);
+ await click(panel.root,'continue').fire('click');assert.equal(f.controller.getState().attempt.state,'token_exchanged');
+});
+test('provider change and explicit clear reset old connection revision before new proposal',async()=>{
+ const f=await ready({connections:async()=>({items:[{id:'old',account_id:'personal',platform:'naver_blog',connection_revision:7}],base_revision:'b1'})});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ f.controller.selectConnection('old');field(panel.root,'provider_id').value='naver';await field(panel.root,'provider_id').fire('change');assert.equal(f.controller.getState().connection_revision,0);
+ f.controller.selectConnection('old');await click(panel.root,'clear').fire('click');assert.equal(f.controller.getState().connection_revision,0);
+});
+test('DOM refresh preserves original pending retry and explicit revalidation creates new revision key',async()=>{
+ let revision='b1';const bodies=[];const f=await ready({connections:async()=>({items:[{id:'c1',account_id:'personal',platform:'naver_blog',connection_revision:2}],base_revision:revision}),start:async body=>{bodies.push(body);throw Object.assign(new Error(),{status:409});}});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});await click(panel.root,'start').fire('click');const key=bodies[0].request_key;
+ revision='b2';await click(panel.root,'load').fire('click');await click(panel.root,'retry-pending').fire('click');
+ assert.equal(bodies[1].expected_base_revision,'b1');assert.equal(bodies[1].request_key,key);
+ await click(panel.root,'revalidate-pending').fire('click');assert.equal(bodies.length,2);await click(panel.root,'start').fire('click');
+ assert.equal(bodies[2].expected_base_revision,'b2');assert.notEqual(bodies[2].request_key,key);assert.equal(bodies[2].connection_id,'c1');
+});
+test('new proposal sends null and zero revision and adopts only server-issued connection identity',async()=>{
+ const bodies=[];const f=await ready({start:async body=>{
+  assert.equal(body.connection_id,null);assert.equal(body.expected_connection_revision,0);bodies.push(body);
+  return {attempt_id:'a-new',account_id:'personal',provider_id:'naver',connection_id:'oauth.server-issued',connection_revision:0,base_revision:'b1',state:'consent_pending',revision:1};
+ }});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ field(panel.root,'connection_id').value='';await field(panel.root,'connection_id').fire('change');await click(panel.root,'start').fire('click');
+ assert.equal(bodies.length,1);assert.equal(f.controller.getState().connection_id,'oauth.server-issued');
+});
+test('async close approval preserves state until accepted and then restores focus',async()=>{
+ const f=await ready({start:async()=>{throw Object.assign(new Error(),{status:503});}});await f.controller.start();
+ const {document}=harness();const opener=document.createElement('button');opener.focus();let accept;
+ const panel=createOAuthPanel({controller:f.controller,document,onClose:()=>new Promise(resolve=>accept=resolve)});panel.open();
+ const work=click(panel.root,'close').fire('click');assert.equal(f.controller.hasUnsavedChanges(),true);assert.equal(panel.root.hidden,false);
+ accept(true);await work;assert.equal(f.controller.hasUnsavedChanges(),false);assert.equal(panel.root.hidden,true);assert.equal(document.activeElement,opener);
+});
+test('explicit revalidation preserves pending if refreshed catalog no longer permits zero-cost start',async()=>{
+ let allowed=true;const bodies=[];const f=await ready({catalog:async()=>({items:[{...provider,cost_gate:allowed?'no_additional_cost':'unknown'}],live_enabled:true}),start:async body=>{bodies.push(body);throw Object.assign(new Error(),{status:409});}});
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});await click(panel.root,'start').fire('click');const pending=f.controller.getState().pending;
+ allowed=false;await click(panel.root,'revalidate-pending').fire('click');assert.deepEqual(f.controller.getState().pending,pending);assert.equal(bodies.length,1);
+ await click(panel.root,'retry-pending').fire('click');assert.equal(bodies.length,1);assert.equal(click(panel.root,'start').disabled,true);
+});
+test('DOM separates attempt expiry from credential expiry and never infers observed scopes from requested scopes',async()=>{
+ const attempt={attempt_id:'a1',account_id:'personal',provider_id:'naver',connection_id:'c1',state:'token_exchanged',revision:4,expires_at:'2026-11-01T00:10:00Z',requested_scopes:['requested-only'],scopes:['legacy-ambiguous']};
+ const f=await ready({result:async()=>({items:[attempt]}),attempt:async()=>attempt});await f.controller.reloadOwnedResult();await f.controller.selectOwnedAttempt('a1');
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ assert.match(panel.root.textContent,/연결 시도 만료: 2026-11-01T00:10:00Z/);assert.match(panel.root.textContent,/자격 만료: 미확인/);assert.match(panel.root.textContent,/실제 동의된 scope: 미확인/);
+ assert.doesNotMatch(panel.root.textContent,/requested-only|legacy-ambiguous/);
+});
+test('DOM displays only safe authorization metadata and keeps publication unverified or blocked',async()=>{
+ const authorization={observed_scopes:['actually-granted'],credential_expires_at:'2026-12-01T00:00:00Z',read_status:'verified',publication_status:'blocked',credential_status:'stored'};
+ const attempt={attempt_id:'a1',account_id:'personal',provider_id:'naver',connection_id:'c1',state:'token_exchanged',revision:4,expires_at:'2026-11-01T00:10:00Z',authorization};
+ const f=await ready({result:async()=>({items:[attempt]}),attempt:async()=>attempt});await f.controller.reloadOwnedResult();await f.controller.selectOwnedAttempt('a1');
+ const {document}=harness();const panel=createOAuthPanel({controller:f.controller,document});
+ assert.match(panel.root.textContent,/실제 동의된 scope: actually-granted/);assert.match(panel.root.textContent,/자격 만료: 2026-12-01T00:00:00Z/);assert.match(panel.root.textContent,/읽기 검증: 확인됨/);assert.match(panel.root.textContent,/발행 권한: 차단/);assert.match(panel.root.textContent,/자격 상태: 보관됨/);
+ const api=createOAuthApi(async()=>({ok:true,json:async()=>({authorization})}));assert.deepEqual(await api.attempt('a1'),{authorization});
+ const unsafe=createOAuthApi(async()=>({ok:true,json:async()=>({authorization:{...authorization,access_token:'secret'}})}));await assert.rejects(()=>unsafe.attempt('a1'));
 });

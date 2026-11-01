@@ -4,6 +4,10 @@ const requestKey = () => globalThis.crypto.randomUUID();
 const clean = account_id => ({account_id, provider_id: '', connection_id: '', base_revision: null, connection_revision: 0,
   catalog: [], connections: [], ownedResults: [], attempt: null, pending: null, requested_scopes: [], live_enabled: false,
   busy: false, message: '계정과 연결 방식을 선택하세요.', errorStatus: null});
+export function matchesOAuthConnection(row, provider) {
+  if (!row || !provider) return false;
+  return row.provider_id != null ? row.provider_id === provider.provider_id : row.platform === provider.platform;
+}
 export function createOAuthController({api, onChange = () => {}}) {
   let state = clean('all'), generation = 0, selection = 0;
   const listeners = new Set();
@@ -29,6 +33,7 @@ export function createOAuthController({api, onChange = () => {}}) {
   }
   function clearSelection() {
     selection++; state.attempt = null; state.pending = null; state.requested_scopes = []; state.errorStatus = null;
+    state.connection_id = ''; state.connection_revision = 0;
   }
   function selectProvider(value) {
     if (state.busy) return;
@@ -39,12 +44,13 @@ export function createOAuthController({api, onChange = () => {}}) {
     if (state.busy) return;
     const row = state.connections.find(item => (item.connection_id || item.id) === value);
     clearSelection();
-    state.connection_id = row && row.account_id === state.account_id ? value : '';
-    state.connection_revision = row?.connection_revision ?? row?.revision ?? 0;
+    state.connection_id = row && row.account_id === state.account_id && matchesOAuthConnection(row, provider()) ? value : '';
+    state.connection_revision = state.connection_id ? row.connection_revision ?? row.revision ?? 0 : 0;
     state.requested_scopes = [...(provider()?.read_scopes || [])]; emit();
   }
   async function load() {
-    const current = ++generation; state.busy = true; emit();
+    if (state.busy) return false;
+    const current = ++generation; let loaded = false; state.busy = true; emit();
     try {
       const [catalog, connections] = await Promise.all([api.catalog(state.account_id), api.connections(state.account_id)]);
       if (current !== generation) return;
@@ -53,9 +59,13 @@ export function createOAuthController({api, onChange = () => {}}) {
       state.live_enabled = catalog.live_enabled === true;
       state.connections = (connections.items || []).filter(row => state.account_id === 'all' || row.account_id === state.account_id);
       state.base_revision = connections.base_revision;
+      const selectedConnection = connection();
+      if (selectedConnection) state.connection_revision = selectedConnection.connection_revision ?? selectedConnection.revision ?? 0;
+      loaded = true;
       state.message = '권한·비용·준비 상태를 확인하세요. 발행 실행은 비활성입니다.';
     } catch (error) { if (current === generation) feedback(error); }
     finally { if (current === generation) { state.busy = false; emit(); } }
+    return loaded;
   }
   async function reloadOwnedResult() {
     if (state.busy) return;
@@ -77,6 +87,10 @@ export function createOAuthController({api, onChange = () => {}}) {
       if (current !== generation || selected !== selection) return;
       if (result.account_id !== state.account_id || result.attempt_id !== value || !providerIds.includes(result.provider_id)) throw new Error();
       state.attempt = result; state.provider_id = result.provider_id;
+      state.connection_id = typeof result.connection_id === 'string' ? result.connection_id : '';
+      const selectedConnection = connection();
+      state.connection_revision = selectedConnection?.connection_revision ?? selectedConnection?.revision ?? result.connection_revision ?? 0;
+      if (!selectedConnection && typeof result.base_revision === 'string') state.base_revision = result.base_revision;
       state.message = '동의 복귀는 연결 완료가 아닙니다. 상태를 확인하고 계속하세요.';
     } catch (error) { if (current === generation && selected === selection) feedback(error); }
     finally { if (current === generation && selected === selection) { state.busy = false; emit(); } }
@@ -100,10 +114,36 @@ export function createOAuthController({api, onChange = () => {}}) {
       if (result.connection_id && state.connection_id && result.connection_id !== state.connection_id) throw new Error();
       state.pending = null;
       if (result.attempt_id) state.attempt = result;
+      if (operation === 'start' && typeof result.connection_id === 'string') {
+        state.connection_id = result.connection_id;
+        state.connection_revision = result.connection_revision ?? 0;
+      }
       state.message = operation === 'disconnect' ? '로컬 연결을 해제했습니다. 제공자의 원격 권한 해지는 수행하지 않았습니다.' :
         operation === 'revoke' ? '원격 권한 해지 결과를 확인하세요. 다른 연결의 영향은 별도입니다.' : '서버 결과를 확인하세요. 발행 실행은 비활성입니다.';
     } catch (error) { if (current === generation && selected === selection) feedback(error); }
     finally { if (current === generation && selected === selection) { state.busy = false; emit(); } }
+  }
+  function retryPending() {
+    if (!state.pending || state.busy) return;
+    const {operation, target, signature, request_key, ...payload} = state.pending;
+    if (operation === 'start' && !canStart()) {state.message = '현재 등록·비용·정책 상태에서 대기 요청을 재전송할 수 없습니다.'; emit(); return;}
+    return mutate(operation, target, payload);
+  }
+  async function revalidatePending() {
+    if (state.busy || !state.pending || state.errorStatus !== 409) return;
+    const pending = state.pending;
+    if (!['start', 'refresh', 'disconnect', 'revoke'].includes(pending.operation)) {
+      state.message = '이 시도는 돌아온 결과에서 최신 상태와 대상을 다시 확인해야 합니다. 대기 요청은 보존했습니다.'; emit(); return;
+    }
+    if (!await load() || state.pending?.request_key !== pending.request_key) return;
+    const selectedConnection = connection();
+    if ((state.connection_id && (!selectedConnection || !matchesOAuthConnection(selectedConnection, provider()))) ||
+        (pending.operation === 'start' && (!canStart() || state.requested_scopes.some(scope => !provider()?.read_scopes?.includes(scope))))) {
+      state.message = '최신 등록·권한·비용·연결 조건이 맞지 않습니다. 원래 대기 요청과 입력은 보존했습니다.'; emit(); return;
+    }
+    state.connection_revision = selectedConnection?.connection_revision ?? selectedConnection?.revision ?? 0;
+    state.pending = null; state.errorStatus = null;
+    state.message = '최신 기준으로 재검증했습니다. 입력을 검토한 뒤 다시 누르면 새 요청 키로 제출합니다.'; emit();
   }
   const revisions = () => ({expected_base_revision: state.base_revision, expected_connection_revision: state.connection_revision});
   const start = () => {
@@ -138,7 +178,7 @@ export function createOAuthController({api, onChange = () => {}}) {
   function close() { generation++; selection++; state = clean(state.account_id); emit(); }
   return {getState, subscribe(listener) {listeners.add(listener); return () => listeners.delete(listener);}, setContext, load, selectProvider, selectConnection,
     clearSelection() {if (!state.busy) {clearSelection(); state.provider_id = ''; state.connection_id = ''; emit();}},
-    reloadOwnedResult, selectOwnedAttempt, start, continue: continueAttempt, inspect, confirmTarget,
+    reloadOwnedResult, selectOwnedAttempt, retryPending, revalidatePending, start, continue: continueAttempt, inspect, confirmTarget,
     refresh: () => connectionAction('refresh'), disconnect: () => connectionAction('disconnect'), revoke: () => connectionAction('revoke'),
     canStart, canConfirmTarget, close, isBusy: () => state.busy, hasUnsavedChanges: () => !!state.pending,
   };
