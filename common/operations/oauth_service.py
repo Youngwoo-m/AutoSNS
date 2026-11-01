@@ -1,6 +1,8 @@
 """명시 사용자 세션의 OAuth 조합. 생성/GET는 vault와 외부 provider를 호출하지 않는다."""
 from dataclasses import dataclass, replace, asdict
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from types import MappingProxyType
 from urllib.parse import urlsplit, parse_qsl
 import base64
@@ -11,12 +13,14 @@ import re
 import secrets
 from uuid import uuid4
 from .content_store import StoreError, ConflictError
-from .credential_backend import CredentialError, validate_ref
+from .credential_backend import CredentialError
 from .managed_connections import project_registry
 from .oauth_catalog import provider_catalog
 from .oauth_models import AttemptContext, CredentialRef, OAuthClientRegistration, OAuthPolicy, TokenBundle, validate_authorization
 from .oauth_policy import assert_zero_cost
 from .oauth_store import _time
+from .oauth_stage_models import OwnedCredentialRef, logical_ref
+from .oauth_workspace import OAuthWorkspaceContext, oauth_write_guard
 
 
 @dataclass(frozen=True, repr=False)
@@ -61,7 +65,19 @@ def _token_from_bytes(value):
 
 class OAuthConnectionService:
     def __init__(self,registry_supplier,client_registrations,attempt_store,connection_store,backend,
-                 providers,policy=None,clock=None,*,cost_guard=None):
+                 providers,policy=None,clock=None,*,cost_guard=None,workspace_context=None,
+                 stage_store=None,owned_backend=None):
+        injected=(workspace_context,stage_store,owned_backend)
+        if any(value is not None for value in injected):
+            if any(value is None for value in injected): raise StoreError('oauth_workspace_mismatch')
+            try:
+                if not isinstance(workspace_context,OAuthWorkspaceContext): raise ValueError()
+                contexts=(workspace_context,stage_store.context,owned_backend.context)
+                roots=[Path(value.root).resolve() for value in (*contexts,attempt_store,connection_store)]
+                if len(set(roots))!=1 or any(value.owner!=workspace_context.owner for value in contexts): raise ValueError()
+            except (AttributeError,TypeError,ValueError,OSError,RuntimeError):
+                raise StoreError('oauth_workspace_mismatch') from None
+        self.workspace_context=workspace_context; self.stage_store=stage_store; self.owned_backend=owned_backend
         self.registry_supplier=registry_supplier
         self.client_registrations=MappingProxyType(dict(client_registrations or {}))
         self.attempt_store=attempt_store; self.connection_store=connection_store
@@ -77,6 +93,52 @@ class OAuthConnectionService:
             definitions[key]=definition
         self.definitions=MappingProxyType(definitions)
 
+    def _write_guard(self):
+        return oauth_write_guard(self.workspace_context) if self.workspace_context is not None else nullcontext()
+
+    def stage_secret(self,operation_id,ref,payload):
+        """intent commit → create-only vault put → stored commit. 실패 시 보존한다."""
+        if self.workspace_context is None:
+            self.backend.put(ref,payload)
+            return ref
+        owner=self.workspace_context.owner
+        owned=OwnedCredentialRef(ref,owner.workspace_id,owner.root_binding,uuid4().hex)
+        stage=self.stage_store.begin_stage(owner,owned,operation_id,0)
+        self.owned_backend.put_owned(owned,payload)
+        self.stage_store.mark_stored(stage.stage_id,stage.revision)
+        return owned
+
+    def read_secret(self,ref):
+        logical_ref(ref)
+        if isinstance(ref,OwnedCredentialRef):
+            self._owned_ref(ref)
+            return self.owned_backend.read_owned(ref)
+        return self.backend.get(ref)
+
+    def _owned_ref(self,ref):
+        context=self.workspace_context
+        if (context is None or (ref.workspace_id,ref.root_binding)!=
+                (context.owner.workspace_id,context.owner.root_binding)):
+            raise StoreError('credential_owner_mismatch')
+
+    def _operation_id(self,receipt):
+        return receipt.get('_operation_id')
+
+    def _operation_transition(self,identifier,method,*args):
+        if identifier is None: return
+        operation=self.stage_store.read_operation(identifier)
+        return getattr(self.stage_store,method)(identifier,operation.revision,*args)
+
+    def _operation_failed(self,identifier):
+        if identifier is None: return
+        try:
+            operation=self.stage_store.read_operation(identifier)
+            # local-only/terminal의 불명확한 실패는 pending/기존 terminal을 보존한다.
+            if operation.outcome=='pending' and operation.remote_state in ('not_started','in_flight','returned'):
+                self.stage_store.mark_operation_unknown(identifier,operation.revision)
+        except Exception:
+            pass
+
     def _session(self,session):
         if not isinstance(session,SessionContext): raise StoreError('oauth_session_required')
         SessionContext(session.actor,session.session_binding)
@@ -86,7 +148,8 @@ class OAuthConnectionService:
         client=self.client_registrations.get(provider_id)
         definition=self.definitions.get(provider_id)
         if (not isinstance(client,OAuthClientRegistration) or definition is None or
-                client.provider_id!=provider_id or provider_id not in self.providers or self.backend is None or
+                client.provider_id!=provider_id or provider_id not in self.providers or
+                (self.backend is None and self.owned_backend is None) or
                 definition.pkce_mode=='unconfirmed' or definition.policy_reasons):
             raise StoreError('oauth_registration_blocked')
         if urlsplit(client.redirect_uri).path!='/oauth/callback/'+provider_id:
@@ -140,21 +203,25 @@ class OAuthConnectionService:
                              context.connection_id,generation,kind)
 
     def _checked_ref(self,context,ref,kind,generation=None):
-        validate_ref(ref)
-        if (ref.account_id!=context.account_id or ref.platform!=self.definitions[context.provider_id].platform or
-                ref.connection_id!=context.connection_id or ref.kind!=kind or
-                (generation is not None and ref.generation!=generation)):
+        logical=logical_ref(ref)
+        if isinstance(ref,OwnedCredentialRef): self._owned_ref(ref)
+        if (logical.account_id!=context.account_id or logical.platform!=self.definitions[context.provider_id].platform or
+                logical.connection_id!=context.connection_id or logical.kind!=kind or
+                (generation is not None and logical.generation!=generation)):
             raise StoreError('credential_owner_mismatch')
         return ref
 
     def _delete(self,refs):
         # 지정한 이 서비스의 ref만 정리한다. 실패한 정리는 숨은 GET/retry로 수행하지 않는다.
         for ref in refs:
+            if isinstance(ref,OwnedCredentialRef): continue
             try: self.backend.delete(ref)
             except CredentialError: pass
 
     def _discard_unreferenced(self,context,refs,attempt_id=None):
         """불명확한 커밋은 보존한다. 참조되지 않음을 읽기로 입증한 stage만 정리한다."""
+        refs=[ref for ref in refs if not isinstance(ref,OwnedCredentialRef)]
+        if not refs: return
         try:
             referenced=[row.get('credential_ref') for row in self.connection_store.snapshot().connections.values()]
             if attempt_id is not None:
@@ -162,7 +229,7 @@ class OAuthConnectionService:
                 referenced.extend(item.get(key) for key in ('code_ref','ticket_ref','verifier_ref','state_key_ref','token_ref'))
             safe=[]
             for ref in refs:
-                self._checked_ref(context,ref,ref.kind)
+                self._checked_ref(context,ref,logical_ref(ref).kind)
                 if ref not in referenced: safe.append(ref)
         except Exception:
             return
@@ -171,8 +238,9 @@ class OAuthConnectionService:
     def _client_secret(self,context):
         client=self.client_registrations[context.provider_id]
         if client.client_secret_ref is None: return None
+        if isinstance(client.client_secret_ref,OwnedCredentialRef): raise StoreError('credential_owner_mismatch')
         ref=self._checked_ref(context,client.client_secret_ref,'client')
-        return self.backend.get(ref).decode('utf-8')
+        return self.read_secret(ref).decode('utf-8')
 
     def _authorization(self,bundle=None,*,read_status='not_checked',credential_status='pending',observed_scopes=None):
         if bundle is not None and bundle.expires_at is not None:
@@ -273,6 +341,10 @@ class OAuthConnectionService:
                            if item['context'].actor==session.actor])
 
     def _request(self,session,operation,body,fields,action):
+        with self._write_guard():
+            return self._request_locked(session,operation,body,fields,action)
+
+    def _request_locked(self,session,operation,body,fields,action):
         self._session(session)
         if not isinstance(body,dict) or set(body)!=set(fields)|{'request_key'}: raise StoreError('invalid')
         key=body['request_key']
@@ -283,16 +355,27 @@ class OAuthConnectionService:
             if operation=='start': return self._retry_start(session,receipt)
             return receipt['result']
         if receipt['status']!='claimed': raise StoreError('oauth_request_in_progress')
+        identifier=None
         try:
+            if self.stage_store is not None:
+                kind=operation.split(':')[0]
+                record=self.stage_store.begin_operation(kind,receipt_id=receipt['id'],
+                    local_only=kind in ('start','confirm','disconnect'))
+                identifier=record.operation_id
+                receipt=dict(receipt,_operation_id=identifier)
             result=action(receipt)
             safe={key:value for key,value in result.items() if key!='authorize_url'}
+            self._operation_transition(identifier,'finish_operation','referenced')
             self.attempt_store.finish_request(receipt['id'],receipt['revision'],safe)
             return result
         except StoreError:
+            self._operation_failed(identifier)
             raise
         except CredentialError:
+            self._operation_failed(identifier)
             raise StoreError('oauth_credential_unavailable') from None
         except Exception:
+            self._operation_failed(identifier)
             raise StoreError('oauth_operation_failed') from None
 
     def _state(self,context,receipt_id,key):
@@ -321,9 +404,9 @@ class OAuthConnectionService:
         if _time(item['expires_at'])<=_time(self.clock()): raise StoreError('expired')
         self._current(context); provider,wrapper=self._gate(context,'authorize')
         key_ref=self._checked_ref(context,item.get('state_key_ref'),'state_key')
-        wrapper['state']=self._state(context,item['request_receipt_id'],self.backend.get(key_ref))
+        wrapper['state']=self._state(context,item['request_receipt_id'],self.read_secret(key_ref))
         if self.definitions[context.provider_id].pkce_mode=='s256':
-            verifier=self.backend.get(self._checked_ref(context,item.get('verifier_ref'),'verifier',key_ref.generation))
+            verifier=self.read_secret(self._checked_ref(context,item.get('verifier_ref'),'verifier',logical_ref(key_ref).generation))
             wrapper['code_challenge']=base64.urlsafe_b64encode(hashlib.sha256(verifier).digest()).rstrip(b'=').decode()
         result['authorize_url']=self._authorize_url(provider,wrapper,self.client_registrations[context.provider_id])
         return result
@@ -355,15 +438,15 @@ class OAuthConnectionService:
             generation=self.attempt_store.reserve_generation('autosns.oauth',account,definition.platform,connection_id)
             state_ref=self._ref(context,generation,'state_key'); staged=[]; item=None; state=None
             try:
-                self.backend.put(state_ref,secrets.token_bytes(32)); staged.append(state_ref)
-                state=self._state(context,receipt['id'],self.backend.get(state_ref))
+                state_ref=self.stage_secret(self._operation_id(receipt),state_ref,secrets.token_bytes(32)); staged.append(state_ref)
+                state=self._state(context,receipt['id'],self.read_secret(state_ref))
                 item=self.attempt_store.create_attempt(context,hashlib.sha256(state.encode()).hexdigest(),
                     (_time(self.clock())+timedelta(minutes=10)).isoformat())
                 item=self.attempt_store.bind_state_key(item['attempt_id'],session.session_binding,item['revision'],state_ref,receipt['id'])
                 wrapper['state']=state
                 if definition.pkce_mode=='s256':
                     verifier=secrets.token_urlsafe(48); ref=self._ref(context,generation,'verifier')
-                    self.backend.put(ref,verifier.encode()); staged.append(ref)
+                    ref=self.stage_secret(self._operation_id(receipt),ref,verifier.encode()); staged.append(ref)
                     item=self.attempt_store.bind_verifier(item['attempt_id'],session.session_binding,item['revision'],ref)
                     wrapper['code_challenge']=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
                 url=self._authorize_url(provider,wrapper,client)
@@ -381,6 +464,10 @@ class OAuthConnectionService:
         return self._request(session,'start',body,('account_id','provider_id','connection_id','expected_base_revision','expected_connection_revision','requested_scopes'),action)
 
     def receive_callback(self,provider_id,parameters,callback_context):
+        with self._write_guard():
+            return self._receive_callback_locked(provider_id,parameters,callback_context)
+
+    def _receive_callback_locked(self,provider_id,parameters,callback_context):
         if (not isinstance(callback_context,CallbackContext) or callback_context.provider_id!=provider_id or
                 not isinstance(parameters,dict) or set(parameters) not in ({'state','code'},{'state','error'})):
             raise StoreError('oauth_callback_invalid')
@@ -389,30 +476,54 @@ class OAuthConnectionService:
         state=_safe_text(parameters['state'],2048)
         _safe_text(parameters.get('code',parameters.get('error')),8192)
         claim=self.attempt_store.claim_callback(hashlib.sha256(state.encode()).hexdigest(),provider_id)
-        staged=[]; item=None
+        staged=[]; item=None; identifier=None; finalize_expired=False
         try:
             context=claim.context
+            if self.stage_store is not None:
+                operation=self.stage_store.begin_operation('callback',local_only=True)
+                identifier=operation.operation_id
+                bound=self.stage_store.bind_operation('attempt',claim.attempt_id,identifier,claim.lease_revision)
+                claim=replace(claim,lease_revision=bound['revision'])
             if context.redirect_uri!=callback_context.redirect_uri: raise StoreError('oauth_callback_invalid')
             item=self.attempt_store.read_owned(claim.attempt_id,context.session_binding)
             if 'error' in parameters:
                 self.attempt_store.fail_callback(claim,'denied')
                 self._discard_unreferenced(context,[item[key] for key in ('state_key_ref','verifier_ref') if item.get(key)],claim.attempt_id)
+                self._operation_transition(identifier,'finish_operation','unused')
                 return dict(redirect_path='/connections/oauth-result')
             verifier_ref=item.get('verifier_ref') or item.get('state_key_ref')
             if verifier_ref:
-                self._checked_ref(context,verifier_ref,verifier_ref.kind); generation=verifier_ref.generation
+                logical=logical_ref(verifier_ref)
+                self._checked_ref(context,verifier_ref,logical.kind); generation=logical.generation
             else:
                 generation=self.attempt_store.reserve_generation('autosns.oauth',context.account_id,self.definitions[provider_id].platform,context.connection_id)
             code_ref=self._ref(context,generation,'code'); ticket_ref=self._ref(context,generation,'ticket')
-            self.backend.put(code_ref,parameters['code'].encode()); staged.append(code_ref)
-            self.backend.put(ticket_ref,secrets.token_bytes(32)); staged.append(ticket_ref)
+            code_ref=self.stage_secret(identifier,code_ref,parameters['code'].encode()); staged.append(code_ref)
+            ticket_ref=self.stage_secret(identifier,ticket_ref,secrets.token_bytes(32)); staged.append(ticket_ref)
             expiry=min(_time(claim.expires_at),_time(self.clock())+timedelta(minutes=2))
-            self.attempt_store.finalize_callback(claim,code_ref,ticket_ref,expiry.isoformat())
+            try:
+                self.attempt_store.finalize_callback(claim,code_ref,ticket_ref,expiry.isoformat())
+            except StoreError as error:
+                # 실제 store의 expired는 pointer UPDATE 전 검사에서만 발생한다.
+                finalize_expired=error.code=='expired'
+                raise
+            self._operation_transition(identifier,'finish_operation','referenced')
             return dict(redirect_path='/connections/oauth-result')
         except Exception:
             self._discard_unreferenced(claim.context,staged,claim.attempt_id)
-            try: self.attempt_store.fail_callback(claim,'stage_failed')
+            failed=False
+            try:
+                self.attempt_store.fail_callback(claim,'stage_failed')
+                failed=True
             except StoreError: pass
+            if identifier is not None and finalize_expired and failed and len(staged)==2:
+                try:
+                    # 두 put+stored 완료, 원격 호출0, pre-UPDATE 만료, 확정 fail commit.
+                    after=self.attempt_store.read_owned(claim.attempt_id,claim.context.session_binding)
+                    if after['state']=='error' and not any(after.get(key) for key in ('code_ref','ticket_ref')):
+                        self._operation_transition(identifier,'finish_operation','unused')
+                except Exception: pass
+            self._operation_failed(identifier)
             if item is not None:
                 self._discard_unreferenced(claim.context,[item[key] for key in ('state_key_ref','verifier_ref') if item.get(key)],claim.attempt_id)
             raise StoreError('oauth_callback_failed') from None
@@ -427,26 +538,28 @@ class OAuthConnectionService:
             self._current(context); provider,wrapper=self._gate(context,'exchange')
             # Naver token 교환은 state 원문을 요구한다. hash-only 계약에서는 추정/복구하지 않는다.
             if context.provider_id=='naver': raise StoreError('oauth_contract_blocked')
-            generation=item['code_ref'].generation if item.get('code_ref') else None
+            generation=logical_ref(item['code_ref']).generation if item.get('code_ref') else None
             code_ref=self._checked_ref(context,item.get('code_ref'),'code',generation)
             ticket_ref=self._checked_ref(context,item.get('ticket_ref'),'ticket',generation)
             try:
-                code=self.backend.get(code_ref).decode(); ticket=self.backend.get(ticket_ref)
+                code=self.read_secret(code_ref).decode(); ticket=self.read_secret(ticket_ref)
                 if len(ticket)!=32: raise StoreError('oauth_credential_invalid')
                 verifier=None
                 if self.definitions[context.provider_id].pkce_mode=='s256':
-                    verifier=self.backend.get(self._checked_ref(context,item.get('verifier_ref'),'verifier',generation)).decode()
+                    verifier=self.read_secret(self._checked_ref(context,item.get('verifier_ref'),'verifier',generation)).decode()
                 secret=self._client_secret(context)
             except CredentialError:
                 raise StoreError('oauth_credential_unavailable') from None
             claimed=self.attempt_store.claim_resume(attempt_id,session.session_binding,body['expected_revision'])
             token_ref=self._ref(context,generation,'token'); stored=False
             try:
+                self._operation_transition(self._operation_id(receipt),'mark_remote_in_flight')
                 bundle=provider.exchange(wrapper,code,secret,verifier=verifier)
                 if not isinstance(bundle,TokenBundle) or not set(bundle.scopes)<=set(context.requested_scopes): raise StoreError('oauth_scope_blocked')
                 authorization=self._authorization(bundle,credential_status='stored')
+                self._operation_transition(self._operation_id(receipt),'mark_remote_returned')
                 self._current(context)
-                self.backend.put(token_ref,_token_bytes(bundle)); stored=True
+                token_ref=self.stage_secret(self._operation_id(receipt),token_ref,_token_bytes(bundle)); stored=True
                 result=self.attempt_store.update_attempt(attempt_id,session.session_binding,claimed['revision'],'token_exchanged',{'token_ref':token_ref,'authorization':authorization})
                 return self._public_attempt(result)
             except Exception:
@@ -463,10 +576,11 @@ class OAuthConnectionService:
             self._current(context); provider,wrapper=self._gate(context,'inspect')
             if _time(item['expires_at'])<=_time(self.clock()): raise StoreError('expired')
             ref=self._checked_ref(context,item.get('token_ref'),'token')
-            bundle=_token_from_bytes(self.backend.get(ref))
+            bundle=_token_from_bytes(self.read_secret(ref))
             self._authorization(bundle,credential_status='stored')
             pending=self.attempt_store.update_attempt(attempt_id,session.session_binding,body['expected_revision'],'principal_pending',{})
             try:
+                self._operation_transition(self._operation_id(receipt),'mark_remote_in_flight')
                 result=provider.inspect(wrapper,bundle)
                 if not isinstance(result,dict) or set(result)!={'provider_subject','targets','observed_scopes','checked_at'}: raise StoreError('oauth_response_invalid')
                 subject=_safe_text(result['provider_subject']); checked=_time(result['checked_at']).isoformat()
@@ -480,6 +594,7 @@ class OAuthConnectionService:
                 public_text=json.dumps([subject,target_id,label,observed,checked])
                 if any(secret and secret in public_text for secret in (bundle.access_token,bundle.refresh_token)):
                     raise StoreError('oauth_response_invalid')
+                self._operation_transition(self._operation_id(receipt),'mark_remote_returned')
                 _,snapshot,projected=self._current(context)
                 connection=projected.connections.get(context.connection_id)
                 if connection and connection.target_id is not None and connection.target_id!=target_id: raise ConflictError()
@@ -503,7 +618,7 @@ class OAuthConnectionService:
             base,snapshot,projected=self._current(context)
             if body['expected_base_revision']!=base.revision or body['expected_connection_revision']!=context.connection_revision: raise ConflictError()
             ref=self._checked_ref(context,proposal['credential_ref'],'token')
-            self._authorization(_token_from_bytes(self.backend.get(ref)),credential_status='stored')
+            self._authorization(_token_from_bytes(self.read_secret(ref)),credential_status='stored')
             connection=projected.connections.get(context.connection_id)
             if connection and connection.target_id is not None and connection.target_id!=proposal['target_id']: raise ConflictError()
             # 현재 base와 동일 snapshot projection 검증을 pointer commit보다 먼저 수행한다.
@@ -535,9 +650,9 @@ class OAuthConnectionService:
                 continue
             self._checked_ref(context,ref,'token')
             # refresh는 active 세대만 교체한다. 이전 완료 시도는 그 현재 포인터를 해석하는 근거다.
-            if ref.generation<=row['credential_generation']: candidates.append(item)
+            if logical_ref(ref).generation<=row['credential_generation']: candidates.append(item)
         if not candidates: raise StoreError('not_found')
-        return max(candidates,key=lambda item:item['token_ref'].generation)['context']
+        return max(candidates,key=lambda item:logical_ref(item['token_ref']).generation)['context']
 
     def _public_connection(self,connection_id):
         row=self.connection_store.snapshot().connections[connection_id]
@@ -560,23 +675,28 @@ class OAuthConnectionService:
             if operation=='revoke' and context.provider_id in ('youtube','blogger'):
                 raise StoreError('oauth_revoke_impact_unverified')
             ref=self._checked_ref(context,row['credential_ref'],'token',row['credential_generation'])
-            bundle=_token_from_bytes(self.backend.get(ref)); secret=self._client_secret(context)
+            bundle=_token_from_bytes(self.read_secret(ref)); secret=self._client_secret(context)
             lease=self.connection_store.claim_connection_operation(connection_id,body['expected_base_revision'],body['expected_connection_revision'],operation)
             staged=None
             try:
+                if self.stage_store is not None:
+                    lease=self.stage_store.bind_operation('lease',connection_id,self._operation_id(receipt),lease['connection_revision'])
+                self._operation_transition(self._operation_id(receipt),'mark_remote_in_flight')
                 if operation=='refresh':
                     result=provider.refresh(wrapper,bundle,secret)
                     if not isinstance(result,TokenBundle) or set(result.scopes)!=set(bundle.scopes): raise StoreError('oauth_scope_blocked')
+                    authorization=self._authorization(result,read_status=row.get('authorization',{}).get('read_status','unknown'),credential_status='active')
+                    self._operation_transition(self._operation_id(receipt),'mark_remote_returned')
                     current_base,_,_=self._snapshot()
                     if current_base.revision!=context.base_revision: raise ConflictError()
                     # 단일 lease 상태를 유지한 채 새 generation을 stage하고 CAS로 pointer만 전환한다.
                     generation=self.connection_store.reserve_generation('autosns.oauth',context.account_id,row['platform'],connection_id)
-                    staged=self._ref(context,generation,'token'); self.backend.put(staged,_token_bytes(result))
-                    authorization=self._authorization(result,read_status=row.get('authorization',{}).get('read_status','unknown'),credential_status='active')
+                    staged=self.stage_secret(self._operation_id(receipt),self._ref(context,generation,'token'),_token_bytes(result))
                     self.connection_store.finish_connection_operation(lease,new_ref=staged,authorization=authorization)
                 else:
                     result=provider.revoke(wrapper,bundle,secret)
                     if not isinstance(result,dict) or result.get('remote_revoked') is not True: raise StoreError('oauth_revoke_unconfirmed')
+                    self._operation_transition(self._operation_id(receipt),'mark_remote_returned')
                     current_base,_,_=self._snapshot()
                     if current_base.revision!=context.base_revision: raise ConflictError()
                     self.connection_store.finish_connection_operation(lease,state='revoked')
