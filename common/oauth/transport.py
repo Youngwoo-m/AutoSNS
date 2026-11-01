@@ -1,4 +1,6 @@
 """고정 catalog 전용 전송. 기본 fetch=None이며 import/생성은 네트워크 I/O가 없다."""
+import base64
+import binascii
 import json
 import ssl
 from urllib.parse import urlencode
@@ -6,6 +8,57 @@ from urllib.request import Request, HTTPRedirectHandler, HTTPSHandler, build_ope
 from common.operations.content_store import StoreError
 
 MAX_RESPONSE_BYTES = 262144
+
+
+# 전송 자체가 operation/verb/URL/필수 필드/인증방식을 함께 검증한다.
+# 동일 token URL이어도 refresh 비용 규칙으로 code 교환을 보낼 수 없다.
+_WIRE = {
+    ('naver','exchange'): ('POST','https://nid.naver.com/oauth2.0/token',
+        ('grant_type','client_id','client_secret','code','state'),'authorization_code','none'),
+    ('naver','refresh'): ('POST','https://nid.naver.com/oauth2.0/token',
+        ('grant_type','client_id','client_secret','refresh_token'),'refresh_token','none'),
+    ('naver','revoke'): ('POST','https://nid.naver.com/oauth2.0/revoke',
+        ('client_id','client_secret','token','token_type_hint'),None,'none'),
+    ('naver','inspect'): ('GET','https://openapi.naver.com/v1/nid/me',(),None,'bearer'),
+    ('tiktok','exchange'): ('POST','https://open.tiktokapis.com/v2/oauth/token/',
+        ('client_key','client_secret','code','grant_type','redirect_uri'),'authorization_code','none'),
+    ('tiktok','refresh'): ('POST','https://open.tiktokapis.com/v2/oauth/token/',
+        ('client_key','client_secret','grant_type','refresh_token'),'refresh_token','none'),
+    ('x','refresh'): ('POST','https://api.x.com/2/oauth2/token',
+        ('grant_type','refresh_token'),'refresh_token','basic'),
+    ('threads','exchange'): ('POST','https://graph.threads.net/oauth/access_token',
+        ('client_id','client_secret','grant_type','redirect_uri','code'),'authorization_code','none'),
+}
+
+
+def _validate_wire(provider_id, operation, rule, params, headers):
+    contract = _WIRE.get((provider_id,operation))
+    if contract is None or not isinstance(params,dict) or not isinstance(headers,dict):
+        raise StoreError('oauth_contract_blocked')
+    method, endpoint, fields, grant, auth = contract
+    if ((rule.method,rule.endpoint) != (method,endpoint) or set(params) != set(fields) or
+        any(not isinstance(v,str) or not v or any(ord(c)<32 for c in v) for v in params.values()) or
+        (grant is not None and params.get('grant_type') != grant)):
+        raise StoreError('oauth_contract_blocked')
+    if provider_id == 'naver' and operation == 'revoke' and params['token_type_hint'] != 'access_token':
+        raise StoreError('oauth_contract_blocked')
+    if auth == 'none':
+        if headers:
+            raise StoreError('oauth_contract_blocked')
+        return
+    if set(headers) != {'Authorization'} or not isinstance(headers['Authorization'],str):
+        raise StoreError('oauth_contract_blocked')
+    value = headers['Authorization']
+    prefix = 'Basic ' if auth == 'basic' else 'Bearer '
+    if not value.startswith(prefix) or not value[len(prefix):] or any(ord(c)<33 for c in value[len(prefix):]):
+        raise StoreError('oauth_contract_blocked')
+    if auth == 'basic':
+        try:
+            pair = base64.b64decode(value[6:],validate=True).decode('ascii').split(':')
+            if len(pair) != 2 or not all(pair):
+                raise ValueError()
+        except (ValueError, UnicodeError, binascii.Error):
+            raise StoreError('oauth_contract_blocked') from None
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -44,6 +97,7 @@ class OAuthTransport:
         rule = self.rule(credentials.get('provider_id'), operation, credentials.get('evidence_revision'))
         if endpoint != rule.endpoint or not endpoint.startswith('https://'):
             raise StoreError('oauth_contract_blocked')
+        _validate_wire(credentials.get('provider_id'), operation, rule, params, credentials.get('headers', {}))
         if self._fetch is None:
             raise StoreError('oauth_transport_unconfigured')
         encoded = urlencode(params).encode('ascii')
@@ -64,9 +118,11 @@ class OAuthTransport:
             raw = response.read(self.max_response_bytes + 1)
             if not isinstance(raw, bytes) or len(raw) > self.max_response_bytes:
                 raise StoreError('oauth_response_invalid')
-            if not raw:
-                if operation == 'revoke':
+            if credentials.get('provider_id') == 'naver' and operation == 'revoke':
+                if raw == b'':
                     return {}
+                raise StoreError('oauth_response_invalid')
+            if not raw:
                 raise StoreError('oauth_response_invalid')
             value = json.loads(raw.decode('utf-8'))
             if not isinstance(value, dict) or value.get('error'):

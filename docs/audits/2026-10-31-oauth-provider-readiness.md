@@ -31,3 +31,7 @@ Naver revoke는 POST /oauth2.0/revoke의 client_id/client_secret/token/token_typ
 OAuthTransport(catalog, fetch=None)는 기본 미구성이다. fixture fetch는 urllib Request와 timeout/TLS context를 받아 응답 객체를 반환하며 redirect를 수행하지 않아야 한다. 실제 사용용 urllib_fetch도 별도 명시 주입해야 하며 고정 HTTPS, 기본 TLS 검증, proxy/쿠키 0, redirect 거부, timeout<=30초, 응답<=262144 bytes, retry/fallback 0이다. 응답 URL 변경·3xx·비정상 JSON·provider error·큰 응답은 고정 오류로 변환한다. 실제 urllib_fetch는 실행하지 않았다.
 
 `python3 -m unittest tests.oauth.test_provider_contracts -v`: 15 tests, PASS, skip 0. default catalog 비용/계약 차단 외부 0; exact URL/method/form/header, Naver scope 생략·redirect 일치·빈 revoke·프로필-only, TikTok refresh 회전, X Basic, PKCE 미확인 거부, Threads refresh 차단, 오류/리다이렉트/크기/재시도 0을 검증했다. 실 provider 성공이나 배포 완료의 증거는 아니다.
+
+## Task4 독립검토 수정 (2026-11-01)
+
+transport는 provider/operation별 method·endpoint·grant_type·정확한 필수 필드·인증방식을 함께 결속한다. Naver/TikTok의 같은 token URL에서 다른 operation 비용을 빌려 grant를 바꾸는 요청, 추가/누락 필드, 인증방식 혼동은 fetch 전에 차단한다. Naver revoke는 raw 빈 HTTP200만 성공이며 비어 있지 않은 JSON{}·null·공백을 거부한다. focused 계약시험은 18 tests PASS, skip0으로 갱신됐다. 이 검증도 fake fetch만 사용했다.

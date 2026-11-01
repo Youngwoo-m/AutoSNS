@@ -166,3 +166,46 @@ class Contracts(unittest.TestCase):
         with self.assertRaises(StoreError):
             p.exchange(self.attempt,'code','secret')
         self.assertEqual([],self.calls)
+
+    def test_shared_token_endpoint_cannot_change_grant_under_another_cost_rule(self):
+        for name in ('naver','tiktok'):
+            for allowed, injected in (('refresh','authorization_code'),('exchange','refresh_token')):
+                definition = next(p for p in provider_catalog() if p.id==name)
+                catalog = (replace(definition,operations=tuple(replace(r,cost_kind='no_additional_cost' if r.operation==allowed else 'unknown') for r in definition.operations)),)
+                self.setup_provider(name,catalog=catalog)
+                endpoint = next(r.endpoint for r in catalog[0].operations if r.operation==allowed)
+                client_field = 'client_key' if name == 'tiktok' else 'client_id'
+                fields = dict(client_secret='private-secret', grant_type=injected)
+                fields[client_field] = 'id'
+                if allowed == 'refresh':
+                    fields['refresh_token'] = 'refresh'
+                else:
+                    fields['code'] = 'code'
+                    fields['state' if name == 'naver' else 'redirect_uri'] = 'state' if name == 'naver' else self.context.redirect_uri
+                # 필드 집합이 맞아도 grant가 다르면 해당 operation 비용으로 보낼 수 없다.
+                with self.assertRaises(StoreError):
+                    self.transport.request(allowed,endpoint,fields, {'provider_id':name,'evidence_revision':self.context.evidence_revision})
+                self.assertEqual([],self.calls)
+
+    def test_transport_rejects_extra_fields_missing_auth_and_changed_auth_method(self):
+        cases = [
+            ('naver',{'grant_type':'refresh_token','client_id':'id','client_secret':'secret','refresh_token':'refresh','code':'code'},{}),
+            ('naver',{'grant_type':'refresh_token','client_id':'id','refresh_token':'refresh'},{}),
+            ('tiktok',{'grant_type':'refresh_token','client_id':'id','client_secret':'secret','refresh_token':'refresh'},{}),
+            ('x',{'grant_type':'refresh_token','refresh_token':'refresh'},{}),
+            ('x',{'grant_type':'refresh_token','refresh_token':'refresh'},{'Authorization':'Bearer private'}),
+            ('naver',{'grant_type':'refresh_token','client_id':'id','client_secret':'secret','refresh_token':'refresh'},{'Authorization':'Basic private'}),
+        ]
+        for name,params,headers in cases:
+            self.setup_provider(name)
+            endpoint = next(r.endpoint for r in self.catalog[0].operations if r.operation=='refresh')
+            with self.assertRaises(StoreError):
+                self.transport.request('refresh',endpoint,params,{'provider_id':name,'evidence_revision':self.context.evidence_revision,'headers':headers})
+            self.assertEqual([],self.calls)
+
+    def test_naver_revoke_nonempty_json_is_not_empty_http200(self):
+        for raw in (b'{}',b'null',b' ',b'{"success":true}'):
+            p = self.setup_provider(response=Response(raw))
+            with self.assertRaises(StoreError):
+                p.revoke(self.attempt,TokenBundle('token',None,'Bearer',None,()),'secret')
+            self.assertEqual(1,len(self.calls))
