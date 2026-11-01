@@ -248,6 +248,14 @@ class OAuthAttemptStore(OAuthDatabase):
         if not self.path.is_file(): return []
         with self._db() as db:
             return [self._decode(row) for row in db.execute('SELECT * FROM oauth_attempts WHERE session_binding=? ORDER BY id',(session_binding,))]
+    def list_completed_for_actor(self,actor):
+        """검증된 서버 actor의 완료 이력만 읽는다. 미완 세션 경계를 바꾸지 않는다."""
+        if not isinstance(actor,str) or not actor.strip() or len(actor)>200 or any(ord(c)<32 or ord(c)==127 for c in actor): raise StoreError('invalid')
+        if not self.path.is_file(): return []
+        with self._db() as db:
+            items=(self._decode(row) for row in db.execute("SELECT * FROM oauth_attempts WHERE state='connected' ORDER BY id"))
+            return [item for item in items if item['context'].actor==actor]
+
     def claim_resume(self,attempt_id,session_binding,expected_revision):
         if type(expected_revision) is not int or expected_revision<1: raise StoreError('invalid')
         with self._db(True) as db:

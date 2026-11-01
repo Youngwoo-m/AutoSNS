@@ -170,3 +170,23 @@ class AttemptTests(unittest.TestCase):
                 self.assertEqual([10,11,12,13],sorted(reserved))
                 self.assertEqual(1,reopened.reserve_generation('autosns.oauth','dept','youtube','conn'))
                 self.assertEqual(1,reopened.reserve_generation('autosns.oauth','personal','instagram','conn'))
+
+    def test_completed_actor_readonly_reopen_does_not_relax_session_ownership(self):
+        from dataclasses import replace
+        self.assertEqual([],self.store.list_completed_for_actor('user'))
+        self.assertFalse(self.store.path.exists())
+        for actor in ('',' ',None,1,'bad\nactor'):
+            with self.assertRaises(StoreError): self.store.list_completed_for_actor(actor)
+        item=self.create()
+        foreign=self.store.create_attempt(replace(self.context,actor='another',session_binding='other'),'b'*64,(self.now+timedelta(minutes=10)).isoformat())
+        with self.store._db(True) as db:
+            db.execute("UPDATE oauth_attempts SET state='connected' WHERE id IN (?,?)",(item['attempt_id'],foreign['attempt_id']))
+        pending=self.store.create_attempt(self.context,'c'*64,(self.now+timedelta(minutes=10)).isoformat())
+        reopened=OAuthAttemptStore(self.tmp.name)
+        found=reopened.list_completed_for_actor('user')
+        self.assertEqual([item['attempt_id']],[r['attempt_id'] for r in found])
+        self.assertEqual([foreign['attempt_id']],[r['attempt_id'] for r in reopened.list_completed_for_actor('another')])
+        self.assertEqual([],reopened.list_completed_for_actor('absent'))
+        with self.assertRaises(StoreError): reopened.read_owned(item['attempt_id'],'new-session')
+        self.assertEqual([],reopened.list_owned('new-session'))
+        self.assertNotIn(pending['attempt_id'],[r['attempt_id'] for r in found])
