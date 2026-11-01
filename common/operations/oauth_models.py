@@ -211,3 +211,38 @@ class OAuthPolicy:
     def __post_init__(self):
         if type(self.live_enabled) is not bool:
             _invalid()
+
+
+def validate_authorization(value):
+    """비밀 없는 인증 관측만 정규화한다. 요청 scope로 허용 권한을 합성하지 않는다."""
+    from datetime import datetime, timezone
+    fields = {'observed_scopes', 'credential_expires_at', 'read_status', 'publication_status', 'credential_status'}
+    if not isinstance(value, dict) or set(value) != fields:
+        _invalid()
+    scopes = value['observed_scopes']
+    if scopes is not None:
+        if not isinstance(scopes, (list, tuple)) or len(scopes) > 100:
+            _invalid()
+        for scope in scopes:
+            _text(scope)
+            if len(scope) > 500:
+                _invalid()
+        scopes = list(scopes)
+    expiry = value['credential_expires_at']
+    if expiry is not None:
+        try:
+            parsed = datetime.fromisoformat(expiry)
+            if parsed.tzinfo is None:
+                _invalid()
+            expiry = parsed.astimezone(timezone.utc).isoformat()
+        except (TypeError, ValueError):
+            _invalid()
+    choices = {
+        'read_status': ('not_checked', 'verified', 'unknown', 'error'),
+        'publication_status': ('not_checked', 'blocked'),
+        'credential_status': ('pending', 'stored', 'active', 'reauth_required', 'unknown'),
+    }
+    for field, allowed in choices.items():
+        if value[field] not in allowed:
+            _invalid()
+    return dict(value, observed_scopes=scopes, credential_expires_at=expiry)
