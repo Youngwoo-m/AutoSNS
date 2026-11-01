@@ -22,7 +22,11 @@ def validate_ref(ref, account_id=None):
         raise CredentialError('credential_invalid_ref')
     if ref.account_id not in ('personal', 'dept') or (account_id is not None and ref.account_id != account_id):
         raise CredentialError('credential_owner_mismatch')
-    if any(not isinstance(x, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,200}', x) for x in (ref.platform, ref.connection_id)):
+    if not isinstance(ref.platform, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,200}', ref.platform):
+        raise CredentialError('credential_invalid_ref')
+    # Registry connection IDs contain dots; retain exact IDs, never path-normalize.
+    if (not isinstance(ref.connection_id, str) or len(ref.connection_id) > 200
+            or not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*', ref.connection_id)):
         raise CredentialError('credential_invalid_ref')
     if type(ref.generation) is not int or ref.generation <= 0 or ref.kind not in ('client','code','verifier','ticket','token'):
         raise CredentialError('credential_invalid_ref')

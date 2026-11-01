@@ -42,11 +42,25 @@ class CredentialBackendTests(unittest.TestCase):
     def test_namespace_and_owner_rejected_before_bridge(self):
         bridge = FakeBridge(); backend = MacKeychainBackend(bridge, account_id='personal')
         invalid = []
-        for field,value in [('namespace','other'),('connection_id','../x'),('generation',True)]:
+        for field,value in [('namespace','other'),('connection_id','../x'),('connection_id','a/b'),('connection_id','a\\b'),('connection_id','a..b'),('platform','a.b'),('generation',True)]:
             item=ref(); object.__setattr__(item,field,value); invalid.append(item)
         for item in invalid + [ref('dept')]:
             with self.assertRaises(CredentialError): backend.get(item)
         self.assertEqual(bridge.calls, [])
+    def test_existing_dotted_connection_ids_preserve_exact_identity(self):
+        for backend in self.backends():
+            for identifier in ('personal.youtube','dept.naver_blog','youtube.personal'):
+                item = CredentialRef('autosns.oauth','personal','youtube',identifier,1,'token')
+                backend.put(item, b'dotted-fixture')
+                self.assertEqual(backend.get(item), b'dotted-fixture')
+                other = CredentialRef('autosns.oauth','dept','youtube',identifier,1,'token')
+                with self.assertRaises(CredentialError) as ctx: backend.get(other)
+                self.assertEqual(ctx.exception.code, 'credential_owner_mismatch')
+                lookalike = CredentialRef('autosns.oauth','personal','youtube',identifier.replace('.', '_'),1,'token')
+                with self.assertRaises(CredentialError): backend.get(lookalike)
+                backend.delete(item)
+                with self.assertRaises(CredentialError): backend.get(item)
+
     def test_account_isolation_unbound(self):
         backend = MemoryCredentialBackend(); backend.put(ref(), b'private')
         with self.assertRaises(CredentialError): backend.get(ref('dept'))
