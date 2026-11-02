@@ -63,3 +63,10 @@ python3 ax-console/app/production_main.py --source-root /Volumes/USB256/devAPP/A
 SIGTERM/SIGINT는 HTTP 종료 요청과 worker drain으로 처리한다. 자동 재시작이나 실행 중 모델의 강제 종료는 하지 않는다. 날짜가 바뀐 경우에도 다음 제작 직전에 새 창을 준비하며 이전 사용 기록을 보존한다.
 
 2026-11-02 실제 관리 저장소에 점검 명령만 실행했다. 두 계정 비활성·한도 미지정, native probe 미실행·quota 무변경 결과를 확인했다. `--enable-production`으로 운영 서버를 전환하지 않았다.
+
+## 형식별 텍스트 제작과 실제 수락 확인
+텍스트 전용 작업은 `production_prompts.build_production_prompt`로 글·카드뉴스·숏츠 대본·영상 대본의 제작 규칙을 구분한다. 계정·원고 ID·버전을 대조하고 허용한 원고/변환본/출처만 모델에 전달한다. 자료 속 실행·권한·발행 지시는 실행하지 않으며, 기술사 4종의 해설/답안 문체 구분을 적용한다. 기존 미디어 출력 작업의 제작 경로는 유지한다.
+
+저장된 brief와 원고에 같은 본문·출처가 중복된 경우 모델 입력에서는 한 번만 보낸다. 원래 brief와 원고는 바꾸지 않는다. 제작 결과는 원고의 새 버전으로 저장하고 기존 출처·채널 변환본을 유지하며 검토 필요 상태로 둔다. 이 단계가 영상·음성·이미지 렌더를 완료했다는 뜻은 아니다.
+
+2026-11-02 운영과 분리된 임시 저장소에서 Claude Max로 ‘메모를 세 칸으로 정리하기’ 검증 원고 한 편을 실제 제작했다. 설치 검증 probe 1회와 제작 1회, 원고 revision 1→2, 기존 버전 보존, 검토 대기, 동일 요청 재접수의 추가 native 호출 없음, 운영 DB 바이트 무변경을 확인했다. SNS 접속/발행은 없었다. 결과 기록은 `docs/audits/2026-11-02-text-production-acceptance.json`, 비공개 샘플은 `ax-console/data/production-acceptance/text-sample.json`이다.

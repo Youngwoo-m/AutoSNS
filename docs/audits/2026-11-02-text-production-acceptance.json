@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-02",
+  "scope": "isolated_actual_claude_max_text_production",
+  "cli_version": "2.1.310 (Claude Code)",
+  "input_revision": 1,
+  "output_revision": 2,
+  "output_status": "review",
+  "review_status": "required",
+  "original_preserved": true,
+  "native_calls": {
+    "model": 2,
+    "auth": 2
+  },
+  "replay_same_run": true,
+  "replay_no_native_calls": true,
+  "sns_publication": false,
+  "publication_adapters": 0,
+  "live_operations_unchanged": true
+}
