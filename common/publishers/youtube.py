@@ -72,6 +72,13 @@ class YoutubeAdapter:
             evidence = dict(item, reason='media_evidence_required')
             if item.get('upload_status') in ('failed', 'rejected', 'deleted') or item.get('processing_status') in ('failed', 'terminated'):
                 return VerificationResult('failed', checked, dict(evidence, reason='remote_processing_failed'))
+            # 이것은 공개 관측의 적합성일 뿐 업로드 원본의 증명이 아니다.
+            # verify_delivery가 authoritative attempt의 upload_receipt와 다시 결속한다.
+            if (item.get('visibility') == 'public' and item.get('upload_status') == 'processed'
+                    and item.get('processing_status') == 'succeeded'):
+                evidence.pop('reason', None)
+                evidence['verification_method'] = 'youtube_public_observation'
+                return VerificationResult('verified', checked, evidence)
             return VerificationResult('pending', checked, evidence)
         except Exception:
             return VerificationResult('error', now, {'reason': 'youtube_verification_error'})

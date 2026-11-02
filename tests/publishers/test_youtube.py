@@ -205,10 +205,10 @@ class YoutubeTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue() + stderr.getvalue(), '')
         self.assertNotIn('secret-credential-value', str(result.to_dict()))
 
-    def test_youtube_transcoded_media_is_not_local_hash_proof(self):
+    def test_youtube_public_observation_is_only_candidate_without_local_hash_claim(self):
         result = self.adapter.verify(context(), 'remote', snapshot())
-        self.assertEqual(result.outcome, 'pending')
-        self.assertEqual(result.evidence['reason'], 'media_evidence_required')
+        self.assertEqual(result.outcome, 'verified')
+        self.assertEqual(result.evidence['verification_method'], 'youtube_public_observation')
         self.assertIsNone(result.evidence.get('media_sha256'))
         self.assertEqual(result.evidence['description'], '배포 본문')
         self.assertEqual(result.evidence['target_id'], 'UC-dept')

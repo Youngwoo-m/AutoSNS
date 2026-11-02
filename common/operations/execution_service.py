@@ -257,7 +257,7 @@ class ExecutionService:
         self._read_scope(delivery)
         ctx=delivery['context'];snapshot=self.store.content_store.get(ctx['content_id'],ctx['content_revision'])
         with self._profile(ctx['connection_id']):
-            return verify_delivery(self.store,delivery_id,self.adapters.get(ctx['connection_id']),snapshot,now=self.clock(),expected_version=expected_version).to_dict()
+            return verify_delivery(self.store,delivery_id,self.adapters.get(ctx['connection_id']),snapshot,now=self.clock(),clock=self.clock,expected_version=expected_version).to_dict()
 
     def reconcile(self,delivery_id,*,expected_version,request_key,actor='recovery_service'):
         from .recovery import reconcile_delivery

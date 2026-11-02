@@ -1,9 +1,57 @@
 """YouTube의 실제 Google transport. import/조립은 외부 I/O를 하지 않는다."""
 from datetime import datetime, timezone
+from dataclasses import dataclass
+import re
 from collections.abc import Mapping
 import hashlib
 import io
 from common.operations.runtime_models import utc
+
+
+@dataclass(frozen=True)
+class VerifiedYoutubeMedia:
+    """서버 media_factory가 실제 원본 바이트를 검증한 뒤 만드는 SDK 미디어 봉투."""
+    upload: object
+    sha256: str
+    size: int
+
+    def __post_init__(self):
+        if (self.upload is None or not isinstance(self.sha256, str)
+                or re.fullmatch(r'[0-9a-f]{64}', self.sha256) is None
+                or type(self.size) is not int or self.size <= 0):
+            raise ValueError('invalid_verified_youtube_media')
+
+
+def _bound_receipt(prepared, target):
+    """실제 SDK에 전달할 입력의 식별자만 고정한다. 공개/원격 바이트 검증 증거는 아니다."""
+    if not isinstance(prepared, Mapping) or not isinstance(target, Mapping):
+        raise ValueError('invalid_youtube_binding')
+    names=('connection_id','target_id','owner_account_id','destination_account_id','content_id','manifest_hash')
+    identity={name:prepared[name] for name in names}
+    for value in identity.values():
+        if not isinstance(value,str) or not value or '\x00' in value or len(value)>2000:
+            raise ValueError('invalid_youtube_binding')
+        value.encode('utf-8')
+    destination=identity['destination_account_id']
+    if (identity['owner_account_id'] not in ('personal','dept') or destination not in ('personal','dept')
+            or identity['connection_id'] != destination+'.youtube' or identity['target_id'] != target.get('target_id')
+            or type(prepared['content_revision']) is not int or prepared['content_revision'] < 1):
+        raise ValueError('invalid_youtube_binding')
+    asset=prepared['asset']
+    if (not isinstance(asset,Mapping) or not isinstance(asset.get('id'),str) or not asset['id']
+            or '\x00' in asset['id'] or len(asset['id'])>2000 or asset.get('media_type')!='video/mp4'
+            or not isinstance(asset.get('sha256'),str) or re.fullmatch(r'[0-9a-f]{64}',asset['sha256']) is None
+            or type(asset.get('size')) is not int or asset['size']<=0):
+        raise ValueError('invalid_youtube_binding')
+    asset['id'].encode('utf-8')
+    snippet=prepared['body']['snippet']
+    title,description=snippet['title'],snippet['description']
+    if not isinstance(title,str) or not title.strip() or not isinstance(description,str):
+        raise ValueError('invalid_youtube_binding')
+    return dict(kind='youtube_upload_receipt_v1',**identity,content_revision=prepared['content_revision'],
+                asset_id=asset['id'],asset_sha256=asset['sha256'],asset_size=asset['size'],
+                title_sha256=hashlib.sha256(title.encode('utf-8')).hexdigest(),
+                description_sha256=hashlib.sha256(description.encode('utf-8')).hexdigest())
 
 
 def _visibility(status):
@@ -47,14 +95,26 @@ class GoogleYoutubeServices:
                         verification_method='immutable_channel_id', status='needs_auth')
 
     def submit(self, prepared, target):
+        try:
+            receipt_binding = _bound_receipt(prepared, target)
+            status = prepared['body']['status']
+            if not isinstance(status, Mapping): raise ValueError('invalid_youtube_status')
+        except Exception:
+            return dict(outcome='failed', evidence=dict(reason='media_or_schedule_unavailable', confirmed_not_submitted=True))
         if not _target_matches(self.inspect(target), target):
             return dict(outcome='failed', evidence=dict(reason='target_unverified', confirmed_not_submitted=True))
-        status = prepared['body']['status']
         try:
             # 과거 publishAt는 YouTube가 즉시 공개로 해석하므로 I/O 직전에 다시 거절한다.
             if status.get('publishAt') and (status.get('privacyStatus') != 'private' or utc(status['publishAt']) <= utc(self.clock())):
                 return dict(outcome='failed', evidence=dict(reason='schedule_not_future', confirmed_not_submitted=True))
             media = self.media_factory(prepared['asset'], prepared)
+            verified_media = isinstance(media, VerifiedYoutubeMedia)
+            if verified_media:
+                # factory 이후에도 실제 전송 입력이 바뀌지 않았는지 재검증한다.
+                if (_bound_receipt(prepared, target) != receipt_binding
+                        or media.sha256 != receipt_binding['asset_sha256'] or media.size != receipt_binding['asset_size']):
+                    raise ValueError('youtube_asset_changed')
+                media = media.upload
             if status.get('publishAt') and utc(status['publishAt']) <= utc(self.clock()):
                 return dict(outcome='failed', evidence=dict(reason='schedule_not_future', confirmed_not_submitted=True))
         except Exception:
@@ -75,6 +135,8 @@ class GoogleYoutubeServices:
                 schedule_confirmed=_visibility(observed) == 'scheduled',
                 followup_intents=prepared.get('followup_intents', []),
                 followup_completion='pending' if prepared.get('followup_intents') else 'not_required')
+            if verified_media:
+                evidence['upload_receipt'] = dict(receipt_binding, remote_id=remote_id)
             result = dict(outcome='submitted', remote_id=remote_id, url='https://www.youtube.com/watch?v=' + remote_id, evidence=evidence)
             if evidence['schedule_confirmed']:
                 try:
@@ -128,5 +190,6 @@ def create_youtube_services(connection_id, credentials, *, media_loader):
         metadata, raw = media_loader(prepared['content_id'], prepared['content_revision'], asset['id'])
         if (metadata.get('sha256') != asset['sha256'] or len(raw) != asset['size'] or
             hashlib.sha256(raw).hexdigest() != asset['sha256']): raise ValueError('youtube_asset_changed')
-        return MediaIoBaseUpload(io.BytesIO(raw), mimetype='video/mp4', chunksize=-1, resumable=True)
+        upload = MediaIoBaseUpload(io.BytesIO(raw), mimetype='video/mp4', chunksize=-1, resumable=True)
+        return VerifiedYoutubeMedia(upload, hashlib.sha256(raw).hexdigest(), len(raw))
     return GoogleYoutubeServices(service, media_factory=media_factory)

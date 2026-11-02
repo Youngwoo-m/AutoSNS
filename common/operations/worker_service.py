@@ -221,7 +221,7 @@ class WorkerService:
                         outcome='verified' if self.services.store.get_delivery(current['id'])['state']=='verified' else 'pending'
                     else:
                         snapshot=self.services.store.content_store.get(ctx['content_id'],ctx['content_revision'])
-                        outcome=verify_delivery(self.services.store,current['id'],adapter,snapshot,now=self.clock(),expected_version=current['version']).outcome
+                        outcome=verify_delivery(self.services.store,current['id'],adapter,snapshot,now=self.clock(),clock=self.clock,expected_version=current['version']).outcome
                     outcomes.append(dict(delivery_id=current['id'],outcome=outcome))
             except (ContractError,StoreError) as error:
                 outcomes.append(dict(outcome='pending',reason_code=error.code))
