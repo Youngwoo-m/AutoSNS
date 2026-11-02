@@ -21,6 +21,7 @@ from common.operations.registry import load_registry
 from common.operations.tool_cost_policy import ToolkitPolicy
 from common.operations.voicebox_client import LocalVoiceboxClient
 from common.operations.voice_tasks import VoiceTaskService,VoiceTaskStore
+from common.operations.video_startup import build_video_task_service,validate_video_registration
 from production_application import build_production_application
 
 _VOICEBOX_PROFILE=re.compile(r'[A-Za-z0-9_-]{1,128}')
@@ -34,6 +35,7 @@ def parser():
     mode=p.add_mutually_exclusive_group();mode.add_argument('--check',action='store_true');mode.add_argument('--serve',action='store_true')
     p.add_argument('--enable-production',action='store_true')
     p.add_argument('--enable-voicebox',action='store_true')
+    p.add_argument('--enable-video',action='store_true',help='신뢰된 서버 제작기·검사기 등록이 있을 때 영상 worker를 활성화합니다')
     p.add_argument('--voicebox-profile-id');p.add_argument('--voicebox-port',type=int,default=17493)
     p.add_argument('--host',default='127.0.0.1');p.add_argument('--port',type=int,default=8769)
     p.add_argument('--local-toolkit',action='store_true')
@@ -51,6 +53,7 @@ def _validate(args):
     except ValueError:raise ContractError('invalid_bootstrap_config') from None
     if not address.is_loopback or not 0<=args.port<=65535:raise ContractError('invalid_bootstrap_config')
     if args.enable_production and not args.serve:raise ContractError('activation_requires_serve')
+    if args.enable_video and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_production and not (args.claude_executable and args.claude_home and args.claude_user):
         raise ContractError('subscription_configuration_required')
     # Voicebox 옵션: 비활성이어도 값이 주어지면 형식은 검증하지만 활성화하지 않는다.
@@ -65,9 +68,11 @@ def _validate(args):
 
 def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_production_runtime,
         application_builder=build_production_application,quota_preparer=None,clock=None,
-        voice_client_factory=LocalVoiceboxClient,voice_service_factory=VoiceTaskService):
+        voice_client_factory=LocalVoiceboxClient,voice_service_factory=VoiceTaskService,
+        video_registration=None):
     """check는 읽기만 한다. serve/enable은 CLI에서 명시적으로 선택해야 한다."""
     config=_validate(args);clock=clock or (lambda:datetime.now(timezone.utc))
+    if args.enable_video:validate_video_registration(video_registration)
     planning=load_registry(args.registry)
     settings=ProductionSettingsStore(config.workspace_root)
     rows=[settings.get(account) for account in ('personal','dept')]
@@ -75,7 +80,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         interpreter=Path(sys.executable).absolute(),activate=args.enable_production)
     summary=dict(mode='check',execution_enabled=False,settings_revision=compiled.registry.revision,
         accounts=[dict(account_id=row['account_id'],enabled_preference=row['enabled_preference'],daily_limit=row['daily_limit']) for row in rows],
-        native_probe_performed=False,quota_modified=False,voicebox_enabled=False)
+        native_probe_performed=False,quota_modified=False,voicebox_enabled=False,video_enabled=False)
     if not args.serve:return summary
     runner=None
     if args.enable_production:
@@ -89,6 +94,9 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
     runtime=runtime_builder(config=config,registry=compiled.registry,catalog=compiled.catalog,
         policy=compiled.policy,subscription_runner=runner,quota_preparer=quota_preparer if compiled.policy.enabled else None,clock=clock,initialize=False)
     extra={}
+    if args.enable_video:
+        extra['video_task_service']=build_video_task_service(config=config,
+            content_store=runtime.service.store.content_store,registration=video_registration,activate=True)
     if args.enable_voicebox:
         # 생성자는 I/O가 없다. ready 조회/합성/앱 기동은 하지 않고 저장소 초기화는 application이 맡는다.
         client=voice_client_factory(args.voicebox_profile_id,port=args.voicebox_port)
@@ -110,7 +118,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         if not requested:app.serve_forever()
         return dict(summary,mode='serve',execution_enabled=compiled.policy.enabled,
                     native_probe_performed=runner is not None,quota_modified=compiled.policy.enabled,
-                    voicebox_enabled=bool(args.enable_voicebox))
+                    voicebox_enabled=bool(args.enable_voicebox),video_enabled=bool(args.enable_video))
     finally:
         for signum,handler in previous.items():signal.signal(signum,handler)
         if app.state=='built':app.close()

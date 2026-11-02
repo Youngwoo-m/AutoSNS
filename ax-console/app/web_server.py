@@ -71,6 +71,7 @@ _STATIC = {
     'production_settings_panel.js': 'text/javascript; charset=utf-8',
     'media_plan_panel.js': 'text/javascript; charset=utf-8',
     'voice_task_panel.js': 'text/javascript; charset=utf-8',
+    'video_task_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -739,15 +740,19 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         if not isinstance(registry, Registry):raise ValueError('실제 등록부 객체가 필요합니다')
         if operations_registry is not None and getattr(execution_service,'base_registry',registry) != input_registry:
             raise ValueError('실행 서비스 등록부가 일치하지 않습니다')
+    managed_content = service_store.content_store if service_store is not None else ContentStore(workspace_root) if workspace_root is not None else None
+    # 실행 저장소가 /var 등의 경로 별칭을 쓰더라도 같은 ContentStore 표기를 공유한다.
+    # 검증 가능한 저장소 조립은 소켓을 열기 전에 끝낸다.
+    media_plans = MediaPlanStore(managed_content.root, managed_content) if managed_content is not None else None
     backend = auth_backend if auth_backend is not None else _load_auth(source_root)
     server_class = _IPv6WebServer if address.version == 6 else _WebServer
     server = server_class((str(address), port), _Handler)
     server.source_root = source_root
     server.workspace_root = workspace_root
-    server.content_store = service_store.content_store if service_store is not None else ContentStore(workspace_root) if workspace_root is not None else None
+    server.content_store = managed_content
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.production_settings_store = ProductionSettingsStore(workspace_root) if workspace_root is not None else None
-    server.media_plan_store = MediaPlanStore(workspace_root, server.content_store) if workspace_root is not None else None
+    server.media_plan_store = media_plans
     server.voice_task_service = voice_task_service
     server.voice_task_store = voice_task_service.store if voice_task_service is not None else VoiceTaskStore(workspace_root) if workspace_root is not None else None
     server.video_task_service = video_task_service

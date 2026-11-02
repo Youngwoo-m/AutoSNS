@@ -86,3 +86,7 @@
 .voice-task input,.voice-task textarea { max-width:100%; padding:.4rem; box-sizing:border-box; }
 .voice-task textarea { width:100%; min-height:6rem; }
 .voice-task-row { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }
+.video-task { margin-block:1rem; padding:1rem; overflow-wrap:anywhere; }
+.video-task summary { cursor:pointer; font-weight:700; }
+.video-task button { max-width:100%; white-space:normal; }
+.video-task-row { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }
