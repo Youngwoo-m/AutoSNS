@@ -20,7 +20,7 @@ async function setup({post}={}){
         records=records.map(r=>r.asset_id===value.asset_id?value:r);
       }else value={items:records};
     }else if(url.endsWith('/video/capabilities'))value={provider_id:'remotion-local',service_available:true,execution_enabled:true,review_status:'not_checked'};
-    else if(url.endsWith('/voicebox/capabilities'))value={provider_id:'voicebox-local',service_available:false,execution_enabled:false,readiness:'not_checked',external_fallback:false};
+    else if(url.split('?')[0].endsWith('/voicebox/capabilities'))value={provider_id:'voicebox-local',service_available:false,execution_enabled:false,readiness:'not_checked',external_fallback:false};
     else if(url.includes('/media-plan'))value={content_id:content.id,content_revision:1,manifest_hash:content.manifest_hash,owner_account_id:'personal',plan_revision:1,plan:{exam:'시험',field:'분야',source:'',footer:'',disclosure:'AI 합성 음성',voice_asset_id:null,scenes:[]},inputs_ready:true,blockers:[],execution_enabled:false,review_status:'not_checked'};
     else value={items:[]};
     return {ok:true,status:200,json:async()=>structuredClone(value)};

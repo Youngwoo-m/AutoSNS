@@ -20,7 +20,7 @@ async function setup({post}={}){
       task={task_id:'video1',state:'queued',reason_code:null,content_id:original.id,input_revision:1,plan_revision:planVersion,output_revision:null,asset_id:null,review_status:'not_checked'};return response(task);
     }
     if(url==='/api/v2/video/capabilities')return response({provider_id:'remotion-local',service_available:true,execution_enabled:true,review_status:'not_checked'});
-    if(url==='/api/v2/voicebox/capabilities')return response({provider_id:'voicebox-local',service_available:false,execution_enabled:false,readiness:'not_checked',external_fallback:false});
+    if(url.split('?')[0]==='/api/v2/voicebox/capabilities')return response({provider_id:'voicebox-local',service_available:false,execution_enabled:false,readiness:'not_checked',external_fallback:false});
     if(url.includes('/media-plan'))return response(plan(Number(new URL('http://fixture'+url).searchParams.get('revision'))));
     if(url.includes('/video-tasks'))return response({items:task?[task]:[]});
     return response({items:[]});

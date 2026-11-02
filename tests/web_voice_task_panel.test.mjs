@@ -323,3 +323,13 @@ test('완료 콜백은 같은 open 맥락에서 task_id마다 한 번만 호출�
   await panel.open(c);
   assert.deepEqual(done.map(r=>r.task_id),['td','tp','td','tp']);
 });
+
+test('개인·학과 capability 조회는 실제 원고 소유 계정에 결속한다',async()=>{
+ for(const owner of ['personal','dept']){
+  const c=content({owner_account_id:owner}),calls=[];const {document}=harness();
+  const panel=createVoiceTaskPanel({document,fetcher:async(url,init)=>{calls.push([url,init]);return res(200,url.startsWith(CAPS_URL)?cap():{items:[]});}});
+  await panel.open(c);
+  assert.equal(calls[0][0],CAPS_URL+'?account='+owner);
+  assert.equal(calls.every(([,i])=>i.method==='GET'),true);
+ }
+});

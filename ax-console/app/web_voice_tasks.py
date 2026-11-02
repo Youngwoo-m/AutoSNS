@@ -30,7 +30,9 @@ def recovery_preview(value, task_id):
 def handle(store,service,method,path,query,read_body):
     enabled=service is not None and getattr(service,'enabled',False) is True
     if path==CAPABILITIES and method=='GET':
-        if query:raise StoreError('invalid')
+        if set(query)-{'account'} or ('account' in query and (len(query['account'])!=1 or query['account'][0] not in ('personal','dept'))):raise StoreError('invalid')
+        if service is not None and callable(getattr(service,'capabilities',None)):
+            return service.capabilities(query.get('account',[None])[0])
         return dict(provider_id='voicebox-local',service_available=service is not None,execution_enabled=enabled,readiness='not_checked',external_fallback=False)
     content=CONTENT.fullmatch(path);task=TASK.fullmatch(path)
     if content and method=='GET':

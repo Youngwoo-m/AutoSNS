@@ -18,7 +18,7 @@ async function setup({post}={}){
     if(o.method==='POST'){
       if(post)return post(url,o);
       if(url.endsWith('/resume')){latest=2;value=task('completed');}else value=task();
-    }else if(url.endsWith('/capabilities'))value=caps;
+    }else if(url.split('?')[0].endsWith('/capabilities'))value=caps;
     else if(url.includes('/voice-tasks'))value={items:[]};
     else value={content_id:original.id,content_revision:1,manifest_hash:original.manifest_hash,owner_account_id:'personal',plan_revision:0,plan:{exam:'',field:'',source:'',footer:'',disclosure:'',voice_asset_id:null,scenes:[]},inputs_ready:false,blockers:[],execution_enabled:false,review_status:'not_checked'};
     return {ok:true,status:200,json:async()=>structuredClone(value)};

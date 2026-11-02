@@ -45,8 +45,8 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
     if(e.kind==='http'&&(e.status===400||e.status===422))return '서버가 입력을 받아들이지 않았습니다. 대본과 시드를 확인하세요. 입력은 보존했습니다.';
     return UNCERTAIN;
   };
-  async function fetchCaps(){
-    const data=await send('/api/v2/voicebox/capabilities','GET');
+  async function fetchCaps(mine){
+    const data=await send('/api/v2/voicebox/capabilities'+(['personal','dept'].includes(mine.owner_account_id)?'?account='+encodeURIComponent(mine.owner_account_id):''),'GET');
     if(!validCaps(data))throw invalid();
     return {provider_id:data.provider_id,service_available:data.service_available,execution_enabled:data.execution_enabled,readiness:data.readiness,external_fallback:data.external_fallback};
   }
@@ -220,7 +220,7 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
       if(!ok){ctx=null;if(content)message='원고 정보를 확인할 수 없어 음성 작업을 조회하지 않았습니다.';paint();onChange();return Promise.resolve();}
       ctx={id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,owner_account_id:content.owner_account_id};
       const mine=ctx,token=generation;pending='loading';message='조회 중';paint();onChange();
-      const capsRun=fetchCaps().then(v=>({v}),e=>({e}));
+      const capsRun=fetchCaps(mine).then(v=>({v}),e=>({e}));
       const listRun=fetchTasks(mine).then(v=>({v}),e=>({e}));
       return (async()=>{
         const [c,l]=await Promise.all([capsRun,listRun]);

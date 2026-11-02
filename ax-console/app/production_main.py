@@ -20,6 +20,8 @@ from common.operations.installed_claude import InstalledClaudeRunner
 from common.operations.registry import load_registry
 from common.operations.tool_cost_policy import ToolkitPolicy
 from common.operations.voicebox_client import LocalVoiceboxClient
+from common.operations.voice_settings import VoiceSettingsStore,compile_voice_settings
+from common.operations.account_voice_service import AccountVoiceTaskService
 from common.operations.voice_tasks import VoiceTaskService,VoiceTaskStore
 from common.operations.installed_image_startup import load_installed_image_settings,build_installed_image_registration
 from common.operations.image_startup import build_image_task_service,validate_image_registration
@@ -69,7 +71,7 @@ def _validate(args):
     if type(port) is not int or not 1<=port<=65535:raise ContractError('invalid_voicebox_registration')
     if args.enable_voicebox:
         if not args.serve:raise ContractError('activation_requires_serve')
-        if profile is None:raise ContractError('voicebox_profile_required')
+
     return BootstrapConfig(source_root=source,workspace_root=workspace,registry_path=args.registry)
 
 
@@ -88,6 +90,11 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
             settings=load_installed_video_settings(args.video_config)
             video_registration=build_installed_video_registration(config=config,settings=settings)
         validate_video_registration(video_registration)
+    account_voice_profiles={}
+    if args.enable_voicebox and args.voicebox_profile_id is None:
+        voice_settings=VoiceSettingsStore(config.workspace_root)
+        account_voice_profiles=compile_voice_settings([voice_settings.get(account) for account in ('personal','dept')])
+        if not account_voice_profiles:raise ContractError('voicebox_profile_required')
     planning=load_registry(args.registry)
     settings=ProductionSettingsStore(config.workspace_root)
     rows=[settings.get(account) for account in ('personal','dept')]
@@ -116,9 +123,15 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
             content_store=runtime.service.store.content_store,registration=video_registration,activate=True)
     if args.enable_voicebox:
         # 생성자는 I/O가 없다. ready 조회/합성/앱 기동은 하지 않고 저장소 초기화는 application이 맡는다.
-        client=voice_client_factory(args.voicebox_profile_id,port=args.voicebox_port)
-        extra['voice_task_service']=voice_service_factory(VoiceTaskStore(config.workspace_root),
-            runtime.service.store.content_store,client,profile_id=args.voicebox_profile_id,enabled=True)
+        store=VoiceTaskStore(config.workspace_root)
+        content_store=runtime.service.store.content_store
+        if args.voicebox_profile_id is not None:
+            client=voice_client_factory(args.voicebox_profile_id,port=args.voicebox_port)
+            extra['voice_task_service']=voice_service_factory(store,content_store,client,profile_id=args.voicebox_profile_id,enabled=True)
+        else:
+            services={account:voice_service_factory(store,content_store,voice_client_factory(profile,port=args.voicebox_port),profile_id=profile,enabled=True)
+                      for account,profile in account_voice_profiles.items()}
+            extra['voice_task_service']=AccountVoiceTaskService(store,content_store,services)
     app=application_builder(runtime=runtime,config=config,planning_registry=planning,host=args.host,port=args.port,
         web_root=_APP/'web',toolkit_policy=ToolkitPolicy(enabled=args.local_toolkit),**extra)
     previous={};requested=False

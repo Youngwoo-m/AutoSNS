@@ -44,6 +44,8 @@ from common.operations.models import Registry
 from web_deliveries import handle as handle_deliveries
 from web_operations import handle as handle_operations, recognizes as operations_path, OperationsBlocked
 from common.operations.production_store import ProductionStore
+from common.operations.voice_settings import VoiceSettingsStore
+from web_voice_settings import recognizes as voice_settings_path, handle as handle_voice_settings
 from common.operations.production_settings import ProductionSettingsStore
 from common.operations.media_plans import MediaPlanStore
 from common.operations.image_tasks import ImageTaskStore,ImageTaskService
@@ -72,6 +74,7 @@ _STATIC = {
     'api.js': 'text/javascript; charset=utf-8',
     'app.js': 'text/javascript; charset=utf-8',
     'account_navigation.js': 'text/javascript; charset=utf-8',
+    'voice_settings_panel.js': 'text/javascript; charset=utf-8',
     'production_settings_panel.js': 'text/javascript; charset=utf-8',
     'media_plan_panel.js': 'text/javascript; charset=utf-8',
     'image_task_panel.js': 'text/javascript; charset=utf-8',
@@ -349,6 +352,10 @@ class _Handler(BaseHTTPRequestHandler):
                     or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
                 self._error(400, '올바르지 않은 버전입니다')
                 return None
+        elif parsed.path=='/api/v2/voicebox/capabilities':
+            if set(query)-{'account'} or ('account' in query and (len(query['account'])!=1 or query['account'][0] not in ('personal','dept'))):
+                self._error(400,'올바르지 않은 계정입니다')
+                return None
         elif query:
             self._error(400, '지원하지 않는 조회 조건입니다')
             return None
@@ -412,6 +419,11 @@ class _Handler(BaseHTTPRequestHandler):
                                       lambda: self._read_body(1024*1024, json_body=True))
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200, result)
+            if voice_settings_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_voice_settings(self.server.voice_settings_store,method,path,query,lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if production_settings_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 result = handle_production_settings(self.server.production_settings_store, method, path, query,
@@ -777,6 +789,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.workspace_root = workspace_root
     server.content_store = managed_content
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
+    server.voice_settings_store=VoiceSettingsStore(workspace_root) if workspace_root is not None else None
     server.production_settings_store = ProductionSettingsStore(workspace_root) if workspace_root is not None else None
     server.media_plan_store = media_plans
     server.reuse_approval_store = ReuseApprovalStore(managed_content.root) if managed_content is not None else None
@@ -852,6 +865,7 @@ def main():
             server.ledger.initialize()
             server.runtime_store.initialize()
             server.metrics_store.initialize()
+            server.voice_settings_store.initialize()
             server.production_settings_store.initialize()
             server.media_plan_store.initialize()
             server.image_task_store.initialize()

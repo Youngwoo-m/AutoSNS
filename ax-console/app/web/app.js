@@ -1,3 +1,4 @@
+import {createVoiceSettingsPanel} from './voice_settings_panel.js';
 import {createProductionSettingsPanel} from './production_settings_panel.js';
 import {createOAuthApi} from './oauth_api.js';
 import {createOAuthController} from './oauth_controller.js';
@@ -63,6 +64,8 @@ let editorActive=false,integrationAccount=null,detailMode='legacy';
 const execution=createExecutionWorkspace({api:createExecutionApi(),contentApi,onChange:()=>renderStatus(),onOpenOutput:(id,revision)=>openEditor({id,revision,source:'managed'})});
 const editor=createContentEditor({api:contentApi,writable,execution,onSaved:()=>loader.refresh()});
 const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>{}});
+const voiceSettings=createVoiceSettingsPanel({document,onChange:()=>renderStatus()});
+let voiceSettingsAccount=null;
 const productionSettings=createProductionSettingsPanel({document,onChange:()=>renderStatus()});
 const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
 const operations=createOperationsPanel({api:createOperationsApi(),execution,onChange:()=>{renderStatus();}});
@@ -93,9 +96,10 @@ function toolkitSurface(section,extra={}) {
 const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
 const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty()||productionSettings.isDirty());
+  if(voiceSettings.isBusy()||productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty()||productionSettings.isDirty()||voiceSettings.isDirty());
   if(accepted&&operations.isDirty())operations.discard();
+  if(accepted&&voiceSettings.isDirty())voiceSettings.discardChanges();
   if(accepted&&productionSettings.isDirty())productionSettings.discardChanges();return accepted;
 }
 function pageHead() {
@@ -192,7 +196,14 @@ function renderContentResults() {
 function renderContents() {
   const root=h('div',{},filterControls(),muted('관련 계정 기준으로 조회합니다. 위의 원본 소유 계정 필터는 게시 대상 계정과 별개입니다.'),h('div',{id:'content-results'}));
   if(view==='planning') root.append(muted(`현재 계정은 ${accountName(route.account)}입니다. 새 기획은 현재 계정 소유로 시작합니다. 다른 계정에 보내는 변환본은 게시 대상을 별도로 선택하세요.`));
-  if(view==='planning') {root.prepend(productionSettings.render({account:route.account,writable:writable()}));root.append(toolkitSurface('planning'));}
+  if(view==='planning') {
+    root.prepend(productionSettings.render({account:route.account,writable:writable()}));
+    const account=['personal','dept'].includes(route.account)?route.account:null;
+    if(account!==voiceSettingsAccount){voiceSettingsAccount=account;voiceSettings.open(account,{writable:writable()});}
+    else voiceSettings.refreshControls({writable:writable()});
+    if(account)root.append(voiceSettings.element);
+    root.append(toolkitSurface('planning'));
+  }
   if(view==='planning') root.append(panel('AI 기획 제안 기록',state.snapshot.proposals.length?h('div',{class:'entry-list'},state.snapshot.proposals.map(p=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(p.owner_account_id),badge(p.status)),h('h3',{},text(p.title)),h('p',{},text(p.summary)),disabled('채택·반려 미지원')))):empty('수집된 제안이 없습니다','기획 제안 자료가 없으면 예시 제안을 만들지 않습니다.')));
   if(view==='planning') {
     const proposals=state.snapshot.metric_proposals||[];
@@ -346,7 +357,7 @@ const loader=createSnapshotLoader(next=>{state=next;render();});
 // 상위 4개 메뉴: 계정(personal/dept)과 영역(accounts/publishing)을 함께 고른다. 발행 영역은 항상 콘텐츠 기획에서 시작한다.
 document.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>{const target=routeById(button.dataset.route);if(target)navigate({account:target.account,area:target.area,view:target.area==='accounts'?'accounts':(route.area==='publishing'&&target.account===route.account?view:'planning')});}));
 $('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
+window.addEventListener('beforeunload',event=>{if((typeof voiceSettings!=='undefined'&&(voiceSettings.isDirty()||voiceSettings.isBusy()))||(typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
 operations.load(route.account);
 loader.select(route.account);
