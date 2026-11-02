@@ -70,7 +70,7 @@ export function createVideoTaskPanel({document,fetcher=globalThis.fetch,onChange
   const definite=e=>e.kind==='http'&&[400,401,404,409,422].includes(e.status);
   const writeMessage=e=>{
     if(e.kind==='http'&&e.status===401)return '로그인 후 다시 시도하세요. 요청은 접수되지 않았습니다.';
-    if(e.kind==='http'&&e.status===409)return '원고·제작 계획 버전이 바뀌었거나 이미 진행 중인 작업이 있습니다. 요청은 접수되지 않았습니다. 영상 작업을 다시 조회해 확인하세요.';
+    if(e.kind==='http'&&e.status===409)return '원고·제작 계획 버전이 바뀌었거나 이미지 재사용 확인이 부족하거나 이미 진행 중인 작업이 있습니다. 요청은 접수되지 않았습니다. 영상 작업을 다시 조회해 확인하세요.';
     if(e.kind==='http'&&(e.status===400||e.status===404||e.status===422))return '서버가 요청을 받아들이지 않았습니다. 영상 작업을 다시 조회해 확인하세요.';
     return UNCERTAIN;
   };

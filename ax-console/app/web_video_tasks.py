@@ -104,7 +104,7 @@ def handle(store,service,method,path,query,read_body):
         else:result=service.resume(task.group(1))
     except ContractError as error:
         if error.code in ('invalid','invalid_video_request','invalid_task','invalid_video_review','invalid_review'):raise StoreError('invalid') from None
-        if error.code in ('content_revision_conflict','video_task_conflict','video_plan_conflict','plan_revision_conflict','media_inputs_required',
+        if error.code in ('content_revision_conflict','video_task_conflict','video_plan_conflict','plan_revision_conflict','media_inputs_required','reuse_not_authorized',
                           'video_review_conflict','review_not_available','video_review_unavailable','video_review_stale','content_changed','plan_changed','video_worker_busy'):
             raise ConflictError() from None
         if error.code in ('content_not_found','task_not_found','media_plan_not_found'):raise StoreError('not_found') from None

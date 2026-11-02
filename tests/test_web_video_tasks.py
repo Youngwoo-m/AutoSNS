@@ -23,6 +23,7 @@ class VideoHTTPTests(unittest.TestCase):
         self.record=self.plans.save(self.item['id'],self.item['revision'],0,self.ready_plan(images,voice))
         self.store=VideoTaskStore(self.root);self.store.initialize()
         self.service=VideoTaskService(self.store,self.contents,self.plans,enabled=True,runner_factory=lambda **kwargs:None)
+        self.service.reuse_authorization=lambda **kw:dict(authorized=True,reviewed=True,**{key:kw['manifest'][key] for key in ('sha256','source','reuse_request_id')})
         self.server=server_module.create_server(source_root=self.root.parent/'source',workspace_root=self.root,
             web_root=APP/'web',auth_backend=server_fixture.FakeAuth(),video_task_service=self.service)
         thread=threading.Thread(target=self.server.serve_forever,daemon=True);thread.start()
@@ -53,6 +54,8 @@ class VideoHTTPTests(unittest.TestCase):
             path=prepared.artifact_root/'short.mp4';data=b'0000ftypisomfixture';path.write_bytes(data)
             evidence=dict(kind='remotion_video',probe=dict(seconds=15,width=1080,height=1920,has_audio=True),
                 audio_checked=True,font_checked=True,disclosure='AI 합성 음성',scenes=[dict(checked=True)])
+            evidence['inputs']=[dict(asset_id=asset.asset_id,path=asset.path,sha256=asset.sha256,source=asset.source,
+                origin='reuse',reuse_request_id=asset.reuse_request_id) for asset in prepared.scene_assets.values()]
             return dict(status='completed',assets=[dict(path=str(path),filename=path.name,media_type='video/mp4',
                 size=len(data),sha256=hashlib.sha256(data).hexdigest(),evidence=evidence)])
         with patch('common.operations.video_tasks.render_prepared_short',side_effect=render):

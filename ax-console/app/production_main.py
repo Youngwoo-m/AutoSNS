@@ -22,6 +22,7 @@ from common.operations.tool_cost_policy import ToolkitPolicy
 from common.operations.voicebox_client import LocalVoiceboxClient
 from common.operations.voice_tasks import VoiceTaskService,VoiceTaskStore
 from common.operations.video_startup import build_video_task_service,validate_video_registration
+from common.operations.installed_video_startup import load_installed_video_settings,build_installed_video_registration
 from production_application import build_production_application
 
 _VOICEBOX_PROFILE=re.compile(r'[A-Za-z0-9_-]{1,128}')
@@ -36,6 +37,7 @@ def parser():
     p.add_argument('--enable-production',action='store_true')
     p.add_argument('--enable-voicebox',action='store_true')
     p.add_argument('--enable-video',action='store_true',help='신뢰된 서버 제작기·검사기 등록이 있을 때 영상 worker를 활성화합니다')
+    p.add_argument('--video-config',type=Path,default=_APP.parent/'config/video-renderer.json')
     p.add_argument('--voicebox-profile-id');p.add_argument('--voicebox-port',type=int,default=17493)
     p.add_argument('--host',default='127.0.0.1');p.add_argument('--port',type=int,default=8769)
     p.add_argument('--local-toolkit',action='store_true')
@@ -72,7 +74,11 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         video_registration=None):
     """check는 읽기만 한다. serve/enable은 CLI에서 명시적으로 선택해야 한다."""
     config=_validate(args);clock=clock or (lambda:datetime.now(timezone.utc))
-    if args.enable_video:validate_video_registration(video_registration)
+    if args.enable_video:
+        if video_registration is None:
+            settings=load_installed_video_settings(args.video_config)
+            video_registration=build_installed_video_registration(config=config,settings=settings)
+        validate_video_registration(video_registration)
     planning=load_registry(args.registry)
     settings=ProductionSettingsStore(config.workspace_root)
     rows=[settings.get(account) for account in ('personal','dept')]

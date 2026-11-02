@@ -11,3 +11,7 @@
 2026-11-02 작업공간에 누락된 의존성을 기존 `package-lock.json`으로 복원했다. 잠금 파일은 npm 공식 저장소만 참조했으며 `npm ci --ignore-scripts --no-audit --no-fund`와 별도 캐시·빈 사용자 설정을 사용했다. 사용자 npm 인증이나 설치 스크립트를 실행하지 않았다. 추가 SaaS·유료 API 호출과 실제 영상 렌더도 하지 않았다.
 
 읽기 전용 검사 결과는 `docs/audits/2026-11-02-remotion-readiness.json`에 있다. `verified=true`는 고정 파일·설치 버전 검사를 뜻하며 실제 영상 품질 검증이나 운영 활성화 승인을 뜻하지 않는다. 8769의 영상 제작 서비스는 계속 비활성이다.
+
+기본 고정 설정은 `ax-console/config/video-renderer.json`이다. 허용 필드는 schema·SurveyShort 식별자·enabled·두 해시뿐이며 명령·외부 경로·완료 플래그는 받지 않는다. `enabled` 기본값은 false다. `production_main.py --serve --enable-video --video-config <설정 파일>`을 명시했을 때만 이 설정을 읽어 등록을 시도한다. 비활성 설정이나 파일·의존성 검사 실패는 제작기·모델 실행 전에 거부한다. `--check`와 기존 8769 기본 기동은 활성화하지 않는다.
+
+고정 기동 경로는 실제 `ManagedReuseAuthorizer`와 실측기를 연결하고 사람 검토는 보류한다. 미실시 검사를 완료로 만드는 더미 검사기를 등록하지 않는다. 제작된 결과는 규격 검사 후 검토 대기로 이어진다. 별도 서버 코드가 직접 `VideoRegistration`을 주입하는 기존 방식도 유지한다. 실제 렌더는 이번 개발·검증에서 실행하지 않았다.

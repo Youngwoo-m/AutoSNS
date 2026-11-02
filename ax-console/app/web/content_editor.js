@@ -1,3 +1,4 @@
+import {createReuseApprovalPanel} from './reuse_approval_panel.js';
 import {createVideoTaskPanel} from './video_task_panel.js';
 import {createVoiceTaskPanel} from './voice_task_panel.js';
 import {createMediaPlanPanel} from './media_plan_panel.js';
@@ -66,10 +67,11 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     message='후보를 미저장 초안에 반영했습니다. 원본 저장 시 새 버전과 독립 검토가 필요합니다.';
     render();
   });
-  let deliveryKey='',mediaKey='',voiceKey='',videoKey='',mediaWritable=null,voiceWritable=null,videoWritable=null;
+  let deliveryKey='',mediaKey='',voiceKey='',videoKey='',reuseKey='',mediaWritable=null,voiceWritable=null,videoWritable=null,reuseWritable=null;
   const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved,onStateChange:()=>updateRevisionControls()});
   const media=createMediaPlanPanel({document,onChange:()=>updateRevisionControls()});
   const voice=createVoiceTaskPanel({document,onChange:()=>updateRevisionControls(),onCompleted:voiceCompleted});
+  const reuse=createReuseApprovalPanel({document,onChange:()=>updateRevisionControls()});
   const video=createVideoTaskPanel({document,onChange:()=>updateRevisionControls(),onCompleted:row=>productionCompleted(row,'영상')});
   function voiceCompleted(row){return productionCompleted(row,'음성');}
   async function productionCompleted(row,label){
@@ -79,23 +81,25 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     try{const history=await api.listRevisions(current.id);if(token!==generation||session.content!==current)return;revisions=history.items||[];historical=true;message=label==='영상'?'영상 자산이 새 버전에 등록되었습니다. 최신 버전을 열어 MP4를 확인하세요. 검토는 아직 하지 않았습니다.':'음성 자산이 새 버전에 등록되었습니다. 최신 버전을 열어 WAV를 확인하세요. 검토는 아직 하지 않았습니다.';render();}
     catch{if(token===generation){message=label+' 등록이 끝났습니다. 최신 원고를 다시 조회해 자산을 확인하세요.';}}
   }
-  const childBlocksRevision=()=>video.isBusy()||video.isDirty()||voice.isBusy()||voice.isDirty()||media.isBusy()||media.isDirty()||toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
+  const childBlocksRevision=()=>reuse.isBusy()||reuse.isDirty()||video.isBusy()||video.isDirty()||voice.isBusy()||voice.isDirty()||media.isBusy()||media.isDirty()||toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
   function updateRevisionControls(){
     const base=canWrite()&&!session.dirty()&&!delivery.isBusy()&&!delivery.hasUnsavedChanges()&&!execution?.isBusy()&&!execution?.isDirty()&&!toolkit.isBusy();
-    const allowed=base&&!video.isBusy()&&!video.isDirty()&&!voice.isBusy()&&!voice.isDirty();
+    const allowed=base&&!reuse.isBusy()&&!reuse.isDirty()&&!video.isBusy()&&!video.isDirty()&&!voice.isBusy()&&!voice.isDirty();
     if(allowed!==mediaWritable){mediaWritable=allowed;media.refreshControls({writable:allowed});}
-    const voiceAllowed=base&&!video.isBusy()&&!video.isDirty()&&!media.isBusy()&&!media.isDirty();
+    const voiceAllowed=base&&!reuse.isBusy()&&!reuse.isDirty()&&!video.isBusy()&&!video.isDirty()&&!media.isBusy()&&!media.isDirty();
     if(voiceAllowed!==voiceWritable){voiceWritable=voiceAllowed;voice.refreshControls({writable:voiceAllowed});}
-    const videoAllowed=base&&!voice.isBusy()&&!voice.isDirty()&&!media.isBusy()&&!media.isDirty();
+    const videoAllowed=base&&!reuse.isBusy()&&!reuse.isDirty()&&!voice.isBusy()&&!voice.isDirty()&&!media.isBusy()&&!media.isDirty();
     if(videoAllowed!==videoWritable){videoWritable=videoAllowed;video.refreshControls({writable:videoAllowed});}
+    const reuseAllowed=base&&!voice.isBusy()&&!voice.isDirty()&&!media.isBusy()&&!media.isDirty()&&!video.isBusy()&&!video.isDirty();
+    if(reuseAllowed!==reuseWritable){reuseWritable=reuseAllowed;reuse.refreshControls({writable:reuseAllowed});}
     const blocked=childBlocksRevision();
     toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!blocked});
     root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));
     const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;
     const notice=root.querySelector('[data-child-block]');
-    if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':video.isBusy()?'영상 작업을 조회·접수하는 중입니다.':video.isDirty()?'영상 검토 입력이 남아 있습니다. 검토 저장 또는 입력 버리기 후 원본을 변경하세요.':voice.isBusy()?'음성 작업을 처리하는 중입니다.':voice.isDirty()?'음성 대본·복구 입력이 남아 있습니다. 처리 또는 입력 버리기 후 원본을 변경하세요.':media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.') : '';
+    if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':reuse.isBusy()?'이미지 확인 기록을 조회·저장하는 중입니다.':reuse.isDirty()?'이미지 재사용 확인에 미저장 입력이 있습니다. 확인 기록 저장 또는 입력 버리기 후 원본을 변경하세요.':video.isBusy()?'영상 작업을 조회·접수하는 중입니다.':video.isDirty()?'영상 검토 입력이 남아 있습니다. 검토 저장 또는 입력 버리기 후 원본을 변경하세요.':voice.isBusy()?'음성 작업을 처리하는 중입니다.':voice.isDirty()?'음성 대본·복구 입력이 남아 있습니다. 처리 또는 입력 버리기 후 원본을 변경하세요.':media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.') : '';
   }
-  const hasChanges=()=>video.isDirty()||voice.isDirty()||media.isDirty()||toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
+  const hasChanges=()=>reuse.isDirty()||video.isDirty()||voice.isDirty()||media.isDirty()||toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength,locked=false}={}) {
     const input=el(type,{...(maxLength?{maxlength:maxLength}:{}),disabled:locked||!canWrite(),oninput:e=>{onChange(e.target.value);updateNotice();}});
     if(options)for(const [id,text] of options)input.append(el('option',{value:id},text));
@@ -104,7 +108,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
   function updateNotice(){toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!childBlocksRevision()});if(session.content&&execution)execution.forContent(session.content,{dirty:session.dirty(),readOnly:!canWrite()});delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
   function notice(){return el('p',{class:'editor-message',role:'status','aria-live':'polite'},session.error||message|| (session.phase==='saved'?'저장했습니다.':busy?'처리 중입니다.':''));}
   async function action(task) {
-    if(video.isBusy()||voice.isBusy()||media.isBusy()||delivery.isBusy()||execution?.isBusy()||toolkit.isBusy())return;
+    if(reuse.isBusy()||video.isBusy()||voice.isBusy()||media.isBusy()||delivery.isBusy()||execution?.isBusy()||toolkit.isBusy())return;
     busy=true;message='';session.error='';render();
     try {await task();}catch(error){session.error=error.message;session.phase=error.status===401?'unauthorized':error.status===409?'conflict':'error';}
     finally {busy=false;render();}
@@ -152,6 +156,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     const reviewButton=[...form.querySelectorAll('button')].find(node=>node.textContent==='이 버전의 수동 검토 기록 저장');if(reviewButton)reviewButton.setAttribute('data-needs-clean','');
     root.replaceChildren(form);
     root.append(syncToolkit());
+    if(c){root.append(reuse.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==reuseKey){reuseKey=key;reuse.open(c,{writable:canWrite()&&!session.dirty()});}}
     if(c){root.append(voice.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==voiceKey){voiceKey=key;voice.open(c,{writable:canWrite()&&!session.dirty()});}}
     if(c){root.append(media.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==mediaKey){mediaKey=key;media.open(c,{writable:canWrite()&&!session.dirty()});}}
     if(c){root.append(video.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==videoKey){videoKey=key;video.open(c,{writable:canWrite()&&!session.dirty()});}}
@@ -160,7 +165,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     updateRevisionControls();
   }
   async function open(content=null,{accountId}={}) {
-    const token=++generation;deliveryKey=mediaKey=voiceKey=videoKey='';mediaWritable=voiceWritable=videoWritable=null;video.open(null);voice.open(null);media.open(null);delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];
+    const token=++generation;deliveryKey=mediaKey=voiceKey=videoKey=reuseKey='';mediaWritable=voiceWritable=videoWritable=reuseWritable=null;reuse.open(null);video.open(null);voice.open(null);media.open(null);delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];
     scopedAccount=validAccount(accountId)?accountId:'';
     session=createEditSession();
     // 새 원본(관리 원본이 아닌 경우)에만 현재 계정 컨텍스트를 소유 계정 초기값으로 쓴다. baseline도 맞춰 dirty=false 유지.
@@ -177,5 +182,5 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     finally {if(token===generation){busy=false;render();}}
   }
   execution?.subscribe?.(()=>updateRevisionControls());
-  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||video.isBusy()||voice.isBusy()||media.isBusy()||delivery.isBusy()||!!execution?.isBusy()||toolkit.isBusy()};
+  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||reuse.isBusy()||video.isBusy()||voice.isBusy()||media.isBusy()||delivery.isBusy()||!!execution?.isBusy()||toolkit.isBusy()};
 }

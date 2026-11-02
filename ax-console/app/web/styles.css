@@ -94,3 +94,9 @@
 .video-review video { display:block; width:100%; max-width:360px; max-height:65vh; background:#111; }
 .video-review label { display:block; margin-block:.6rem; }
 .video-review textarea { box-sizing:border-box; width:100%; max-width:100%; min-height:5rem; }
+.reuse-approval { margin-block:1rem; padding:1rem; overflow-wrap:anywhere; }
+.reuse-approval summary { cursor:pointer; font-weight:700; }
+.reuse-approval img { max-width:180px; max-height:200px; object-fit:contain; }
+.reuse-approval label { display:block; margin-block:.6rem; }
+.reuse-approval textarea { box-sizing:border-box; width:100%; max-width:100%; min-height:4rem; }
+.reuse-approval-row { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }

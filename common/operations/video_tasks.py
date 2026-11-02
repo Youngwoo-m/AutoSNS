@@ -460,6 +460,8 @@ class VideoTaskService:
             ready = False
         if not ready:
             raise ContractError('media_inputs_required')
+        preflight=getattr(self.reuse_authorization,'check_plan',None)
+        if callable(preflight):preflight(content_id,revision)
         # 새 버전/계획의 명시 제작 요청은 더는 승인할 수 없는 옛 검토 대기를
         # 보관 상태로 옮긴다. 파일·검토 입력은 보존하고, 같은 입력의 재시도는 위에서 반환한다.
         for waiting in self.store.list_for_content(content_id):
@@ -644,6 +646,10 @@ class VideoTaskService:
             return self._move(row, ('rendered',), state='failed', reason_code='render_artifact_invalid')
         if len(raw) != asset['size'] or _hash(raw) != asset['sha256']:
             return self._move(row, ('rendered',), state='failed', reason_code='render_artifact_invalid')
+        try:
+            self._reauthorize_inputs(asset['evidence'])
+        except ContractError:
+            return self._move(row,('rendered',),state='rendered',reason_code='reuse_not_authorized')
         filename = f'video-{row["task_id"]}.mp4'
         for _ in range(3):  # add_asset 후 다음 반복이 읽기 복구 경로로 완료를 연결한다.
             try:
@@ -665,6 +671,23 @@ class VideoTaskService:
                     return self._move(row, ('rendered',), state='failed', reason_code='video_ingest_rejected')
                 return row
         return self.store.get_row(row['task_id'])
+
+    def _reauthorize_inputs(self,evidence):
+        """렌더 중 철회된 이미지 확인을 완료 증거로 재사용하지 않는다."""
+        inputs=evidence.get('inputs') if isinstance(evidence,dict) else None
+        if not isinstance(inputs,list) or not inputs or not callable(self.reuse_authorization):
+            raise ContractError('reuse_not_authorized')
+        for item in inputs:
+            if not isinstance(item,dict) or item.get('origin')!='reuse':
+                raise ContractError('reuse_not_authorized')
+            try:
+                manifest={key:item[key] for key in ('path','sha256','source','reuse_request_id')}
+                answer=self.reuse_authorization(manifest=manifest,asset=dict(path=item['path'],sha256=item['sha256']))
+                if (not isinstance(answer,dict) or answer.get('authorized') is not True or answer.get('reviewed') is not True
+                    or any(answer.get(key)!=manifest[key] for key in ('sha256','source','reuse_request_id'))):
+                    raise ContractError('reuse_not_authorized')
+            except Exception:
+                raise ContractError('reuse_not_authorized') from None
 
     def _judge(self, row, head, filename, asset):
         """('ingest',) | ('done', revision, asset_id) | ('changed',). 불확실하면 changed."""
@@ -798,6 +821,7 @@ class VideoTaskService:
             raw = self._candidate_raw(root, candidate, review)
             if raw is None:
                 raise ContractError('video_review_invalid')
+            self._reauthorize_inputs(candidate['evidence'])
             fingerprint = _hash(_canonical(dict(
                 version=row['version'], task_id=row['task_id'], owner=row['owner_account_id'],
                 input=dict(content_id=row['content_id'], input_revision=row['input_revision'],

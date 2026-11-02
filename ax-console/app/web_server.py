@@ -48,6 +48,8 @@ from common.operations.production_settings import ProductionSettingsStore
 from common.operations.media_plans import MediaPlanStore
 from common.operations.voice_tasks import VoiceTaskStore,VoiceTaskService
 from common.operations.video_tasks import VideoTaskStore,VideoTaskService
+from common.operations.reuse_approvals import ReuseApprovalStore,ReuseApprovalService
+from web_reuse_approvals import recognizes as reuse_approvals_path, handle as handle_reuse_approvals, CONTENT as REUSE_CONTENT_ROUTE
 from web_voice_tasks import recognizes as voice_tasks_path, handle as handle_voice_tasks, CONTENT as VOICE_CONTENT_ROUTE
 from web_video_tasks import recognizes as video_tasks_path, handle as handle_video_tasks, CONTENT as VIDEO_CONTENT_ROUTE, VideoPreview, preview_response
 from web_media_plans import recognizes as media_plan_path, handle as handle_media_plans
@@ -72,6 +74,7 @@ _STATIC = {
     'media_plan_panel.js': 'text/javascript; charset=utf-8',
     'voice_task_panel.js': 'text/javascript; charset=utf-8',
     'video_task_panel.js': 'text/javascript; charset=utf-8',
+    'reuse_approval_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -338,7 +341,7 @@ class _Handler(BaseHTTPRequestHandler):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
         elif (re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path) or media_plan_path(parsed.path)
-              or VOICE_CONTENT_ROUTE.fullmatch(parsed.path) or VIDEO_CONTENT_ROUTE.fullmatch(parsed.path)):
+              or VOICE_CONTENT_ROUTE.fullmatch(parsed.path) or VIDEO_CONTENT_ROUTE.fullmatch(parsed.path) or REUSE_CONTENT_ROUTE.fullmatch(parsed.path)):
             if (set(query) - {'revision'} or any(len(values) != 1 for values in query.values())
                     or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
                 self._error(400, '올바르지 않은 버전입니다')
@@ -462,6 +465,12 @@ class _Handler(BaseHTTPRequestHandler):
                     status,raw,headers=preview_response(result,self.headers.get('Range'))
                     return self._send(status,body=raw,content_type='video/mp4',headers=headers)
                 return self._send(200, result)
+            if reuse_approvals_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_reuse_approvals(self.server.reuse_approval_service,method,path,query,
+                    lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if media_plan_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 result = handle_media_plans(self.server.media_plan_store, method, path, query,
@@ -756,6 +765,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.production_settings_store = ProductionSettingsStore(workspace_root) if workspace_root is not None else None
     server.media_plan_store = media_plans
+    server.reuse_approval_store = ReuseApprovalStore(managed_content.root) if managed_content is not None else None
+    server.reuse_approval_service = ReuseApprovalService(server.reuse_approval_store,managed_content,media_plans) if managed_content is not None else None
     server.voice_task_service = voice_task_service
     server.voice_task_store = voice_task_service.store if voice_task_service is not None else VoiceTaskStore(workspace_root) if workspace_root is not None else None
     server.video_task_service = video_task_service
@@ -829,6 +840,7 @@ def main():
             server.media_plan_store.initialize()
             server.voice_task_store.initialize()
             server.video_task_store.initialize()
+            server.reuse_approval_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
