@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-02",
+  "timezone": "Asia/Seoul",
+  "scope": "isolated_minimal_subscription_probe",
+  "cli_version": "2.1.310",
+  "executable": "/Users/youngwoo/.local/share/claude/versions/2.1.310",
+  "auth": {
+    "loggedIn": true,
+    "authMethod": "claude.ai",
+    "apiProvider": "firstParty",
+    "subscriptionType": "max"
+  },
+  "allowed_environment_names": [
+    "HOME",
+    "USER",
+    "LOGNAME",
+    "PATH",
+    "LANG"
+  ],
+  "tool_events": false,
+  "probe_result": "success",
+  "content_production": false,
+  "sns_publication": false,
+  "caveat": "Point-in-time probe only. Does not prove remaining subscription allowance or future availability."
+}

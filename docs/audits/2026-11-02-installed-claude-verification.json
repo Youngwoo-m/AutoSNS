@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-02",
+  "scope": "explicit_installed_runner_probe",
+  "verified": true,
+  "reason_code": null,
+  "version": "2.1.310 (Claude Code)",
+  "actual_content_production": false,
+  "sns_publication": false
+}

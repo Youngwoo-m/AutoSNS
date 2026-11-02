@@ -102,6 +102,26 @@ def _copy_producers(producers, jobs):
     return result
 
 
+def _subscription_producers(runner, registry, policy):
+    """검증을 마친 구독 실행기를 명시 정책의 텍스트 제작 작업에만 결속한다."""
+    from .installed_claude import InstalledClaudeRunner
+    from .production_providers import ClaudeSubscriptionProvider
+    from .provider_policy import resolve_job_provider_policy, validate_provider_use
+    if not isinstance(runner, InstalledClaudeRunner) or runner.capability_evidence['text_only_verified'] is not True:
+        raise ContractError('provider_unavailable')
+    result = {}
+    for job_id, job in registry.jobs.items():
+        if tuple(job.get('required_outputs', ())) != ('text',):
+            raise ContractError('provider_media_unavailable')
+        provider_policy = resolve_job_provider_policy(dict(job, id=job_id), registry, policy)
+        if not provider_policy.subscription_only:
+            raise ContractError('provider_policy_violation')
+        validate_provider_use(provider_policy, 'claude-subscription', 'text')
+        result[job_id] = dict(provider=ClaudeSubscriptionProvider(runner.executable, runner.model, spawn=runner),
+                              media_runner={})
+    return result
+
+
 def _database_ready(root):
     from .database import connect_database
     try:
@@ -112,7 +132,7 @@ def _database_ready(root):
         return False
 
 
-def build_production_runtime(*, config, registry, catalog, producers=None, policy=None, clock=None, initialize=False):
+def build_production_runtime(*, config, registry, catalog, producers=None, subscription_runner=None, policy=None, clock=None, initialize=False):
     """제작 전용 ExecutionService와 WorkerService를 조립한다. 기본은 비활성·무변이."""
     from datetime import datetime, timezone
     from .content_store import ContentStore
@@ -127,6 +147,10 @@ def build_production_runtime(*, config, registry, catalog, producers=None, polic
     jobs = _production_job_ids(registry)
     _validate_catalog(catalog, jobs)
     _validate_policy(policy)
+    if subscription_runner is not None:
+        if producers is not None:
+            raise ContractError('invalid_production_producer')
+        producers = _subscription_producers(subscription_runner, registry, policy)
     producers = _copy_producers(producers, jobs)
     root = config.workspace_root
     content = ContentStore(root)

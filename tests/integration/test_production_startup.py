@@ -274,6 +274,67 @@ class ProductionStartupTests(unittest.TestCase):
         self.assertEqual(saved['original'], '완성 본문')
         self.assertEqual(dict(runtime.service.adapters), {})
 
+    def installed_runner(self, verified=True):
+        from common.operations.installed_claude import InstalledClaudeRunner
+        from tests.operations.test_installed_claude import FakeSpawn
+        executable=self.root/'fixture-claude'
+        executable.write_bytes(b'fake installed executable')
+        executable.chmod(0o755)
+        fake=FakeSpawn()
+        runner=InstalledClaudeRunner(executable,self.root/'home','fixture','sonnet',spawn=fake)
+        if verified:self.assertTrue(runner.verify()['verified'])
+        fake.calls.clear()
+        return runner,fake
+
+    def test_verified_subscription_runner_binds_without_calling_model(self):
+        runner,fake=self.installed_runner()
+        runtime=self.runtime(policy=self.enabled,producers=None,subscription_runner=runner)
+        self.assertEqual(fake.calls,[])
+        self.assertEqual(set(runtime.service.producers),set(self.job_ids.values()))
+        self.assertEqual(dict(runtime.service.adapters),{})
+        self.assertTrue(all(p['provider']._available() for p in runtime.service.producers.values()))
+
+    def test_unverified_or_ambiguous_subscription_binding_is_rejected_before_storage(self):
+        runner,fake=self.installed_runner(False)
+        with self.assertRaises(ContractError):
+            self.runtime(policy=self.enabled,producers=None,subscription_runner=runner)
+        self.assertFalse(self.config.workspace_root.exists())
+        self.assertEqual(fake.calls,[])
+        runner,fake=self.installed_runner()
+        with self.assertRaises(ContractError):
+            self.runtime(policy=self.enabled,subscription_runner=runner)
+        self.assertFalse(self.config.workspace_root.exists())
+        self.assertEqual(fake.calls,[])
+
+    def test_subscription_binding_cannot_provision_media_or_weaken_provider_policy(self):
+        runner,fake=self.installed_runner()
+        for change in (dict(required_outputs=['text','video']),dict(subscription_only=False)):
+            jobs={k:dict(v,**change) for k,v in self.registry.jobs.items()}
+            policies={k:dict(v,subscription_only=False) for k,v in self.registry.policies.items()}
+            registry=replace(self.registry,jobs=jobs,policies=policies)
+            with self.assertRaises(ContractError):
+                self.runtime(registry=registry,policy=self.enabled,producers=None,subscription_runner=runner)
+        self.assertFalse(self.config.workspace_root.exists())
+        self.assertEqual(fake.calls,[])
+
+    def test_installed_runner_provider_worker_pipeline_does_not_repeat_generation(self):
+        runner,fake=self.installed_runner()
+        runtime=self.runtime(policy=self.enabled,producers=None,subscription_runner=runner)
+        quota=self.quota['personal']
+        start,end=quota_window(quota,NOW)
+        runtime.service.store.observe_bucket(bucket_id('owner','personal','posts',start,end),5,0,NOW,end)
+        content=runtime.service.store.content_store.create('personal',dict(title='입력',kind='article',original='원문'))
+        run=self.submit(runtime,'personal',content)
+        self.assertEqual(fake.calls,[])
+        self.assertEqual(runtime.worker.tick()['state'],'completed')
+        output=runtime.service.store.content_store.get(content['id'])
+        self.assertEqual(output['original'],'generated text')
+        self.assertEqual(output['owner_account_id'],'personal')
+        self.assertEqual(fake.steps(),['auth','model'])
+        self.assertEqual(self.submit(runtime,'personal',content),run)
+        self.assertEqual(runtime.worker.tick()['state'],'idle')
+        self.assertEqual(fake.steps(),['auth','model'])
+
 
 if __name__ == '__main__':
     unittest.main()

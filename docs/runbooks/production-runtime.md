@@ -30,3 +30,12 @@
 worker 실패와 HTTP loop 진입 실패가 겹쳐도 worker가 `BaseServer.shutdown()`에서 대기하지 않도록 공개 `service_actions` hook으로 종료한다. drain 제한을 넘기면 성공으로 간주하지 않고 `worker_not_stopped`와 stuck 상태를 보존하며 자동 재기동하지 않는다. signal 연결과 실제 공급자/기동 설정은 후속 범위다.
 
 현재 8769의 기본 기동은 여전히 기존 모드다. 실제 제작 실행과 기본 기동 전환을 수행하지 않았다.
+
+## 설치된 Claude Max 구독 공급자
+`common.operations.installed_claude.InstalledClaudeRunner(executable, home, username, model)`은 생성만으로 인증이나 프로세스를 실행하지 않는다. 명시 `verify()`에서 실행파일 해시·버전·필수 옵션·Max 구독 인증을 확인하고 도구 없는 최소 probe를 한 번 실행한다. 성공 후 `build_production_runtime(..., subscription_runner=runner)`로 결속한다. `producers`와 동시에 지정할 수 없다. 등록 작업마다 명시된 구독 전용 정책과 필수 출력 `text`가 있어야 한다.
+
+실행환경은 고정 HOME·USER·LOGNAME·PATH·LANG만 사용한다. 부모 API 키·토큰·게이트웨이 환경을 복사하지 않으며, 인증 방식이 `claude.ai`/`firstParty`/`max`가 아니면 생성을 거부한다. 매 생성 전 인증과 실행파일 해시를 재확인하며 API fallback이나 자동 재검증은 없다.
+
+macOS의 현재 설치에서는 실제 바이너리 경로가 필요하다. `/usr/local/bin/claude` wrapper는 HOME에 의존하고, HOME만 전달해도 구독 인증을 찾지 못한다. 고정 USER·LOGNAME도 필요하다는 것을 최소 환경 시험에서 확인했다. 실행파일 버전 변경 시 기존 증거를 재사용하지 않는다.
+
+2026-11-02 CLI 2.1.310에서 실제 어댑터의 명시 최소 검증이 성공했다. 이 결과는 당시 로그인과 도구 없는 응답만 증명하며 잔여 한도·향후 사용 가능·실제 콘텐츠 품질을 보장하지 않는다. 실제 콘텐츠 제작과 8769의 제작 모드 활성화는 아직 수행하지 않았다.
