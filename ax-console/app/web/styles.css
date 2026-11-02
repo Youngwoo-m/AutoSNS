@@ -80,3 +80,9 @@
 .media-plan input,.media-plan select,.media-plan textarea { max-width:100%; padding:.4rem; }
 .media-plan textarea { width:100%; min-height:5rem; }
 .media-plan [data-media-plan-scene] { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }
+.voice-task { margin-block:1rem; padding:1rem; overflow-wrap:anywhere; }
+.voice-task summary { cursor:pointer; font-weight:700; }
+.voice-task label { display:block; margin-block:.7rem; }
+.voice-task input,.voice-task textarea { max-width:100%; padding:.4rem; box-sizing:border-box; }
+.voice-task textarea { width:100%; min-height:6rem; }
+.voice-task-row { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }

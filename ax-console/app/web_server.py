@@ -68,6 +68,7 @@ _STATIC = {
     'account_navigation.js': 'text/javascript; charset=utf-8',
     'production_settings_panel.js': 'text/javascript; charset=utf-8',
     'media_plan_panel.js': 'text/javascript; charset=utf-8',
+    'voice_task_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',

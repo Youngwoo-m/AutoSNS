@@ -1,3 +1,4 @@
+import {createVoiceTaskPanel} from './voice_task_panel.js';
 import {createMediaPlanPanel} from './media_plan_panel.js';
 import {createToolkitApi} from './toolkit_api.js';
 import {createToolkitController} from './toolkit_controller.js';
@@ -64,12 +65,32 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     message='후보를 미저장 초안에 반영했습니다. 원본 저장 시 새 버전과 독립 검토가 필요합니다.';
     render();
   });
-  let deliveryKey='',mediaKey='',mediaWritable=null;
+  let deliveryKey='',mediaKey='',voiceKey='',mediaWritable=null,voiceWritable=null;
   const delivery=createDeliveryEditor({api,writable:()=>canWrite()&&!session.dirty(),onSaved,onStateChange:()=>updateRevisionControls()});
   const media=createMediaPlanPanel({document,onChange:()=>updateRevisionControls()});
-  const childBlocksRevision=()=>media.isBusy()||media.isDirty()||toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
-  function updateRevisionControls(){const allowed=canWrite()&&!session.dirty()&&!delivery.isBusy()&&!delivery.hasUnsavedChanges()&&!execution?.isBusy()&&!execution?.isDirty()&&!toolkit.isBusy();if(allowed!==mediaWritable){mediaWritable=allowed;media.refreshControls({writable:allowed});}const blocked=childBlocksRevision();toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!blocked});root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;const notice=root.querySelector('[data-child-block]');if(notice)notice.textContent=blocked?(media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.'):'';}
-  const hasChanges=()=>media.isDirty()||toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
+  const voice=createVoiceTaskPanel({document,onChange:()=>updateRevisionControls(),onCompleted:voiceCompleted});
+  async function voiceCompleted(row){
+    const current=session.content;
+    if(!current||row.content_id!==current.id||row.input_revision!==current.revision||!Number.isInteger(row.output_revision)||row.output_revision<=current.revision)return;
+    const token=generation;
+    try{const history=await api.listRevisions(current.id);if(token!==generation||session.content!==current)return;revisions=history.items||[];historical=true;message='음성 자산이 새 버전에 등록되었습니다. 최신 버전을 열어 WAV를 확인하세요. 검토는 아직 하지 않았습니다.';render();}
+    catch{if(token===generation){message='음성 등록이 끝났습니다. 최신 원고를 다시 조회해 자산을 확인하세요.';}}
+  }
+  const childBlocksRevision=()=>voice.isBusy()||voice.isDirty()||media.isBusy()||media.isDirty()||toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
+  function updateRevisionControls(){
+    const base=canWrite()&&!session.dirty()&&!delivery.isBusy()&&!delivery.hasUnsavedChanges()&&!execution?.isBusy()&&!execution?.isDirty()&&!toolkit.isBusy();
+    const allowed=base&&!voice.isBusy()&&!voice.isDirty();
+    if(allowed!==mediaWritable){mediaWritable=allowed;media.refreshControls({writable:allowed});}
+    const voiceAllowed=base&&!media.isBusy()&&!media.isDirty();
+    if(voiceAllowed!==voiceWritable){voiceWritable=voiceAllowed;voice.refreshControls({writable:voiceAllowed});}
+    const blocked=childBlocksRevision();
+    toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!blocked});
+    root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));
+    const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;
+    const notice=root.querySelector('[data-child-block]');
+    if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':voice.isBusy()?'음성 작업을 처리하는 중입니다.':voice.isDirty()?'음성 대본에 미저장 입력이 있습니다. 합성 요청 또는 입력 버리기 후 원본을 변경하세요.':media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.') : '';
+  }
+  const hasChanges=()=>voice.isDirty()||media.isDirty()||toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength,locked=false}={}) {
     const input=el(type,{...(maxLength?{maxlength:maxLength}:{}),disabled:locked||!canWrite(),oninput:e=>{onChange(e.target.value);updateNotice();}});
     if(options)for(const [id,text] of options)input.append(el('option',{value:id},text));
@@ -78,7 +99,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
   function updateNotice(){toolkit.refreshControls({context:toolkitContext(),writable:canWrite()&&!childBlocksRevision()});if(session.content&&execution)execution.forContent(session.content,{dirty:session.dirty(),readOnly:!canWrite()});delivery.refreshControls();updateRevisionControls();const notice=root.querySelector('[data-dirty]');if(notice)notice.textContent=session.dirty()?'미저장 변경 있음':'';root.querySelectorAll('[data-needs-clean]').forEach(node=>node.disabled=!canWrite()||session.dirty()||childBlocksRevision());}
   function notice(){return el('p',{class:'editor-message',role:'status','aria-live':'polite'},session.error||message|| (session.phase==='saved'?'저장했습니다.':busy?'처리 중입니다.':''));}
   async function action(task) {
-    if(media.isBusy()||delivery.isBusy()||execution?.isBusy()||toolkit.isBusy())return;
+    if(voice.isBusy()||media.isBusy()||delivery.isBusy()||execution?.isBusy()||toolkit.isBusy())return;
     busy=true;message='';session.error='';render();
     try {await task();}catch(error){session.error=error.message;session.phase=error.status===401?'unauthorized':error.status===409?'conflict':'error';}
     finally {busy=false;render();}
@@ -97,7 +118,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
       }});
       for(const rev of revisions)select.append(el('option',{value:rev.revision},`버전 ${rev.revision} · ${formatDateTime(rev.created_at)}`));select.value=String(c.revision);
       form.append(el('label',{class:'editor-field'},'저장 버전',select));
-      if(historical)form.append(button('최신 버전 열기',()=>open({id:c.id,source:'managed'}),busy));
+      if(historical)form.append(button('최신 버전 열기',()=>{if(childBlocksRevision())return;if(hasChanges()&&!globalThis.confirm('저장하지 않은 변경을 버리고 최신 버전을 열까요?'))return;return open({id:c.id,source:'managed'});},busy||childBlocksRevision()));
       form.append(el('p',{},`원본 소유: ${accountLabel(c.owner_account_id)} · 버전 ${c.revision}`));
     }else if(scopedAccount&&d.owner_account_id===scopedAccount){
       form.append(field(`원본 소유 계정 (현재 계정: ${accountLabel(scopedAccount)})`,d.owner_account_id,()=>{},{type:'select',options:[['personal','개인'],['dept','학과']],locked:true}),el('p',{class:'sub'},'이 계정 메뉴에서 만드는 새 원본은 현재 계정 소유로 고정됩니다. 다른 계정 소유로 만들려면 해당 계정 메뉴로 돌아가 새로 만드세요.'));
@@ -126,13 +147,14 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     const reviewButton=[...form.querySelectorAll('button')].find(node=>node.textContent==='이 버전의 수동 검토 기록 저장');if(reviewButton)reviewButton.setAttribute('data-needs-clean','');
     root.replaceChildren(form);
     root.append(syncToolkit());
+    if(c){root.append(voice.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==voiceKey){voiceKey=key;voice.open(c,{writable:canWrite()&&!session.dirty()});}}
     if(c){root.append(media.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==mediaKey){mediaKey=key;media.open(c,{writable:canWrite()&&!session.dirty()});}}
     if(c&&!historical){root.append(delivery.element);const key=`${c.id}:${c.revision}:${c.manifest_hash}`;if(key!==deliveryKey){deliveryKey=key;delivery.open(c);}else delivery.refreshControls();}
     if(c&&execution)root.append(execution.forContent(c,{dirty:session.dirty(),readOnly:!canWrite()}));
     updateRevisionControls();
   }
   async function open(content=null,{accountId}={}) {
-    const token=++generation;deliveryKey=mediaKey='';mediaWritable=null;media.open(null);delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];
+    const token=++generation;deliveryKey=mediaKey=voiceKey='';mediaWritable=voiceWritable=null;voice.open(null);media.open(null);delivery.open(null);historical=false;loadFailed=false;reviewDraft={kind:'general',decision:'pass',notes:''};message='';revisions=[];
     scopedAccount=validAccount(accountId)?accountId:'';
     session=createEditSession();
     // 새 원본(관리 원본이 아닌 경우)에만 현재 계정 컨텍스트를 소유 계정 초기값으로 쓴다. baseline도 맞춰 dirty=false 유지.
@@ -149,5 +171,5 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     finally {if(token===generation){busy=false;render();}}
   }
   execution?.subscribe?.(()=>updateRevisionControls());
-  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||media.isBusy()||delivery.isBusy()||!!execution?.isBusy()||toolkit.isBusy()};
+  return {element:root,open,hasUnsavedChanges:hasChanges,isBusy:()=>busy||voice.isBusy()||media.isBusy()||delivery.isBusy()||!!execution?.isBusy()||toolkit.isBusy()};
 }

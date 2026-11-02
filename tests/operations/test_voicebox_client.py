@@ -53,6 +53,14 @@ def code_of(testcase, call, *args, **kwargs):
 
 
 class VoiceboxClientTests(unittest.TestCase):
+    def test_poll_once_returns_active_and_failure_without_sleep_or_retry(self):
+        for status in ('running', 'failed', 'cancelled', 'completed'):
+            clock = FakeClock()
+            client, transport = make(js({'id':'g1','status':status}), clock=clock, sleep=clock.sleep)
+            self.assertEqual(client.poll_once('g1'), {'id':'g1','status':status})
+            self.assertEqual(transport.calls, [('GET','/history/g1',None)])
+            self.assertEqual(clock.sleeps, [])
+
     def test_constructor_does_no_io_and_validates_registration(self):
         with mock.patch('http.client.HTTPConnection') as connection, mock.patch('socket.socket') as sock:
             client = LocalVoiceboxClient(PROFILE)

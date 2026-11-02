@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime, timezone
 import ipaddress
 import json
+import re
 import signal
 import sys
 
@@ -18,7 +19,11 @@ from common.operations.production_startup import build_production_runtime
 from common.operations.installed_claude import InstalledClaudeRunner
 from common.operations.registry import load_registry
 from common.operations.tool_cost_policy import ToolkitPolicy
+from common.operations.voicebox_client import LocalVoiceboxClient
+from common.operations.voice_tasks import VoiceTaskService,VoiceTaskStore
 from production_application import build_production_application
+
+_VOICEBOX_PROFILE=re.compile(r'[A-Za-z0-9_-]{1,128}')
 
 
 def parser():
@@ -28,6 +33,8 @@ def parser():
     p.add_argument('--registry',type=Path,default=_APP.parent/'config/operations.json')
     mode=p.add_mutually_exclusive_group();mode.add_argument('--check',action='store_true');mode.add_argument('--serve',action='store_true')
     p.add_argument('--enable-production',action='store_true')
+    p.add_argument('--enable-voicebox',action='store_true')
+    p.add_argument('--voicebox-profile-id');p.add_argument('--voicebox-port',type=int,default=17493)
     p.add_argument('--host',default='127.0.0.1');p.add_argument('--port',type=int,default=8769)
     p.add_argument('--local-toolkit',action='store_true')
     p.add_argument('--claude-executable',type=Path);p.add_argument('--claude-home',type=Path);p.add_argument('--claude-user')
@@ -46,11 +53,19 @@ def _validate(args):
     if args.enable_production and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_production and not (args.claude_executable and args.claude_home and args.claude_user):
         raise ContractError('subscription_configuration_required')
+    # Voicebox 옵션: 비활성이어도 값이 주어지면 형식은 검증하지만 활성화하지 않는다.
+    profile,port=args.voicebox_profile_id,args.voicebox_port
+    if profile is not None and _VOICEBOX_PROFILE.fullmatch(profile) is None:raise ContractError('invalid_voicebox_registration')
+    if type(port) is not int or not 1<=port<=65535:raise ContractError('invalid_voicebox_registration')
+    if args.enable_voicebox:
+        if not args.serve:raise ContractError('activation_requires_serve')
+        if profile is None:raise ContractError('voicebox_profile_required')
     return BootstrapConfig(source_root=source,workspace_root=workspace,registry_path=args.registry)
 
 
 def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_production_runtime,
-        application_builder=build_production_application,quota_preparer=None,clock=None):
+        application_builder=build_production_application,quota_preparer=None,clock=None,
+        voice_client_factory=LocalVoiceboxClient,voice_service_factory=VoiceTaskService):
     """check는 읽기만 한다. serve/enable은 CLI에서 명시적으로 선택해야 한다."""
     config=_validate(args);clock=clock or (lambda:datetime.now(timezone.utc))
     planning=load_registry(args.registry)
@@ -60,7 +75,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         interpreter=Path(sys.executable).absolute(),activate=args.enable_production)
     summary=dict(mode='check',execution_enabled=False,settings_revision=compiled.registry.revision,
         accounts=[dict(account_id=row['account_id'],enabled_preference=row['enabled_preference'],daily_limit=row['daily_limit']) for row in rows],
-        native_probe_performed=False,quota_modified=False)
+        native_probe_performed=False,quota_modified=False,voicebox_enabled=False)
     if not args.serve:return summary
     runner=None
     if args.enable_production:
@@ -73,8 +88,14 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         quota_preparer=prepare_managed_text_quota
     runtime=runtime_builder(config=config,registry=compiled.registry,catalog=compiled.catalog,
         policy=compiled.policy,subscription_runner=runner,quota_preparer=quota_preparer if compiled.policy.enabled else None,clock=clock,initialize=False)
+    extra={}
+    if args.enable_voicebox:
+        # 생성자는 I/O가 없다. ready 조회/합성/앱 기동은 하지 않고 저장소 초기화는 application이 맡는다.
+        client=voice_client_factory(args.voicebox_profile_id,port=args.voicebox_port)
+        extra['voice_task_service']=voice_service_factory(VoiceTaskStore(config.workspace_root),
+            runtime.service.store.content_store,client,profile_id=args.voicebox_profile_id,enabled=True)
     app=application_builder(runtime=runtime,config=config,planning_registry=planning,host=args.host,port=args.port,
-        web_root=_APP/'web',toolkit_policy=ToolkitPolicy(enabled=args.local_toolkit))
+        web_root=_APP/'web',toolkit_policy=ToolkitPolicy(enabled=args.local_toolkit),**extra)
     previous={};requested=False
     def stop(signum,frame):
         nonlocal requested
@@ -88,7 +109,8 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
             for signum in (signal.SIGTERM,signal.SIGINT):previous[signum]=signal.signal(signum,stop)
         if not requested:app.serve_forever()
         return dict(summary,mode='serve',execution_enabled=compiled.policy.enabled,
-                    native_probe_performed=runner is not None,quota_modified=compiled.policy.enabled)
+                    native_probe_performed=runner is not None,quota_modified=compiled.policy.enabled,
+                    voicebox_enabled=bool(args.enable_voicebox))
     finally:
         for signum,handler in previous.items():signal.signal(signum,handler)
         if app.state=='built':app.close()

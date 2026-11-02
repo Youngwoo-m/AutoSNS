@@ -102,3 +102,23 @@ class VoiceHTTPTests(unittest.TestCase):
         self.assertEqual(payload['profile_id'], PROFILE)
         self.assertEqual(payload['engine'], 'qwen')
         self.assertEqual(payload['text'], SCRIPT)
+
+    def test_real_client_resume_checks_once_and_persists_terminal_failure(self):
+        calls = []
+        status = ['running']
+        def transport(method, path, body=None):
+            calls.append((method, path))
+            payload = ([{'id':PROFILE}] if path == '/profiles' else
+                       {'id':'generation2','status':'pending' if path == '/generate' else status[0]})
+            return 200, {}, json.dumps(payload).encode()
+        self.service.client = LocalVoiceboxClient(PROFILE, transport=transport,
+            sleep=lambda _: self.fail('웹 상태 확인에서 대기하지 않아야 함'))
+        row = self.service.create(self.item['id'], 1, SCRIPT)
+        self.assertEqual(self.service.resume(row['task_id'])['state'], 'pending')
+        self.assertEqual(calls.count(('GET','/history/generation2')), 1)
+        status[0] = 'failed'
+        failed = self.service.resume(row['task_id'])
+        self.assertEqual(failed['state'], 'failed')
+        before = list(calls)
+        self.assertEqual(self.service.resume(row['task_id']), failed)
+        self.assertEqual(calls, before)

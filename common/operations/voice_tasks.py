@@ -465,7 +465,9 @@ class VoiceTaskService:
         if not generation_id:
             return row
         try:  # GET만 사용한다.
-            result = self.client.wait_completed(generation_id)
+            # 웹 요청은 합성이 끝날 때까지 수분간 대기하지 않는다.
+            poll = getattr(self.client, 'poll_once', None)
+            result = poll(generation_id) if callable(poll) else self.client.wait_completed(generation_id)
         except Exception:
             return row  # pending 유지, 다음 resume이 다시 GET
         if not isinstance(result, dict) or result.get('id') != generation_id:

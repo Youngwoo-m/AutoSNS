@@ -153,13 +153,19 @@ class LocalVoiceboxClient:
             raise VoiceboxGenerationUnknown() from None
         return generated
 
+    def poll_once(self, generation_id):
+        """저장된 생성 ID를 GET 한 번으로 확인한다. 대기·재생성하지 않는다."""
+        _require(_valid_id(generation_id), 'voicebox_invalid_request')
+        current = self._projection(self._get_json(f'/history/{generation_id}'))
+        _require(current is not None and current['id'] == generation_id, 'voicebox_invalid_response')
+        return current
+
     def wait_completed(self, generation_id):
         _require(_valid_id(generation_id), 'voicebox_invalid_request')
         deadline = self._clock() + self._poll_timeout
         attempts = int(self._poll_timeout / self._poll_interval) + 2
         for _ in range(attempts):
-            current = self._projection(self._get_json(f'/history/{generation_id}'))
-            _require(current is not None and current['id'] == generation_id, 'voicebox_invalid_response')
+            current = self.poll_once(generation_id)
             if current['status'] == 'completed':
                 return current
             _require(current['status'] in _ACTIVE, 'voicebox_generation_failed')
