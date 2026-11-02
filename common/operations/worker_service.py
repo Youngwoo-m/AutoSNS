@@ -16,8 +16,10 @@ from common.shared.axlock import Timeout, ControlBlocked
 
 
 class WorkerService:
-    def __init__(self,services,*,clock=None,stop_event=None,heartbeat_interval=10):
+    def __init__(self,services,*,clock=None,stop_event=None,heartbeat_interval=10,production_quota_preparer=None):
         if type(heartbeat_interval) not in (int,float) or not 0<heartbeat_interval<60:raise StoreError('invalid')
+        if production_quota_preparer is not None and not callable(production_quota_preparer):raise StoreError('invalid')
+        self.production_quota_preparer=production_quota_preparer
         self.services=services;self.clock=clock or (lambda:datetime.now(timezone.utc))
         self.stop_event=stop_event if stop_event is not None else threading.Event()
         self.heartbeat_interval=heartbeat_interval;self.active_lease=None
@@ -139,9 +141,12 @@ class WorkerService:
         self(lease)
         try:
             self.check()
+            now=utc(self.clock())
+            if self.production_quota_preparer is not None:
+                self.production_quota_preparer(self.services.store,self.services.base_registry,now)
             result=produce_content(request,provider=producer['provider'],media_runner=producer.get('media_runner',{}),
                 content_store=self.services.store.content_store,production_store=self.services.production_store,
-                runtime_store=self.services.store,policy=policy,now=utc(self.clock()))
+                runtime_store=self.services.store,policy=policy,now=now)
             result=self._review(result,request,producer,execute=True)
         except (StoreError,ContractError) as error:
             if 'result' in locals() and result.get('status')=='completed':

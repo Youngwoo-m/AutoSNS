@@ -42,3 +42,36 @@ class CompiledProductionTests(unittest.TestCase):
             after=compile_production_settings([settings.get(a) for a in ('personal','dept')],accounts={'personal':{},'dept':{}},code_root=root,interpreter=Path(sys.executable),activate=True)
             self.assertFalse(after.policy.enabled)
             self.assertEqual(dict(runtime.service.adapters),{})
+
+    def test_worker_prepares_new_day_and_does_not_reset_consumed_limit(self):
+        from datetime import timedelta
+        from common.operations.production_quota import prepare_managed_text_quota
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);settings=ProductionSettingsStore(root/'managed');settings.initialize()
+            settings.save('personal',0,dict(enabled_preference=True,daily_limit=1))
+            compiled=compile_production_settings([settings.get(a) for a in ('personal','dept')],accounts={'personal':{},'dept':{}},code_root=root,interpreter=Path(sys.executable),activate=True)
+            calls=[];clock=[NOW]
+            class Provider:
+                def generate(self,request,prompt,policy):
+                    calls.append(request.content_id)
+                    return dict(status='completed',text='다음날 원고',provider_id='claude-subscription',execution_id='rollover-fixture',observed_usage=None)
+            runtime=build_production_runtime(config=BootstrapConfig(code_root=root,source_root=root/'source',workspace_root=root/'managed',registry_path=root/'unused'),registry=compiled.registry,catalog=compiled.catalog,policy=compiled.policy,
+                producers={'managed-text-personal':{'provider':Provider(),'media_runner':{}}},quota_preparer=prepare_managed_text_quota,initialize=True,clock=lambda:clock[0])
+            first=prepare_managed_text_quota(runtime.service.store,compiled.registry,clock[0])[0]['bucket_id']
+            def submit(title):
+                content=runtime.service.store.content_store.create('personal',dict(title=title,kind='article',original='입력'))
+                trigger=dict(job_id='managed-text-personal',scheduled_at_utc=clock[0].isoformat(),phase='prepare',source='console',request_kind='new_publication',mode='live')
+                runtime.service.submit(trigger,'console',content_id=content['id'],expected_revision=content['revision'])
+            submit('전날 접수')
+            clock[0]+=timedelta(days=1)
+            self.assertEqual(runtime.worker.tick()['state'],'completed')
+            buckets=runtime.service.store.quota_buckets()
+            self.assertEqual(len(buckets),2)
+            self.assertEqual(next(b for b in buckets if b['id']==first)['reserved'],0)
+            submit('한도 확인')
+            self.assertEqual(runtime.worker.tick()['state'],'blocked')
+            self.assertEqual(len(calls),1)
+            clock[0]+=timedelta(days=1)
+            submit('새 날짜 첫 접수')
+            self.assertEqual(runtime.worker.tick()['state'],'completed')
+            self.assertEqual(len(calls),2)

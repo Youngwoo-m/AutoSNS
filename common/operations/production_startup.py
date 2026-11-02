@@ -132,7 +132,7 @@ def _database_ready(root):
         return False
 
 
-def build_production_runtime(*, config, registry, catalog, producers=None, subscription_runner=None, policy=None, clock=None, initialize=False):
+def build_production_runtime(*, config, registry, catalog, producers=None, subscription_runner=None, quota_preparer=None, policy=None, clock=None, initialize=False):
     """제작 전용 ExecutionService와 WorkerService를 조립한다. 기본은 비활성·무변이."""
     from datetime import datetime, timezone
     from .content_store import ContentStore
@@ -144,6 +144,8 @@ def build_production_runtime(*, config, registry, catalog, producers=None, subsc
     if not isinstance(config, BootstrapConfig) or type(initialize) is not bool:
         raise ContractError('invalid_bootstrap_config')
     policy = ExecutionPolicy() if policy is None else policy
+    if quota_preparer is not None and not callable(quota_preparer):
+        raise ContractError('invalid_quota_policy')
     jobs = _production_job_ids(registry)
     _validate_catalog(catalog, jobs)
     _validate_policy(policy)
@@ -170,4 +172,4 @@ def build_production_runtime(*, config, registry, catalog, producers=None, subsc
         clock or (lambda: datetime.now(timezone.utc)))
     # 제작 전용: 정책이 enabled여도 발행 adapter는 비어 있고 추가할 수 없다.
     service.adapters = MappingProxyType({})
-    return ProductionRuntime(service, WorkerService(service, clock=service.clock))
+    return ProductionRuntime(service, WorkerService(service, clock=service.clock, production_quota_preparer=quota_preparer))

@@ -48,3 +48,18 @@ macOS의 현재 설치에서는 실제 바이너리 경로가 필요하다. `/us
 다음 명시 제작 기동에서 `compile_production_settings`에 두 계정 설정과 기존 accounts, 신뢰된 코드/인터프리터 경로를 전달한다. 기본 `activate=False`이며, 명시 활성 기동에서도 입력한 계정과 한도만 제작 등록부·정책에 포함한다. 실제 quota bucket 관측은 별도로 필요하며 컴파일러는 임의 생성·초기화하지 않는다.
 
 2026-11-02 8769에 설정 패널과 저장 API를 반영했다. 실제 설정 값은 기본 비활성으로 남겼으며 실제 콘텐츠 생성이나 발행은 하지 않았다.
+
+## 명시 제작 기동 명령
+설정 점검은 아래 명령으로 수행한다. `--check`를 생략해도 기본은 점검이며, DB 초기화·인증 probe·소켓·worker·quota 변경을 하지 않는다.
+
+```sh
+python3 ax-console/app/production_main.py --source-root /Volumes/USB256/devAPP/AutoSNS --workspace-root /Users/youngwoo/.codex/worktrees/account-automation-design/AutoSNS/ax-console/data/managed-workspace --check
+```
+
+`--serve`만 지정하면 제작 비활성 상태로 웹을 제공한다. 실제 제작 모드는 `--serve --enable-production`과 명시적인 `--claude-executable`, `--claude-home`, `--claude-user`가 모두 필요하다. 사용할 계정과 한도가 저장되어 있어야 하며, 구독 검증 실패 시 서버·worker를 시작하지 않는다. 이 기동 경로도 발행 adapter는 만들지 않는다. 현재 8769를 중복 실행하면 포트 충돌이므로 실제 전환 전에 기존 프로세스를 확인한다.
+
+명시 활성 기동과 제작 실행 직전에 관리 텍스트 횟수 창을 준비한다. 새 창의 기준선은 로컬 창 시작 0이며 그 창의 held/settled 기록을 합산한다. 기존 bucket의 사용량·관측 시각·예약·생성 기록을 덮어쓰지 않는다. 저장한 한도가 달라지면 다음 기동에서 capacity만 변경한다. 기존 발행/외부 API metric은 바꾸지 않는다. 이는 Claude 구독 잔여량의 관측이 아니다.
+
+SIGTERM/SIGINT는 HTTP 종료 요청과 worker drain으로 처리한다. 자동 재시작이나 실행 중 모델의 강제 종료는 하지 않는다. 날짜가 바뀐 경우에도 다음 제작 직전에 새 창을 준비하며 이전 사용 기록을 보존한다.
+
+2026-11-02 실제 관리 저장소에 점검 명령만 실행했다. 두 계정 비활성·한도 미지정, native probe 미실행·quota 무변경 결과를 확인했다. `--enable-production`으로 운영 서버를 전환하지 않았다.
