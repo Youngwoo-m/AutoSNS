@@ -90,7 +90,7 @@ class ProductionApplication:
             if self.state != 'built':
                 raise ProductionApplicationError('application_' + self.state)
             for name in ('content_store', 'integration_store', 'ledger', 'runtime_store',
-                         'production_store', 'metrics_store', 'production_settings_store'):
+                         'production_store', 'metrics_store', 'production_settings_store', 'media_plan_store'):
                 store = getattr(self.server, name, None)
                 if store is not None:
                     store.initialize()
