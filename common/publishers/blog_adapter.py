@@ -21,6 +21,10 @@ class BlogAdapter:
             connection.target_id != ctx.target_id or not ctx.target_id or
             ctx.registry_revision != self.registry.revision):
             raise ContractError('blog_context_mismatch')
+        if self.platform=='blogger':
+            from .credential_bindings import validate_publication_credential_binding
+            try:validate_publication_credential_binding(self.registry,connection)
+            except ContractError:raise ContractError('blog_context_mismatch') from None
         return binding['executor_id']
 
     def inspect_target(self, ctx):
@@ -38,6 +42,8 @@ class BlogAdapter:
         for name in ('platform', 'target_id', 'connection_id', 'owner_account_id', 'destination_account_id'):
             if prepared.get(name) != getattr(ctx, name):
                 raise ContractError('blog_prepared_mismatch')
+        if self.registry.connections[ctx.connection_id].credential_ref and self.registry.connections[ctx.connection_id].credential_ref.startswith('oauth:'):
+            return SubmissionResult('failed',evidence={'reason':'managed_publication_unverified','confirmed_not_submitted':True})
         try:
             raw = self.bridge.submit(executor, ctx, prepared, permit)
         except Exception:

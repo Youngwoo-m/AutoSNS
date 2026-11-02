@@ -7,7 +7,7 @@ bootstrap은 서버 파일에서 registry/catalog/store/locks/handler를 조립�
 stdin과 argv는 코드·저장소·credential 경로를 선택할 수 없다.
 """
 from collections.abc import Mapping
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stdout, redirect_stderr,contextmanager
 from datetime import datetime, timezone
 import json
 import os
@@ -57,9 +57,9 @@ class BridgeHost:
         _clear(self.locks)
         if not mutation:
             if nonce:raise ContractError('bridge_invalid_permit')
-            credentials=self._credentials(ctx,'read')
-            # 조회 handler는 서버가 등록한다. editor/dry action은 이 경계에 없다.
-            return handler(ctx.to_dict(),request['payload'],credentials)
+            # 새 자격은 읽기 handler가 끝날 때까지 작업공간 소유·세대 guard 안에서 사용한다.
+            with self._credential_scope(ctx,'read') as credentials:
+                return handler(ctx.to_dict(),request['payload'],credentials)
         if not nonce or len(spec.mutation_actions)!=1:raise ContractError('bridge_invalid_permit')
         expected_binding=dict(executor_id=executor_id,action=action,context_hash=ctx.context_hash,prepared_hash=request['prepared_hash'])
         if secret_binding!=expected_binding:raise ContractError('bridge_invalid_permit')
@@ -80,6 +80,8 @@ class BridgeHost:
             job.get('owner_account_id')!=ctx.owner_account_id or job.get('policy_revision')!=ctx.policy_revision):
             raise ContractError('bridge_job_mismatch')
         # credential 준비는 승인/STOP writer를 막지 않는 허가 이전 단계다.
+        if callable(getattr(self.credential_resolver,'use',None)):
+            raise ContractError('managed_publication_unverified')
         credentials=self._credentials(ctx,'publication')
         with self.locks.publication_guard(job='bridge-leaf',wait=10):
             _clear(self.locks)
@@ -93,6 +95,18 @@ class BridgeHost:
         # 허가는 redemption commit에서 선형화됐다. 이후 STOP/철회는 이미 시작된
         # 요청의 취소 성공을 뜻하지 않으며 외부 I/O 동안 gate를 잡지 않는다.
         return handler(ctx.to_dict(),request['payload'],credentials)
+
+    @contextmanager
+    def _credential_scope(self,ctx,scope):
+        use=getattr(self.credential_resolver,'use',None)
+        if not callable(use):
+            yield self._credentials(ctx,scope)
+            return
+        scoped=resolve_registered_credentials(ctx.connection_id,registry=self.registry,
+            credential_catalog=self.credential_catalog,
+            resolver=lambda reference,**binding:use(reference,**binding,target_id=ctx.target_id),scope=scope)
+        with scoped as credentials:
+            yield credentials
 
     def _credentials(self,ctx,scope):
         return resolve_registered_credentials(ctx.connection_id,registry=self.registry,

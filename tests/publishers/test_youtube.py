@@ -437,7 +437,12 @@ class YoutubeTests(unittest.TestCase):
              patch('subprocess.Popen', side_effect=AssertionError('process forbidden')), \
              patch('os.makedirs', side_effect=AssertionError('mkdir forbidden')):
             for name in ('youtube_payloads', 'youtube_services', 'youtube_runtime', 'youtube'):
-                importlib.reload(importlib.import_module('common.publishers.' + name))
+                # Fresh imports must not replace canonical classes used by other tests.
+                existing=importlib.import_module('common.publishers.'+name)
+                alias='common.publishers._import_check_'+name
+                spec=importlib.util.spec_from_file_location(alias,existing.__file__)
+                fresh=importlib.util.module_from_spec(spec)
+                with patch.dict(sys.modules,{alias:fresh}):spec.loader.exec_module(fresh)
             self.prepare()
         self.assertEqual(environment, dict(os.environ)); self.assertEqual(paths, sys.path)
         self.assertNotIn('youtube_upload', sys.modules)

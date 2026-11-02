@@ -18,9 +18,11 @@ class YoutubeAdapter:
         executor = YOUTUBE_BINDINGS.get(ctx.connection_id)
         if (not executor or not connection or connection.platform != 'youtube' or ctx.platform != 'youtube' or
             connection.account_id != ctx.destination_account_id or connection.target_id != ctx.target_id or
-            not ctx.target_id or ctx.registry_revision != self.registry.revision or
-            connection.credential_ref != ctx.connection_id + '.credential'):
+            not ctx.target_id or ctx.registry_revision != self.registry.revision):
             raise ContractError('youtube_context_mismatch')
+        from .credential_bindings import validate_publication_credential_binding
+        try:validate_publication_credential_binding(self.registry,connection)
+        except ContractError:raise ContractError('youtube_context_mismatch') from None
         return executor
 
     def inspect_target(self, ctx):
@@ -36,6 +38,8 @@ class YoutubeAdapter:
         executor = self._binding(ctx)
         for name in ('connection_id', 'target_id', 'platform', 'owner_account_id', 'destination_account_id', 'content_id', 'content_revision', 'manifest_hash'):
             if prepared.get(name) != getattr(ctx, name): raise ContractError('youtube_prepared_mismatch')
+        if self.registry.connections[ctx.connection_id].credential_ref and self.registry.connections[ctx.connection_id].credential_ref.startswith('oauth:'):
+            return SubmissionResult('failed',evidence={'reason':'managed_publication_unverified','confirmed_not_submitted':True})
         try:
             raw = self.bridge.submit(executor, ctx, prepared, permit)
             if raw.get('outcome') not in ('submitted', 'scheduled', 'unknown', 'failed'):
