@@ -99,8 +99,8 @@ class Ledger:
     def _public(self,record,registry=None):
         registry=registry or self.registry()
         connection=registry.connections.get(record['connection_id'])
-        record=dict(record,target_status=connection.target_status if connection else 'unverified',target_label=connection.target_label if connection else '')
-        keys=('id','content_id','revision','manifest_hash','owner_account_id','destination_account_id','connection_id','platform','target_label','target_status','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','options','status','version','subject_hash','approval','blockers','created_at','updated_at')
+        record=dict(record,target_id=connection.target_id if connection else None,target_status=connection.target_status if connection else 'unverified',target_label=connection.target_label if connection else '')
+        keys=('id','content_id','revision','manifest_hash','owner_account_id','destination_account_id','connection_id','platform','target_id','target_label','target_status','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','options','status','version','subject_hash','approval','blockers','created_at','updated_at')
         approval=record.get('approval')
         return {**{k:record.get(k) for k in keys},'approval':None if approval is None else {k:approval[k] for k in ('id','scope','decision','subject_hash','content_revision','source','recorded_at')},'source':'managed','schedule_kind':'local_plan','remote_state':'unavailable','execution_enabled':False}
 
@@ -128,7 +128,7 @@ class Ledger:
         version(body['revision'])
         if not isinstance(body['manifest_hash'],str) or not re.fullmatch('[0-9a-f]{64}',body['manifest_hash']): invalid()
         options=body.get('options',{})
-        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override','text_only'}: invalid()
+        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override','text_only','instagram'}: invalid()
         if 'text_only' in options and options['text_only'] is not True: invalid()
         if 'visibility' in options and options['visibility'] not in ('public','unlisted','private'): invalid()
         for key,limit in [('title_override',300),('description_override',200000)]:
@@ -143,9 +143,18 @@ class Ledger:
         # Capabilities are explicit allowlisted option names (or their conventional aliases).
         caps=set(connection.capabilities)
         if 'text_only' in options and connection.platform not in ('threads','facebook'): invalid()
+        if connection.platform=='instagram':
+            if 'instagram' not in options or 'plan' not in caps:invalid()
+            from common.publishers.instagram_payloads import select_instagram_assets
+            try:select_instagram_assets(snapshot,options['instagram'])
+            except ContractError:invalid()
+        elif 'instagram' in options:invalid()
         for key in options:
             if key=='visibility':
                 if 'visibility:'+options[key] not in caps: invalid()
+            elif key=='instagram':
+                # 명시 미디어 선택은 기존 plan 능력의 입력이다. 게시 권한/활성화를 만들지 않는다.
+                if 'plan' not in caps:invalid()
             elif key not in caps: invalid()
         record.update(context=context,owner_account_id=snapshot['owner_account_id'],destination_account_id=context['destination_account_id'],platform=context['platform'],target_label=connection.target_label,target_status=context['target_status'],subject_hash=self._subject(snapshot,context),blockers=self._blockers(context,registry),status='pending',version=1,approval=None)
         return record

@@ -1,13 +1,13 @@
 """명시 Instagram 매체 선택의 순수 준비 계약. 실제 파일·권한·API를 검증하지 않는다."""
 import copy
-from dataclasses import replace
+from dataclasses import replace,FrozenInstanceError
 from datetime import datetime,timedelta,timezone
 from unittest.mock import patch
 import hashlib
 import unittest
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext
-from common.publishers.instagram_payloads import build_instagram_payload
+from common.publishers.instagram_payloads import build_instagram_payload,InstagramPreparationContext,select_instagram_assets
 
 NOW=datetime(2026,11,2,tzinfo=timezone.utc)
 KEYS={'platform','connection_id','target_id','owner_account_id','destination_account_id','content_id','content_revision','manifest_hash','publication_purpose','schedule_slot','caption','caption_sha256','media_format','assets','media_sha256'}
@@ -99,3 +99,19 @@ class InstagramPayloadTests(unittest.TestCase):
             for value in (None,True,[],{},1):
                 ctx=context();object.__setattr__(ctx,field,value)
                 with self.assertRaises(ContractError):build_instagram_payload(snapshot(),ctx)
+
+    def test_authless_preparation_context_only_prepares_same_payload(self):
+        live=context()
+        fields=('platform','connection_id','target_id','owner_account_id','destination_account_id','content_id','content_revision','manifest_hash','publication_purpose','schedule_slot','options')
+        plan=InstagramPreparationContext(**{name:getattr(live,name) for name in fields})
+        self.assertEqual(build_instagram_payload(snapshot(),plan),build_instagram_payload(snapshot(),live))
+        self.assertFalse(hasattr(plan,'auth_checked_at'));self.assertFalse(hasattr(plan,'run_id'))
+        with self.assertRaises(FrozenInstanceError):plan.target_id='other'
+        with self.assertRaises(TypeError):plan.options['instagram']['format']='reels'
+
+    def test_selection_helper_does_not_need_a_target_or_authentication_context(self):
+        source=snapshot();minimal={'assets':source['assets']}
+        result=select_instagram_assets(minimal,{'format':'carousel','asset_ids':['video1','image2']})
+        self.assertEqual([item['id'] for item in result],['video1','image2'])
+        result[0]['size']=999;self.assertEqual(source['assets'][2]['size'],50)
+        with self.assertRaises(ContractError):select_instagram_assets(minimal,{'format':'image','asset_ids':['png1']})

@@ -6,6 +6,7 @@ import unittest
 from common.operations.models import ContractError
 from common.operations.runtime_models import PublicationContext
 from common.publishers.instagram_media_sources import InstagramMediaSourceFactory,InstagramHostedMedia
+from common.publishers.instagram_payloads import InstagramPreparationContext
 
 NOW=datetime(2026,11,2,tzinfo=timezone.utc)
 JPEG=b'\xff\xd8\xff\xe0fixture\xff\xd9'
@@ -27,6 +28,11 @@ class InstagramMediaSourcesTests(unittest.TestCase):
         self.events.append(('stage',request['asset_id']));self.proofs.append((request,raw))
         return dict(url='https://cdn.example.com/'+request['asset_id']+'.jpg',asset_sha256=hashlib.sha256(raw).hexdigest(),asset_size=len(raw),expires_at=(NOW+timedelta(hours=1)).isoformat(),receipt_id='receipt_'+request['asset_id'])
     def factory(self,**over):return InstagramMediaSourceFactory(self.loader,stager=self.stager,approval_guard=self.guard,allowed_hosts=('cdn.example.com',),clock=lambda:NOW,**over)
+    def test_plan_preparation_context_never_grants_public_media_delivery(self):
+        publication=context()
+        plan=InstagramPreparationContext(**{key:getattr(publication,key) for key in InstagramPreparationContext.__dataclass_fields__})
+        with self.assertRaises(ContractError) as error:self.factory().prepare(plan,prepared(publication))
+        self.assertEqual(error.exception.code,'publication_context_required');self.assertEqual(self.events,[])
     def test_constructor_and_unconfigured_defaults_never_load_stage_or_call_clock(self):
         factory=InstagramMediaSourceFactory(self.loader,clock=lambda:(_ for _ in ()).throw(AssertionError('no clock')))
         self.assertEqual(self.events,[])

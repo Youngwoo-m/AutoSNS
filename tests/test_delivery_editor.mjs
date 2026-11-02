@@ -184,3 +184,49 @@ test('Facebook 실제 계획 미리보기 화면에 텍스트 전용 승인 범�
   await findButton(editor.element,'계획 미리보기').listeners.click();assert.equal(calls.length,1);assert.deepEqual(calls[0].options,{text_only:true});assert.match(editor.element.textContent,/Facebook 페이지 텍스트 전용/);assert.match(editor.element.textContent,/이미지·영상은 이 배포에 포함하지 않습니다/);assert.match(editor.element.textContent,/실행 안 함/);
  }finally{restore();}
 });
+
+const igAssets=[{id:'jpeg-a',filename:'a.jpg',media_type:'image/jpeg',size:20,sha256:'b'.repeat(64)},{id:'jpeg-b',filename:'b.jpg',media_type:'image/jpeg',size:21,sha256:'c'.repeat(64)},{id:'video-a',filename:'a.mp4',media_type:'video/mp4',size:22,sha256:'d'.repeat(64)},{id:'png-a',filename:'a.png',media_type:'image/png',size:23,sha256:'e'.repeat(64)}];
+const igContent={...fullContent,manifest_hash:'a'.repeat(64),assets:igAssets};
+const igConnection={id:'dept.instagram',account_id:'dept',platform:'instagram',target_id:'123456',target_status:'verified',planning_enabled:true,auth_status:'unknown',capabilities:['plan','visibility:public']};
+const igPlan={...selectedPlan,content_id:igContent.id,manifest_hash:igContent.manifest_hash,connection_id:igConnection.id,target_id:igConnection.target_id,platform:'instagram',target_label:'Instagram 구성',options:{instagram:{format:'image',asset_ids:['jpeg-a']}}};
+const igChecks={rights_confirmed:false,visual_checked:false,caption_checked:false,composition_checked:false,audio_checked:false};
+const igReview={plan_id:igPlan.id,content_id:igPlan.content_id,content_revision:igPlan.revision,manifest_hash:igPlan.manifest_hash,owner_account_id:igPlan.owner_account_id,destination_account_id:igPlan.destination_account_id,connection_id:igPlan.connection_id,target_id:igConnection.target_id,media_format:'image',caption:'고정 캡션',assets:[{id:'jpeg-a',sha256:'b'.repeat(64),size:20,media_type:'image/jpeg'}],subject_hash:'f'.repeat(64),review_revision:0,decision:null,checks:igChecks,notes:'',review_method:'manual',status:'not_reviewed',audio_required:false};
+function igApi(extra={}){return stubApi({getContent:async()=>igContent,listConnections:async()=>({items:[igConnection]}),listDeliveries:async()=>({items:[igPlan]}),getDelivery:async()=>igPlan,deliveryEvents:async()=>({items:[]}),getInstagramReview:async()=>igReview,...extra});}
+const reviewDetails=editor=>editor.element.querySelectorAll('details').find(n=>n.querySelector('summary')?.textContent==='Instagram 최종 구성 검토');
+test('Instagram 선택은 자동 자산 없이 시작하며 형식·순서·MIME을 검증하고 연결 전환 시 지운다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=delivery.createDeliveryEditor({api:igApi(),writable:()=>true});await editor.open(igContent);selectConnection(editor,'dept.instagram');assert.equal(findInput(editor.element,'Instagram 게시 형식').value,'');assert.equal(findInput(editor.element,'자산 ID 순서 (한 줄에 하나)').value,'');assert.match(editor.element.textContent,/jpeg-a · image\/jpeg/);assert.match(editor.element.textContent,/video-a · video\/mp4/);assert.doesNotMatch(editor.element.textContent,/png-a · image\/png/);
+  assert.throws(()=>delivery.deliveryPayload(igContent,{connection_id:'dept.instagram',schedule_slot:'main',scheduled_at:'2026-11-02T10:00:00+09:00'},igConnection),/게시 형식/);
+  const draft={connection_id:'dept.instagram',schedule_slot:'main',scheduled_at:'2026-11-02T10:00:00+09:00',instagram_format:'carousel',instagram_asset_ids:['video-a','jpeg-b']};assert.deepEqual(delivery.deliveryPayload(igContent,draft).options.instagram,{format:'carousel',asset_ids:['video-a','jpeg-b']});
+  for(const change of [{instagram_format:'image',instagram_asset_ids:['video-a']},{instagram_format:'reels',instagram_asset_ids:['jpeg-a']},{instagram_format:'carousel',instagram_asset_ids:['jpeg-a','jpeg-a']},{instagram_format:'image',instagram_asset_ids:['png-a']}])assert.throws(()=>delivery.deliveryPayload(igContent,{...draft,...change}),/Instagram/);
+  inputValue(editor,'Instagram 게시 형식','carousel');inputValue(editor,'자산 ID 순서 (한 줄에 하나)','jpeg-b\njpeg-a');selectConnection(editor,'');selectConnection(editor,'dept.instagram');assert.equal(findInput(editor.element,'Instagram 게시 형식').value,'');assert.equal(findInput(editor.element,'자산 ID 순서 (한 줄에 하나)').value,'');
+ }finally{restore();}
+});
+test('Instagram 저장 계획을 선택해 펼칠 때만 최종 검토 GET하고 자식 초안이 부모 계획 전환을 막는다',async()=>{
+ const restore=useTestDocument();try{
+  let gets=0;const editor=delivery.createDeliveryEditor({api:igApi({getInstagramReview:async()=>{gets++;return igReview;}}),writable:()=>true});await editor.open(igContent);assert.equal(reviewDetails(editor),undefined);await editor.element.querySelectorAll('button').find(n=>n.textContent.includes('Instagram 구성')).listeners.click();const details=reviewDetails(editor);assert.ok(details);assert.equal(gets,0);details.open=true;await details.listeners.toggle();assert.equal(gets,1);
+  const box=details.querySelector('[data-instagram-review-field]');box.checked=true;box.listeners.change({target:box});assert.equal(editor.hasUnsavedChanges(),true);assert.equal(findButton(editor.element,'새 계획 작성').disabled,true);await findButton(editor.element,'새 계획 작성').listeners.click();assert.ok(reviewDetails(editor));assert.equal(box.disabled,false);assert.equal(editor.element.querySelectorAll('button').find(n=>n.textContent==='이 버전 계획 승인').disabled,true);
+  const discard=details.querySelectorAll('button').find(n=>n.textContent==='입력 버리기');discard.listeners.click();assert.equal(editor.hasUnsavedChanges(),false);assert.equal(findButton(editor.element,'새 계획 작성').disabled,false);
+ }finally{restore();}
+});
+test('Instagram 최종 검토 초안과 처리 중 요청은 부모 원본 저장·업로드도 잠근다',async()=>{
+ const restore=useTestDocument();try{
+  const {createContentEditor}=await import('../ax-console/app/web/content_editor.js');let writes=0,finish;const api=igApi({updateContent:async()=>{writes++;return igContent;},recordInstagramReview:()=>new Promise(resolve=>finish=resolve)});const editor=createContentEditor({api,writable:()=>true});await editor.open(igContent);await tick();await editor.element.querySelectorAll('button').find(n=>n.textContent.includes('Instagram 구성')).listeners.click();const details=reviewDetails(editor);details.open=true;await details.listeners.toggle();
+  for(const box of details.querySelectorAll('input')){box.checked=true;box.listeners.change({target:box});}assert.equal(editor.hasUnsavedChanges(),true);assert.equal(findButton(editor.element,'원본 저장').disabled,true);await editor.element.querySelector('form').listeners.submit({preventDefault(){}});assert.equal(writes,0);
+  const saving=details.querySelectorAll('button').find(n=>n.textContent==='검토 확인 저장').listeners.click();await tick();assert.equal(editor.isBusy(),true);assert.equal(findButton(editor.element,'원본 저장').disabled,true);finish({...igReview,review_revision:1,decision:'approved',status:'approved',checks:{...igChecks,rights_confirmed:true,visual_checked:true,caption_checked:true,composition_checked:true}});await saving;assert.equal(editor.isBusy(),false);
+ }finally{restore();}
+});
+test('Instagram 형식과 자산 순서는 미리보기·저장 계획에 표시되며 미확인 대상은 최종 검토를 열지 않는다',async()=>{
+ const summary=delivery.deliveryPreviewSummary({...igPlan,options:{instagram:{format:'carousel',asset_ids:['jpeg-b','jpeg-a']}}}).join(' ');assert.match(summary,/Instagram 게시 형식: 캐러셀/);assert.match(summary,/jpeg-b → jpeg-a/);
+ const restore=useTestDocument();try{
+  let gets=0;const unverified={...igPlan,target_status:'unverified'};const editor=delivery.createDeliveryEditor({api:igApi({getDelivery:async()=>unverified,listConnections:async()=>({items:[{...igConnection,target_id:null,target_status:'unverified'}]}),getInstagramReview:async()=>{gets++;return igReview;}}),writable:()=>true});await editor.open(igContent);await editor.element.querySelectorAll('button').find(n=>n.textContent.includes('Instagram 구성')).listeners.click();assert.match(editor.element.textContent,/Instagram 게시 형식: 이미지/);const details=reviewDetails(editor);details.open=true;await details.listeners.toggle();assert.equal(gets,0);assert.match(details.textContent,/게시 대상/);
+ }finally{restore();}
+});
+
+test('Instagram 자식 검토 입력은 부모 refresh에서도 같은 DOM·포커스·선택 범위를 유지한다',async()=>{
+ const old=globalThis.document;const {harness}=await import('./helpers/execution_dom.mjs');const {document}=harness();globalThis.document=document;
+ try{
+  const editor=delivery.createDeliveryEditor({api:igApi(),writable:()=>true});await editor.open(igContent);await editor.element.querySelectorAll('button').find(n=>n.textContent.includes('Instagram 구성')).fire('click');const details=reviewDetails(editor);details.open=true;await details.fire('toggle');
+  const notes=details.querySelector('textarea');notes.focus();notes.value='보존할 검토 입력';notes.selectionStart=2;notes.selectionEnd=4;await notes.fire('input');editor.refreshControls();assert.equal(document.activeElement,notes);assert.equal(reviewDetails(editor).querySelector('textarea'),notes);assert.equal(notes.value,'보존할 검토 입력');assert.equal(notes.selectionStart,2);assert.equal(notes.selectionEnd,4);assert.equal(notes.disabled,false);assert.equal(findButton(editor.element,'새 계획 작성').disabled,true);
+ }finally{globalThis.document=old;}
+});

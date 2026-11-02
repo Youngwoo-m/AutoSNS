@@ -58,6 +58,8 @@ from common.operations.voice_tasks import VoiceTaskStore,VoiceTaskService
 from common.operations.video_tasks import VideoTaskStore,VideoTaskService
 from common.operations.reuse_approvals import ReuseApprovalStore,ReuseApprovalService
 from web_reuse_approvals import recognizes as reuse_approvals_path, handle as handle_reuse_approvals, CONTENT as REUSE_CONTENT_ROUTE
+from common.operations.instagram_reviews import InstagramReviewStore,InstagramReviewService
+from web_instagram_reviews import recognizes as instagram_review_path,handle as handle_instagram_review
 from web_voice_tasks import recognizes as voice_tasks_path, handle as handle_voice_tasks, CONTENT as VOICE_CONTENT_ROUTE
 from web_video_tasks import recognizes as video_tasks_path, handle as handle_video_tasks, CONTENT as VIDEO_CONTENT_ROUTE, VideoPreview, preview_response
 from web_media_plans import recognizes as media_plan_path, handle as handle_media_plans
@@ -85,6 +87,7 @@ _STATIC = {
     'voice_task_panel.js': 'text/javascript; charset=utf-8',
     'video_task_panel.js': 'text/javascript; charset=utf-8',
     'reuse_approval_panel.js': 'text/javascript; charset=utf-8',
+    'instagram_review_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -472,6 +475,12 @@ class _Handler(BaseHTTPRequestHandler):
                 result=handle_operations(self.server.runtime_store,method,path,query,lambda:self._read_body(1024*1024,json_body=True),source_root=self.server.source_root,policy=self.server.execution_policy,adapters=self.server.recovery_adapters,process_probe=self.server.process_probe,lock_probe=self.server.lock_probe,registry=self.server.ledger.registry if self.server.ledger is not None else None,now=self.server.operations_clock())
                 if result is None:return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200,result)
+            if instagram_review_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_instagram_review(self.server.instagram_review_service,method,path,query,
+                    lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if deliveries:
                 if path == '/api/v2/connections' and self.server.oauth_service is not None:
                     return handle_oauth(self, method, '/api/v2/oauth/connections', query)
@@ -840,6 +849,9 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.process_probe = process_probe
     server.lock_probe = lock_probe
     server.operations_clock = operations_clock if operations_clock is not None else lambda: datetime.now(timezone.utc)
+    server.instagram_review_store=InstagramReviewStore(managed_content.root) if managed_content is not None else None
+    server.instagram_review_service=InstagramReviewService(server.instagram_review_store,managed_content,
+        server.ledger.get_delivery,server.ledger.registry,server.operations_clock) if managed_content is not None else None
     server.toolkit_service = LocalToolkitService(registry=server.metrics_registry(),
         content_store=server.content_store, metrics_store=server.metrics_store,
         runtime_store=server.runtime_store, policy=toolkit_policy if toolkit_policy is not None else ToolkitPolicy(),
@@ -898,6 +910,7 @@ def main():
             server.voice_task_store.initialize()
             server.video_task_store.initialize()
             server.reuse_approval_store.initialize()
+            server.instagram_review_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass

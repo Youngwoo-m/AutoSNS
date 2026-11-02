@@ -196,6 +196,25 @@ class ThreadsLedgerOptionsTests(unittest.TestCase):
     setup_content=LedgerTests.setup_content
     error=LedgerTests.error
 
+    def test_instagram_selection_plan_can_save_without_fabricating_target_or_auth(self):
+        from dataclasses import replace
+        body=self.setup_content();base=self.ledger.registry()
+        self.content=self.store.add_asset(self.content['id'],self.content['revision'],'approved.jpg','image/jpeg',b'\xff\xd8\xfffixture\xff\xd9')
+        item=self.content['assets'][0]
+        ig=replace(base.connections['personal.youtube'],id='personal.instagram',platform='instagram',target_id=None,capabilities=('plan','visibility:public'))
+        configured=replace(base,connections={**base.connections,ig.id:ig})
+        ledger=Ledger(self.root,configured,self.store);ledger.initialize()
+        request={**body,'revision':self.content['revision'],'manifest_hash':self.content['manifest_hash'],
+            'connection_id':ig.id,'options':{'instagram':{'format':'image','asset_ids':[item['id']]}}}
+        preview=ledger.preview_delivery(request)
+        self.assertEqual(preview['target_status'],'unverified');self.assertIsNone(preview['subject_hash'])
+        self.assertEqual(preview['options'],request['options']);self.assertFalse(preview['execution_enabled'])
+        saved=ledger.create_or_get_delivery(request);self.assertEqual(saved['options'],request['options'])
+        for options in ({},{'instagram':{'format':'image','asset_ids':[]}},{'instagram':{'format':'image','asset_ids':[item['id'],item['id']]}},
+                        {'instagram':{'format':'reels','asset_ids':[item['id']]}},{'instagram':{'format':'image','asset_ids':['missing']}}):
+            self.error('invalid',ledger.preview_delivery,{**request,'options':options})
+        self.error('invalid',ledger.preview_delivery,{**request,'connection_id':'personal.youtube'})
+
     def test_facebook_pages_text_only_requires_explicit_connection_capability(self):
         from dataclasses import replace
         body=self.setup_content(True);base=self.ledger.registry()
