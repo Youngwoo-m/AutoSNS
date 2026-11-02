@@ -5,12 +5,19 @@ import hashlib
 import re
 from urllib.parse import urlsplit
 from .content_store import StoreError, ConflictError
+from .models import ContractError
 from .runtime_models import PublicationContext, VerificationResult, utc, serial
 
 
 def snapshot_fingerprints(context, snapshot):
     if not isinstance(snapshot, Mapping) or snapshot.get('manifest_hash') != context['manifest_hash'] or snapshot.get('revision') != context['content_revision']:
         raise StoreError('content_changed')
+    if context.get('platform')=='instagram':
+        from common.publishers.instagram_payloads import build_instagram_payload
+        try:prepared=build_instagram_payload(snapshot,PublicationContext(**dict(context)))
+        except (ContractError,ValueError,TypeError,KeyError):raise StoreError('content_changed') from None
+        # 선택된 원본의 로컬 fingerprint다. 원격 변환 파일의 해시라는 뜻이 아니다.
+        return prepared['caption_sha256'],prepared['media_sha256']
     text = snapshot.get('original')
     variants = [v for v in snapshot.get('variants', ()) if v.get('destination_account_id') == context['destination_account_id'] and v.get('platform') == context.get('platform')]
     if len(variants) > 1:
@@ -106,12 +113,17 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
         if delivery['context'].get('platform')=='youtube':
             from .youtube_evidence import youtube_upload_identity
             identity=youtube_upload_identity(delivery['context'],snapshot,result.evidence,attempt,now,delivery['remote_id'])
+        elif delivery['context'].get('platform')=='instagram':
+            from .instagram_evidence import instagram_upload_identity
+            identity=instagram_upload_identity(delivery['context'],snapshot,result.evidence,attempt,now,delivery['remote_id'])
         else:
             identity=strong_identity(delivery['context'], snapshot, result.evidence, attempt, now, remote_id=delivery['remote_id'])
         if not valid_time or result.evidence.get('visibility') != 'public' or not identity:
             result = VerificationResult('pending', now, {'reason': 'insufficient_publication_evidence'})
         elif delivery['context'].get('platform')=='youtube':
             result=VerificationResult('verified',result.checked_at,dict(result.evidence,verification_method='youtube_upload_receipt_and_public_observation'))
+        elif delivery['context'].get('platform')=='instagram':
+            result=VerificationResult('verified',result.checked_at,dict(result.evidence,verification_method='instagram_upload_receipt_and_public_observation'))
     verified_url=None
     if result.outcome=='verified' and delivery['context'].get('platform')=='threads':
         verified_url=_threads_url(result.evidence.get('url'))
@@ -119,12 +131,20 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
     if result.outcome=='verified' and delivery['context'].get('platform')=='facebook':
         verified_url=_facebook_url(result.evidence.get('url'))
         if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
+    if result.outcome=='verified' and delivery['context'].get('platform')=='instagram':
+        from .instagram_evidence import safe_instagram_url
+        verified_url=safe_instagram_url(result.evidence.get('url'))
+        if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
     safe_keys = ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256', 'visibility')
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':safe_keys+=('verification_method',)
+    if result.outcome=='verified' and delivery['context'].get('platform')=='instagram':
+        safe_keys+=('verification_method','upload_receipt','media_format','children','media_status')
     if verified_url is not None:safe_keys+=('url',)
     safe_evidence = {k: serial(result.evidence[k]) for k in safe_keys if k in result.evidence}
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':
         safe_evidence.pop('body_sha256',None)
+        safe_evidence['media_sha256']=None
+    if result.outcome=='verified' and delivery['context'].get('platform')=='instagram':
         safe_evidence['media_sha256']=None
     if result.evidence.get('reason') in ('adapter_error', 'invalid_adapter_result', 'insufficient_publication_evidence', 'media_evidence_required', 'remote_processing_failed', 'remote_identity_mismatch', 'remote_observation_unavailable', 'youtube_verification_error', 'blog_verification_error'):
         safe_evidence['reason'] = result.evidence['reason']

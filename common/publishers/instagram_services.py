@@ -1,8 +1,8 @@
 """Instagram 다단계 전송의 명시 재개 원장. 기본 권한·매체·검토 공급자는 없다.
 
 SQLite/OS 잠금과 CAS로 원격 쓰기 직전 상태를 영속한다. 응답 불명확 단계는 자동
-재전송하지 않는다. 전달 영수증은 private DB에만 보관하며 실제 공개 검증·원격 해시
-증명은 구현하지 않는다. 이 경계는 독립 원고 검토·발행 permit·런타임 STOP을 대신하지
+재전송하지 않는다. 원본 전달 영수증은 private DB와 서버 증거로 보관한다. 공개 확인은 별도
+서버 public_probe가 제공하는 신선한 관측에만 의존하며 원격 파일 해시는 추정하지 않는다. 이 경계는 독립 원고 검토·발행 permit·런타임 STOP을 대신하지
 않는다. before_write는 신뢰된 런타임이 STOP/permit 검사를 주입할 별도 경계다.
 """
 from collections.abc import Mapping
@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+from common.operations.instagram_evidence import safe_instagram_url
 from common.operations.content_store import StoreError,ConflictError
 from common.operations.models import thaw,freeze
 from common.operations.runtime_models import PublicationContext,utc
@@ -103,7 +104,7 @@ class InstagramJournal:
             except BaseException:db.rollback();raise
     def save(self,row,state,data,at,*,remote_id=None):
         allowed={'staging_blocked':{'staging_started'},'staging_started':{'ready','unknown','staging_blocked'},'ready':{'ready','publish_started','unknown','failed'},
-                 'publish_started':{'submitted','unknown'}}
+                 'publish_started':{'submitted','unknown'},'submitted':{'submitted'},'unknown':{'unknown'}}
         if state not in allowed.get(row['state'],set()):raise ConflictError()
         with self._db(True) as db:
             cursor=db.execute('UPDATE instagram_submissions SET state=?,data=?,remote_id=?,version=version+1,updated_at=? WHERE logical_key=? AND version=? AND state=?',
@@ -116,7 +117,7 @@ def _unknown(reason='instagram_submission_uncertain',remote_id=None):
     result=dict(outcome='unknown',url=None,evidence=dict(reason=reason))
     if remote_id is not None:result['remote_id']=remote_id
     return result
-def _submitted(identifier):return dict(outcome='submitted',remote_id=identifier,url=None,evidence={})
+def _submitted(identifier,receipt=None):return dict(outcome='submitted',remote_id=identifier,url=None,evidence={'upload_receipt':receipt} if receipt is not None else {})
 
 class _Blocked(Exception):pass
 class _Uncertain(Exception):pass
@@ -124,13 +125,13 @@ class _Pending(Exception):pass
 class _Terminal(Exception):pass
 
 class InstagramServices:
-    def __init__(self,client,journal,clock,*,media_factory=None,account_authorizer=None,review_guard=None):
+    def __init__(self,client,journal,clock,*,media_factory=None,account_authorizer=None,review_guard=None,public_probe=None):
         factory=media_factory if callable(media_factory) else getattr(media_factory,'prepare',None)
         if (not callable(clock) or media_factory is not None and not callable(factory)
-                or any(value is not None and not callable(value) for value in (account_authorizer,review_guard))):
+                or any(value is not None and not callable(value) for value in (account_authorizer,review_guard,public_probe))):
             raise StoreError('invalid_instagram_service_registration')
         self.client=client;self.journal=journal;self.clock=clock;self.media_factory=factory
-        self.account_authorizer=account_authorizer;self.review_guard=review_guard;self.before_write=lambda:None
+        self.account_authorizer=account_authorizer;self.review_guard=review_guard;self.before_write=lambda:None;self.public_probe=public_probe
     def _at(self):return utc(self.clock()).isoformat()
     def inspect(self,target):
         base=dict(platform='instagram',target_id=None,login_subject=None,authenticated=False,
@@ -181,7 +182,9 @@ class InstagramServices:
     def _uncertain(self,row,data,remote_id=None):
         try:self._mark(row,'unknown',data,remote_id)
         except Exception:pass
-        return _unknown(remote_id=remote_id)
+        result=_unknown(remote_id=remote_id)
+        if data.get('upload_receipt') is not None:result['evidence']['upload_receipt']=data['upload_receipt']
+        return result
     def submit(self,ctx,prepared,target):
         if self.media_factory is None or self.account_authorizer is None or self.review_guard is None:return _failed('instagram_service_unconfigured')
         try:
@@ -201,14 +204,22 @@ class InstagramServices:
             with self.journal.hold(key):
                 try:row,new=self.journal.claim(key,payload_hash,prepared,self._at(),ctx.context_hash)
                 except Exception:return _failed('instagram_journal_unavailable_or_conflict')
-                if row['state']=='submitted':return _submitted(row['remote_id']) if _id(row['remote_id']) else _unknown()
+                if row['state']=='submitted':
+                    try:receipt=json.loads(row['data']).get('upload_receipt')
+                    except Exception:return _unknown()
+                    return _submitted(row['remote_id'],receipt) if _id(row['remote_id']) else _unknown()
                 if row['context_hash']!=ctx.context_hash:return _failed('instagram_context_reauthorization_required')
                 if row['state']=='staging_blocked':
                     # 외부 공급자를 호출하기 전 차단된 확정 기록만 명시 재개한다.
                     try:row=self._mark(row,'staging_started',{});new=True
                     except Exception:return _failed('instagram_journal_unavailable')
                 if row['state'] in ('unknown','publish_started') or row['state']=='staging_started' and not new:
-                    return _unknown(remote_id=row['remote_id'])
+                    result=_unknown(remote_id=row['remote_id'])
+                    try:
+                        saved_receipt=json.loads(row['data']).get('upload_receipt')
+                        if saved_receipt is not None:result['evidence']['upload_receipt']=saved_receipt
+                    except Exception:pass
+                    return result
                 if row['state']=='failed':return _failed('instagram_container_failed')
                 try:data=json.loads(row['data'])
                 except Exception:return _unknown()
@@ -285,7 +296,81 @@ class InstagramServices:
                     response=self.client.publish(ctx.target_id,cid)
                     identifier=response.get('id') if isinstance(response,Mapping) else None
                     if not _id(identifier):identifier=None;raise ValueError()
+                    data['upload_receipt']=self._upload_receipt(ctx,prepared,identifier,cid,data)
                     self._mark(row,'submitted',data,identifier)
-                    return _submitted(identifier)
+                    return _submitted(identifier,data['upload_receipt'])
                 except Exception:return self._uncertain(row,data,identifier)
         except Exception:return _failed('instagram_journal_unavailable')
+
+    @staticmethod
+    def _key(value):
+        return _hash({name:value[name] for name in ('owner_account_id','destination_account_id','connection_id','target_id','content_id','content_revision','publication_purpose','schedule_slot')})
+    @staticmethod
+    def _upload_receipt(ctx,prepared,remote_id,cid,data):
+        return dict(kind='instagram_upload_receipt_v1',context_hash=ctx.context_hash,
+            **{key:prepared[key] for key in ('connection_id','target_id','owner_account_id','destination_account_id','content_id','content_revision','manifest_hash','caption_sha256','media_format','assets')},
+            remote_id=remote_id,creation_id=cid,
+            child_creation_ids=[data['steps']['child_'+str(i)]['id'] for i in range(len(prepared['assets']))] if prepared['media_format']=='carousel' else [],
+            published_children=None if prepared['media_format']=='carousel' else [])
+    @staticmethod
+    def _safe_url(value):
+        return safe_instagram_url(value)
+    def observe(self,ctx,target,remote_id):
+        try:
+            if (not isinstance(ctx,PublicationContext) or ctx.platform!='instagram' or not _id(remote_id)
+                    or not isinstance(target,Mapping) or target.get('target_id')!=ctx.target_id
+                    or target.get('connection_id',ctx.connection_id)!=ctx.connection_id or not self.inspect(target)['authenticated']):return None
+            key=self._key(vars(ctx))
+            with self.journal.hold(key):
+                row=self.journal.get(key)
+                if row is None or row['context_hash']!=ctx.context_hash or row['state'] not in ('submitted','unknown') or row['remote_id']!=remote_id:return None
+                data=json.loads(row['data']);receipt=data.get('upload_receipt')
+                if not isinstance(receipt,dict) or receipt.get('remote_id')!=remote_id or receipt.get('context_hash')!=ctx.context_hash:return None
+                prepared=json.loads(row['prepared'])
+                if _hash(prepared)!=row['payload_hash'] or self._key(prepared)!=key:return None
+                original=self._upload_receipt(ctx,prepared,remote_id,data['steps']['parent']['id'],data)
+                if set(receipt)!=set(original) or any(receipt[k]!=original[k] for k in original if k!='published_children'):return None
+                pinned=receipt['published_children']
+                if prepared['media_format']!='carousel' and pinned!=[]:return None
+                if pinned is not None and prepared['media_format']=='carousel' and (type(pinned) is not list or not 2<=len(pinned)<=10 or any(type(c) is not dict or set(c)!={'id','media_type'} or not _id(c['id']) or c['media_type'] not in ('IMAGE','VIDEO') for c in pinned) or len({c['id'] for c in pinned})!=len(pinned)):return None
+                raw=self.client.read_media(remote_id)
+                if not isinstance(raw,Mapping) or raw.get('id')!=remote_id or raw.get('owner',{}).get('id')!=ctx.target_id:return None
+                caption=raw.get('caption');timestamp=utc(raw.get('timestamp'));url=self._safe_url(raw.get('permalink'))
+                if type(caption) is not str or not url or timestamp>utc(self.clock()):return None
+                caption.encode('utf-8')
+                kind=(raw.get('media_type'),raw.get('media_product_type'))
+                fmt={('IMAGE','FEED'):'image',('VIDEO','REELS'):'reels',('CAROUSEL_ALBUM','FEED'):'carousel'}.get(kind)
+                if fmt is None:return None
+                children=[]
+                if fmt=='carousel':
+                    children=self.client.read_children(remote_id)
+                    if (type(children) is not list or not 2<=len(children)<=10 or any(type(c) is not dict or set(c)!={'id','media_type'} or not _id(c['id']) or c['media_type'] not in ('IMAGE','VIDEO') for c in children)
+                            or len({c['id'] for c in children})!=len(children)):return None
+                    if (receipt.get('published_children') is None and fmt==prepared['media_format']
+                            and hashlib.sha256(caption.encode('utf-8')).hexdigest()==prepared['caption_sha256']
+                            and len(children)==len(prepared['assets'])
+                            and all(c['media_type']==('IMAGE' if a['media_type']=='image/jpeg' else 'VIDEO') for c,a in zip(children,prepared['assets']))):
+                        # known-ID 원본 영수증이 있는 unknown도 로컬 관측 메타데이터만 고정한다.
+                        receipt={**receipt,'published_children':children};data['upload_receipt']=receipt
+                        row=self._mark(row,row['state'],data)
+                obs=dict(remote_id=remote_id,target_id=ctx.target_id,text=caption,media_type=raw['media_type'],media_product_type=raw['media_product_type'],
+                    body_sha256=hashlib.sha256(caption.encode('utf-8')).hexdigest(),media_sha256=None,
+                    media_format=fmt,media_status='readable',children=children,visibility='unknown',url=url,
+                    created_at=timestamp.isoformat(),upload_receipt=receipt)
+                if self.public_probe is not None:
+                    try:
+                        started=utc(self.clock());proof=self.public_probe(thaw(freeze(obs)));finished=utc(self.clock())
+                        keys={'public','remote_id','target_id','body_sha256','url','media_format','children','checked_at'}
+                        if (isinstance(proof,Mapping) and set(proof)==keys and proof['public'] is True
+                                and all(proof[k]==obs[k] for k in keys-{'public','checked_at'})
+                                and started<=utc(proof['checked_at'])<=finished and finished-started<=timedelta(seconds=60)):
+                            obs['visibility']='public'
+                    except Exception:pass
+                return obs
+        except Exception:return None
+    def lookup(self,ctx,target,attempt):
+        remote_id=attempt.get('remote_id') if isinstance(attempt,Mapping) else getattr(attempt,'remote_id',None)
+        if not remote_id and isinstance(attempt,Mapping):
+            result=attempt.get('result',{});remote_id=result.get('remote_id') if isinstance(result,Mapping) else None
+        obs=self.observe(ctx,target,remote_id) if _id(remote_id) else None
+        return [obs] if obs is not None else []

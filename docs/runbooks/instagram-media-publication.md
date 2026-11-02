@@ -4,7 +4,7 @@ Instagram의 관리 게시 연결은 기존 제작물과 승인된 채널별 원
 
 ## 현재 구현 범위
 
-순수 배포 준비·Facebook Login 계열 API client·공개 미디어 전달 경계와, 구성 검토 저장소/서비스·계획/검토 화면·다단계 전송 원장을 구현했다. 기본 외부 transport·공개 파일 공급자·계정 권한 공급자는 없고 실제 로그인·파일 공개·API 호출·발행을 실행하지 않는다. 관리 adapter/native bootstrap·원격 공개 검증과 실제 최종 승인/STOP/permit를 조합하는 실행 기동은 아직 연결되지 않았다.
+순수 배포 준비·Facebook Login 계열 API client·공개 미디어 전달 경계, 구성 검토·화면·다단계 전송 원장과 공통 adapter/bridge·영수증 기반 검증/조회 복구를 연결했다. 기본 외부 transport·공개 파일 공급자·계정 권한 공급자는 없고 실제 로그인·파일 공개·API 호출·발행을 실행하지 않는다. native bootstrap은 명시적으로 차단하며 실제 최종 승인/STOP/permit를 조합하는 공급자 기동과 공개 probe의 실계정 수락은 아직 남아 있다.
 
 고정 콘텐츠 버전의 `options.instagram`에서 `format`과 순서 있는 `asset_ids`를 명시한다. 단일 이미지에는 JPEG 하나, REELS에는 MP4 하나, 캐러셀에는 2~10개 JPEG/MP4를 선택한다. 이는 이번 구현의 지원 범위다. PNG·WebP를 자동 JPEG로 바꾸거나 누락 자산을 빼고 계속 진행하지 않는다. 변환이 필요하면 새 자산·새 해시를 생성하고 그 결과를 검토해야 한다. 2200자 캡션 준비 상한은 내부 정책이며 실제 앱/API의 모든 수락 조건을 증명하지 않는다.
 
@@ -50,7 +50,17 @@ Facebook Login 기반 Instagram Graph 경로는 `graph.facebook.com`과 연결�
 
 현재 private 전달 영수증은 최초 context_hash에 묶이므로 인증/permit/run 문맥이 바뀐 미완료 시도의 자동 재사용은 차단된다. 안전한 새 문맥 재승인·이미 처리된 컨테이너 재결속과 운영 복구 UI는 후속 필수 작업이다. 실제 runtime/adapter는 이 제약을 숨기거나 재POST로 우회하면 안 된다.
 
-후속 공개 검증은 실제 전달 영수증과 컨테이너 ID·최종 미디어 ID·소유 계정·원격 캡션·처리 완료·캐러셀 자식 순서·공개 접근을 함께 대조해야 한다. Meta가 변환한 이미지/영상의 URL이나 바이트 해시를 로컬 원본 SHA256이라고 주장하지 않는다. API의 읽기 성공이나 permalink 존재만으로 공개 검증 완료로 처리하지 않는다.
+전송 성공 시 `instagram_upload_receipt_v1`은 문맥 해시·계정/대상·원고 버전/manifest·실제 선택 자산 메타데이터·캡션 해시·형식·부모/자식 컨테이너 ID·최종 게시 ID를 보존한다. 원격 미디어 해시를 합성하지 않으며 공개 미디어의 사설 전달 주소/영수증 ID는 parent 증거에 복사하지 않는다. 이 영수증이 없는 기존 시도를 로컬 원고만으로 완료 처리하지 않는다.
+
+캐러셀의 초기 `published_children=None`은 미확정 상태다. 실제 현재 권한의 소유자 API에서 원격 캡션·형식·개수·유형 순서가 원본 준비물과 맞을 때만 첫 자식 ID 순서를 private 원장에 CAS 고정한다. 잘못되거나 부분적인 첫 관측은 영구 고정하지 않는다. 이미 고정된 순서는 이후 조회 결과로 덮어쓰지 않는다. 조회 실패 뒤에도 새 POST를 하지 않고 정상 읽기에서만 핀을 확정한다. known ID와 유효한 원본 영수증이 있는 unknown도 로컬 관측 핀만 저장하고 unknown 상태를 유지한다.
+
+`InstagramServices.observe`는 실제 원격 캡션을 해시하고 원격 미디어 해시는 `None`으로 둔다. 별도 공개 probe의 정확한 게시 ID·대상·캡션 해시·URL·형식·자식 순서와 신선한 시각이 일치할 때만 public으로 관측한다. 기본 probe가 없으면 unknown이다. 실제 owner API 관측이나 permalink 존재만으로 공개 검증 완료를 만들지 않는다.
+
+`instagram_upload_identity`는 실제 시작된 attempt의 저장된 원본 영수증을 승인 snapshot과 다시 대조한다. 초기 핀이 미확정이면 private 원장이 반환한 최종 영수증이 자식 핀 외 모든 필드에서 초기 영수증과 같아야 한다. 원격 캡션·형식·시각·현재 자식 ID 순서·실제 공개 URL이 일치해야 최종 완료되며, 최종 증거에 `verification_method=instagram_upload_receipt_and_public_observation`, `media_sha256=None`을 남긴다. Meta가 변환한 이미지/영상의 해시를 로컬 원본 SHA256이라고 주장하지 않는다.
+
+공통 factory는 활성·실제 대상이 있는 고정 개인/학과 연결만 조립한다. 기본 catalog는 비어 있고 실제 child bootstrap은 미설정으로 거부한다. BridgeHost는 기존 일회성 permit·부모 잠금 증명·계정별 자격·STOP 검사를 유지하며 새 managed OAuth의 publication 차단을 해제하지 않는다. 미디어 공급자 내부의 각 공개 전달 guard에도 실제 STOP/permit/최종 검토를 결합한 수락이 필요하다.
+
+공통 조회 복구는 원본 전달 영수증이 있는 알려진 ID만 일치시킨다. unknown 시도의 읽기 증거를 `link_existing`으로 원장에 결속한 뒤 별도 공개 검증을 진행하며, 목록 스캔·텍스트 유사성이나 프로세스 종료만으로 게시 존재/부재를 판단하지 않는다. 원장 자체 손상·게시 ID의 이중 저장 실패·새 인증 문맥 재결속은 추가 명시 복구가 필요하며 자동 재게시로 우회하지 않는다.
 
 기존 교차 게시 23개 중 `news.instagram`, `career.instagram`, `disaster.instagram`은 모두 학과 YouTube→학과 Instagram의 `legacy` 실행 소유 경로다. 새 구현 때문에 이를 `managed`로 전환하거나 동일 콘텐츠를 중복 게시하지 않는다. 첫 댓글·캡션 보완도 별도 후처리 승인과 원장 작업으로 남긴다.
 

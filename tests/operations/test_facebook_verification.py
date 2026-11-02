@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from tests.operations import test_runtime_store as fixture_module
 NOW=fixture_module.NOW
 from common.operations.runtime_models import VerificationResult
+from common.operations.content_store import StoreError
 from common.operations.verification import snapshot_fingerprints,verify_delivery
 
 class FacebookVerificationTests(unittest.TestCase):
@@ -28,9 +29,11 @@ class FacebookVerificationTests(unittest.TestCase):
     def test_only_explicit_facebook_text_only_excludes_source_assets(self):
         _,ctx,snapshot,_=self.prepared()
         self.assertEqual(snapshot_fingerprints(ctx.to_dict(),snapshot)[1],[])
-        for change in (dict(options={}),dict(platform='youtube'),dict(platform='instagram')):
+        for change in (dict(options={}),dict(platform='youtube')):
             altered=replace(ctx,**change)
             self.assertEqual(snapshot_fingerprints(altered.to_dict(),snapshot)[1],['a'*64])
+        # Instagram은 별도 명시 자산 선택을 요구한다. Facebook 옵션을 묵시적으로 재사용하지 않는다.
+        with self.assertRaises(StoreError):snapshot_fingerprints(replace(ctx,platform='instagram').to_dict(),snapshot)
 
     def test_public_evidence_persists_exact_url_and_crosspost_body(self):
         store,ctx,snapshot,evidence=self.prepared();adapter=Mock()

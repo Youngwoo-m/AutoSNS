@@ -87,9 +87,16 @@ def _lookup(store, delivery, adapter, now):
         return None, attempt
     snapshot = content_store.get(delivery['context']['content_id'], delivery['context']['content_revision'])
     candidate = result.candidates[0]
-    if not strong_identity(delivery['context'], snapshot, candidate, attempt, now):
-        return None, attempt
+    instagram=delivery['context'].get('platform')=='instagram'
+    if instagram:
+        from .instagram_evidence import instagram_upload_identity
+        if not instagram_upload_identity(delivery['context'],snapshot,candidate,attempt,now,candidate.get('remote_id'),
+                require_public=False,allow_unknown=True):return None,attempt
+    elif not strong_identity(delivery['context'], snapshot, candidate, attempt, now):return None,attempt
     evidence = {k: serial(candidate[k]) for k in ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256')}
+    if instagram:
+        source=(attempt.get('result') or {}).get('evidence',{}).get('upload_receipt')
+        evidence['upload_receipt']=serial(candidate.get('upload_receipt',source))
     evidence.update(identity_confirmed=True, checked_at=now.isoformat())
     return evidence, attempt
 

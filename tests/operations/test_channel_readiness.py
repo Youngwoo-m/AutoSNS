@@ -41,7 +41,7 @@ class ChannelReadinessTests(unittest.TestCase):
         result=build_channel_readiness(replace(reg,connections=connections),'dept')
         by={r['platform']:r for r in result['channels']}
         self.assertEqual(by['instagram']['authentication_status'],'connected');self.assertIs(by['instagram']['live_enabled'],False)
-        self.assertEqual(by['instagram']['publisher_status'],'not_implemented');self.assertEqual(by['instagram']['metrics_status'],'stored_only')
+        self.assertEqual(by['instagram']['publisher_status'],'implemented');self.assertEqual(by['instagram']['metrics_status'],'stored_only')
         self.assertEqual(by['threads']['publisher_status'],'text_only_implemented');self.assertEqual(by['threads']['verification_status'],'public_probe_required')
         self.assertEqual(by['facebook']['publisher_status'],'text_only_implemented');self.assertEqual(by['facebook']['verification_status'],'public_probe_required')
         self.assertEqual(by['youtube']['publisher_status'],'implemented');self.assertEqual(by['youtube']['verification_status'],'receipt_implemented');self.assertEqual(by['youtube']['metrics_status'],'implemented')
@@ -86,3 +86,21 @@ class ChannelReadinessTests(unittest.TestCase):
             self.assertEqual(row['metrics_status'],'stored_only');self.assertIs(row['live_enabled'],False)
             text=' '.join(row['next_actions'])
             for phrase in ('명시 선택','로그인 주체','페이지 자격','tasks','공개','아직'):self.assertIn(phrase,text)
+
+    def test_instagram_foundation_never_implies_live_authorization_or_target(self):
+        base=registry();connections=dict(base.connections)
+        connections['dept.instagram']=replace(connections['dept.instagram'],target_id=None)
+        base=replace(base,connections=connections)
+        rows=[r for r in build_channel_readiness(base)['channels'] if r['platform']=='instagram']
+        self.assertEqual(len(rows),2)
+        for row in rows:
+            self.assertEqual(row['publisher_status'],'implemented')
+            self.assertEqual(row['verification_status'],'public_probe_required')
+            self.assertEqual(row['metrics_status'],'stored_only');self.assertIs(row['live_enabled'],False)
+            text=' '.join(row['next_actions'])
+            for phrase in ('REELS','캐러셀','수동 검토','원본 전달 영수증','공개 호스팅','익명 공개','Instagram Login','직접 업로드','프로페셔널','미수락'):
+                self.assertIn(phrase,text)
+        personal=next(r for r in rows if r['account_id']=='personal')
+        self.assertIsNone(personal['connection_id']);self.assertEqual(personal['target_status'],'no_connection')
+        dept=next(r for r in rows if r['account_id']=='dept')
+        self.assertEqual(dept['connection_id'],'dept.instagram');self.assertEqual(dept['target_status'],'unverified')

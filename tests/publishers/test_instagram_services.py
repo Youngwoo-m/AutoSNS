@@ -56,7 +56,7 @@ class InstagramServicesTests(unittest.TestCase):
                 before=len(self.writes());service=self.service();result=service.submit(ctx,payload,TARGET)
                 self.assertEqual(result['outcome'],'submitted');self.assertIsNone(result['url']);self.assertEqual([x[0] for x in self.writes()[before:]],kinds)
                 count=len(self.writes());self.assertEqual(service.submit(ctx,payload,TARGET),result);self.assertEqual(len(self.writes()),count)
-                self.assertNotIn('https',str(result));self.assertNotIn('receipt_',str(result))
+                self.assertNotIn('https',str(result));self.assertNotIn('receipt_one',str(result));self.assertNotIn('cdn.example',str(result))
     def test_in_progress_reuses_existing_container_without_stage_or_create(self):
         ctx,payload=fixture();service=self.service();self.client.status='IN_PROGRESS'
         first=service.submit(ctx,payload,TARGET);self.assertEqual(first['outcome'],'failed');self.assertTrue(first['evidence']['confirmed_not_submitted'])
@@ -153,3 +153,115 @@ class InstagramServicesTests(unittest.TestCase):
         self.assertEqual(service.submit(changed,payload,TARGET)['outcome'],'failed');self.assertEqual(self.stages,[])
         self.assertEqual(service.submit(ctx,payload,TARGET)['outcome'],'submitted')
         self.assertEqual(len(self.stages),1);self.assertEqual([x[0] for x in self.writes()],['image','publish'])
+    def test_upload_receipt_and_owned_observation_default_not_public(self):
+        ctx,payload=fixture();service=self.service();result=service.submit(ctx,payload,TARGET)
+        receipt=result['evidence']['upload_receipt']
+        self.assertEqual(receipt['assets'],payload['assets']);self.assertEqual(receipt['context_hash'],ctx.context_hash)
+        self.client.read_media=lambda rid:dict(id=rid,owner={'id':'123'},caption=payload['caption'],media_type='IMAGE',media_product_type='FEED',timestamp=NOW.isoformat(),permalink='https://www.instagram.com/p/AbC_1/')
+        obs=service.observe(ctx,TARGET,result['remote_id'])
+        self.assertEqual(obs['visibility'],'unknown');self.assertIsNone(obs['media_sha256']);self.assertEqual(obs['upload_receipt'],receipt)
+        self.assertEqual(service.lookup(ctx,TARGET,{'remote_id':result['remote_id']}),[obs])
+
+    def observation(self,payload,remote_id,**changes):
+        fmt=payload['media_format']
+        return dict(dict(id=remote_id,owner={'id':'123'},caption=payload['caption'],media_type={'image':'IMAGE','reels':'VIDEO','carousel':'CAROUSEL_ALBUM'}[fmt],media_product_type='REELS' if fmt=='reels' else 'FEED',timestamp=NOW.isoformat(),permalink='https://www.instagram.com/reel/ABC/' if fmt=='reels' else 'https://www.instagram.com/p/ABC/'),**changes)
+    def test_carousel_first_read_pins_children_but_reorder_cannot_replace_pin(self):
+        ctx,payload=fixture('carousel');service=self.service();result=service.submit(ctx,payload,TARGET)
+        self.assertIsNone(result['evidence']['upload_receipt']['published_children'])
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        children=[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+        self.client.read_children=lambda rid:children
+        first=service.observe(ctx,TARGET,result['remote_id']);self.assertEqual(first['upload_receipt']['published_children'],children)
+        self.client.read_children=lambda rid:list(reversed(children))
+        second=service.observe(ctx,TARGET,result['remote_id']);self.assertEqual(second['children'],list(reversed(children)))
+        self.assertEqual(second['upload_receipt']['published_children'],children)
+        self.assertEqual(service.submit(ctx,payload,TARGET)['evidence']['upload_receipt']['published_children'],children)
+        self.assertEqual(len(self.writes()),4)
+    def test_read_failure_then_success_and_source_context_binding(self):
+        ctx,payload=fixture('carousel');service=self.service();result=service.submit(ctx,payload,TARGET)
+        self.client.read_media=lambda rid:(_ for _ in ()).throw(OSError('PRIVATE'))
+        self.assertIsNone(service.observe(ctx,TARGET,result['remote_id']))
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        self.client.read_children=lambda rid:[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+        self.assertIsNotNone(service.observe(ctx,TARGET,result['remote_id']))
+        self.assertIsNone(service.observe(replace(ctx,run_id='different'),TARGET,result['remote_id']))
+        self.assertIsNone(service.observe(ctx,TARGET,'999'))
+        self.now=NOW+timedelta(hours=2)
+        self.assertIsNotNone(service.observe(ctx,TARGET,result['remote_id']))
+    def test_public_probe_exact_fresh_proof_only_and_invalid_observations(self):
+        for fmt in ('image','reels','carousel'):
+            ctx,payload=fixture(fmt);ctx=replace(ctx,schedule_slot=fmt);payload['schedule_slot']=fmt
+            service=self.service();result=service.submit(ctx,payload,TARGET)
+            self.client.read_media=lambda rid:self.observation(payload,rid)
+            self.client.read_children=lambda rid:[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+            def proof(obs):return {**{k:obs[k] for k in ('remote_id','target_id','body_sha256','url','media_format','children')},'public':True,'checked_at':self.now}
+            service.public_probe=proof
+            self.assertEqual(service.observe(ctx,TARGET,result['remote_id'])['visibility'],'public')
+            for change in ({'public':False},{'target_id':'999'},{'checked_at':NOW-timedelta(seconds=1)},{'url':'https://www.instagram.com/p/other/'},{'children':[] if fmt=='carousel' else [{'id':'9','media_type':'IMAGE'}]}):
+                service.public_probe=lambda obs,change=change:{**proof(obs),**change}
+                self.assertEqual(service.observe(ctx,TARGET,result['remote_id'])['visibility'],'unknown')
+            for change in ({'owner':{'id':'999'}},{'permalink':'https://evil.example/p/ABC/'},{'timestamp':(NOW+timedelta(seconds=1)).isoformat()},{'media_product_type':'INVALID'}):
+                self.client.read_media=lambda rid,change=change:self.observation(payload,rid,**change)
+                self.assertIsNone(service.observe(ctx,TARGET,result['remote_id']))
+    def test_unknown_known_id_retains_upload_receipt_and_lookup_never_posts(self):
+        ctx,payload=fixture();service=self.service();save=self.journal.save
+        def fail(row,state,*a,**kw):
+            if state=='submitted':raise StoreError('failure')
+            return save(row,state,*a,**kw)
+        self.journal.save=fail;result=service.submit(ctx,payload,TARGET);self.journal.save=save
+        self.assertEqual(result['outcome'],'unknown');self.assertEqual(result['evidence']['upload_receipt']['remote_id'],result['remote_id'])
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        count=len(self.writes());self.assertEqual(len(service.lookup(ctx,TARGET,result)),1);self.assertEqual(len(self.writes()),count)
+
+    def test_receipt_original_context_survives_cached_replay_and_read_fields_are_exact(self):
+        ctx,payload=fixture();service=self.service();result=service.submit(ctx,payload,TARGET)
+        changed=replace(ctx,run_id='new-run')
+        self.assertEqual(service.submit(changed,payload,TARGET)['evidence']['upload_receipt']['context_hash'],ctx.context_hash)
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        obs=service.observe(ctx,TARGET,result['remote_id'])
+        self.assertEqual(set(obs),{'remote_id','target_id','created_at','text','body_sha256','media_sha256','media_format','media_type','media_product_type','media_status','children','visibility','url','upload_receipt'})
+        self.assertEqual(obs['text'],payload['caption']);self.assertEqual(obs['media_type'],'IMAGE')
+    def test_carousel_pin_write_failure_cannot_claim_observation(self):
+        ctx,payload=fixture('carousel');service=self.service();result=service.submit(ctx,payload,TARGET)
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        self.client.read_children=lambda rid:[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+        save=self.journal.save;self.journal.save=lambda *a,**kw:(_ for _ in ()).throw(StoreError('PRIVATE'))
+        self.assertIsNone(service.observe(ctx,TARGET,result['remote_id']))
+        self.journal.save=save
+        self.assertIsNotNone(service.observe(ctx,TARGET,result['remote_id']))
+    def test_unknown_carousel_known_id_can_pin_readonly_without_repost(self):
+        ctx,payload=fixture('carousel');service=self.service();save=self.journal.save
+        def fail(row,state,*a,**kw):
+            if state=='submitted':raise StoreError('injected')
+            return save(row,state,*a,**kw)
+        self.journal.save=fail;result=service.submit(ctx,payload,TARGET);self.journal.save=save
+        self.assertEqual(result['outcome'],'unknown');self.assertIsNone(result['evidence']['upload_receipt']['published_children'])
+        self.client.read_media=lambda rid:self.observation(payload,rid)
+        children=[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+        self.client.read_children=lambda rid:children
+        count=len(self.writes());obs=service.observe(ctx,TARGET,result['remote_id'])
+        self.assertIsNotNone(obs);self.assertEqual(obs['upload_receipt']['published_children'],children)
+        self.assertEqual(service.lookup(ctx,TARGET,result),[obs]);self.assertEqual(len(self.writes()),count)
+        self.assertEqual(service.submit(ctx,payload,TARGET)['outcome'],'unknown');self.assertEqual(len(self.writes()),count)
+        self.assertIsNone(service.observe(ctx,TARGET,'999'))
+    def test_wrong_first_carousel_observation_does_not_poison_pin(self):
+        for bad in ('count','type','caption'):
+            ctx,payload=fixture('carousel');ctx=replace(ctx,schedule_slot=bad);payload['schedule_slot']=bad
+            service=self.service();result=service.submit(ctx,payload,TARGET);count=len(self.writes())
+            correct=[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+            children=correct+[{'id':'503','media_type':'IMAGE'}] if bad=='count' else [{'id':'501','media_type':'VIDEO'},{'id':'502','media_type':'IMAGE'}] if bad=='type' else correct
+            self.client.read_children=lambda rid:children
+            self.client.read_media=lambda rid:self.observation(payload,rid,**({'caption':'다른 캡션'} if bad=='caption' else {}))
+            first=service.observe(ctx,TARGET,result['remote_id']);self.assertIsNotNone(first)
+            self.assertIsNone(first['upload_receipt']['published_children'])
+            self.client.read_children=lambda rid:correct;self.client.read_media=lambda rid:self.observation(payload,rid)
+            self.assertEqual(service.observe(ctx,TARGET,result['remote_id'])['upload_receipt']['published_children'],correct)
+            self.assertEqual(len(self.writes()),count)
+    def test_raw_or_encoded_url_controls_rejected_before_probe_or_pin(self):
+        ctx,payload=fixture('carousel');calls=[];service=self.service(public_probe=lambda obs:calls.append(obs));result=service.submit(ctx,payload,TARGET)
+        self.client.read_children=lambda rid:[{'id':'501','media_type':'IMAGE'},{'id':'502','media_type':'VIDEO'}]
+        for url in ('https://www.instagram.com/p/ABC/\n','https://www.instagram.com/p/ABC/%0a','https://www.instagram.com/\tp/ABC/'):
+            self.client.read_media=lambda rid,url=url:self.observation(payload,rid,permalink=url)
+            self.assertIsNone(service.observe(ctx,TARGET,result['remote_id']))
+        self.assertEqual(calls,[])
+        self.assertIsNone(service.submit(ctx,payload,TARGET)['evidence']['upload_receipt']['published_children'])

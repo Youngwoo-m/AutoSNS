@@ -9,6 +9,8 @@ def build_adapters(*,registry=None,bridge=None):
     from .threads import ThreadsAdapter
     from .facebook_runtime import FACEBOOK_BINDINGS
     from .facebook import FacebookAdapter
+    from .instagram_runtime import INSTAGRAM_BINDINGS
+    from .instagram import InstagramAdapter
     result={}
     for key in BLOG_BINDINGS:
         connection=registry.connections.get(key)
@@ -24,4 +26,8 @@ def build_adapters(*,registry=None,bridge=None):
         connection=registry.connections.get(key)
         if connection and connection.enabled and connection.platform=='facebook' and connection.target_id:
             result[key]=FacebookAdapter(registry,bridge)
+    for key in INSTAGRAM_BINDINGS:
+        connection=registry.connections.get(key)
+        if connection and connection.enabled and connection.platform=='instagram' and connection.target_id:
+            result[key]=InstagramAdapter(registry,bridge)
     return result

@@ -15,15 +15,17 @@ _LABELS={'naver_blog':'네이버 블로그','blogger':'Blogger','tistory':'Tisto
 _AUTH_STATUSES=frozenset(('connected','unknown','not_checked','needs_auth','reauth_required',
                          'disconnected','revoked','expired','error'))
 _PUBLISHERS={'naver_blog':'browser_implemented','blogger':'implemented','tistory':'browser_implemented',
-             'youtube':'implemented','threads':'text_only_implemented','facebook':'text_only_implemented'}
+             'youtube':'implemented','instagram':'implemented','threads':'text_only_implemented','facebook':'text_only_implemented'}
 _VERIFIERS={'naver_blog':'hash_implemented','blogger':'hash_implemented','tistory':'hash_implemented',
-            'youtube':'receipt_implemented','threads':'public_probe_required','facebook':'public_probe_required'}
+            'youtube':'receipt_implemented','instagram':'public_probe_required','threads':'public_probe_required','facebook':'public_probe_required'}
 _ACTIONS={
  'naver_blog':('네이버 OAuth는 회원 프로필 확인용입니다. 블로그 게시에는 기존 브라우저 로그인 연결이 필요합니다.',),
  'blogger':('Blogger 연결의 실제 게시·공개 확인 시험이 남아 있습니다.',),
  'tistory':('공식 API가 종료되어 기존 브라우저 로그인 방식으로 연결해야 합니다.',),
  'youtube':('계정별 로그인 연결과 실제 업로드·공개 확인·성과 수집 시험이 남아 있습니다.',),
- 'instagram':('프로페셔널 계정 여부와 로그인 방식을 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+ 'instagram':('이미지·REELS·캐러셀 준비, 수동 검토와 원본 전달 영수증 결속 기반은 개발됐습니다.',
+              '실제 프로페셔널 계정·권한 확인, 공개 호스팅·익명 공개 확인(probe), 실제 전송과 서버 기동 연결은 미수락 상태입니다.',
+              'Instagram Login 방식과 직접 업로드는 후속 개발 범위입니다.'),
  'threads':('텍스트 게시 기반은 개발됐으며, 실제 게시 연결과 공개 페이지 확인은 개발·검증이 남아 있습니다.',),
  'x':('API 이용 비용을 확인해야 합니다. 추가 결제 없이 사용할 연결 방식을 검토 중입니다.',
       '실제 게시와 공개 확인 연결은 개발이 남아 있습니다.'),
