@@ -59,6 +59,7 @@ _STATIC = {
     'styles.css': 'text/css; charset=utf-8',
     'api.js': 'text/javascript; charset=utf-8',
     'app.js': 'text/javascript; charset=utf-8',
+    'account_navigation.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -647,7 +648,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
-                  oauth_service=None, oauth_callback_policy=None, oauth_test_only=False) -> ThreadingHTTPServer:
+                  oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
+                  planning_registry=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -665,7 +667,18 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     workspace_root = Path(workspace_root).resolve() if workspace_root is not None else None
     if workspace_root is not None and (workspace_root.is_relative_to(source_root) or source_root.is_relative_to(workspace_root)):
         raise ValueError('관리 저장소와 운영 루트는 분리해야 합니다')
-    registry_source = operations_registry or _APP.parent / 'config' / 'operations.json'
+    if planning_registry is not None:
+        from common.operations.production_startup import ProductionExecutionService
+        if (not isinstance(planning_registry, Registry) or
+                not isinstance(execution_service, ProductionExecutionService) or operations_registry is not None):
+            raise ValueError('조회 등록부 분리는 제작 전용 실행에서만 지원합니다')
+        if (execution_service.adapters or execution_service.base_registry.connections or
+                not set(execution_service.base_registry.accounts) <= set(planning_registry.accounts)):
+            raise ValueError('제작 실행과 조회 계정의 범위가 일치하지 않습니다')
+        for job_id, job in execution_service.base_registry.jobs.items():
+            if job_id in planning_registry.jobs and planning_registry.jobs[job_id] != job:
+                raise ValueError('조회 등록부와 제작 작업 식별자가 충돌합니다')
+    registry_source = planning_registry if planning_registry is not None else operations_registry or _APP.parent / 'config' / 'operations.json'
     registry_value = registry_source() if callable(registry_source) else registry_source
     registry = registry_value if isinstance(registry_value, Registry) else load_registry(Path(registry_value))
     input_registry = registry
@@ -676,7 +689,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     if service_store is not None:
         if workspace_root is None or service_store.root.resolve() != workspace_root:
             raise ValueError('실행 서비스의 관리 저장소가 일치하지 않습니다')
-        registry = execution_service.registry
+        registry = planning_registry if planning_registry is not None else execution_service.registry
         if not isinstance(registry, Registry):raise ValueError('실제 등록부 객체가 필요합니다')
         if operations_registry is not None and getattr(execution_service,'base_registry',registry) != input_registry:
             raise ValueError('실행 서비스 등록부가 일치하지 않습니다')
@@ -687,7 +700,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.workspace_root = workspace_root
     server.content_store = service_store.content_store if service_store is not None else ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
-    server.ledger = execution_service.ledger if service_store is not None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
+    server.ledger = execution_service.ledger if service_store is not None and planning_registry is None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
     server.runtime_store = service_store if service_store is not None else RuntimeStore(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.production_store = execution_service.production_store if service_store is not None else ProductionStore(workspace_root, registry=registry) if workspace_root is not None else None
@@ -696,7 +709,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         if store is not None:store.locks=locks;store.execution_policy=server.execution_policy
     server.execution_service = execution_service
     server.execution_status_info = execution_status_info if execution_status_info is not None else getattr(execution_service,'status_info',{})
-    server.metrics_registry = lambda: execution_service.registry if service_store is not None else registry
+    server.metrics_registry = lambda: planning_registry if planning_registry is not None else execution_service.registry if service_store is not None else registry
     server.recovery_adapters = dict(recovery_adapters or {})
     server.process_probe = process_probe
     server.lock_probe = lock_probe

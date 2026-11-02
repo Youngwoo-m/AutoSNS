@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {normalizeRoute,routeForView,visibleSnapshot,publishingViews,accountName} from '../ax-console/app/web/account_navigation.js';
 import {createSnapshotLoader} from '../ax-console/app/web/api.js';
 
 import {webSource} from './helpers/staged_web.mjs';
 const source=webSource('app.js');
 const render=source.slice(source.indexOf('function render() {'),source.indexOf('\nfunction stats('));
 const setView=source.slice(source.indexOf('function setView(id) {'),source.indexOf('\n',source.indexOf('function setView(id) {')));
+const navigate=source.slice(source.indexOf('function navigate(target) {'),source.indexOf('// 기존 내부 링크'));
 const tick=async()=>{for(let n=0;n<5;n++)await Promise.resolve();};
 
 function harness(){
@@ -17,21 +19,23 @@ function harness(){
   const root=node('screen-root');
   root.replaceChildren=(...children)=>{if(contains(root,document.activeElement))document.activeElement=document.body;root.children=children;};
   const find=(root,id)=>root.id===id?root:(root.children||[]).map(child=>find(child,id)).find(Boolean);
-  const $=selector=>find(root,selector.slice(1));
+  const badge=node('account-badge');const dialog={open:false};
+  const $=selector=>selector==='#account-badge'?badge:selector==='#detail-dialog'?dialog:find(root,selector.slice(1));
   const pending=[];
   const request=()=>new Promise((resolve,reject)=>pending.push({resolve,reject}));
   const app=vm.runInNewContext(`
-    let state={account:'all',snapshot:null,phase:'idle'},view='today',detailMode='legacy';
+    let state={account:'personal',snapshot:null,phase:'idle'},route={account:'personal',area:'publishing'},view='today',detailMode='legacy';
     const views={today:[],planning:[]};
     const renderers={today:()=>({}),planning:()=>({})};
     ${render}
+    ${navigate}
     ${setView}
     const loader=createSnapshotLoader(next=>{state=next;render();},{request});
     ({setView,select:loader.select,phase:()=>state.phase});
-  `,{document,$,createSnapshotLoader,request,renderStatus(){},pageHead:()=>node('head',[node('page-title')]),empty:()=>({}),confirmLeave:()=>true});
+  `,{document,$,createSnapshotLoader,request,normalizeRoute,routeForView,visibleSnapshot,publishingViews,accountName,h:()=>({}),renderStatus(){},pageHead:()=>node('head',[node('page-title')]),empty:()=>({}),confirmLeave:()=>true});
   return {app,document,pending,title:()=>$(`#page-title`),outside:()=>node('outside-input')};
 }
-async function opened(){const h=harness();const first=h.app.select('all');h.pending.shift().resolve({});await first;return h;}
+async function opened(){const h=harness();const first=h.app.select('personal');h.pending.shift().resolve({});await first;return h;}
 
 test('기획 탭의 실제 setView→loader loading/ready render는 제목 포커스를 새 제목에 유지한다',async()=>{
   const h=await opened();h.app.setView('planning');

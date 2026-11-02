@@ -11,6 +11,7 @@ import {createOperationsApi,createOperationsPanel} from './operations_panel.js';
 import {createContentEditor} from './content_editor.js';
 import {createIntegrationSettings,confirmSettingsNavigation} from './integration_settings.js';
 import {createSnapshotLoader,contentApi,refreshWorkspace,createExecutionApi} from './api.js';
+import {routeById,normalizeRoute,routeForView,publishingViews,isActiveRoute,pageTitle,accountName,visibleSnapshot} from './account_navigation.js';
 import {accountLabel,kindLabel,statusLabel,scheduleLabel,safeUrl,filterContents,aggregate,dayKey,formatDateTime,weekDays,integrationSummary} from './view_helpers.js';
 
 const $=selector=>document.querySelector(selector);
@@ -39,9 +40,11 @@ const td=(...children)=>h('td',{},...children);
 const tabs=(label,items,selected,onSelect)=>h('div',{class:'tabs','aria-label':label,role:'group'},items.map(([id,title])=>h('button',{class:id===selected?'active':'','aria-pressed':id===selected,onclick:()=>onSelect(id)},title)));
 const contentButton=(content,label)=>h('button',{class:'title-button','data-content':content.id,onclick:()=>openContent(content.id)},label||text(content.title));
 const titleFor=id=>state.snapshot?.contents.find(c=>c.id===id);
-let state={account:'all',snapshot:null,phase:'idle',error:null};
+let state={account:'personal',snapshot:null,phase:'idle',error:null};
 let engineerExam='all';
-let view='today',weekOffset=0,calendarMode='week',crosspostTab='rules',issueTab='actions',detailTab='overview',detailId=null,lastFocus=null;
+// route는 사용자가 선택한 계정·영역이다. state.account(로더 계정)가 route와 같을 때만 snapshot을 노출한다.
+let route={account:'personal',area:'publishing'};
+let view='planning',weekOffset=0,calendarMode='week',crosspostTab='rules',issueTab='actions',detailTab='overview',detailId=null,lastFocus=null;
 const filters={query:'',kind:'all',series:'all',status:'all',owner:'all'};
 const views={
   engineer:['기술사 학습·발행 운영','기술사','측량·토목시공·건축시공·건설안전의 콘텐츠와 운영 관측을 모아 봅니다.'],
@@ -68,7 +71,7 @@ const oauthDirty=()=>oauth.hasUnsavedChanges();
 function guardOAuth(){return !oauthBusy()&&(!oauthDirty()||globalThis.confirm('대기 중인 연결 요청을 보존하지 않고 이동할까요?'));}
 const oauthPanel=createOAuthPanel({controller:oauth,document,onClose:guardOAuth,
   onContextChange:()=>guardOAuth(),onClosed:()=>finishDetailClose()});
-function openOAuth(accountId=state.account,result=false){
+function openOAuth(accountId=route.account,result=false){
   if(!result&&!confirmLeave())return;
   if($('#detail-dialog').open&&!closeDetail())return;
   editorActive=false;detailMode='oauth';lastFocus=document.activeElement;
@@ -83,47 +86,53 @@ const toolkitSurfaces=new Map();
 function toolkitSurface(section,extra={}) {
   let surface=toolkitSurfaces.get(section);
   if(!surface){const controller=createToolkitController({api:createToolkitApi()});surface={controller,panel:createToolkitPanel({controller,document})};toolkitSurfaces.set(section,surface);}
-  return surface.panel.render({section,context:{account:state.account,...extra},writable:writable()});
+  return surface.panel.render({section,context:{account:route.account,...extra},writable:writable()});
 }
 const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
 const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(oauthBusy()||execution.isBusy()||operations.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty());
+  if(oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty());
   if(accepted&&operations.isDirty())operations.discard();return accepted;
 }
 function pageHead() {
   const [eyebrow,title,description]=views[view];
-  return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},title),muted(description)),h('div',{class:'actions'},(['today','planning','library'].includes(view)&&writable())?h('button',{class:'btn btn-primary',onclick:()=>openEditor()},'새 기획'):disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
+  const heading=route.area==='accounts'?pageTitle(route):`${pageTitle(route)} · ${title}`;
+  return h('div',{class:'page-head'},h('div',{},h('div',{class:'eyebrow'},eyebrow),h('h1',{id:'page-title',tabindex:'-1'},heading),muted(description)),h('div',{class:'actions'},(['today','planning','library'].includes(view)&&writable())?h('button',{class:'btn btn-primary',onclick:()=>openEditor()},'새 기획'):disabled(view==='issues'?'비상 정지 미지원':view==='calendar'?'일정 변경 미지원':view==='crosspost'?'경로 수정 미지원':view==='accounts'?'연결 변경 미지원':'새 기획 미지원')));
 }
 function renderStatus() {
   const box=$('#load-status');box.classList.toggle('error',['error','unauthorized'].includes(state.phase));
-  const stale=state.snapshot&&(!Number.isFinite(Date.parse(state.snapshot.generated_at))||Date.now()-Date.parse(state.snapshot.generated_at)>5*60*1000);
-  let message=state.phase==='loading'?(state.snapshot?'갱신 중 · 이전 조회 자료를 표시합니다.':'자료를 불러오는 중입니다.'):
+  const snap=visibleSnapshot(route.account,state);
+  const stale=snap&&(!Number.isFinite(Date.parse(snap.generated_at))||Date.now()-Date.parse(snap.generated_at)>5*60*1000);
+  let message=state.phase==='loading'?(snap?'갱신 중 · 이전 조회 자료를 표시합니다.':'자료를 불러오는 중입니다.'):
     state.phase==='unauthorized'?'로그인이 필요합니다. 인증 설정이 없는 환경에서는 기존 인증 설정 후 이용할 수 있습니다.':
-    state.phase==='error'?(state.snapshot?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
+    state.phase==='error'?(snap?'최신 조회 실패 · 이전 자료입니다.':'자료 조회 실패 · 표시할 자료가 없습니다.'):
     stale?'오래된 조회 자료입니다. 새로고침으로 현재 기록을 확인해 주세요.':writable()?'운영 자료 읽기 전용 · 새 관리 원본 저장 가능':'실제 자료 조회 완료 · 읽기 전용';
   $('.readonly-bar').textContent=writable()?'6A · 제작 접수·별도 발행 승인 · 실제 실행 기본 비활성 · 기존 STOP 읽기 전용':'6A · 실제 자료·성과 조회 · 기존 STOP 읽기 전용';
-  const line=h('div',{class:'status-line'},h('span',{},message),state.snapshot?h('span',{},`마지막 갱신 ${formatDateTime(state.snapshot.generated_at)} · 한국시간`):null);
+  const line=h('div',{class:'status-line'},h('span',{},message),snap?h('span',{},`마지막 갱신 ${formatDateTime(snap.generated_at)} · 한국시간`):null);
   if(state.phase==='unauthorized') line.append(h('a',{href:'/login',target:'_blank',rel:'noopener noreferrer'},'새 창에서 로그인'));
   box.replaceChildren(line);
-  if(state.snapshot?.warnings.length) box.append(h('details',{},h('summary',{},`자료 누락·확인 안내 ${state.snapshot.warnings.length}건`),h('ul',{class:'warnings'},state.snapshot.warnings.map(w=>h('li',{},text(w))))));
+  if(snap?.warnings.length) box.append(h('details',{},h('summary',{},`자료 누락·확인 안내 ${snap.warnings.length}건`),h('ul',{class:'warnings'},snap.warnings.map(w=>h('li',{},text(w))))));
   $('#refresh').textContent=state.phase==='loading'?'다시 갱신':'새로고침';
 }
 function render() {
   const preserveTitleFocus=document.activeElement?.id==='page-title';
   renderStatus();
-  document.querySelectorAll('[data-scope]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.scope===state.account)));
-  document.querySelectorAll('[data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  document.querySelectorAll('[data-route]').forEach(b=>{if(isActiveRoute(routeById(b.dataset.route),route))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  const badgeNode=$('#account-badge');badgeNode.className=`account-badge ${route.account}`;badgeNode.textContent=`현재 계정: ${accountName(route.account)}`;
   $('#screen-root').setAttribute('aria-busy',String(state.phase==='loading'));
-  const head=pageHead();
-  if(!state.snapshot) {
-    $('#screen-root').replaceChildren(head,empty(state.phase==='loading'?'조회 중':state.phase==='unauthorized'?'로그인 후 조회할 수 있습니다':'조회 자료가 없습니다',state.phase==='loading'?'선택한 관련 계정의 실제 기록을 불러옵니다.':state.phase==='unauthorized'?'상단 로그인 링크에서 인증 후 새로고침해 주세요.':'데이터를 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.'));
+  const head=pageHead(),sub=route.area==='publishing'?subNav():null;
+  if(!visibleSnapshot(route.account,state)) {
+    $('#screen-root').replaceChildren(...[head,sub].filter(Boolean),empty(state.phase==='loading'?'조회 중':state.phase==='unauthorized'?'로그인 후 조회할 수 있습니다':'조회 자료가 없습니다',state.phase==='loading'?'선택한 관련 계정의 실제 기록을 불러옵니다.':state.phase==='unauthorized'?'상단 로그인 링크에서 인증 후 새로고침해 주세요.':'데이터를 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.'));
     if(preserveTitleFocus)$('#page-title')?.focus({preventScroll:true});
     return;
   }
-  $('#screen-root').replaceChildren(head,renderers[view]());
+  $('#screen-root').replaceChildren(...[head,sub].filter(Boolean),renderers[view]());
   if(preserveTitleFocus)$('#page-title')?.focus({preventScroll:true});
+}
+// 발행 영역의 보조 메뉴. 상위 메뉴의 aria-current와 별도로 aria-pressed를 쓴다.
+function subNav() {
+  return h('div',{class:'sub-nav',role:'group','aria-label':`${accountName(route.account)} 콘텐츠 발행 보조 메뉴`},publishingViews(route.account).map(item=>h('button',{'data-view':item.id,'aria-pressed':String(item.id===view),onclick:()=>setView(item.id)},item.label)));
 }
 function stats(items) {
   return h('div',{class:'stats'},items.map(([title,value,note])=>h('div',{class:'stat'},h('div',{class:'stat-top'},title),h('strong',{},value),h('p',{class:'stat-note'},note))));
@@ -179,6 +188,7 @@ function renderContentResults() {
 }
 function renderContents() {
   const root=h('div',{},filterControls(),muted('관련 계정 기준으로 조회합니다. 위의 원본 소유 계정 필터는 게시 대상 계정과 별개입니다.'),h('div',{id:'content-results'}));
+  if(view==='planning') root.append(muted(`현재 계정은 ${accountName(route.account)}입니다. 새 기획은 현재 계정 소유로 시작합니다. 다른 계정에 보내는 변환본은 게시 대상을 별도로 선택하세요.`));
   if(view==='planning') root.append(toolkitSurface('planning'));
   if(view==='planning') root.append(panel('AI 기획 제안 기록',state.snapshot.proposals.length?h('div',{class:'entry-list'},state.snapshot.proposals.map(p=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(p.owner_account_id),badge(p.status)),h('h3',{},text(p.title)),h('p',{},text(p.summary)),disabled('채택·반려 미지원')))):empty('수집된 제안이 없습니다','기획 제안 자료가 없으면 예시 제안을 만들지 않습니다.')));
   if(view==='planning') {
@@ -235,15 +245,15 @@ function renderIntegrations() {
 }
 function renderAccounts() {
   const s=state.snapshot;
-  const channels=s.channels.length?h('div',{class:'channel-card-grid'},['dept','personal'].filter(id=>state.account==='all'||state.account===id).map(id=>{
+  const channels=s.channels.length?h('div',{class:'channel-card-grid'},['dept','personal'].filter(id=>route.account===id).map(id=>{
     const items=s.channels.filter(c=>c.account_id===id);
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
-  if(writable()){if(integrationAccount!==state.account){integrationAccount=state.account;integrationSettings.load(state.account);}}
+  if(writable()){if(integrationAccount!==route.account){integrationAccount=route.account;integrationSettings.load(route.account);}}
   return h('div',{},h('button',{class:'btn btn-primary',onclick:()=>openOAuth()},'공식 OAuth 연결·준비 상태'),execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
-  return h('div',{},metrics.render({account:state.account,writable:writable()}),toolkitSurface('analytics'));
+  return h('div',{},metrics.render({account:route.account,writable:writable()}),toolkitSurface('analytics'));
 }
 function renderIssues() {
   const s=state.snapshot;let content;
@@ -254,7 +264,23 @@ function renderIssues() {
   return h('div',{},execution.renderStatus(),operations.render('issues'),tabs('장애 및 설정 하위 메뉴',[['actions','조치 필요'],['runs','실행 기록'],['policy','운영 정책'],['settings','설정']],issueTab,id=>{issueTab=id;render();}),h('div',{class:'tab-content'},content));
 }
 const renderers={engineer:()=>renderEngineerPanel({snapshot:state.snapshot,exam:engineerExam,onSelect:id=>{engineerExam=id;render();},onOpen:openContent,h,formatDateTime,accountLabel}),today:renderToday,planning:renderContents,library:renderContents,calendar:renderCalendar,crosspost:renderCrosspost,accounts:renderAccounts,analytics:renderAnalytics,issues:renderIssues};
-function setView(id) {if(!views[id]||!confirmLeave())return;if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)setView(id);});return;}view=id;render();$('#page-title')?.focus({preventScroll:true});if(id==='planning')loader.refresh();}
+// 계정·영역·화면 전환의 단일 경로. 미저장/바쁨 가드 → OAuth·상세 닫기 → 계정별 컨트롤러 갱신 순서를 지킨다.
+function navigate(target) {
+  const next=normalizeRoute(target);
+  if(!confirmLeave())return;
+  if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)navigate(next);});return;}
+  const changed=next.account!==route.account;
+  if(changed&&$('#detail-dialog').open&&!closeDetail(true))return;
+  route={account:next.account,area:next.area};view=next.view;
+  if(changed){
+    for(const surface of toolkitSurfaces.values())surface.panel.refreshControls({context:{account:next.account}});
+    operations.load(next.account);metrics.load(next.account);loader.select(next.account);
+  }
+  render();$('#page-title')?.focus({preventScroll:true});
+  if(!changed&&next.view==='planning')loader.refresh();
+}
+// 기존 내부 링크(setView('crosspost') 등)는 현재 계정을 유지한 채 영역과 화면을 정한다.
+function setView(id) {if(!views[id])return;navigate(routeForView(route.account,id));}
 
 function deliveryDetail(d) {
   const url=safeUrl(d.url);
@@ -283,7 +309,7 @@ function openEditor(content=null){
   $('#drawer-heading').replaceChildren(h('h2',{id:'drawer-title'},content?.source==='managed'?'관리 원본 편집':'새 기획 저장'));
   $('#drawer-content').replaceChildren(editor.element);
   $('.drawer-foot span').textContent='관리 원본 · 계획 승인과 별도 발행 승인 구분 · 실행은 서버 정책에 따름';
-  editor.open(content);if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
+  editor.open(content,{accountId:route.account});if(!$('#detail-dialog').open)$('#detail-dialog').showModal();document.body.style.overflow='hidden';$('#drawer-close').focus();
 }
 function openContent(id) {
   if(detailMode==='oauth'){oauthPanel.close().then(closed=>{if(closed)openContent(id);});return;}
@@ -304,7 +330,7 @@ function closeDetail(confirmed=false) {
 $('#drawer-close').addEventListener('click',closeDetail);
 $('#detail-dialog').addEventListener('click',e=>{if(e.target===$('#detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDetail();}});
 $('#detail-dialog').addEventListener('cancel',e=>{e.preventDefault();closeDetail();});
-$('#detail-dialog').addEventListener('close',()=>{document.body.style.overflow='';if(lastFocus?.isConnected)lastFocus.focus();else $('[data-view][aria-current="page"]')?.focus();detailId=null;});
+$('#detail-dialog').addEventListener('close',()=>{document.body.style.overflow='';if(lastFocus?.isConnected)lastFocus.focus();else $('[data-route][aria-current="page"]')?.focus();detailId=null;});
 $('#detail-dialog').addEventListener('keydown',e=>{
   if(detailMode==='oauth')return;
   if(e.key!=='Tab')return;
@@ -314,12 +340,12 @@ $('#detail-dialog').addEventListener('keydown',e=>{
   else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
 });
 const loader=createSnapshotLoader(next=>{state=next;render();});
-document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));
-document.querySelectorAll('[data-scope]').forEach(button=>button.addEventListener('click',async()=>{if(!confirmLeave())return;if(detailMode==='oauth'){if(!await oauthPanel.close())return;}else if($('#detail-dialog').open&&!closeDetail(true))return;for(const surface of toolkitSurfaces.values())surface.panel.refreshControls({context:{account:button.dataset.scope}});operations.load(button.dataset.scope);metrics.load(button.dataset.scope);loader.select(button.dataset.scope);}));
-$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(state.account);metrics.load(state.account);refreshWorkspace({loader,integrationSettings,account:state.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+// 상위 4개 메뉴: 계정(personal/dept)과 영역(accounts/publishing)을 함께 고른다. 발행 영역은 항상 콘텐츠 기획에서 시작한다.
+document.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>{const target=routeById(button.dataset.route);if(target)navigate({account:target.account,area:target.area,view:target.area==='accounts'?'accounts':(route.area==='publishing'&&target.account===route.account?view:'planning')});}));
+$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
 window.addEventListener('beforeunload',event=>{if((typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
-operations.load('all');
-loader.select('all');
+operations.load(route.account);
+loader.select(route.account);
 if(globalThis.location?.pathname==='/connections/oauth-result')openOAuth('all',true);
 setInterval(renderStatus,60000);

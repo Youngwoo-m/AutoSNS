@@ -11,7 +11,7 @@ const temporary=mkdtempSync(join(tmpdir(),'staged-web-'));
 const root=join(temporary,'web');cpSync(join(base,'ax-console/app/web'),root,{recursive:true});
 const sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 const plan=existsSync(oauth)?oauth:existsSync(toolkit)?toolkit:phase6;
-if(existsSync(plan)){
+if(!existsSync(join(root,'account_navigation.js'))&&existsSync(plan)){
  const manifest=JSON.parse(readFileSync(plan));
  for(const e of manifest.entries){
   if(sha(join(base,e.artifact))!==e.artifact_sha256)throw new Error(`artifact SHA mismatch: ${e.target}`);

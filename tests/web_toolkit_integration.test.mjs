@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {loadWebModule,webSource} from './helpers/staged_web.mjs';
 const app=webSource('app.js'),editor=webSource('content_editor.js');
-test('existing nine navigation destinations preserved without toolkit top menu',()=>{const html=webSource('index.html');assert.equal((html.match(/data-view=/g)||[]).length,9);assert.doesNotMatch(html,/data-view="toolkit"/);});
+test('four account workspaces preserve existing screens as publishing submenus',()=>{const html=webSource('index.html');assert.equal((html.match(/data-route=/g)||[]).length,4);assert.equal((html.match(/data-scope=/g)||[]).length,0);assert.match(app,/subNav/);assert.doesNotMatch(html,/data-view="toolkit"/);});
 test('accounts planning analytics detail compose toolkit beside existing panels',()=>{assert.match(app,/createToolkitPanel/);for(const section of ['accounts','planning','analytics','schedule'])assert.match(app,new RegExp(`toolkitSurface\\('${section}'`));assert.match(app,/metrics\.render/);assert.match(app,/integrationSettings\.element/);});
 test('editor stage uses clean hash context and existing full payload CAS',()=>{for(const text of ['inputHash','editorDirty','toolkit-stage','stageCandidate','toContentPayload','expected_revision'])assert.ok(editor.includes(text),text);assert.match(editor,/session\.draft\.variants\[patch\.variant\.index\]\.text=patch\.variant\.text/);assert.doesNotMatch(editor,/session\.draft\.original=patch/);});
 import {harness,all,field} from './helpers/execution_dom.mjs';

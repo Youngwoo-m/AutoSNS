@@ -20,7 +20,7 @@ def overlay(webroot,manifest,*,source_root=ROOT):
 def product_webroot(webroot):
     shutil.copytree(ROOT/'ax-console/app/web',webroot)
     manifest=OAUTH_MANIFEST if OAUTH_MANIFEST.exists() else MANIFEST
-    if manifest.exists():overlay(webroot,json.loads(manifest.read_text()))
+    if not (webroot/'account_navigation.js').exists() and manifest.exists():overlay(webroot,json.loads(manifest.read_text()))
 class ProtectedAcceptance(unittest.TestCase):
     def fixture(self,root):
         web=root/'web';web.mkdir();art=root/'art';art.mkdir();entries=[]

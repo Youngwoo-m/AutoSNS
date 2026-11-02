@@ -140,6 +140,14 @@ class WebServerTests(unittest.TestCase):
         self.assertEqual(headers['Content-Type'], 'text/javascript; charset=utf-8')
         self.assertEqual(body, b'export const fixture = true;')
 
+    def test_account_navigation_module_requires_auth_and_javascript_type(self):
+        (self.web / 'account_navigation.js').write_text('export const routes = [];')
+        self.assertEqual(self.request('/web/account_navigation.js')[0], 401)
+        status, headers, body = self.request('/web/account_navigation.js', headers=self.login())
+        self.assertEqual(status, 200)
+        self.assertEqual(headers['Content-Type'], 'text/javascript; charset=utf-8')
+        self.assertEqual(body, b'export const routes = [];')
+
     def test_write_routes_and_methods_rejected(self):
         cookie = self.login()
         for method in ('POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'TRACE'):
