@@ -150,6 +150,15 @@ class FacebookApiClient:
         owner=_id(row['from'].get('id'),code='facebook_invalid_response')
         if owner!=page_id or type(row.get('is_published')) is not bool or type(row.get('is_hidden')) is not bool:
             _error('facebook_invalid_response')
-        return {'id':post_id,'from':{'id':owner},'message':_text(row.get('message'),MAX_TEXT_BYTES),
+        observed={'id':post_id,'from':{'id':owner},'message':_text(row.get('message'),MAX_TEXT_BYTES),
                 'created_time':_time(row.get('created_time')),'permalink_url':_permalink(row.get('permalink_url')),
                 'is_published':row['is_published'],'is_hidden':row['is_hidden']}
+        # PagePost.get_attachments()의 별도 EDGE 관측이다. 본문만 읽고 매체 없음으로 추정하지 않는다.
+        edge=self._send('GET','/'+post_id+'/attachments')
+        data=edge.get('data');paging=edge.get('paging',{})
+        if (type(data) is not list or any(not isinstance(item,dict) for item in data)
+                or not isinstance(paging,dict) or not data and paging.get('next')):
+            _error('facebook_invalid_response')
+        # 첨부가 하나라도 있으면 텍스트 전용 증거가 아니다. 원격 URL·토큰은 복사하지 않는다.
+        observed['attachments']=[] if not data else [{'present':True}]
+        return observed

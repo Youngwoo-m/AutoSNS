@@ -48,14 +48,23 @@ class FacebookClientTests(unittest.TestCase):
         client,_=self.client([(200,b'{"id":"999_456"}')]);self.code('facebook_invalid_response',lambda:client.create_text('123','본문'))
 
     def test_read_post_requires_exact_composite_id_and_owner_and_preserves_observed_flags(self):
-        row=post();client,calls=self.client([(200,json.dumps(dict(row,access_token='PRIVATE')).encode())])
-        expected={**row,'from':{'id':'123'}}
+        row=post();client,calls=self.client([(200,json.dumps(dict(row,access_token='PRIVATE')).encode()),(200,b'{"data":[]}')])
+        expected={**row,'from':{'id':'123'},'attachments':[]}
         self.assertEqual(client.read_post('123_456'),expected)
         self.assertEqual(calls[0][1],'/v26.0/123_456?fields=id%2Cfrom%2Cmessage%2Ccreated_time%2Cpermalink_url%2Cis_published%2Cis_hidden')
+        self.assertEqual(calls[1][1],'/v26.0/123_456/attachments')
         for change in ({'id':'123_789'},{'from':{'id':'999'}},{'from':'123'},{'created_time':'not-a-time'},{'created_time':'2026-11-02T02:00:00'},{'is_published':1},{'is_hidden':'false'},{'permalink_url':'javascript:alert(1)'}):
             client,_=self.client([(200,json.dumps(post(**change)).encode())]);self.code('facebook_invalid_response',lambda:client.read_post('123_456'))
-        client,_=self.client([(200,json.dumps(post(is_published=False,is_hidden=True)).encode())])
+        client,_=self.client([(200,json.dumps(post(is_published=False,is_hidden=True)).encode()),(200,b'{"data":[]}')])
         result=client.read_post('123_456');self.assertFalse(result['is_published']);self.assertTrue(result['is_hidden']);self.assertNotIn('verified',result)
+
+    def test_attachment_edge_must_be_observed_and_never_copies_raw_media_or_paging_tokens(self):
+        for edge in ({},{'data':None},{'data':{},'paging':{}},{'data':[],'paging':{'next':'https://graph.facebook.com/?access_token=SECRET'}}):
+            client,_=self.client([(200,json.dumps(post()).encode()),(200,json.dumps(edge).encode())])
+            self.code('facebook_invalid_response',lambda:client.read_post('123_456'))
+        client,_=self.client([(200,json.dumps(post()).encode()),(200,b'{"data":[{"url":"PRIVATE","media":{"token":"SECRET"}}]}')])
+        observed=client.read_post('123_456')
+        self.assertEqual(observed['attachments'],[{'present':True}]);self.assertNotIn('SECRET',str(observed));self.assertNotIn('PRIVATE',str(observed))
 
     def test_default_transport_remains_blocked_without_native_construction(self):
         with patch('socket.socket',side_effect=AssertionError('socket forbidden')):

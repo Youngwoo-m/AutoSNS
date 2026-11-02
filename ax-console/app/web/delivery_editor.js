@@ -21,6 +21,7 @@ export function approvalRecordLabel(plan) {
 export const targetIdentityLabel=status=>status==='verified'?'대상 ID 확인':'대상 미확인 · 승인 불가';
 const crossReasonLabel=reason=>({owner_mismatch:'원본 소유자 불일치',slot_not_allowed:'허용 슬롯 아님',trigger_not_met:'시작 조건 불충족',conditions_not_met:'교차 조건 불충족',ineligible:'교차 대상 제외',disabled:'규칙 중지',unknown:'활성 상태 미확인',observe_legacy:'기존 실행기 관측'}[reason]||'추가 조건 확인 필요');
 const localTimeLabel=(value,zone)=>{if(!value)return '시각 미확인';try{return `${zonedScheduleValue(value,zone||'Asia/Seoul')} (${zone||'Asia/Seoul'})`;}catch{return '시각·시간대 확인 필요';}};
+const textOnlyNotice=platform=>platform==='facebook'?'Facebook 페이지 텍스트 전용 · 개인 타임라인 게시가 아닙니다. 원고의 이미지·영상은 이 배포에 포함하지 않습니다.':platform==='threads'?'Threads 텍스트 전용 · 원고의 이미지·영상은 이 배포에 포함하지 않습니다.':'텍스트 전용 옵션 · 게시 대상 채널과 원본 자산 제외 여부를 다시 확인하세요.';
 export function deliveryPreviewSummary(preview,context={}) {
   const p={...context,...preview},lines=[`원본 ${accountLabel(p.owner_account_id)} → 대상 ${accountLabel(p.destination_account_id)} · ${p.platform||'채널 미확인'} · ${p.target_label||'대상 이름 미확인'}`,`${targetIdentityLabel(p.target_status)} · 인증 미확인 (대상 ID 확인과 별개)`,`로컬 예정 시각: ${localTimeLabel(p.scheduled_at,p.timezone)}`,p.approval_retained===true?'계획 승인 유지':p.approval_retained===false?'계획 재검토 필요':'계획 승인 검토 필요','실행 안 함 · 원격 예약 변경 없음'];
   for(const blocker of p.blockers||[])lines.push(`차단: ${blocker.reason||blocker.message||'대상·정책 확인 필요'}`);
@@ -32,7 +33,7 @@ export function deliveryPreviewSummary(preview,context={}) {
     lines.push(`교차: ${accountLabel(row.owner_account_id)} → ${accountLabel(row.destination_account_id)} · ${row.platform||'채널 미확인'} · ${owner} · ${status} · ${(row.reasons||[]).map(crossReasonLabel).join(' · ')||'추가 제외 사유 없음'} · 계산 시각 ${localTimeLabel(row.not_before,row.window?.timezone||p.timezone)} · 지연 ${(row.delay_seconds||0)/60}분 (${delayOwner}) · 최소 간격 ${(row.min_gap_seconds||0)/60}분 · 실행 안 함`);
   }
   if(!(p.crossposts||[]).length)lines.push('해당하는 교차 경로 없음');
-  if(p.options?.text_only===true)lines.push('Threads 텍스트 전용 · 원고의 이미지·영상은 이 배포에 포함하지 않습니다.');
+  if(p.options?.text_only===true)lines.push(textOnlyNotice(p.platform));
   return lines;
 }
 export function zonedScheduleValue(value,timezone) {
@@ -82,9 +83,10 @@ export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onSt
     if(!state.plan){
       const d=state.draft,selectedConnection=connections.find(item=>item.id===state.draft.connection_id),visibilityOptions=[['','기본값'],...['public','unlisted','private'].filter(value=>(selectedConnection?.capabilities||[]).includes(`visibility:${value}`)).map(value=>[value,({public:'공개',unlisted:'일부 공개',private:'비공개'})[value]])],change=key=>value=>{state.change(key,value);const saveButton=root.querySelector('[data-save-plan]');if(saveButton)saveButton.disabled=true;if(key==='connection_id'){d.visibility='';d.text_only=false;render();}};
       root.append(field('실제 등록 연결 (도구 선호와 별개)',d.connection_id,change('connection_id'),[['','연결 선택'],...connections.filter(c=>c.planning_enabled).map(c=>[c.id,`${accountLabel(c.account_id)} · ${c.platform} · ${c.target_label||'대상 미확인'} · ${c.target_status==='verified'?'대상 ID 확인':'대상 미확인 · 승인 불가'} · 인증 ${c.auth_status}`])]),field('발행 목적',d.publication_purpose,change('publication_purpose'),[['initial','최초 계획'],['followup','후속'],['republication','재발행']]),field('일정 슬롯 (계획 생성 후 고정)',d.schedule_slot,change('schedule_slot')),field('예정 시각 (예: 2026-11-01T10:00:00+09:00)',d.scheduled_at,change('scheduled_at')),field('IANA 시간대',d.timezone,change('timezone')),field('허용 일정 조건',d.condition_kind,v=>{change('condition_kind')(v);render();},[['fixed','고정 시각'],['window','허용 범위 (시작 포함·끝 제외)']]));
-      if(selectedConnection?.platform==='threads'&&(selectedConnection.capabilities||[]).includes('text_only')){
-        const box=el('input',{type:'checkbox','data-threads-text-only':'',disabled:blocked(),onchange:event=>{if(blocked())return;state.change('text_only',event.target.checked);updateDirty();syncDraftControls();}});box.checked=d.text_only===true;
-        root.append(el('label',{class:'editor-field'},box,'Threads에 텍스트만 발행 · 원고의 이미지·영상은 포함하지 않음'));
+      if(['threads','facebook'].includes(selectedConnection?.platform)&&(selectedConnection.capabilities||[]).includes('text_only')){
+        const facebook=selectedConnection.platform==='facebook';
+        const box=el('input',{type:'checkbox',...(facebook?{'data-facebook-text-only':''}:{'data-threads-text-only':''}),disabled:blocked(),onchange:event=>{if(blocked())return;state.change('text_only',event.target.checked);updateDirty();syncDraftControls();}});box.checked=d.text_only===true;
+        root.append(el('label',{class:'editor-field'},box,facebook?'Facebook 페이지에 텍스트만 발행 · 개인 타임라인 게시 아님 · 원고의 이미지·영상은 포함하지 않음':'Threads에 텍스트만 발행 · 원고의 이미지·영상은 포함하지 않음'));
       }
       if(d.condition_kind==='window')root.append(field('허용 시작 ISO 시각',d.window_from,change('window_from')),field('허용 끝 ISO 시각',d.window_to,change('window_to')));
       root.append(field('공개 옵션 (연결 기능에 따라 서버 검증)',d.visibility,change('visibility'),visibilityOptions),el('div',{},(selectedConnection?.capabilities||[]).includes('title_override')?field('제목 대체 (선택)',d.title_override,change('title_override')):null,(selectedConnection?.capabilities||[]).includes('description_override')?field('설명 대체 (선택)',d.description_override,change('description_override')):null),field('기존 교차 규칙 ID (선택)',d.crosspost_rule_id,change('crosspost_rule_id')),
@@ -92,7 +94,7 @@ export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onSt
       if(state.preview)root.append(el('h4',{},'대상·차단·교차 경로 미리보기'),previewOutput(state.preview));
     }else{
       const p=state.plan;root.append(el('h4',{},`${p.target_label||p.platform} · ${statusLabel(p.status)}`),el('p',{},`원본 ${accountLabel(p.owner_account_id)} → 대상 ${accountLabel(p.destination_account_id)} · ${p.platform} · ${targetIdentityLabel(p.target_status)} · 인증 미확인 · 계획 버전 ${p.version}`),el('p',{},`로컬 계획 · 원격 상태 미제공 · 실행 안 함 · 원본 버전 ${p.revision}`),el('p',{class:'delivery-hash'},`승인 subject: ${p.subject_hash||'미확인'}`));
-      if(p.options?.text_only===true)root.append(el('p',{},'Threads 텍스트 전용 · 원고의 이미지·영상은 이 배포에 포함하지 않습니다.'));
+      if(p.options?.text_only===true)root.append(el('p',{},textOnlyNotice(p.platform)));
       if(p.revision!==content.revision)root.append(el('p',{class:'inline-note'},'이 계획은 현재 편집 원본과 다른 저장 버전을 고정합니다.'));
       for(const blocker of p.blockers||[])root.append(el('p',{class:'inline-note'},blocker.reason||blocker.message||blocker.code));
       root.append(el('p',{},approvalRecordLabel(p)),field('계획 승인 메모',notes,v=>notes=v),button('이 버전 계획 승인',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'approved',notes)),'notes')),!canApprove(p)),button('계획 반려',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'rejected',notes)),'notes')),p.status==='cancelled'||!p.subject_hash),button('계획 승인 철회',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'revoked',notes)),'notes')),p.status==='cancelled'||!p.approval));

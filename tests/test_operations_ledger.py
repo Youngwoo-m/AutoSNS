@@ -196,6 +196,23 @@ class ThreadsLedgerOptionsTests(unittest.TestCase):
     setup_content=LedgerTests.setup_content
     error=LedgerTests.error
 
+    def test_facebook_pages_text_only_requires_explicit_connection_capability(self):
+        from dataclasses import replace
+        body=self.setup_content(True);base=self.ledger.registry()
+        page=replace(base.connections['personal.youtube'],id='personal.facebook',platform='facebook',target_id='123',capabilities=('text_only',))
+        configured=replace(base,connections={**base.connections,page.id:page})
+        ledger=Ledger(self.root,configured,self.store);ledger.initialize()
+        request={**body,'connection_id':page.id,'options':{'text_only':True}}
+        preview=ledger.preview_delivery(request)
+        self.assertEqual(preview['platform'],'facebook');self.assertEqual(preview['options'],{'text_only':True})
+        self.assertFalse(preview['execution_enabled'])
+        saved=ledger.create_or_get_delivery(request)
+        self.assertEqual(saved['options'],{'text_only':True})
+        missing=replace(configured,connections={**configured.connections,page.id:replace(page,capabilities=())})
+        self.error('invalid',Ledger(self.root,missing,self.store).preview_delivery,request)
+        for bad in (False,1,'true'):
+            self.error('invalid',ledger.preview_delivery,{**request,'options':{'text_only':bad}})
+
     def test_threads_text_only_option_requires_platform_and_registered_capability(self):
         from dataclasses import replace
         body=self.setup_content(True);base=self.ledger.registry()

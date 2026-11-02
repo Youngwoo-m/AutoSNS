@@ -7,6 +7,8 @@ def build_adapters(*,registry=None,bridge=None):
     from .youtube import YoutubeAdapter
     from .threads_runtime import THREADS_BINDINGS
     from .threads import ThreadsAdapter
+    from .facebook_runtime import FACEBOOK_BINDINGS
+    from .facebook import FacebookAdapter
     result={}
     for key in BLOG_BINDINGS:
         connection=registry.connections.get(key)
@@ -18,4 +20,8 @@ def build_adapters(*,registry=None,bridge=None):
     for key in THREADS_BINDINGS:
         connection=registry.connections.get(key)
         if connection and connection.enabled and connection.target_id:result[key]=ThreadsAdapter(registry,bridge)
+    for key in FACEBOOK_BINDINGS:
+        connection=registry.connections.get(key)
+        if connection and connection.enabled and connection.platform=='facebook' and connection.target_id:
+            result[key]=FacebookAdapter(registry,bridge)
     return result

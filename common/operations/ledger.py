@@ -142,7 +142,7 @@ class Ledger:
         connection=registry.connections[body['connection_id']]
         # Capabilities are explicit allowlisted option names (or their conventional aliases).
         caps=set(connection.capabilities)
-        if 'text_only' in options and connection.platform!='threads': invalid()
+        if 'text_only' in options and connection.platform not in ('threads','facebook'): invalid()
         for key in options:
             if key=='visibility':
                 if 'visibility:'+options[key] not in caps: invalid()

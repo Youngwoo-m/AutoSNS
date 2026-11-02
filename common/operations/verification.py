@@ -20,7 +20,7 @@ def snapshot_fingerprints(context, snapshot):
     assets = snapshot.get('assets')
     if not isinstance(text, str) or not isinstance(assets, (list, tuple)) or any(not isinstance(a, Mapping) or not isinstance(a.get('sha256'), str) or not a['sha256'] for a in assets):
         raise StoreError('insufficient_evidence')
-    media=[] if context.get('platform')=='threads' and context.get('options',{}).get('text_only') is True else [a['sha256'] for a in assets]
+    media=[] if context.get('platform') in ('threads','facebook') and context.get('options',{}).get('text_only') is True else [a['sha256'] for a in assets]
     return hashlib.sha256(text.encode('utf-8')).hexdigest(), media
 
 
@@ -49,6 +49,19 @@ def _threads_url(value):
         if (parsed.scheme=='https' and parsed.hostname in ('threads.net','www.threads.net','threads.com','www.threads.com')
                 and not parsed.username and not parsed.password and not parsed.port and not parsed.query and not parsed.fragment
                 and re.fullmatch(r'/@[^/]+/post/[A-Za-z0-9_-]+/?',parsed.path)):
+            return value
+    except ValueError:pass
+    return None
+
+
+def _facebook_url(value):
+    # URL만으로 공개 여부를 판단하지 않는다. 상위 검증의 실제 관측과 결속된 URL만 보존한다.
+    if type(value) is not str or len(value)>2000 or any(ord(c)<=32 or ord(c)==127 for c in value):return None
+    try:
+        parsed=urlsplit(value)
+        if (parsed.scheme=='https' and parsed.netloc in ('facebook.com','www.facebook.com')
+                and not parsed.username and not parsed.password and parsed.port is None
+                and not parsed.query and not parsed.fragment and parsed.path not in ('','/')):
             return value
     except ValueError:pass
     return None
@@ -102,6 +115,9 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
     verified_url=None
     if result.outcome=='verified' and delivery['context'].get('platform')=='threads':
         verified_url=_threads_url(result.evidence.get('url'))
+        if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
+    if result.outcome=='verified' and delivery['context'].get('platform')=='facebook':
+        verified_url=_facebook_url(result.evidence.get('url'))
         if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
     safe_keys = ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256', 'visibility')
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':safe_keys+=('verification_method',)

@@ -43,6 +43,7 @@ class ChannelReadinessTests(unittest.TestCase):
         self.assertEqual(by['instagram']['authentication_status'],'connected');self.assertIs(by['instagram']['live_enabled'],False)
         self.assertEqual(by['instagram']['publisher_status'],'not_implemented');self.assertEqual(by['instagram']['metrics_status'],'stored_only')
         self.assertEqual(by['threads']['publisher_status'],'text_only_implemented');self.assertEqual(by['threads']['verification_status'],'public_probe_required')
+        self.assertEqual(by['facebook']['publisher_status'],'text_only_implemented');self.assertEqual(by['facebook']['verification_status'],'public_probe_required')
         self.assertEqual(by['youtube']['publisher_status'],'implemented');self.assertEqual(by['youtube']['verification_status'],'receipt_implemented');self.assertEqual(by['youtube']['metrics_status'],'implemented')
     def test_tistory_and_naver_browser_paths_and_x_cost_gate_are_explained(self):
         rows={r['platform']:r for r in build_channel_readiness(registry(),'personal')['channels']}
@@ -73,3 +74,15 @@ class ChannelReadinessTests(unittest.TestCase):
         with self.assertRaises(StoreError):build_channel_readiness({})
         for services in (object(),{'live_enabled':True},{'metrics_enabled':True}):
             with self.assertRaises(StoreError):build_channel_readiness(registry(),services=services)
+
+    def test_facebook_foundation_status_keeps_missing_connection_and_real_authorization_unproven(self):
+        result=build_channel_readiness(registry())
+        rows=[row for row in result['channels'] if row['platform']=='facebook']
+        self.assertEqual(len(rows),2)
+        for row in rows:
+            self.assertIsNone(row['connection_id']);self.assertIs(row['planning_enabled'],False)
+            self.assertEqual(row['target_status'],'no_connection');self.assertEqual(row['authentication_status'],'no_connection')
+            self.assertEqual(row['publisher_status'],'text_only_implemented');self.assertEqual(row['verification_status'],'public_probe_required')
+            self.assertEqual(row['metrics_status'],'stored_only');self.assertIs(row['live_enabled'],False)
+            text=' '.join(row['next_actions'])
+            for phrase in ('명시 선택','로그인 주체','페이지 자격','tasks','공개','아직'):self.assertIn(phrase,text)

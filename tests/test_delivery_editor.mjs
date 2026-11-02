@@ -143,3 +143,44 @@ test('Threads 텍스트 전용 선택은 명시적 true일 때만 계획 옵션�
  assert.deepEqual(delivery.deliveryPayload(content,draft).options,{text_only:true});
  for(const text_only of [false,undefined,'true',1])assert.deepEqual(delivery.deliveryPayload(content,{...draft,text_only}).options,{});
 });
+
+const facebookConnections=[
+ {id:'personal.facebook',account_id:'personal',platform:'facebook',planning_enabled:true,capabilities:['text_only','visibility:public']},
+ {id:'dept.facebook',account_id:'dept',platform:'facebook',planning_enabled:true,capabilities:['visibility:public']},
+ {id:'dept.threads',account_id:'dept',platform:'threads',planning_enabled:true,capabilities:['text_only','visibility:public']},
+ {id:'personal.youtube',account_id:'personal',platform:'youtube',planning_enabled:true,capabilities:['text_only']}];
+const connectionField=editor=>findInput(editor.element,'실제 등록 연결 (도구 선호와 별개)');
+const selectConnection=(editor,id)=>{const field=connectionField(editor);field.value=id;field.listeners.input({target:field});};
+test('Facebook 페이지 텍스트 전용은 실제 등록 기능에 있을 때만 선택하고 개인 타임라인과 구분한다',async()=>{
+ const restore=useTestDocument();try{
+  let writes=0;const editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:facebookConnections}),previewDelivery:async()=>{writes++;}}),writable:()=>true});await editor.open(fullContent);
+  selectConnection(editor,'personal.facebook');const box=editor.element.querySelector('[data-facebook-text-only]');assert.ok(box);assert.match(editor.element.textContent,/Facebook 페이지에 텍스트만 발행/);assert.match(editor.element.textContent,/개인 타임라인 게시 아님/);box.checked=true;box.listeners.change({target:box});assert.equal(editor.hasUnsavedChanges(),true);assert.equal(writes,0);
+  selectConnection(editor,'dept.facebook');assert.equal(editor.element.querySelector('[data-facebook-text-only]'),null);
+  selectConnection(editor,'personal.youtube');assert.equal(editor.element.querySelector('[data-facebook-text-only]'),null);assert.equal(editor.element.querySelector('[data-threads-text-only]'),null);
+  assert.equal(editor.element.querySelectorAll('nav').length,0);
+ }finally{restore();}
+});
+test('연결 전환은 텍스트 전용 선택을 지우고 기존 Threads checkbox 동작을 보존한다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:facebookConnections})}),writable:()=>true});await editor.open(fullContent);
+  selectConnection(editor,'personal.facebook');let box=editor.element.querySelector('[data-facebook-text-only]');box.checked=true;box.listeners.change({target:box});
+  selectConnection(editor,'dept.threads');box=editor.element.querySelector('[data-threads-text-only]');assert.ok(box);assert.equal(box.checked,false);assert.match(editor.element.textContent,/Threads에 텍스트만 발행/);box.checked=true;box.listeners.change({target:box});
+  selectConnection(editor,'personal.facebook');assert.equal(editor.element.querySelector('[data-facebook-text-only]').checked,false);
+ }finally{restore();}
+});
+test('Facebook 텍스트 전용 미리보기와 저장 계획은 원본 자산 제외를 페이지 문구로 표시한다',async()=>{
+ const preview={...selectedPlan,platform:'facebook',options:{text_only:true},target_label:'개인 소유 페이지'};
+ const summary=delivery.deliveryPreviewSummary(preview).join(' ');assert.match(summary,/Facebook 페이지 텍스트 전용/);assert.match(summary,/개인 타임라인 게시가 아닙니다/);assert.match(summary,/이미지·영상은 이 배포에 포함하지 않습니다/);assert.doesNotMatch(summary,/Threads 텍스트 전용/);
+ assert.match(delivery.deliveryPreviewSummary({...preview,platform:'threads'}).join(' '),/Threads 텍스트 전용/);
+ const restore=useTestDocument();try{
+  const editor=await selectedEditor({getDelivery:async()=>preview});assert.match(editor.element.textContent,/Facebook 페이지 텍스트 전용/);assert.match(editor.element.textContent,/개인 타임라인 게시가 아닙니다/);assert.doesNotMatch(editor.element.textContent,/Threads 텍스트 전용/);
+ }finally{restore();}
+});
+
+test('Facebook 실제 계획 미리보기 화면에 텍스트 전용 승인 범위를 표시하고 발행은 요청하지 않는다',async()=>{
+ const restore=useTestDocument();try{
+  const calls=[];const editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:facebookConnections}),previewDelivery:async body=>{calls.push(body);return {...selectedPlan,platform:'facebook',options:body.options,crossposts:[]};},createDelivery:async()=>{throw new Error('저장 클릭 없음');},submit:async()=>{throw new Error('발행 금지');}}),writable:()=>true});await editor.open(fullContent);selectConnection(editor,'personal.facebook');
+  const box=editor.element.querySelector('[data-facebook-text-only]');box.checked=true;box.listeners.change({target:box});inputValue(editor,'예정 시각 (예: 2026-11-01T10:00:00+09:00)','2026-11-02T10:00:00+09:00');
+  await findButton(editor.element,'계획 미리보기').listeners.click();assert.equal(calls.length,1);assert.deepEqual(calls[0].options,{text_only:true});assert.match(editor.element.textContent,/Facebook 페이지 텍스트 전용/);assert.match(editor.element.textContent,/이미지·영상은 이 배포에 포함하지 않습니다/);assert.match(editor.element.textContent,/실행 안 함/);
+ }finally{restore();}
+});

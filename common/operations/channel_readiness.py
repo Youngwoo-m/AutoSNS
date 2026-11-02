@@ -15,9 +15,9 @@ _LABELS={'naver_blog':'네이버 블로그','blogger':'Blogger','tistory':'Tisto
 _AUTH_STATUSES=frozenset(('connected','unknown','not_checked','needs_auth','reauth_required',
                          'disconnected','revoked','expired','error'))
 _PUBLISHERS={'naver_blog':'browser_implemented','blogger':'implemented','tistory':'browser_implemented',
-             'youtube':'implemented','threads':'text_only_implemented'}
+             'youtube':'implemented','threads':'text_only_implemented','facebook':'text_only_implemented'}
 _VERIFIERS={'naver_blog':'hash_implemented','blogger':'hash_implemented','tistory':'hash_implemented',
-            'youtube':'receipt_implemented','threads':'public_probe_required'}
+            'youtube':'receipt_implemented','threads':'public_probe_required','facebook':'public_probe_required'}
 _ACTIONS={
  'naver_blog':('네이버 OAuth는 회원 프로필 확인용입니다. 블로그 게시에는 기존 브라우저 로그인 연결이 필요합니다.',),
  'blogger':('Blogger 연결의 실제 게시·공개 확인 시험이 남아 있습니다.',),
@@ -27,7 +27,8 @@ _ACTIONS={
  'threads':('텍스트 게시 기반은 개발됐으며, 실제 게시 연결과 공개 페이지 확인은 개발·검증이 남아 있습니다.',),
  'x':('API 이용 비용을 확인해야 합니다. 추가 결제 없이 사용할 연결 방식을 검토 중입니다.',
       '실제 게시와 공개 확인 연결은 개발이 남아 있습니다.'),
- 'facebook':('Facebook 페이지와 게시 권한을 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+ 'facebook':('Facebook 페이지를 명시 선택하고 로그인 주체와 페이지 자격·관리 권한(tasks)을 확인해야 합니다.',
+             '텍스트 게시 기반은 개발됐으며, 실제 서버 전송·로그인 연결과 익명 공개 페이지 확인은 아직 등록·검증되지 않았습니다.'),
  'tiktok':('업로드와 직접 게시를 구분하고 앱 심사·동의를 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
 }
 
