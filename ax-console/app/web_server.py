@@ -46,6 +46,8 @@ from web_operations import handle as handle_operations, recognizes as operations
 from common.operations.production_store import ProductionStore
 from common.operations.production_settings import ProductionSettingsStore
 from common.operations.media_plans import MediaPlanStore
+from common.operations.voice_tasks import VoiceTaskStore,VoiceTaskService
+from web_voice_tasks import recognizes as voice_tasks_path, handle as handle_voice_tasks, CONTENT as VOICE_CONTENT_ROUTE
 from web_media_plans import recognizes as media_plan_path, handle as handle_media_plans
 from web_production_settings import recognizes as production_settings_path, handle as handle_production_settings
 from common.shared.axlock import AxLock, LockPaths
@@ -331,7 +333,7 @@ class _Handler(BaseHTTPRequestHandler):
                 or ('content_id' in query and not re.fullmatch(CONTENT_ID,query['content_id'][0]))):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
-        elif re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path) or media_plan_path(parsed.path):
+        elif re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path) or media_plan_path(parsed.path) or VOICE_CONTENT_ROUTE.fullmatch(parsed.path):
             if (set(query) - {'revision'} or any(len(values) != 1 for values in query.values())
                     or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
                 self._error(400, '올바르지 않은 버전입니다')
@@ -440,6 +442,12 @@ class _Handler(BaseHTTPRequestHandler):
                 result = handle_deliveries(self.server.ledger, method, path, query, lambda: self._read_body(1024*1024,json_body=True))
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200,result)
+            if voice_tasks_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                result = handle_voice_tasks(self.server.voice_task_store, self.server.voice_task_service, method, path, query,
+                    lambda: self._read_body(16384, json_body=True))
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200, result)
             if media_plan_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 result = handle_media_plans(self.server.media_plan_store, method, path, query,
@@ -667,7 +675,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
                   oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
-                  planning_registry=None) -> ThreadingHTTPServer:
+                  planning_registry=None, voice_task_service=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -696,6 +704,11 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         for job_id, job in execution_service.base_registry.jobs.items():
             if job_id in planning_registry.jobs and planning_registry.jobs[job_id] != job:
                 raise ValueError('조회 등록부와 제작 작업 식별자가 충돌합니다')
+    if voice_task_service is not None:
+        if (not isinstance(voice_task_service, VoiceTaskService) or workspace_root is None or
+                voice_task_service.store.root.resolve()!=workspace_root or
+                voice_task_service.content_store.root.resolve()!=workspace_root):
+            raise ValueError('음성 서비스의 관리 저장소가 일치하지 않습니다')
     registry_source = planning_registry if planning_registry is not None else operations_registry or _APP.parent / 'config' / 'operations.json'
     registry_value = registry_source() if callable(registry_source) else registry_source
     registry = registry_value if isinstance(registry_value, Registry) else load_registry(Path(registry_value))
@@ -720,6 +733,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
     server.production_settings_store = ProductionSettingsStore(workspace_root) if workspace_root is not None else None
     server.media_plan_store = MediaPlanStore(workspace_root, server.content_store) if workspace_root is not None else None
+    server.voice_task_service = voice_task_service
+    server.voice_task_store = voice_task_service.store if voice_task_service is not None else VoiceTaskStore(workspace_root) if workspace_root is not None else None
     server.ledger = execution_service.ledger if service_store is not None and planning_registry is None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
     server.runtime_store = service_store if service_store is not None else RuntimeStore(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
@@ -787,6 +802,7 @@ def main():
             server.metrics_store.initialize()
             server.production_settings_store.initialize()
             server.media_plan_store.initialize()
+            server.voice_task_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
