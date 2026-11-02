@@ -20,6 +20,8 @@ Claude Max가 클라이언트·영속 작업 모듈·화면·기동 옵션을 �
 | `POST /api/v2/contents/{id}/voice-tasks` | 정확히 `expected_revision`, `script`, `seed`를 받아 작업 생성 |
 | `GET /api/v2/voice-tasks/{task_id}` | 저장된 상태 조회 |
 | `POST /api/v2/voice-tasks/{task_id}/resume` | 빈 객체 `{}`로 기존 생성 ID의 결과 확인·WAV 등록 재개 |
+| `POST /api/v2/voice-tasks/{task_id}/recovery-preview` | `generation_id` 한 건을 입력 원고·등록 음성과 대조. 합성·상태 변경 없음 |
+| `POST /api/v2/voice-tasks/{task_id}/recover` | 대조한 `generation_id`, `recovery_fingerprint`로 명시 연결. 결과 확인은 별도 요청 |
 
 ## 중복과 중단
 
@@ -27,7 +29,11 @@ Claude Max가 클라이언트·영속 작업 모듈·화면·기동 옵션을 �
 
 WAV는 별도 보존 후 실측 길이(20초 이하)를 검사하며 입력 콘텐츠 버전에 CAS로 등록한다. 원본 버전은 보존한다. 등록 직후 프로세스가 중단되면 정확한 파일 해시·바이트와 단일 버전 증가를 대조해 기존 자산을 연결한다. 다른 편집이 끼어들면 `content_changed`로 보존한다.
 
-생성 ID 없이 `started` 또는 `unknown`에 남은 작업은 자동 해제하지 않는다. 수동 대조·복구 화면은 아직 없다. 실제 로컬 클라이언트의 `resume`은 `poll_once()`로 상태 GET 한 번만 수행한다. 합성이 진행 중이면 대기하지 않고 `pending`을 유지한다. 기존 배치 렌더러용 `wait_completed()`는 유지한다.
+생성 ID 없이 `started` 또는 `unknown`에 남은 작업은 자동 해제하지 않는다. **기존 음성 대조 → 대조한 음성 연결**로 사용자가 알고 있는 생성 ID 한 건만 연결한다. 서버가 원고 버전·소유 계정·대본·프로필·시드·언어·엔진·모델을 확인하며 같은 생성 ID가 다른 작업에 붙어 있으면 거부한다. 대조와 확정 사이 상태가 달라지면 fingerprint/CAS 검증으로 연결을 거부한다. 음성 원문이나 프로필 값은 복구 응답에 넣지 않는다.
+
+합성 POST와 복구는 작업별 OS 파일 잠금을 공유한다. 같은 프로세스의 별도 fd와 별도 Python 프로세스 시험을 모두 통과했다. 복구가 먼저 연결하면 합성 직전에 최신 행을 다시 읽어 새 POST를 생략한다. 살아 있는 합성 작업이 잠금을 보유하면 복구가 끼어들지 않는다.
+
+실제 로컬 클라이언트의 `resume`은 `poll_once()`로 상태 GET 한 번만 수행한다. 합성이 진행 중이면 대기하지 않고 `pending`을 유지한다. 기존 배치 렌더러용 `wait_completed()`는 유지한다.
 
 ## 화면과 기동
 
@@ -43,4 +49,6 @@ WAV는 별도 보존 후 실측 길이(20초 이하)를 검사하며 입력 콘�
 
 화면은 브라우저 내부 가짜 응답으로 요청→대기→완료를 확인했다. 검증 이미지는 `ax-console/design/previews/voice-task-fixture.png`이며 실제 음성 제작 증거가 아니다.
 
-남은 작업은 실제 Voicebox 응답·음성 품질 검증, ID 없는 중단 작업의 명시 복구, 영상 제작 실행 연결이다. SNS 인증·발행 활성화와 분리해 진행한다.
+실제 Voicebox history 응답 스키마는 아직 확인하지 못했다. 필요한 8개 필드가 없거나 입력 대조가 불확실하면 복구를 거부한다. 개발 시험과 브라우저 예시가 실제 서비스 복구 성공을 뜻하지 않는다.
+
+남은 작업은 실제 Voicebox 응답·음성 품질 검증과 영상 제작 실행 연결이다. SNS 인증·발행 활성화와 분리해 진행한다.

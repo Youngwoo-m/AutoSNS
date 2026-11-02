@@ -17,9 +17,10 @@ const invalid=()=>Object.assign(new Error('invalid'),{kind:'invalid'});
 
 export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange=()=>{},onCompleted=()=>{},requestTimeoutMs=45000}={}) {
   const root=document.createElement('details');root.className='panel voice-task';
-  let ctx=null,writable=true,caps=null,tasks=[],script='',seed=DEFAULT_SEED,baseScript='',baseSeed=DEFAULT_SEED,pending=null,message='',generation=0,scriptInput=null,seedInput=null,seen=new Set(),queue=[];
-  const dirty=()=>!!ctx&&(script!==baseScript||seed!==baseSeed);
+  let ctx=null,writable=true,caps=null,tasks=[],script='',seed=DEFAULT_SEED,baseScript='',baseSeed=DEFAULT_SEED,pending=null,message='',generation=0,scriptInput=null,seedInput=null,seen=new Set(),queue=[],recovery=new Map();
+  const dirty=()=>!!ctx&&(script!==baseScript||seed!==baseSeed||[...recovery.values()].some(d=>d.generation_id!==''));
   const canRun=()=>!!ctx&&writable&&caps!==null&&caps.service_available===true&&caps.execution_enabled===true&&pending===null;
+  const canCreate=()=>canRun()&&!tasks.some(t=>t.state==='started'||t.state==='unknown')&&![...recovery.values()].some(d=>d.generation_id!=='');
   const node=(tag,attrs={},text)=>{const n=document.createElement(tag);for(const [k,v] of Object.entries(attrs)){if(k==='disabled')n.disabled=v;else n.setAttribute(k,String(v));}if(text!==undefined)n.textContent=text;return n;};
   async function send(url,method,body){
     const controller=new AbortController();let timer;
@@ -76,7 +77,19 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
     if(row.voice_label!==null)facts.push(`음성 ${row.voice_label}`);
     facts.push('검토 전');
     card.append(node('p',{class:'sub'},facts.join(' · ')));
-    if(row.state==='started'||row.state==='unknown')card.append(node('p',{class:'sub'},'생성 결과를 확인하기 전 다시 합성하지 마세요. 작업 목록을 조회해 상태를 확인하세요.'));
+    if(row.state==='started'||row.state==='unknown'){
+      card.append(node('p',{class:'sub'},'생성 결과를 확인하기 전 다시 합성하지 마세요. 기존 생성 ID를 알고 있다면 아래에서 대본·음성 설정을 대조한 뒤 연결할 수 있습니다.'));
+      if(!recovery.has(row.task_id))recovery.set(row.task_id,{generation_id:'',preview:null});
+      const draft=recovery.get(row.task_id);
+      const candidate=node('input',{type:'text',maxlength:128,'aria-label':'기존 생성 ID','data-voice-recovery-input':row.task_id,disabled:!canRun()});candidate.value=draft.generation_id;
+      const label=node('label');label.append(document.createTextNode('기존 생성 ID '),candidate);card.append(label);
+      const inspect=node('button',{type:'button',class:'btn btn-small','data-voice-action':'inspect-recovery','data-voice-recovery-task':row.task_id,disabled:!canRun()},'기존 음성 대조');
+      inspect.addEventListener('click',()=>inspectRecovery(row.task_id));card.append(inspect);
+      const confirm=node('button',{type:'button',class:'btn btn-small','data-voice-action':'confirm-recovery','data-voice-recovery-task':row.task_id,disabled:!canRun()||!draft.preview},'대조한 음성 연결');
+      confirm.addEventListener('click',()=>confirmRecovery(row.task_id));card.append(confirm);
+      candidate.addEventListener('input',()=>{if(!canRun())return;draft.generation_id=candidate.value;draft.preview=null;confirm.disabled=true;onChange();});
+      if(draft.preview)card.append(node('p',{class:'sub'},'대본과 등록 음성 설정이 일치합니다. 연결을 확정하면 새 합성 없이 기존 결과 확인을 이어갑니다. 검토 완료를 뜻하지 않습니다.'));
+    }
     if(row.state==='pending'||row.state==='audio_ready'){
       const resume=node('button',{type:'button',class:'btn btn-small','data-voice-action':'resume','data-voice-resume':row.task_id,disabled:!canRun()},'결과 확인');
       resume.addEventListener('click',()=>resumeTask(row.task_id));card.append(resume);
@@ -95,21 +108,21 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
       body.append(node('p',{class:'sub'},`원고 해시 ${ctx.manifest_hash.slice(0,12)}`));
       body.append(node('p',{'data-voice-info':'capability'},capText()));
       if(!writable)body.append(node('p',{class:'sub'},'읽기 전용 상태라 합성을 요청할 수 없습니다.'));
-      const locked=!writable||pending==='creating'||pending==='resuming';
+      const locked=!writable||pending!==null;
       scriptInput=node('textarea',{maxlength:MAX_SCRIPT,'data-voice-field':'script','aria-label':'합성할 대본',disabled:locked});scriptInput.value=script;
-      scriptInput.addEventListener('input',()=>{if(!writable||pending==='creating'||pending==='resuming')return;script=scriptInput.value;onChange();});
+      scriptInput.addEventListener('input',()=>{if(!writable||pending!==null)return;script=scriptInput.value;onChange();});
       const sl=node('label');sl.append(document.createTextNode(`대본 (최대 ${MAX_SCRIPT}자 · 원고 본문은 자동으로 복사되지 않습니다) `),scriptInput);body.append(sl);
       seedInput=node('input',{type:'number',min:0,step:1,inputmode:'numeric','data-voice-field':'seed','aria-label':'시드',disabled:locked});seedInput.value=seed;
-      seedInput.addEventListener('input',()=>{if(!writable||pending==='creating'||pending==='resuming')return;seed=seedInput.value;onChange();});
+      seedInput.addEventListener('input',()=>{if(!writable||pending!==null)return;seed=seedInput.value;onChange();});
       const dl=node('label');dl.append(document.createTextNode('시드 '),seedInput);body.append(dl);
       if(dirty())body.append(node('p',{class:'sub'},'아직 합성 요청에 쓰이지 않은 입력이 있습니다.'));
-      const create=node('button',{type:'button',class:'btn btn-small','data-voice-action':'create',disabled:!canRun()},pending==='creating'?'요청 중…':'합성 요청');
+      const create=node('button',{type:'button',class:'btn btn-small','data-voice-action':'create',disabled:!canCreate()},pending==='creating'?'요청 중…':'합성 요청');
       create.addEventListener('click',createTask);body.append(create);
       const discard=node('button',{type:'button',class:'btn btn-small','data-voice-action':'discard',disabled:pending!==null},'입력 버리기');
       discard.addEventListener('click',()=>{
         if(!ctx||pending!==null||!dirty())return;
-        if(typeof globalThis.confirm==='function'&&!globalThis.confirm('합성 요청에 쓰지 않은 대본·시드 변경을 버릴까요?'))return;
-        script=baseScript;seed=baseSeed;message='입력 변경을 버렸습니다. 저장된 음성 작업은 보존됩니다.';paint();onChange();
+        if(typeof globalThis.confirm==='function'&&!globalThis.confirm('대본·시드 변경과 확정하지 않은 복구 입력을 버릴까요?'))return;
+        script=baseScript;seed=baseSeed;recovery=new Map();message='입력 변경을 버렸습니다. 저장된 음성 작업은 보존됩니다.';paint();onChange();
       });body.append(discard);
       body.append(node('h4',{},'음성 작업'));
       if(!tasks.length)body.append(node('p',{class:'sub'},'조회된 음성 작업이 없습니다.'));
@@ -136,7 +149,7 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
     return '';
   }
   async function createTask(){
-    if(!canRun())return;
+    if(!canCreate())return;
     const problem=localProblem();if(problem){message=problem;paint();return;}
     const token=++generation,mine=ctx,sent={script,seed};
     pending='creating';message='합성 요청 전송 중 · 결과가 나올 때까지 다시 누르지 마세요';paint();onChange();
@@ -163,10 +176,38 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
     }catch(e){if(token===generation)message=writeMessage(e);}
     finally{if(token===generation){pending=null;paint();onChange();flush();}}
   }
+  const recoveryError=e=>e.kind==='http'&&e.status===401?'로그인 후 다시 대조하세요. 입력은 유지됩니다.':e.kind==='http'&&e.status===409?'작업이 처리 중이거나 대조 내용이 달라 연결하지 않았습니다. 저장된 작업을 조회한 뒤 다시 대조하세요.':'기존 음성과 이 작업의 일치 여부를 확인하지 못했습니다. 입력을 보존했고 새 합성은 하지 않았습니다.';
+  async function inspectRecovery(id){
+    if(!canRun())return;
+    const row=tasks.find(t=>t.task_id===id),draft=recovery.get(id);
+    if(!row||!['started','unknown'].includes(row.state)||!draft)return;
+    if(!/^[A-Za-z0-9_-]{1,128}$/.test(draft.generation_id)){message='기존 생성 ID의 형식을 확인하세요.';paint();return;}
+    const token=++generation,candidate=draft.generation_id;draft.preview=null;pending='inspecting';message='기존 음성 대조 중';paint();onChange();
+    try{
+      const result=await send('/api/v2/voice-tasks/'+encodeURIComponent(id)+'/recovery-preview','POST',{generation_id:candidate});
+      if(token!==generation)return;
+      if(!exactKeys(result,['task_id','generation_id','recovery_fingerprint','task_state','can_confirm','review_status'])||result.task_id!==id||result.generation_id!==candidate||!['started','unknown'].includes(result.task_state)||result.can_confirm!==true||result.review_status!=='not_checked'||typeof result.recovery_fingerprint!=='string'||!/^[a-f0-9]{64}$/.test(result.recovery_fingerprint))throw invalid();
+      draft.preview={...result};message='기존 음성을 대조했습니다. 연결 버튼으로 확정하세요. 아직 작업 상태를 바꾸지 않았습니다.';
+    }catch(e){if(token===generation)message=recoveryError(e);}
+    finally{if(token===generation){pending=null;paint();onChange();}}
+  }
+  async function confirmRecovery(id){
+    if(!canRun())return;
+    const row=tasks.find(t=>t.task_id===id),draft=recovery.get(id);
+    if(!row||!['started','unknown'].includes(row.state)||!draft?.preview||draft.preview.generation_id!==draft.generation_id)return;
+    const token=++generation,mine=ctx,preview={...draft.preview};pending='recovering';message='대조한 기존 음성 연결 중';paint();onChange();
+    try{
+      const result=await send('/api/v2/voice-tasks/'+encodeURIComponent(id)+'/recover','POST',{generation_id:preview.generation_id,recovery_fingerprint:preview.recovery_fingerprint});
+      if(token!==generation)return;
+      if(!validRow(result,mine)||result.task_id!==id||!['pending','audio_ready','completed'].includes(result.state)||result.generation_id!==preview.generation_id)throw invalid();
+      recovery.delete(id);upsert(pick(result));message='기존 음성을 연결했습니다. 새 합성 없이 결과 확인을 이어갈 수 있습니다. 검토 전입니다.';
+    }catch(e){if(token===generation)message=recoveryError(e);}
+    finally{if(token===generation){pending=null;paint();onChange();flush();}}
+  }
   paint();
   return {
     element:root,isDirty:dirty,isBusy:()=>pending!==null,
-    discardChanges(){script=baseScript;seed=baseSeed;paint();onChange();},
+    discardChanges(){script=baseScript;seed=baseSeed;recovery=new Map();paint();onChange();},
     refreshControls(options={}){
       if(!options||options.writable===undefined)return;
       const next=options.writable===true;
@@ -174,7 +215,7 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
       writable=next;paint();
     },
     open(content,{writable:w=true}={}){
-      generation++;pending=null;caps=null;tasks=[];script=baseScript='';seed=baseSeed=DEFAULT_SEED;seen=new Set();queue=[];message='';writable=w===true;
+      generation++;pending=null;caps=null;tasks=[];script=baseScript='';seed=baseSeed=DEFAULT_SEED;seen=new Set();queue=[];recovery=new Map();message='';writable=w===true;
       const ok=content&&typeof content.id==='string'&&content.id&&Number.isInteger(content.revision)&&content.revision>=1&&typeof content.manifest_hash==='string'&&typeof content.owner_account_id==='string'&&content.owner_account_id;
       if(!ok){ctx=null;if(content)message='원고 정보를 확인할 수 없어 음성 작업을 조회하지 않았습니다.';paint();onChange();return Promise.resolve();}
       ctx={id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,owner_account_id:content.owner_account_id};

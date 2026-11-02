@@ -20,6 +20,7 @@ _ID = re.compile(r'[A-Za-z0-9_-]{1,128}')
 _STATUSES = frozenset(('pending', 'queued', 'running', 'completed', 'failed', 'cancelled'))
 _ACTIVE = frozenset(('pending', 'queued', 'running'))
 _FIELDS = frozenset(('profile_id', 'text', 'language', 'engine', 'model_size', 'seed', 'normalize', 'max_chunk_chars'))
+_UNVERIFIABLE = 'voicebox_recovery_unverifiable'
 
 
 class VoiceboxGenerationUnknown(ContractError):
@@ -113,6 +114,29 @@ class LocalVoiceboxClient:
             return None
         return {'id': generation_id, 'status': status}
 
+    def _recovery_projection(self, payload, generation_id):
+        """복구 대조에 필요한 8개 필드만 정확히 검증해 돌려준다. 하나라도 불확실하면 None."""
+        if not isinstance(payload, dict):
+            return None
+        status, profile_id, text = payload.get('status'), payload.get('profile_id'), payload.get('text')
+        seed = payload.get('seed')
+        if payload.get('id') != generation_id or not isinstance(status, str) or status not in _STATUSES:
+            return None
+        if profile_id != self.profile_id:
+            return None
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT_CHARS or '\x00' in text:
+            return None
+        try:
+            text.encode('utf-8')
+        except UnicodeError:
+            return None
+        if type(seed) is not int or not 0 <= seed <= MAX_SEED:
+            return None
+        if payload.get('language') != 'ko' or payload.get('engine') != 'qwen' or payload.get('model_size') != '0.6B':
+            return None
+        return {'id': generation_id, 'status': status, 'profile_id': profile_id, 'text': text, 'seed': seed,
+                'language': 'ko', 'engine': 'qwen', 'model_size': '0.6B'}
+
     # -- 공개 -----------------------------------------------------------------
     def ready(self):
         try:
@@ -159,6 +183,22 @@ class LocalVoiceboxClient:
         current = self._projection(self._get_json(f'/history/{generation_id}'))
         _require(current is not None and current['id'] == generation_id, 'voicebox_invalid_response')
         return current
+
+    def inspect_generation(self, generation_id):
+        """ID 없는 작업의 복구용 읽기 전용 확인. GET /history/{id} 한 번만 호출한다.
+
+        id/status/profile_id/text/seed/language/engine/model_size가 모두 정확히 유효할 때만 그 8개 필드를 돌려준다.
+        그 밖의 원문·경로·URL은 버리고, 인증·POST·스캔·재시도·네트워크 fallback은 없다.
+        실제 서버의 history 스키마는 검증되지 않았으므로 불확실하면 항상 닫힌 쪽(실패)으로 처리한다.
+        """
+        _require(_valid_id(generation_id), 'voicebox_invalid_request')
+        try:
+            payload = self._get_json(f'/history/{generation_id}')
+        except ContractError:
+            raise ContractError(_UNVERIFIABLE) from None
+        candidate = self._recovery_projection(payload, generation_id)
+        _require(candidate is not None, _UNVERIFIABLE)
+        return candidate
 
     def wait_completed(self, generation_id):
         _require(_valid_id(generation_id), 'voicebox_invalid_request')

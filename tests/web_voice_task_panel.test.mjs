@@ -31,6 +31,39 @@ const setup=(c,over,{onCompleted}={})=>{
   return {panel,changes,done,...s};
 };
 const typeScript=async(p,value)=>{const n=fieldOf(p,'script');n.value=value;await n.fire('input');};
+const recoveryField=p=>by(p.element,'data-voice-recovery-input','t1')[0];
+const recoveryProof=(over={})=>({task_id:'t1',generation_id:'existing1',recovery_fingerprint:'a'.repeat(64),task_state:'unknown',can_confirm:true,review_status:'not_checked',...over});
+
+test('불명확한 작업은 새 합성을 막고 대조와 연결을 서로 다른 명시 요청으로 처리한다',async()=>{
+  const c=content(),{panel,calls}=setup(c,{list:()=>res(200,{items:[task(c,{state:'unknown'})]}),create:(url,init)=>{
+    if(url.endsWith('/recovery-preview')){assert.deepEqual(JSON.parse(init.body),{generation_id:'existing1'});return res(200,recoveryProof());}
+    assert.ok(url.endsWith('/recover'));assert.deepEqual(JSON.parse(init.body),{generation_id:'existing1',recovery_fingerprint:'a'.repeat(64)});
+    return res(200,task(c,{state:'pending',generation_id:'existing1'}));
+  }});
+  await panel.open(c);await typeScript(panel,'다른 대본');assert.equal(btn(panel,'create').disabled,true);await force(btn(panel,'create'));assert.equal(posts(calls).length,0);
+  const field=recoveryField(panel);field.value='existing1';await field.fire('input');assert.equal(panel.isDirty(),true);
+  await force(btn(panel,'confirm-recovery'));assert.equal(posts(calls).length,0);
+  await btn(panel,'inspect-recovery').fire('click');assert.equal(posts(calls).length,1);assert.equal(btn(panel,'confirm-recovery').disabled,false);
+  await btn(panel,'confirm-recovery').fire('click');assert.equal(posts(calls).length,2);assert.match(panel.element.textContent,/기존 음성을 연결/);assert.equal(btn(panel,'resume').disabled,false);
+});
+
+test('기존 생성 ID 편집은 대조 증명을 무효화하고 실패 시 입력을 유지한다',async()=>{
+  const c=content();let fail=false;
+  const {panel,calls}=setup(c,{list:()=>res(200,{items:[task(c,{state:'unknown'})]}),create:()=>fail?res(409,{}):res(200,recoveryProof())});
+  await panel.open(c);let field=recoveryField(panel);field.value='existing1';await field.fire('input');await btn(panel,'inspect-recovery').fire('click');
+  field=recoveryField(panel);field.value='existing2';await field.fire('input');assert.equal(btn(panel,'confirm-recovery').disabled,true);await force(btn(panel,'confirm-recovery'));assert.equal(posts(calls).length,1);
+  fail=true;await btn(panel,'inspect-recovery').fire('click');assert.equal(recoveryField(panel).value,'existing2');assert.equal(panel.isDirty(),true);assert.equal(panel.isBusy(),false);assert.match(panel.element.textContent,/연결하지 않았습니다/);
+  panel.discardChanges();assert.equal(panel.isDirty(),false);assert.equal(recoveryField(panel).value,'');
+});
+
+test('다른 작업·생성 ID 또는 비공개 필드가 섞인 대조 응답은 연결에 쓰지 않는다',async()=>{
+  const c=content();
+  for(const proof of [recoveryProof({task_id:'other'}),recoveryProof({generation_id:'other'}),recoveryProof({profile_id:'PRIVATE'}),recoveryProof({recovery_fingerprint:'invalid'})]){
+    const {panel,calls}=setup(c,{list:()=>res(200,{items:[task(c,{state:'unknown'})]}),create:()=>res(200,proof)});await panel.open(c);
+    const field=recoveryField(panel);field.value='existing1';await field.fire('input');await btn(panel,'inspect-recovery').fire('click');
+    assert.equal(btn(panel,'confirm-recovery').disabled,true);await force(btn(panel,'confirm-recovery'));assert.equal(posts(calls).length,1);assert.doesNotMatch(panel.element.textContent,/PRIVATE/);
+  }
+});
 
 test('요청 시간 초과는 busy를 풀고 입력을 보존하며 자동 POST를 반복하지 않는다',async()=>{
   const c=content(),{document}=harness();let count=0,signal;

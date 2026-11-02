@@ -1,17 +1,21 @@
 """Voicebox 음성 합성 작업 저장소와 서비스.
 
 원본 콘텐츠는 신뢰된 ContentStore가 소유하고, 이 모듈은 합성 작업 상태만 별도
-SQLite(voice-tasks.sqlite3)에 보존한다. 자동 재합성, lease, 외부 잠금, 프로세스 시작은 없다.
+SQLite(voice-tasks.sqlite3)에 보존한다. 자동 재합성, lease, 프로세스 시작은 없다.
+작업별 OS 파일 잠금(.task.lock)은 native POST와 명시적 복구 연결이 서로 경합하지 않게 할 때만 쓴다.
 결과는 검토를 거치지 않은 AI 합성 음성 원자료이며 review_status는 항상 not_checked다.
 """
 from contextlib import contextmanager
+import errno
 import hashlib
+import hmac
 import json
 import math
 import os
 from pathlib import Path
 import re
 import sqlite3
+import stat
 from uuid import UUID, uuid4
 
 from . import production_media
@@ -23,6 +27,7 @@ SCHEMA_VERSION = 1
 APPLICATION_ID = 0x564F4943
 ARTIFACT_DIR = 'voice-artifacts'
 ARTIFACT_NAME = 'voice.wav'
+LOCK_NAME = '.task.lock'
 MAX_SECONDS = 20
 MAX_SCRIPT_CHARS = 2000
 MAX_SEED = 2147483647
@@ -44,6 +49,13 @@ DDL = (
 )
 GENERATION_ID = re.compile(r'[A-Za-z0-9._:-]{1,200}')
 FAILED_STATUSES = ('failed', 'error', 'cancelled')
+# 복구 연결에 쓰는 ID는 client와 같은 엄격한 형식만 허용한다(경로/URL 문자 차단).
+RECOVERY_ID = re.compile(r'[A-Za-z0-9_-]{1,128}')
+FINGERPRINT = re.compile(r'[0-9a-f]{64}')
+RECOVERABLE_STATES = ('started', 'unknown')
+LINKED_STATES = ('pending', 'audio_ready', 'completed')
+RECOVERY_STATUSES = ('pending', 'queued', 'running', 'completed')
+CANDIDATE_FIELDS = frozenset(('id', 'status', 'profile_id', 'text', 'seed', 'language', 'engine', 'model_size'))
 
 
 def _hash(data): return hashlib.sha256(data).hexdigest()
@@ -217,6 +229,39 @@ class VoiceTaskStore:
             changed = conn.execute(sql, [fields[c] for c in columns] + [task_id, *from_states]).rowcount
         return changed == 1
 
+    def link_generation(self, task_id, generation_id, expected_version):
+        """복구 연결 CAS. started/unknown + generation_id NULL + 예상 version일 때만 pending으로 연결한다.
+
+        generation_id 유일성은 스키마 변경 없이 같은 BEGIN IMMEDIATE transaction 안에서 다시 확인한다.
+        'linked' | 'conflict'(이미 다른 작업에 연결됨) | 'stale'(행이 바뀜)을 돌려준다.
+        """
+        _task_id(task_id)
+        with self._db(True) as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            try:
+                if conn.execute('SELECT 1 FROM voice_tasks WHERE generation_id=? LIMIT 1',
+                                (generation_id,)).fetchone() is not None:
+                    conn.rollback()
+                    return 'conflict'
+                changed = conn.execute(
+                    "UPDATE voice_tasks SET state='pending', generation_id=?, reason_code=NULL, version=version+1 "
+                    "WHERE task_id=? AND state IN ('started','unknown') AND generation_id IS NULL AND version=?",
+                    (generation_id, task_id, expected_version)).rowcount
+                conn.commit()
+            except BaseException:
+                conn.rollback()
+                raise
+        return 'linked' if changed == 1 else 'stale'
+
+    def generation_task(self, generation_id):
+        """generation_id가 이미 붙은 작업의 task_id(없으면 None). 읽기 전용."""
+        with self._db() as conn:
+            if conn is None:
+                return None
+            found = conn.execute('SELECT task_id FROM voice_tasks WHERE generation_id=? LIMIT 1',
+                                 (generation_id,)).fetchone()
+            return found['task_id'] if found is not None else None
+
     def get_row(self, task_id):
         _task_id(task_id)
         with self._db() as conn:
@@ -250,6 +295,43 @@ class VoiceTaskStore:
                 rows = conn.execute('SELECT * FROM voice_tasks WHERE content_id=? AND input_revision=? ORDER BY rowid',
                                     (content_id, revision))
             return [_public(dict(r)) for r in rows.fetchall()]
+
+    # --- 작업별 잠금 ------------------------------------------------------
+    @contextmanager
+    def task_lock(self, task_id):
+        """voice-artifacts/{task_id}/.task.lock에 대한 비차단 flock. 이미 잡혀 있으면 voice_task_busy.
+
+        OS 잠금이므로 프로세스가 죽으면 자동으로 풀리고 DB 행은 그대로 남는다. 다른 프로세스도 같은 파일을 쓴다.
+        """
+        try:
+            import fcntl
+        except ImportError:
+            raise ContractError('voice_storage_error') from None
+        directory = self._artifact_dir(task_id, True)
+        fd = None
+        try:
+            fd = os.open(directory / LOCK_NAME, os.O_RDWR | os.O_CREAT | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise ContractError('voice_storage_unsafe')
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                raise ContractError('voice_task_busy') from None
+        except BaseException as exc:
+            if fd is not None:
+                os.close(fd)
+            if not isinstance(exc, OSError) or isinstance(exc, ContractError):
+                raise
+            code = 'voice_storage_unsafe' if exc.errno == errno.ELOOP else 'voice_storage_error'
+            raise ContractError(code) from exc
+        try:
+            yield
+        finally:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            os.close(fd)
 
     # --- WAV 산출물 -------------------------------------------------------
     def _artifact_dir(self, task_id, create):
@@ -422,18 +504,119 @@ class VoiceTaskService:
         return self._post(row)
 
     def _post(self, row):
-        body = dict(profile_id=self.profile_id, text=row['script'], language='ko', engine='qwen', model_size='0.6B',
-                    seed=row['seed'], normalize=True, max_chunk_chars=250)
+        # 작업 잠금을 잡은 뒤 행을 다시 읽는다. claim 이후 복구가 먼저 연결했거나 상태가 바뀌었으면 합성하지 않는다.
+        # 잠금이 busy면 예외가 나고 native POST는 없다(행은 started로 남는다).
+        with self.store.task_lock(row['task_id']):
+            fresh = self.store.get_row(row['task_id'])
+            if fresh is None:
+                raise ContractError('task_not_found')
+            if fresh['state'] != 'started' or fresh['generation_id'] is not None:
+                return _public(fresh)
+            body = dict(profile_id=self.profile_id, text=fresh['script'], language='ko', engine='qwen',
+                        model_size='0.6B', seed=fresh['seed'], normalize=True, max_chunk_chars=250)
+            try:
+                generation_id = _generation_id(self.client.generate(**body))
+            except Exception:
+                generation_id = None
+            if generation_id is None:
+                # 요청이 도달했는지 알 수 없다. 자동 재합성 금지이므로 unknown으로 남긴다.
+                self.store.transition(fresh['task_id'], ('started',), state='unknown',
+                                      reason_code='voicebox_request_unknown')
+            else:
+                self.store.transition(fresh['task_id'], ('started',), state='pending', generation_id=generation_id)
+            return self.store.get(fresh['task_id'])
+
+    # --- 명시적 복구 연결 -------------------------------------------------
+    @staticmethod
+    def _recovery_args(task_id, generation_id):
         try:
-            generation_id = _generation_id(self.client.generate(**body))
+            _task_id(task_id)
+        except ContractError:
+            raise ContractError('invalid_voice_request') from None
+        if not isinstance(generation_id, str) or RECOVERY_ID.fullmatch(generation_id) is None:
+            raise ContractError('invalid_voice_request')
+
+    def _candidate(self, row, generation_id):
+        """native history 한 건을 GET으로 조회해 작업 입력과 정확히 일치하는지 확인한다. 원문은 노출하지 않는다."""
+        inspect = getattr(self.client, 'inspect_generation', None)
+        if not callable(inspect):
+            raise ContractError('voice_recovery_unverifiable')
+        try:
+            found = inspect(generation_id)
         except Exception:
-            generation_id = None
-        if generation_id is None:
-            # 요청이 도달했는지 알 수 없다. 자동 재합성 금지이므로 unknown으로 남긴다.
-            self.store.transition(row['task_id'], ('started',), state='unknown', reason_code='voicebox_request_unknown')
-        else:
-            self.store.transition(row['task_id'], ('started',), state='pending', generation_id=generation_id)
-        return self.store.get(row['task_id'])
+            raise ContractError('voice_recovery_unverifiable') from None
+        if not isinstance(found, dict) or set(found) != CANDIDATE_FIELDS:
+            raise ContractError('voice_recovery_unverifiable')
+        texts = ('id', 'status', 'profile_id', 'text', 'language', 'engine', 'model_size')
+        if not all(isinstance(found[k], str) for k in texts) or type(found['seed']) is not int:
+            raise ContractError('voice_recovery_unverifiable')
+        if (found['id'] != generation_id or found['status'] not in RECOVERY_STATUSES
+                or found['profile_id'] != self.profile_id or found['text'].strip() != row['script'].strip()
+                or found['seed'] != row['seed'] or found['language'] != 'ko' or found['engine'] != 'qwen'
+                or found['model_size'] != '0.6B'):
+            raise ContractError('voice_recovery_mismatch')
+
+    def _fingerprint(self, row, generation_id):
+        payload = {'task_id': row['task_id'], 'version': row['version'], 'state': row['state'],
+                   'input': {'owner': row['owner_account_id'], 'content_id': row['content_id'],
+                             'revision': row['input_revision'], 'manifest_hash': row['manifest_hash'],
+                             'intent_hash': row['intent_hash']},
+                   'candidate': {'id': generation_id, 'text_sha256': _hash(row['script'].strip().encode('utf-8')),
+                                 'seed': row['seed'], 'language': 'ko', 'engine': 'qwen', 'model_size': '0.6B'}}
+        return _hash(json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
+
+    def _recovery_check(self, task_id, generation_id):
+        """작업 잠금 안에서 호출한다. 모두 통과하면 (fresh row, fingerprint). native는 GET 한 번뿐이다."""
+        row = self.store.get_row(task_id)
+        if row is None:
+            raise ContractError('task_not_found')
+        if row['state'] not in RECOVERABLE_STATES or row['generation_id'] is not None:
+            raise ContractError('voice_recovery_conflict')
+        snapshot = self._snapshot(row['content_id'], row['input_revision'])
+        if snapshot is None:
+            raise ContractError('content_not_found')
+        if (snapshot['revision'] != row['input_revision'] or snapshot['owner_account_id'] != row['owner_account_id']
+                or snapshot['manifest_hash'] != row['manifest_hash']
+                or self._intent(snapshot, row['script'], row['seed']) != row['intent_hash']):
+            raise ContractError('voice_recovery_mismatch')
+        head = self._snapshot(row['content_id'])
+        if (head is None or head['revision'] != row['input_revision'] or head['manifest_hash'] != row['manifest_hash']
+                or head['owner_account_id'] != row['owner_account_id']):
+            raise ContractError('content_revision_conflict')
+        if self.store.generation_task(generation_id) is not None:
+            raise ContractError('voice_recovery_conflict')
+        self._candidate(row, generation_id)
+        return row, self._fingerprint(row, generation_id)
+
+    def inspect_recovery(self, task_id, generation_id):
+        """ID 없는 started/unknown 작업과 기존 생성 ID가 같은 입력인지 미리 본다. DB 전이도 POST도 없다."""
+        self._require_enabled()
+        self._recovery_args(task_id, generation_id)
+        with self.store.task_lock(task_id):
+            row, fingerprint = self._recovery_check(task_id, generation_id)
+            return dict(task_id=task_id, generation_id=generation_id, recovery_fingerprint=fingerprint,
+                        task_state=row['state'], can_confirm=True, review_status=REVIEW_STATUS)
+
+    def confirm_recovery(self, task_id, generation_id, recovery_fingerprint):
+        """검증을 다시 수행하고 DB CAS로 generation_id만 연결한다(pending). 오디오 다운로드/resume은 하지 않는다."""
+        self._require_enabled()
+        self._recovery_args(task_id, generation_id)
+        if not isinstance(recovery_fingerprint, str) or FINGERPRINT.fullmatch(recovery_fingerprint) is None:
+            raise ContractError('invalid_voice_request')
+        with self.store.task_lock(task_id):
+            current = self.store.get_row(task_id)
+            if current is None:
+                raise ContractError('task_not_found')
+            if current['generation_id'] is not None:
+                if current['generation_id'] == generation_id and current['state'] in LINKED_STATES:
+                    return _public(current)  # 읽기 전용 replay
+                raise ContractError('voice_recovery_conflict')
+            row, expected = self._recovery_check(task_id, generation_id)
+            if not hmac.compare_digest(expected, recovery_fingerprint):
+                raise ContractError('voice_recovery_conflict')
+            if self.store.link_generation(task_id, generation_id, row['version']) != 'linked':
+                raise ContractError('voice_recovery_conflict')
+            return self.store.get(task_id)
 
     # --- resume -----------------------------------------------------------
     def resume(self, task_id):

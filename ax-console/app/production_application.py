@@ -90,7 +90,7 @@ class ProductionApplication:
             if self.state != 'built':
                 raise ProductionApplicationError('application_' + self.state)
             for name in ('content_store', 'integration_store', 'ledger', 'runtime_store',
-                         'production_store', 'metrics_store', 'production_settings_store', 'media_plan_store', 'voice_task_store'):
+                         'production_store', 'metrics_store', 'production_settings_store', 'media_plan_store', 'voice_task_store', 'video_task_store'):
                 store = getattr(self.server, name, None)
                 if store is not None:
                     store.initialize()
@@ -217,7 +217,8 @@ class ProductionApplication:
 
 
 def build_production_application(*, runtime, config, planning_registry, host='127.0.0.1', port=8769,
-                                 web_root, auth_backend=None, toolkit_policy=None, server_factory=None, voice_task_service=None):
+                                 web_root, auth_backend=None, toolkit_policy=None, server_factory=None, voice_task_service=None,
+                                 video_task_service=None):
     """검증 후 서버 소켓만 준비한다. worker/thread/serve_forever는 시작하지 않는다."""
     if not isinstance(config, BootstrapConfig):
         raise ContractError('invalid_bootstrap_config')
@@ -228,6 +229,7 @@ def build_production_application(*, runtime, config, planning_registry, host='12
         raise ContractError('invalid_server_factory')
     factory = server_factory if server_factory is not None else _default_server_factory()
     extra = {'voice_task_service':voice_task_service} if voice_task_service is not None else {}
+    if video_task_service is not None:extra['video_task_service']=video_task_service
     server = factory(host, port, source_root=config.source_root, web_root=Path(web_root),
         workspace_root=config.workspace_root, execution_service=runtime.service,
         planning_registry=planning_registry, auth_backend=auth_backend, toolkit_policy=toolkit_policy,**extra)

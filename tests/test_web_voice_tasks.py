@@ -122,3 +122,44 @@ class VoiceHTTPTests(unittest.TestCase):
         before = list(calls)
         self.assertEqual(self.service.resume(row['task_id']), failed)
         self.assertEqual(calls, before)
+
+    def recovery_candidate(self, **changes):
+        return dict(id='existing1',status='completed',profile_id=PROFILE,text=SCRIPT,seed=14005,
+                    language='ko',engine='qwen',model_size='0.6B',**changes)
+
+    def unknown_task(self):
+        self.client.generate_error=TimeoutError()
+        row=self.service.create(self.item['id'],1,SCRIPT)
+        self.assertEqual(row['state'],'unknown')
+        return row
+
+    def test_recovery_preview_confirm_and_resume_are_separate_without_generation(self):
+        row=self.unknown_task();native_posts=len(self.client.generate_calls);reads=[]
+        self.client.inspect_generation=lambda value:(reads.append(value) or self.recovery_candidate())
+        route='/api/v2/voice-tasks/'+row['task_id'];cookie=self.login()
+        status,_,raw=self.request(route+'/recovery-preview','POST',{'generation_id':'existing1'},cookie)
+        self.assertEqual(status,200);preview=json.loads(raw)
+        self.assertEqual(self.store.get(row['task_id'])['state'],'unknown')
+        self.assertNotIn(PROFILE.encode(),raw);self.assertNotIn(SCRIPT.encode(),raw)
+        body=dict(generation_id='existing1',recovery_fingerprint=preview['recovery_fingerprint'])
+        status,_,raw=self.request(route+'/recover','POST',body,cookie)
+        self.assertEqual(status,200);self.assertEqual(json.loads(raw)['state'],'pending')
+        self.assertEqual(reads,['existing1','existing1']);self.assertEqual(self.client.audio_calls,[])
+        self.assertEqual(len(self.client.generate_calls),native_posts)
+        replay=self.request(route+'/recover','POST',body,cookie)
+        self.assertEqual(replay[0],200);self.assertEqual(replay[2],raw)
+        self.assertEqual(self.request(route+'/resume','POST',{},cookie)[0],200)
+        self.assertEqual(len(self.client.generate_calls),native_posts)
+
+    def test_recovery_auth_schema_disabled_and_mismatch_preserve_unknown(self):
+        row=self.unknown_task();route='/api/v2/voice-tasks/'+row['task_id'];reads=[]
+        self.client.inspect_generation=lambda value:(reads.append(value) or {**self.recovery_candidate(),'text':'다른 대본'})
+        body={'generation_id':'existing1'}
+        self.assertEqual(self.request(route+'/recovery-preview','POST',body)[0],401)
+        cookie=self.login()
+        self.assertEqual(self.request(route+'/recovery-preview','POST',{**body,'profile_id':'other'},cookie)[0],400)
+        self.assertEqual(reads,[])
+        self.assertEqual(self.request(route+'/recovery-preview','POST',body,cookie)[0],409)
+        self.assertEqual(self.store.get(row['task_id'])['state'],'unknown')
+        self.server.voice_task_service=None
+        self.assertEqual(self.request(route+'/recover','POST',dict(generation_id='existing1',recovery_fingerprint='a'*64),cookie)[0],503)
