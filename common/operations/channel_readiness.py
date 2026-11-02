@@ -1,0 +1,90 @@
+"""관리 웹의 채널 구현 현황을 계산하는 순수 manifest.
+
+인증 기록·대상 ID 기록은 현재 로그인이나 API 권한의 성공 증거가 아니다. 이 manifest는
+기본 비활성인 관리 발행 서버의 구현 범위만 표시하며 원본 launchd 자동 작업의 실행
+상태를 대변하지 않는다. registry와 공식 계약 snapshot 외에 파일·DB·vault·API를 읽지 않는다.
+"""
+from collections.abc import Mapping
+from .content_store import StoreError
+from .models import Registry,Connection
+from .oauth_catalog import provider_catalog
+
+_PLATFORMS=('naver_blog','blogger','tistory','youtube','instagram','threads','x','facebook','tiktok')
+_LABELS={'naver_blog':'네이버 블로그','blogger':'Blogger','tistory':'Tistory','youtube':'YouTube',
+         'instagram':'Instagram','threads':'Threads','x':'X','facebook':'Facebook','tiktok':'TikTok'}
+_AUTH_STATUSES=frozenset(('connected','unknown','not_checked','needs_auth','reauth_required',
+                         'disconnected','revoked','expired','error'))
+_PUBLISHERS={'naver_blog':'browser_implemented','blogger':'implemented','tistory':'browser_implemented',
+             'youtube':'implemented','threads':'text_only_implemented'}
+_VERIFIERS={'naver_blog':'hash_implemented','blogger':'hash_implemented','tistory':'hash_implemented',
+            'youtube':'receipt_implemented','threads':'public_probe_required'}
+_ACTIONS={
+ 'naver_blog':('네이버 OAuth는 회원 프로필 확인용입니다. 블로그 게시에는 기존 브라우저 로그인 연결이 필요합니다.',),
+ 'blogger':('Blogger 연결의 실제 게시·공개 확인 시험이 남아 있습니다.',),
+ 'tistory':('공식 API가 종료되어 기존 브라우저 로그인 방식으로 연결해야 합니다.',),
+ 'youtube':('계정별 로그인 연결과 실제 업로드·공개 확인·성과 수집 시험이 남아 있습니다.',),
+ 'instagram':('프로페셔널 계정 여부와 로그인 방식을 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+ 'threads':('텍스트 게시 기반은 개발됐으며, 실제 게시 연결과 공개 페이지 확인은 개발·검증이 남아 있습니다.',),
+ 'x':('API 이용 비용을 확인해야 합니다. 추가 결제 없이 사용할 연결 방식을 검토 중입니다.',
+      '실제 게시와 공개 확인 연결은 개발이 남아 있습니다.'),
+ 'facebook':('Facebook 페이지와 게시 권한을 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+ 'tiktok':('업로드와 직접 게시를 구분하고 앱 심사·동의를 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+}
+
+
+def _invalid():raise StoreError('invalid')
+
+
+def _actions(platform,connection,providers):
+    actions=[]
+    if connection is None:
+        actions.append('이 계정의 채널 연결을 등록하세요.')
+    elif connection.target_status=='unverified':
+        actions.append('게시 대상 ID를 확인하세요.')
+    else:
+        actions.append('저장된 대상 ID와 현재 계정의 일치 여부를 서버에서 다시 확인하세요.')
+    if platform in providers and platform not in ('naver_blog','tistory'):
+        actions.append('새 OAuth 연결을 사용할 경우 공식 앱 등록·HTTPS 복귀 주소·필요한 권한을 확인하세요.')
+    actions.extend(_ACTIONS.get(platform,('이 채널의 게시·공개 확인·성과 수집 연결은 개발이 남아 있습니다.',)))
+    actions.append('실제 운영을 켜기 전에 게시·공개 확인 시험이 남아 있습니다.')
+    actions.append('원본 자동 작업 상태는 기존 자동 작업 화면에서 따로 확인하세요.')
+    return actions
+
+
+def _row(account,platform,connection,providers):
+    auth=connection.auth_status if connection is not None and connection.auth_status in _AUTH_STATUSES else 'unknown'
+    label=connection.target_label if connection is not None and connection.target_label.strip() else _LABELS.get(platform,platform)
+    return dict(account_id=account,platform=platform,connection_id=connection.id if connection is not None else None,
+        label=label,planning_enabled=connection.planning_enabled if connection is not None else False,
+        target_status=connection.target_status if connection is not None else 'no_connection',
+        authentication_status=auth if connection is not None else 'no_connection',
+        publisher_status=_PUBLISHERS.get(platform,'not_implemented'),
+        verification_status=_VERIFIERS.get(platform,'not_implemented'),
+        metrics_status='implemented' if platform=='youtube' else 'stored_only',live_enabled=False,
+        next_actions=_actions(platform,connection,providers))
+
+
+def build_channel_readiness(registry,account='all',*,services=None):
+    """계정별 채널 구현 현황. 등록되지 않은 계정/채널 조합에는 가짜 ID를 만들지 않는다.
+
+    services는 향후 명시 서버 능력 모델을 위한 예약 인수다. 현재는 None/빈 mapping만
+    허용한다. 임의 enabled/capabilities 값으로 인증이나 실발행 상태를 합성하지 않는다.
+    """
+    if not isinstance(registry,Registry) or type(account) is not str or account not in ('all','personal','dept'):_invalid()
+    if services is not None and (not isinstance(services,Mapping) or services):_invalid()
+    accounts=[key for key in ('personal','dept') if key in registry.accounts] if account=='all' else [account]
+    if account!='all' and account not in registry.accounts:_invalid()
+    providers={provider.platform for provider in provider_catalog()}
+    channels=[]
+    for owner in accounts:
+        grouped={platform:[] for platform in _PLATFORMS}
+        for identifier,connection in registry.connections.items():
+            if not isinstance(connection,Connection) or connection.id!=identifier:_invalid()
+            if connection.account_id!=owner:continue
+            grouped.setdefault(connection.platform,[]).append(connection)
+        for platform,connections in grouped.items():
+            if connections:
+                channels.extend(_row(owner,platform,connection,providers) for connection in connections)
+            else:
+                channels.append(_row(owner,platform,None,providers))
+    return dict(account_id=account,channels=channels)

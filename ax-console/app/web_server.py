@@ -37,6 +37,8 @@ from web_oauth import (handle as handle_oauth, recognizes as oauth_path,
                        query_fields as oauth_query_fields, OAuthCallbackPolicy)
 from common.operations.local_toolkit import LocalToolkitService
 from common.operations.tool_cost_policy import ToolkitPolicy
+from web_channel_readiness import handle as handle_channel_readiness, recognizes as channel_readiness_path
+from common.operations.managed_connections import project_registry
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
 from web_metrics_collection import handle as handle_metrics_collection, recognizes as metrics_collection_path
 from common.operations.metrics_collection import MetricsCollectionService
@@ -89,6 +91,7 @@ _STATIC = {
     'integration_settings.js': 'text/javascript; charset=utf-8',
     'operations_panel.js': 'text/javascript; charset=utf-8',
     'metrics_collection_panel.js': 'text/javascript; charset=utf-8',
+    'channel_readiness_panel.js': 'text/javascript; charset=utf-8',
     'metrics_panel.js': 'text/javascript; charset=utf-8',
     'execution_panel.js': 'text/javascript; charset=utf-8',
     'execution_controller.js': 'text/javascript; charset=utf-8',
@@ -336,7 +339,7 @@ class _Handler(BaseHTTPRequestHandler):
                     or ('account' in query and query['account'][0] not in ('all','personal','dept'))):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
-        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/metrics/collection-targets', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
+        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/metrics/collection-targets', '/api/v2/channels/readiness', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -442,6 +445,15 @@ class _Handler(BaseHTTPRequestHandler):
                     status_info=(info() if callable(info) else info) if path=='/api/v2/execution/status' else None)
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200, result)
+            if channel_readiness_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                current=self.server.metrics_registry()
+                if self.server.oauth_service is not None:
+                    service=self.server.oauth_service
+                    current=project_registry(service.registry_supplier(),service.connection_store.snapshot())
+                result=handle_channel_readiness(current,method,path,query)
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if metrics_collection_path(path):
                 if not self._authed():return self._error(401,'로그인이 필요합니다')
                 result=handle_metrics_collection(self.server.metrics_collection_service,method,path,query,lambda:self._read_body(16384,json_body=True))

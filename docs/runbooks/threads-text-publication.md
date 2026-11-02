@@ -13,3 +13,9 @@ API client는 공식 Meta 자료의 생성·게시·조회 경로와 응답 필�
 검증: 가짜 전송·메모리 자격·임시 journal과 영속 실행 원장에서 생성→게시→공개 증거→URL 저장, 중복·중단·응답 손실·STOP·잘못된 소유자·공개 증거 누락을 확인했다. 실제 API·로그인·발행·익명 페이지 검증을 수행한 것이 아니다.
 
 공식 근거: [Meta Threads Postman](https://github.com/fbsamples/threads_api/blob/main/postman/threads-api.postman_collection.json), [Meta 샘플 앱](https://github.com/fbsamples/threads_api). 샘플의 host와 현재 문서의 host가 달라 실제 transport 수락 때 함께 재확인해야 한다.
+
+## 명시 HTTPS transport
+
+`ThreadsHttpsTransport`는 서버 코드에서 `activate=True`로 명시 등록한 경우에만 사용할 수 있다. 기본 client의 transport=None 차단은 유지한다. 고정 TLS host·포트·허용 경로/필드/폼만 사용하고 토큰은 Authorization 헤더에만 전달하며 디버그 출력을 끈다. 리다이렉트·재시도·임의 프록시·응답 크기 초과·오류 원문 노출을 허용하지 않는다.
+
+Bearer 헤더 처리는 [RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750#section-2.1)에 따른 표준 구현이다. 실제 Threads의 수용과 .net/.com host 차이는 확인하지 않았으며 운영 기동에 자동 등록하지 않았다. 시험은 가짜 HTTPSConnection을 통해 수행했고 실제 TLS/API 요청을 하지 않았다.
