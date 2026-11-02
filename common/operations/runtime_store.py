@@ -173,12 +173,13 @@ class RuntimeStore:
         elif all(s in ('failed','cancelled') for s in states):state='failed'
         else:state='running'
         c.execute('UPDATE runtime_runs SET state=?,version=version+1 WHERE id=?',(state,run_id))
-    def transition_delivery(self,delivery_id,expected_version,state,*,evidence=None,remote_id=None):
+    def transition_delivery(self,delivery_id,expected_version,state,*,evidence=None,remote_id=None,url=None):
         transitions={'queued':{'running','needs_review','cancelled'},'running':{'needs_review','retry_wait','cancelled'},'uploaded':{'published','needs_review'},'scheduled':{'published','needs_review'},'published':{'verified','needs_review'},'retry_wait':{'queued','needs_review','cancelled'},'unknown':{'needs_review'},'needs_review':{'cancelled'}}
         with self._db(True) as c:
             r=self._delivery(c,delivery_id,expected_version)
             if state not in transitions.get(r['state'],set()):raise ConflictError()
-            self._state(c,delivery_id,state,**({'remote_id':remote_id} if remote_id else {}));self._event(c,delivery_id,state,evidence);return self._delivery(c,delivery_id)
+            if url is not None and (not isinstance(url,str) or not url):raise StoreError('invalid')
+            self._state(c,delivery_id,state,**({'remote_id':remote_id} if remote_id else {}),**({'url':url} if url is not None else {}));self._event(c,delivery_id,state,evidence);return self._delivery(c,delivery_id)
     def _approval(self,c,id):
         r=c.execute('SELECT * FROM publication_approvals WHERE delivery_id=? ORDER BY id DESC LIMIT 1',(id,)).fetchone()
         return dict(r,report_hashes=json.loads(r['report_hashes'])) if r else None

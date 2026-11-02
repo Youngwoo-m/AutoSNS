@@ -75,3 +75,8 @@ Claude Max 두 작업으로 계획 저장소와 편집 패널을 병렬 구현�
 새 소유 자격 참조를 기존 Google 읽기 서비스에 전달하는 서버 경계를 추가했다. 작업공간·계정·플랫폼·연결·대상·세대·실관측 범위·만료를 검증하고, 읽기 handler 전체에서 OAuth writer guard를 유지한다. Google SDK 변환은 이 guard 안에서만 수행하며 실제 vault/API를 기본 활성화하지 않는다. 기존 고정 암호화 자격 경로는 보존한다.
 
 새 자격의 발행 권한 확인 모델은 아직 없으므로 publication scope와 실제 submit은 원격 요청 전에 거부한다. 실제 OAuth 비용·앱 등록 차단, 운영 child bootstrap, 신규 SNS adapter와 실계정 수락은 그대로 미완료다. 이번 메모리 vault·가짜 SDK 시험은 실제 OAuth/발행 완료의 증거가 아니다.
+
+## Threads 텍스트 발행 기반
+Threads의 명시 텍스트 전용 payload, API client 경계, 컨테이너/게시 영속 journal, adapter·host 조립과 공개 증거 결속을 추가했다. 준비 옵션은 계획 승인에 보존하며 기존 미디어 자산은 변경하지 않는다. 응답 불명확 시 자동 재게시하지 않고, owner API만으로 공개를 추정하지 않는다. 가짜 공개 probe가 확인한 실제 URL은 영속 원장에 저장되는 경로를 시험했다.
+
+기본 네트워크 전송·실제 익명 probe·child bootstrap은 미등록이며 새 OAuth 발행 차단도 유지한다. 실제 인증 헤더/host·앱/비용/권한 계약과 실게시 수락이 남아 있다. Threads 미디어·다른 SNS adapter, 실제 OAuth 발행 브리지·운영 전환·성과·계정 경로 이행·외부 접속과 종합 수락은 계속 필수 범위다.

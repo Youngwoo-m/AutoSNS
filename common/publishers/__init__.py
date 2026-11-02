@@ -5,6 +5,8 @@ def build_adapters(*,registry=None,bridge=None):
     from .youtube_runtime import YOUTUBE_BINDINGS
     from .blog_adapter import BlogAdapter
     from .youtube import YoutubeAdapter
+    from .threads_runtime import THREADS_BINDINGS
+    from .threads import ThreadsAdapter
     result={}
     for key in BLOG_BINDINGS:
         connection=registry.connections.get(key)
@@ -13,4 +15,7 @@ def build_adapters(*,registry=None,bridge=None):
     for key in YOUTUBE_BINDINGS:
         connection=registry.connections.get(key)
         if connection and connection.enabled and connection.target_id:result[key]=YoutubeAdapter(registry,bridge)
+    for key in THREADS_BINDINGS:
+        connection=registry.connections.get(key)
+        if connection and connection.enabled and connection.target_id:result[key]=ThreadsAdapter(registry,bridge)
     return result

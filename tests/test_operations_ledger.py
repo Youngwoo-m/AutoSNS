@@ -190,3 +190,32 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(cancelled['target_label'],'확인 해제된 대상')
 
 if __name__=='__main__':unittest.main()
+
+class ThreadsLedgerOptionsTests(unittest.TestCase):
+    setUp=LedgerTests.setUp
+    setup_content=LedgerTests.setup_content
+    error=LedgerTests.error
+
+    def test_threads_text_only_option_requires_platform_and_registered_capability(self):
+        from dataclasses import replace
+        body=self.setup_content(True);base=self.ledger.registry()
+        threads=base.connections['dept.threads']
+        configured=replace(base,connections={**base.connections,'dept.threads':replace(threads,capabilities=tuple(threads.capabilities)+('text_only',))})
+        ledger=Ledger(self.root,configured,self.store);ledger.initialize()
+        self.content=self.store.create('dept',{'title':'학과 원고','kind':'article','original':'학과 본문'})
+        text_body={**body,'content_id':self.content['id'],'revision':self.content['revision'],'manifest_hash':self.content['manifest_hash'],'connection_id':'dept.threads','options':{'text_only':True}}
+        preview=ledger.preview_delivery(text_body)
+        self.assertEqual(preview['platform'],'threads')
+        self.assertEqual(preview['options'],{'text_only':True})
+        created=ledger.create_or_get_delivery(text_body)
+        from contextlib import closing
+        with closing(sqlite3.connect(self.root/'operations.sqlite3')) as db:
+            saved=json.loads(db.execute('SELECT payload FROM deliveries WHERE id=?',(created['id'],)).fetchone()[0])
+        self.assertEqual(saved['options'],{'text_only':True})
+        self.assertFalse(preview['execution_enabled'])
+        self.error('invalid',self.ledger.preview_delivery,text_body)
+        for value in (False,1,'true'):
+            self.error('invalid',ledger.preview_delivery,{**text_body,'options':{'text_only':value}})
+        youtube=base.connections['personal.youtube']
+        wrong=replace(base,connections={**base.connections,'personal.youtube':replace(youtube,capabilities=tuple(youtube.capabilities)+('text_only',))})
+        self.error('invalid',Ledger(self.root,wrong,self.store).preview_delivery,{**body,'options':{'text_only':True}})

@@ -136,3 +136,10 @@ test('과거 승인 기록은 현재 승인·재검토·취소 상태를 구분�
  assert.match(delivery.approvalRecordLabel({...selectedPlan,status:'cancelled',approval}),/취소 전 기록/);
  assert.match(delivery.approvalRecordLabel({...selectedPlan,approval:{...approval,decision:'rejected'}}),/반려/);
 });
+
+test('Threads 텍스트 전용 선택은 명시적 true일 때만 계획 옵션에 보존한다',()=>{
+ const content={id:'c',revision:1,manifest_hash:'hash'};
+ const draft={connection_id:'dept.threads',scheduled_at:'2026-11-02T10:00:00+09:00',schedule_slot:'main',text_only:true};
+ assert.deepEqual(delivery.deliveryPayload(content,draft).options,{text_only:true});
+ for(const text_only of [false,undefined,'true',1])assert.deepEqual(delivery.deliveryPayload(content,{...draft,text_only}).options,{});
+});

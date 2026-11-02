@@ -2,6 +2,8 @@
 from collections.abc import Mapping
 from datetime import datetime, timezone
 import hashlib
+import re
+from urllib.parse import urlsplit
 from .content_store import StoreError, ConflictError
 from .runtime_models import PublicationContext, VerificationResult, utc, serial
 
@@ -18,7 +20,8 @@ def snapshot_fingerprints(context, snapshot):
     assets = snapshot.get('assets')
     if not isinstance(text, str) or not isinstance(assets, (list, tuple)) or any(not isinstance(a, Mapping) or not isinstance(a.get('sha256'), str) or not a['sha256'] for a in assets):
         raise StoreError('insufficient_evidence')
-    return hashlib.sha256(text.encode('utf-8')).hexdigest(), [a['sha256'] for a in assets]
+    media=[] if context.get('platform')=='threads' and context.get('options',{}).get('text_only') is True else [a['sha256'] for a in assets]
+    return hashlib.sha256(text.encode('utf-8')).hexdigest(), media
 
 
 def strong_identity(context, snapshot, candidate, attempt, now, *, remote_id=None):
@@ -37,6 +40,18 @@ def strong_identity(context, snapshot, candidate, attempt, now, *, remote_id=Non
                 and list(candidate['media_sha256']) == media)
     except (StoreError, ValueError, TypeError, KeyError):
         return False
+
+
+def _threads_url(value):
+    if not isinstance(value,str):return None
+    try:
+        parsed=urlsplit(value)
+        if (parsed.scheme=='https' and parsed.hostname in ('threads.net','www.threads.net','threads.com','www.threads.com')
+                and not parsed.username and not parsed.password and not parsed.port and not parsed.query and not parsed.fragment
+                and re.fullmatch(r'/@[^/]+/post/[A-Za-z0-9_-]+/?',parsed.path)):
+            return value
+    except ValueError:pass
+    return None
 
 
 def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected_version=None, clock=None):
@@ -84,8 +99,13 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
             result = VerificationResult('pending', now, {'reason': 'insufficient_publication_evidence'})
         elif delivery['context'].get('platform')=='youtube':
             result=VerificationResult('verified',result.checked_at,dict(result.evidence,verification_method='youtube_upload_receipt_and_public_observation'))
+    verified_url=None
+    if result.outcome=='verified' and delivery['context'].get('platform')=='threads':
+        verified_url=_threads_url(result.evidence.get('url'))
+        if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
     safe_keys = ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256', 'visibility')
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':safe_keys+=('verification_method',)
+    if verified_url is not None:safe_keys+=('url',)
     safe_evidence = {k: serial(result.evidence[k]) for k in safe_keys if k in result.evidence}
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':
         safe_evidence.pop('body_sha256',None)
@@ -96,6 +116,6 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
     store.record_evidence(delivery_id, 'verification', result.to_dict(), attempt_id=attempt['id'] if attempt else None)
     if result.outcome == 'verified':
         if delivery['state'] != 'published':
-            delivery = store.transition_delivery(delivery_id, delivery['version'], 'published', evidence=serial(result.evidence))
-        store.transition_delivery(delivery_id, delivery['version'], 'verified', evidence=serial(result.evidence))
+            delivery = store.transition_delivery(delivery_id, delivery['version'], 'published', evidence=serial(result.evidence),**({'url':verified_url} if verified_url is not None else {}))
+        store.transition_delivery(delivery_id, delivery['version'], 'verified', evidence=serial(result.evidence),**({'url':verified_url} if verified_url is not None else {}))
     return result

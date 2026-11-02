@@ -100,7 +100,7 @@ class Ledger:
         registry=registry or self.registry()
         connection=registry.connections.get(record['connection_id'])
         record=dict(record,target_status=connection.target_status if connection else 'unverified',target_label=connection.target_label if connection else '')
-        keys=('id','content_id','revision','manifest_hash','owner_account_id','destination_account_id','connection_id','platform','target_label','target_status','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','status','version','subject_hash','approval','blockers','created_at','updated_at')
+        keys=('id','content_id','revision','manifest_hash','owner_account_id','destination_account_id','connection_id','platform','target_label','target_status','publication_purpose','schedule_slot','scheduled_at','timezone','schedule_condition','options','status','version','subject_hash','approval','blockers','created_at','updated_at')
         approval=record.get('approval')
         return {**{k:record.get(k) for k in keys},'approval':None if approval is None else {k:approval[k] for k in ('id','scope','decision','subject_hash','content_revision','source','recorded_at')},'source':'managed','schedule_kind':'local_plan','remote_state':'unavailable','execution_enabled':False}
 
@@ -128,7 +128,8 @@ class Ledger:
         version(body['revision'])
         if not isinstance(body['manifest_hash'],str) or not re.fullmatch('[0-9a-f]{64}',body['manifest_hash']): invalid()
         options=body.get('options',{})
-        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override'}: invalid()
+        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override','text_only'}: invalid()
+        if 'text_only' in options and options['text_only'] is not True: invalid()
         if 'visibility' in options and options['visibility'] not in ('public','unlisted','private'): invalid()
         for key,limit in [('title_override',300),('description_override',200000)]:
             if key in options: _string(options[key],limit)
@@ -141,6 +142,7 @@ class Ledger:
         connection=registry.connections[body['connection_id']]
         # Capabilities are explicit allowlisted option names (or their conventional aliases).
         caps=set(connection.capabilities)
+        if 'text_only' in options and connection.platform!='threads': invalid()
         for key in options:
             if key=='visibility':
                 if 'visibility:'+options[key] not in caps: invalid()

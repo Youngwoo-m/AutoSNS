@@ -5,7 +5,7 @@ export function deliveryPayload(content,draft) {
   const aware=value=>{if(!/T.*(?:Z|[+-]\d\d:\d\d)$/.test(value||'')||!Number.isFinite(Date.parse(value)))throw new Error('UTC 또는 시간대 offset을 포함한 ISO 시각을 입력해 주세요.');return value;};
   const scheduled_at=aware(draft.scheduled_at);
   const schedule_condition=draft.condition_kind==='window'?{kind:'window',from:aware(draft.window_from),to:aware(draft.window_to)}:{kind:'fixed',at:scheduled_at};
-  const options={};for(const key of ['visibility','title_override','description_override'])if(draft[key])options[key]=draft[key];
+  const options={};if(draft.text_only===true)options.text_only=true;for(const key of ['visibility','title_override','description_override'])if(draft[key])options[key]=draft[key];
   return {content_id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,connection_id:draft.connection_id,publication_purpose:draft.publication_purpose||'initial',schedule_slot:draft.schedule_slot,scheduled_at,timezone:draft.timezone||'Asia/Seoul',schedule_condition,options,...(draft.crosspost_rule_id?{crosspost_rule_id:draft.crosspost_rule_id}:{})};
 }
 export const canApprove=plan=>Boolean(plan&&['pending','ready'].includes(plan.status)&&plan.target_status==='verified'&&plan.subject_hash&&!(plan.blockers||[]).length);
@@ -32,6 +32,7 @@ export function deliveryPreviewSummary(preview,context={}) {
     lines.push(`교차: ${accountLabel(row.owner_account_id)} → ${accountLabel(row.destination_account_id)} · ${row.platform||'채널 미확인'} · ${owner} · ${status} · ${(row.reasons||[]).map(crossReasonLabel).join(' · ')||'추가 제외 사유 없음'} · 계산 시각 ${localTimeLabel(row.not_before,row.window?.timezone||p.timezone)} · 지연 ${(row.delay_seconds||0)/60}분 (${delayOwner}) · 최소 간격 ${(row.min_gap_seconds||0)/60}분 · 실행 안 함`);
   }
   if(!(p.crossposts||[]).length)lines.push('해당하는 교차 경로 없음');
+  if(p.options?.text_only===true)lines.push('Threads 텍스트 전용 · 원고의 이미지·영상은 이 배포에 포함하지 않습니다.');
   return lines;
 }
 export function zonedScheduleValue(value,timezone) {
@@ -49,7 +50,7 @@ export function createDeliverySession() {
     async write(request){this.phase='saving';this.error='';try{const next=await request();this.plan=next;this.preview=null;this.phase='saved';return next;}catch(error){this.phase=error.status===409?'conflict':error.status===401?'unauthorized':'error';this.error=error.message;return null;}}
   };
 }
-const defaultDraft=()=>({connection_id:'',publication_purpose:'initial',schedule_slot:'main',scheduled_at:'',timezone:'Asia/Seoul',condition_kind:'fixed',window_from:'',window_to:'',visibility:'',title_override:'',description_override:'',crosspost_rule_id:''});
+const defaultDraft=()=>({connection_id:'',publication_purpose:'initial',schedule_slot:'main',scheduled_at:'',timezone:'Asia/Seoul',condition_kind:'fixed',window_from:'',window_to:'',visibility:'',title_override:'',description_override:'',text_only:false,crosspost_rule_id:''});
 export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onStateChange=()=>{}}) {
   const root=document.createElement('section');root.className='editor-section delivery-editor';
   let content=null,connections=[],state=createDeliverySession(),busy=false,generation=0,events=[],dirty=false,loadFailed=false,scheduleDraft={scheduled_at:'',timezone:'Asia/Seoul'},notes='',baselines={create:'',schedule:'',notes:''};
@@ -79,14 +80,19 @@ export function createDeliveryEditor({api,writable=()=>false,onSaved=()=>{},onSt
     const discard=el('button',{type:'button',class:'btn btn-small','data-discard-plan':'',onclick:()=>{if(!busy)return open(content);}},'입력 버리고 계획 다시 불러오기');root.append(el('p',{'data-plan-dirty':'',role:'status'}),discard);
     root.append(navigation('새 계획 작성',()=>{state.plan=null;state.preview=null;state.draft=defaultDraft();events=[];notes='';resetBaselines();render();}));
     if(!state.plan){
-      const d=state.draft,selectedConnection=connections.find(item=>item.id===state.draft.connection_id),visibilityOptions=[['','기본값'],...['public','unlisted','private'].filter(value=>(selectedConnection?.capabilities||[]).includes(`visibility:${value}`)).map(value=>[value,({public:'공개',unlisted:'일부 공개',private:'비공개'})[value]])],change=key=>value=>{state.change(key,value);const saveButton=root.querySelector('[data-save-plan]');if(saveButton)saveButton.disabled=true;if(key==='connection_id'){d.visibility='';render();}};
+      const d=state.draft,selectedConnection=connections.find(item=>item.id===state.draft.connection_id),visibilityOptions=[['','기본값'],...['public','unlisted','private'].filter(value=>(selectedConnection?.capabilities||[]).includes(`visibility:${value}`)).map(value=>[value,({public:'공개',unlisted:'일부 공개',private:'비공개'})[value]])],change=key=>value=>{state.change(key,value);const saveButton=root.querySelector('[data-save-plan]');if(saveButton)saveButton.disabled=true;if(key==='connection_id'){d.visibility='';d.text_only=false;render();}};
       root.append(field('실제 등록 연결 (도구 선호와 별개)',d.connection_id,change('connection_id'),[['','연결 선택'],...connections.filter(c=>c.planning_enabled).map(c=>[c.id,`${accountLabel(c.account_id)} · ${c.platform} · ${c.target_label||'대상 미확인'} · ${c.target_status==='verified'?'대상 ID 확인':'대상 미확인 · 승인 불가'} · 인증 ${c.auth_status}`])]),field('발행 목적',d.publication_purpose,change('publication_purpose'),[['initial','최초 계획'],['followup','후속'],['republication','재발행']]),field('일정 슬롯 (계획 생성 후 고정)',d.schedule_slot,change('schedule_slot')),field('예정 시각 (예: 2026-11-01T10:00:00+09:00)',d.scheduled_at,change('scheduled_at')),field('IANA 시간대',d.timezone,change('timezone')),field('허용 일정 조건',d.condition_kind,v=>{change('condition_kind')(v);render();},[['fixed','고정 시각'],['window','허용 범위 (시작 포함·끝 제외)']]));
+      if(selectedConnection?.platform==='threads'&&(selectedConnection.capabilities||[]).includes('text_only')){
+        const box=el('input',{type:'checkbox','data-threads-text-only':'',disabled:blocked(),onchange:event=>{if(blocked())return;state.change('text_only',event.target.checked);updateDirty();syncDraftControls();}});box.checked=d.text_only===true;
+        root.append(el('label',{class:'editor-field'},box,'Threads에 텍스트만 발행 · 원고의 이미지·영상은 포함하지 않음'));
+      }
       if(d.condition_kind==='window')root.append(field('허용 시작 ISO 시각',d.window_from,change('window_from')),field('허용 끝 ISO 시각',d.window_to,change('window_to')));
       root.append(field('공개 옵션 (연결 기능에 따라 서버 검증)',d.visibility,change('visibility'),visibilityOptions),el('div',{},(selectedConnection?.capabilities||[]).includes('title_override')?field('제목 대체 (선택)',d.title_override,change('title_override')):null,(selectedConnection?.capabilities||[]).includes('description_override')?field('설명 대체 (선택)',d.description_override,change('description_override')):null),field('기존 교차 규칙 ID (선택)',d.crosspost_rule_id,change('crosspost_rule_id')),
         button('계획 미리보기',()=>act(async()=>{state.preview=await api.previewDelivery(deliveryPayload(content,d));})),el('button',{type:'button',class:'btn btn-primary','data-save-plan':'',disabled:blocked()||!state.preview,onclick:()=>act(()=>save(()=>api.createDelivery(deliveryPayload(content,d)),'create'))},'로컬 계획 저장'));
       if(state.preview)root.append(el('h4',{},'대상·차단·교차 경로 미리보기'),previewOutput(state.preview));
     }else{
       const p=state.plan;root.append(el('h4',{},`${p.target_label||p.platform} · ${statusLabel(p.status)}`),el('p',{},`원본 ${accountLabel(p.owner_account_id)} → 대상 ${accountLabel(p.destination_account_id)} · ${p.platform} · ${targetIdentityLabel(p.target_status)} · 인증 미확인 · 계획 버전 ${p.version}`),el('p',{},`로컬 계획 · 원격 상태 미제공 · 실행 안 함 · 원본 버전 ${p.revision}`),el('p',{class:'delivery-hash'},`승인 subject: ${p.subject_hash||'미확인'}`));
+      if(p.options?.text_only===true)root.append(el('p',{},'Threads 텍스트 전용 · 원고의 이미지·영상은 이 배포에 포함하지 않습니다.'));
       if(p.revision!==content.revision)root.append(el('p',{class:'inline-note'},'이 계획은 현재 편집 원본과 다른 저장 버전을 고정합니다.'));
       for(const blocker of p.blockers||[])root.append(el('p',{class:'inline-note'},blocker.reason||blocker.message||blocker.code));
       root.append(el('p',{},approvalRecordLabel(p)),field('계획 승인 메모',notes,v=>notes=v),button('이 버전 계획 승인',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'approved',notes)),'notes')),!canApprove(p)),button('계획 반려',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'rejected',notes)),'notes')),p.status==='cancelled'||!p.subject_hash),button('계획 승인 철회',()=>act(()=>save(()=>api.approveDelivery(p.id,approvalPayload(p,'revoked',notes)),'notes')),p.status==='cancelled'||!p.approval));
