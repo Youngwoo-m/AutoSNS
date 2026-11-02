@@ -475,6 +475,20 @@ class VoiceTaskService:
                              sort_keys=True, ensure_ascii=False, separators=(',', ':'))
         return _hash(payload.encode('utf-8'))
 
+    def _require_profile_binding(self, row):
+        """최초 intent에 포함된 원고·소유자·프로필 결속을 부수효과 전에 확인한다.
+
+        schema 1도 profile_id를 포함한 intent_hash를 보존한다. 현재 등록 프로필로
+        동일 intent를 재현하지 못하면 기존 작업을 조회·등록·복구하지 않는다.
+        """
+        snapshot = self._snapshot(row['content_id'], row['input_revision'])
+        if (not isinstance(snapshot, dict) or snapshot.get('id') != row['content_id']
+                or snapshot.get('revision') != row['input_revision']
+                or snapshot.get('owner_account_id') != row['owner_account_id']
+                or snapshot.get('manifest_hash') != row['manifest_hash']
+                or self._intent(snapshot, row['script'], row['seed']) != row['intent_hash']):
+            raise ContractError('voice_recovery_mismatch')
+
     # --- create -----------------------------------------------------------
     def create(self, content_id, expected_revision, script, seed=14005):
         self._require_enabled()
@@ -609,7 +623,9 @@ class VoiceTaskService:
                 raise ContractError('task_not_found')
             if current['generation_id'] is not None:
                 if current['generation_id'] == generation_id and current['state'] in LINKED_STATES:
-                    return _public(current)  # 읽기 전용 replay
+                    if current['state'] in ('pending', 'audio_ready'):
+                        self._require_profile_binding(current)
+                    return _public(current)  # 완료 작업은 프로필 변경 후에도 읽기 전용 replay
                 raise ContractError('voice_recovery_conflict')
             row, expected = self._recovery_check(task_id, generation_id)
             if not hmac.compare_digest(expected, recovery_fingerprint):
@@ -626,6 +642,8 @@ class VoiceTaskService:
             raise ContractError('task_not_found')
         for _ in range(3):  # pending -> audio_ready -> completed
             state = row['state']
+            if state in ('pending', 'audio_ready'):
+                self._require_profile_binding(row)
             if state == 'pending':
                 row = self._poll(row)
             elif state == 'audio_ready':

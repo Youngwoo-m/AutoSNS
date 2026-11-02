@@ -77,12 +77,48 @@ class VoiceHTTPTests(unittest.TestCase):
         self.assertNotIn(str(self.root).encode(), listed[2])
         self.assertEqual(len(self.client.generate_calls), 1)
 
+    def test_profile_change_blocks_pending_resume_without_native_or_private_error(self):
+        cookie=self.login()
+        status,_,raw=self.request(self.route,'POST',self.body,cookie)
+        self.assertEqual(status,200);pending=json.loads(raw)
+        before=self.store.get_row(pending['task_id'])
+        other=VoiceTaskService(self.store,self.content,self.client,profile_id='different-profile',enabled=True,probe=FakeProbe())
+        self.server.voice_task_service=other
+        route='/api/v2/voice-tasks/'+pending['task_id']+'/resume'
+        status,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(status,409)
+        self.assertEqual(self.client.wait_calls,[]);self.assertEqual(self.client.audio_calls,[])
+        self.assertEqual(self.store.get_row(pending['task_id']),before)
+        self.assertNotIn(PROFILE.encode(),raw);self.assertNotIn(b'different-profile',raw)
+        self.server.voice_task_service=self.service
+        self.assertEqual(self.request(route,'POST',{},cookie)[0],200)
+
     def test_mismatched_store_rejected_before_socket(self):
         other = VoiceTaskService(VoiceTaskStore(Path(self.tmp.name)/'other'), self.content,
             self.client, profile_id=PROFILE, enabled=True, probe=FakeProbe())
         with patch.object(server_module, '_WebServer', NoSocketServer), self.assertRaises(ValueError):
             server_module.create_server(source_root=Path(self.tmp.name)/'source', workspace_root=self.root,
                 web_root=APP/'web', auth_backend=server_fixture.FakeAuth(), voice_task_service=other)
+
+    def test_installed_generating_status_keeps_id_and_does_not_repeat_generate(self):
+        calls=[];status={'value':'generating'}
+        def transport(method,path,body=None):
+            calls.append((method,path))
+            payload={'/profiles':[{'id':PROFILE}],'/generate':{'id':'generation1','status':'generating'},
+                     '/history/generation1':{'id':'generation1','status':status['value']}}
+            return (200,{},make_wav() if path=='/audio/generation1' else json.dumps(payload[path]).encode())
+        self.service.client=LocalVoiceboxClient(PROFILE,transport=transport)
+        cookie=self.login()
+        code,_,raw=self.request(self.route,'POST',self.body,cookie)
+        self.assertEqual(code,200);pending=json.loads(raw)
+        self.assertEqual(pending['state'],'pending');self.assertEqual(pending['generation_id'],'generation1')
+        route='/api/v2/voice-tasks/'+pending['task_id']+'/resume'
+        code,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(json.loads(raw)['state'],'pending')
+        status['value']='completed'
+        code,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(json.loads(raw)['state'],'completed')
+        self.assertEqual(sum(method=='POST' for method,_ in calls),1)
 
     def test_real_client_protocol_with_durable_service(self):
         calls = []

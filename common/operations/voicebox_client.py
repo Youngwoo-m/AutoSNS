@@ -38,6 +38,13 @@ def _valid_id(value):
     return isinstance(value, str) and _ID.fullmatch(value) is not None
 
 
+def _canonical_status(value):
+    # 설치 Voicebox 0.5.0의 실제 생성 상태만 내부 상태 이름으로 결속한다.
+    if value == 'generating':
+        return 'running'
+    return value
+
+
 def _limit_for(path):
     return MAX_WAV_BYTES if path.startswith('/audio/') else MAX_JSON_BYTES
 
@@ -109,7 +116,7 @@ class LocalVoiceboxClient:
     def _projection(payload):
         if not isinstance(payload, dict):
             return None
-        generation_id, status = payload.get('id'), payload.get('status')
+        generation_id, status = payload.get('id'), _canonical_status(payload.get('status'))
         if not _valid_id(generation_id) or not isinstance(status, str) or status not in _STATUSES:
             return None
         return {'id': generation_id, 'status': status}
@@ -118,7 +125,7 @@ class LocalVoiceboxClient:
         """복구 대조에 필요한 8개 필드만 정확히 검증해 돌려준다. 하나라도 불확실하면 None."""
         if not isinstance(payload, dict):
             return None
-        status, profile_id, text = payload.get('status'), payload.get('profile_id'), payload.get('text')
+        status, profile_id, text = _canonical_status(payload.get('status')), payload.get('profile_id'), payload.get('text')
         seed = payload.get('seed')
         if payload.get('id') != generation_id or not isinstance(status, str) or status not in _STATUSES:
             return None

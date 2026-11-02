@@ -40,7 +40,7 @@ export function createVoiceTaskPanel({document,fetcher=globalThis.fetch,onChange
   const readMessage=e=>e.kind==='invalid'?'응답의 원고 버전·형식을 확인할 수 없어 표시하지 않았습니다.':e.kind==='http'&&e.status===401?'로그인 후 다시 시도하세요. 입력은 유지됩니다.':e.kind==='network'?'서버에 연결하지 못했습니다. 입력은 유지됩니다.':'음성 작업을 조회하지 못했습니다. 입력은 유지됩니다.';
   const writeMessage=e=>{
     if(e.kind==='http'&&e.status===401)return '로그인 후 다시 시도하세요. 요청은 접수되지 않았습니다. 입력은 보존했습니다.';
-    if(e.kind==='http'&&e.status===409)return '원고 버전이 바뀌었거나 이미 진행 중인 작업이 있습니다. 입력은 보존했습니다. 작업 목록을 조회해 확인하세요.';
+    if(e.kind==='http'&&e.status===409)return '원고 버전이 바뀌었거나 음성 설정이 다르거나 이미 진행 중인 작업이 있습니다. 입력은 보존했습니다. 작업 목록과 등록 설정을 확인하세요.';
     if(e.kind==='http'&&e.status===503)return '음성 합성 서비스를 지금 사용할 수 없거나 접수 결과를 확인하지 못했습니다. 입력은 보존했습니다. 작업 목록을 조회해 확인하기 전 다시 합성하지 마세요.';
     if(e.kind==='http'&&(e.status===400||e.status===422))return '서버가 입력을 받아들이지 않았습니다. 대본과 시드를 확인하세요. 입력은 보존했습니다.';
     return UNCERTAIN;

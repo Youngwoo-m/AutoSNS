@@ -53,6 +53,27 @@ def code_of(testcase, call, *args, **kwargs):
 
 
 class VoiceboxClientTests(unittest.TestCase):
+    def test_installed_generating_status_normalizes_without_retrying_post(self):
+        client,transport=make(js({'id':'g1','status':'generating'}))
+        self.assertEqual(client.generate(**BODY),{'id':'g1','status':'running'})
+        self.assertEqual([(m,p) for m,p,_ in transport.calls],[('POST','/generate')])
+        client,transport=make(js({'id':'g1','status':'generating'}))
+        self.assertEqual(client.poll_once('g1'),{'id':'g1','status':'running'})
+        self.assertEqual(transport.calls,[('GET','/history/g1',None)])
+
+    def test_installed_generating_waits_for_completed_and_recovery_normalizes(self):
+        clock=FakeClock()
+        client,transport=make(js({'id':'g1','status':'generating'}),js({'id':'g1','status':'completed'}),clock=clock,sleep=clock.sleep)
+        self.assertEqual(client.wait_completed('g1'),{'id':'g1','status':'completed'})
+        self.assertEqual(clock.sleeps,[3]);self.assertEqual(transport.calls,[('GET','/history/g1',None)]*2)
+        candidate={k:BODY[k] for k in ('profile_id','text','seed','language','engine','model_size')}
+        client,transport=make(js(dict(candidate,id='g1',status='generating')))
+        self.assertEqual(client.inspect_generation('g1'),dict(candidate,id='g1',status='running'))
+        self.assertEqual(transport.calls,[('GET','/history/g1',None)])
+        for unknown in ('loading_model','speaking','GENERATING'):
+            client,_=make(js(dict(candidate,id='g1',status=unknown)))
+            self.assertEqual(code_of(self,client.inspect_generation,'g1'),'voicebox_recovery_unverifiable')
+
     def test_poll_once_returns_active_and_failure_without_sleep_or_retry(self):
         for status in ('running', 'failed', 'cancelled', 'completed'):
             clock = FakeClock()
