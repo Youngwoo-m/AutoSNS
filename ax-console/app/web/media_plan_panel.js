@@ -13,7 +13,7 @@ const validRow=(row,c)=>exactKeys(row,ROW_KEYS)&&row.content_id===c.id&&row.cont
 
 export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange=()=>{}}={}) {
   const root=document.createElement('details');root.className='panel media-plan';
-  let ctx=null,writable=true,baseline=null,draft=null,planRevision=0,saved=null,busy=false,message='',generation=0,totalNode=null;
+  let ctx=null,writable=true,baseline=null,draft=null,planRevision=0,saved=null,busy=false,message='',generation=0,totalNode=null,sourceRevision='',previousPlan=null,importButton=null,previewNode=null;
   const copy=value=>JSON.parse(JSON.stringify(value));
   const dirty=()=>!!draft&&JSON.stringify(draft)!==JSON.stringify(baseline);
   const editable=()=>writable&&!busy&&!!draft;
@@ -21,15 +21,19 @@ export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange
   const assetsOf=types=>(ctx?.assets||[]).filter(a=>types.includes(a.media_type));
   const total=()=>draft.scenes.reduce((sum,s)=>sum+(Number.isFinite(s.seconds)?s.seconds:0),0);
   const totalText=()=>`장면 합계 ${Math.round(total()*1000)/1000}초 / 최대 ${MAX_SECONDS}초`;
-  const changed=()=>{if(totalNode)totalNode.textContent=totalText();onChange();};
-  async function request(mine,method,body){
+  const importSafe=()=>!!draft&&!!baseline&&JSON.stringify({...draft,voice_asset_id:null})===JSON.stringify({...baseline,voice_asset_id:null});
+  const sourceNumber=()=>/^[1-9][0-9]{0,9}$/.test(sourceRevision)&&Number(sourceRevision)<ctx?.revision?Number(sourceRevision):null;
+  const canImport=()=>editable()&&!!previousPlan&&previousPlan.content_revision===sourceNumber()&&importSafe();
+  const changed=()=>{if(totalNode)totalNode.textContent=totalText();if(importButton)importButton.disabled=!canImport();onChange();};
+  async function request(mine,method,body,{previous=false}={}){
     const url='/api/v2/contents/'+encodeURIComponent(mine.id)+'/media-plan?revision='+mine.revision;
     let response;
     try{response=await fetcher(url,{method,credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});}
     catch{throw new Error('제작 계획 서버에 연결하지 못했습니다. 입력은 유지됩니다.');}
     if(!response.ok)throw Object.assign(new Error(response.status===409?'다른 창에서 제작 계획이 바뀌었습니다. 입력을 보존했습니다. 저장된 계획을 다시 조회해 비교하세요.':response.status===401?'로그인 후 다시 시도하세요. 입력은 유지됩니다.':'제작 계획을 처리하지 못했습니다. 입력은 유지됩니다.'),{status:response.status});
     let row=null;try{row=await response.json();}catch{row=null;}
-    if(!validRow(row,mine))throw new Error('제작 계획 응답의 원고 버전·소유 계정·형식을 확인할 수 없습니다. 입력은 유지됩니다.');
+    const binding=previous&&typeof row?.manifest_hash==='string'&&/^[0-9a-f]{64}$/.test(row.manifest_hash)?{...mine,manifest_hash:row.manifest_hash}:mine;
+    if(!validRow(row,binding)||(previous&&(!/^[0-9a-f]{64}$/.test(row.manifest_hash)||row.plan_revision<1)))throw new Error('제작 계획 응답의 원고 버전·소유 계정·형식을 확인할 수 없습니다. 입력은 유지됩니다.');
     return row;
   }
   function apply(row){baseline=copy(row.plan);draft=copy(row.plan);planRevision=row.plan_revision;saved={ready:row.inputs_ready,blockers:[...row.blockers]};}
@@ -61,9 +65,9 @@ export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange
     return card;
   }
   function paint(){
-    totalNode=null;
+    totalNode=importButton=previewNode=null;
     const summary=node('summary',{},'숏츠 제작 계획');const body=node('div',{class:'panel-body'});
-    body.append(node('p',{},'저장은 제작 계획 초안만 보존합니다. 렌더러와 Voicebox 실행은 아직 연결되지 않았고, 검토나 게시도 하지 않습니다.'));
+    body.append(node('p',{},'이 패널은 제작 계획만 저장합니다. 음성 합성과 영상 제작은 각각의 제작 패널에서 요청하며, 검토·게시와 별도로 진행됩니다.'));
     body.append(node('p',{class:'sub'},'규칙: 장면 합계 최대 20초 · 디오라마 장면 2~3장에 서로 다른 이미지 · 등록된 WAV 음성 1개가 필요합니다.'));
     if(ctx){
       body.append(node('p',{'data-media-plan-info':'content'},`원고 버전 ${ctx.revision} · 소유 계정 ${ctx.owner_account_id} · ${ctx.title}`));
@@ -81,8 +85,18 @@ export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange
       const add=node('button',{type:'button',class:'btn btn-small','data-media-plan-action':'add-scene',disabled:!editable()||!images.length||draft.scenes.length>=MAX_SCENES},'장면 추가');
       add.addEventListener('click',()=>{if(!editable()||!images.length||draft.scenes.length>=MAX_SCENES)return;draft.scenes.push({asset_id:images[0].id,kind:'diorama',seconds:3,title:'',caption:''});paint();onChange();});body.append(add);
       const save=node('button',{type:'button',class:'btn btn-small','data-media-plan-action':'save',disabled:!editable()},busy?'처리 중…':'제작 계획 저장');save.addEventListener('click',saveDraft);body.append(save);
+      if(ctx.revision>1){
+        const section=node('section',{'data-media-plan-import':'previous'});
+        section.append(node('h4',{},'이전 버전 계획 이어 쓰기'),node('p',{class:'sub'},'이전 장면·자막·출처를 현재 버전에 가져옵니다. 새 WAV를 위에서 선택하면 이전 음성을 대체합니다. 선택하지 않으면 이전 계획의 음성을 유지합니다. 다른 미저장 변경은 먼저 저장하거나 버리세요.'));
+        const input=node('input',{type:'number',min:1,max:ctx.revision-1,step:1,'aria-label':'가져올 이전 원고 버전','data-media-plan-field':'source-revision',disabled:!editable()});input.value=sourceRevision;
+        input.addEventListener('input',()=>{if(!editable())return;sourceRevision=input.value;previousPlan=null;if(previewNode)previewNode.textContent='이전 계획을 조회해 확인하세요.';if(importButton)importButton.disabled=true;onChange();});
+        const label=node('label');label.append(document.createTextNode('이전 원고 버전 '),input);section.append(label);
+        const lookup=node('button',{type:'button',class:'btn btn-small','data-media-plan-action':'lookup-previous',disabled:!editable()},'이전 계획 조회');lookup.addEventListener('click',lookupPrevious);section.append(lookup);
+        previewNode=node('p',{'data-media-plan-info':'previous'},previousPlan?`이전 버전 ${previousPlan.content_revision} · 계획 ${previousPlan.plan_revision} · 장면 ${previousPlan.plan.scenes.length}개 · ${previousPlan.plan.field}`:'이전 계획을 조회해 확인하세요.');section.append(previewNode);
+        importButton=node('button',{type:'button',class:'btn btn-small','data-media-plan-action':'import-previous',disabled:!canImport()},'이전 계획 가져오기');importButton.addEventListener('click',importPrevious);section.append(importButton);body.append(section);
+      }
       if(saved){
-        body.append(node('p',{'data-media-plan-info':'readiness'},saved.ready?'저장된 계획은 입력 조건을 모두 채웠습니다. 다만 실행 연결 전이며 검토 상태는 확인되지 않았습니다.':'저장된 계획에서 부족한 입력: '+saved.blockers.map(b=>BLOCKERS[b]||b).join(' ')));
+        body.append(node('p',{'data-media-plan-info':'readiness'},saved.ready?'저장된 계획은 입력 조건을 모두 채웠습니다. 실제 제작과 검토는 별도로 진행하세요.':'저장된 계획에서 부족한 입력: '+saved.blockers.map(b=>BLOCKERS[b]||b).join(' ')));
         if(dirty())body.append(node('p',{class:'sub'},'미저장 변경은 위 판정에 반영되지 않았습니다.'));
       }
     }
@@ -94,6 +108,22 @@ export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange
   async function load(){
     if(!ctx)return;const token=++generation,mine=ctx;busy=true;message='조회 중';paint();onChange();
     try{const row=await request(mine,'GET');if(token!==generation)return;apply(row);message='저장된 제작 계획 · 실행·검토와 별개';}
+    catch(e){if(token===generation)message=e.message;}
+    finally{if(token===generation){busy=false;paint();onChange();}}
+  }
+  async function lookupPrevious(){
+    if(!editable()||!ctx)return;
+    const revision=sourceNumber();if(revision===null){message='현재 버전보다 작은 이전 원고 버전을 입력하세요.';paint();return;}
+    const token=++generation,mine={...ctx,revision};busy=true;message='이전 계획 조회 중';paint();onChange();
+    try{const row=await request(mine,'GET',undefined,{previous:true});if(token!==generation)return;previousPlan=row;message='이전 계획을 확인했습니다. 가져오기를 눌러 현재 버전에 저장하세요.';}
+    catch(e){if(token===generation)message=e.message;}
+    finally{if(token===generation){busy=false;paint();onChange();}}
+  }
+  async function importPrevious(){
+    if(!canImport()||!ctx)return;
+    const token=++generation,mine=ctx,body={action:'import',expected_revision:planRevision,source_revision:previousPlan.content_revision,source_plan_revision:previousPlan.plan_revision,voice_asset_id:draft.voice_asset_id};
+    busy=true;message='이전 계획 가져오는 중';paint();onChange();
+    try{const row=await request(mine,'POST',body);if(token!==generation)return;apply(row);previousPlan=null;message='이전 계획을 현재 버전에 가져왔습니다. 과거 계획과 검토 기록은 변경하지 않았습니다.';}
     catch(e){if(token===generation)message=e.message;}
     finally{if(token===generation){busy=false;paint();onChange();}}
   }
@@ -117,10 +147,11 @@ export function createMediaPlanPanel({document,fetcher=globalThis.fetch,onChange
     discardChanges(){if(baseline)draft=copy(baseline);paint();},
     refreshControls(options={}){if(options&&options.writable!==undefined)writable=options.writable===true;paint();},
     open(content,{writable:w=true}={}){
-      generation++;busy=false;baseline=draft=saved=null;planRevision=0;message='';writable=w===true;
+      generation++;busy=false;baseline=draft=saved=null;previousPlan=null;sourceRevision='';planRevision=0;message='';writable=w===true;
       const ok=content&&typeof content.id==='string'&&content.id&&Number.isInteger(content.revision)&&content.revision>=0&&typeof content.manifest_hash==='string'&&typeof content.owner_account_id==='string'&&content.owner_account_id;
       if(!ok){ctx=null;if(content)message='원고 정보를 확인할 수 없어 제작 계획을 조회하지 않았습니다.';paint();onChange();return Promise.resolve();}
       ctx={id:content.id,revision:content.revision,manifest_hash:content.manifest_hash,owner_account_id:content.owner_account_id,title:String(content.title??''),series:String(content.series??''),assets:(Array.isArray(content.assets)?content.assets:[]).map(a=>({id:a?.id,filename:a?.filename,media_type:a?.media_type})).filter(a=>typeof a.id==='string')};
+      sourceRevision=String(Math.max(1,ctx.revision-1));
       return load();
     }
   };

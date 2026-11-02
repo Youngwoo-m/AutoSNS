@@ -7,6 +7,7 @@ content_store.get()으로 서버가 조회해 결속하며, 원본·자산·quot
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
+import hashlib
 import math
 from pathlib import Path
 import sqlite3
@@ -242,3 +243,68 @@ class MediaPlanStore:
                 conn.execute('ROLLBACK')
                 raise
         return _public(snapshot, current + 1, normalized)
+
+    def _import_asset(self, snapshot, asset_id, media_types):
+        expected=next((a for a in snapshot['assets'] if a['id']==asset_id),None)
+        if expected is None or expected.get('media_type') not in media_types: _invalid()
+        asset,raw=self.content_store.read_asset(snapshot['id'],snapshot['revision'],asset_id)
+        if (not isinstance(asset,dict) or not isinstance(raw,bytes)
+                or any(asset.get(k)!=expected.get(k) for k in ('id','sha256','size','media_type'))
+                or len(raw)!=expected.get('size') or hashlib.sha256(raw).hexdigest()!=expected.get('sha256')):
+            raise StoreError('storage_error','Asset integrity failure')
+        return asset,raw
+
+    def import_plan(self, content_id, target_revision, expected_revision, source_revision,
+                    source_plan_revision, voice_asset_id=None):
+        """이전 계획만 명시 복사한다. 원본·자산·승인·검토를 생성하거나 변경하지 않는다."""
+        _int(target_revision,1);_int(expected_revision,0)
+        _int(source_revision,1);_int(source_plan_revision,1)
+        if source_revision>=target_revision: _invalid()
+        if voice_asset_id is not None and (type(voice_asset_id) is not str or not voice_asset_id): _invalid()
+        if not self._initialized: raise StoreError('storage_error','initialize() required')
+        with self._db(writable=True) as conn:
+            conn.execute('BEGIN IMMEDIATE')
+            try:
+                source=self._snapshot(content_id,source_revision)
+                target=self._snapshot(content_id,target_revision)
+                if source['owner_account_id']!=target['owner_account_id']: _invalid()
+                head=self.content_store.get(content_id)
+                if not head or head['revision']!=target_revision or head['manifest_hash']!=target['manifest_hash']:
+                    raise ConflictError()
+                row=conn.execute('SELECT * FROM media_plans WHERE content_id=? AND content_revision=?',
+                                 (content_id,source_revision)).fetchone()
+                if row is None: raise StoreError('not_found')
+                source_current,plan=self._stored(source,row)
+                if source_current!=source_plan_revision: raise ConflictError()
+                row=conn.execute('SELECT * FROM media_plans WHERE content_id=? AND content_revision=?',
+                                 (content_id,target_revision)).fetchone()
+                current=0 if row is None else self._stored(target,row)[0]
+                if current!=expected_revision: raise ConflictError()
+                images={scene['asset_id'] for scene in plan['scenes']}
+                shared=[(asset_id,IMAGE_TYPES) for asset_id in images]
+                if voice_asset_id is None and plan['voice_asset_id'] is not None:
+                    shared.append((plan['voice_asset_id'],VOICE_TYPES))
+                for asset_id,types in shared:
+                    old,old_raw=self._import_asset(source,asset_id,types)
+                    new,new_raw=self._import_asset(target,asset_id,types)
+                    if (old_raw!=new_raw or any(old[k]!=new[k] for k in ('sha256','size','media_type'))):
+                        _invalid()
+                if voice_asset_id is not None:
+                    self._import_asset(target,voice_asset_id,VOICE_TYPES)
+                    plan['voice_asset_id']=voice_asset_id
+                plan=validate_media_plan(plan,target)
+                # 자산 검증 중 다른 콘텐츠 버전이 생겼으면 과거 버전에 저장하지 않는다.
+                head=self.content_store.get(content_id)
+                if not head or head['revision']!=target_revision or head['manifest_hash']!=target['manifest_hash']:
+                    raise ConflictError()
+                conn.execute('INSERT INTO media_plans(content_id,content_revision,manifest_hash,owner_account_id,'
+                             'plan_revision,plan,updated_at) VALUES(?,?,?,?,?,?,?) '
+                             'ON CONFLICT(content_id,content_revision) DO UPDATE SET plan_revision=excluded.plan_revision, '
+                             'plan=excluded.plan, updated_at=excluded.updated_at',
+                             (content_id,target_revision,target['manifest_hash'],target['owner_account_id'],
+                              current+1,_dump(plan),_now()))
+                conn.execute('COMMIT')
+            except BaseException:
+                conn.execute('ROLLBACK')
+                raise
+        return _public(target,current+1,plan)

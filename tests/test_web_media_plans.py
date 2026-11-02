@@ -45,3 +45,21 @@ class MediaPlanHTTPTests(unittest.TestCase):
         other=self.server.content_store.create('dept',dict(title='학과',kind='short'))
         status,_,body=self.request('/api/v2/contents/'+other['id']+'/media-plan?revision=1',headers=cookie)
         self.assertEqual(status,200);self.assertEqual(json.loads(body)['owner_account_id'],'dept')
+
+    def test_explicit_import_uses_source_plan_cas_and_preserves_old_plan(self):
+        cookie=self.login();store=self.server.media_plan_store;store.initialize()
+        source=store.save(self.content['id'],1,0,default_media_plan(self.content))
+        next_content=self.server.content_store.add_asset(self.content['id'],1,'image.png','image/png',b'\x89PNG\r\n\x1a\n'+b'x'*30)
+        path='/api/v2/contents/'+self.content['id']+'/media-plan?revision=2'
+        body=dict(action='import',expected_revision=0,source_revision=1,source_plan_revision=1,voice_asset_id=None)
+        self.assertEqual(self.request(path,'POST',body,dict(cookie,Origin='https://evil.example'))[0],403)
+        changed=store.save(self.content['id'],1,1,source['plan'])
+        self.assertEqual(self.request(path,'POST',body,cookie)[0],409)
+        body['source_plan_revision']=changed['plan_revision']
+        source=changed
+        status,_,raw=self.request(path,'POST',body,cookie)
+        self.assertEqual(status,200);result=json.loads(raw)
+        self.assertEqual(result['plan'],source['plan']);self.assertEqual(result['content_revision'],2)
+        self.assertEqual(store.get(self.content['id'],1),source)
+        self.assertEqual(self.request(path,'POST',body,cookie)[0],409)
+        self.assertEqual(self.request(path,'POST',dict(body,owner_account_id='dept'),cookie)[0],400)

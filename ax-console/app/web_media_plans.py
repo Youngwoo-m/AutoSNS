@@ -17,6 +17,9 @@ def handle(store,method,path,query,read_body):
         if store is None:raise StoreError('storage_error')
         return store.get(content_id,revision)
     body=read_body()
+    if isinstance(body,dict) and set(body)=={'action','expected_revision','source_revision','source_plan_revision','voice_asset_id'} and body['action']=='import':
+        if store is None:raise StoreError('storage_error')
+        return store.import_plan(content_id,revision,body['expected_revision'],body['source_revision'],body['source_plan_revision'],body['voice_asset_id'])
     if not isinstance(body,dict) or set(body)!={'expected_revision','plan'}:raise StoreError('invalid')
     if store is None:raise StoreError('storage_error')
     return store.save(content_id,revision,body['expected_revision'],body['plan'])
