@@ -34,6 +34,14 @@ class InstalledVideoStartupTests(unittest.TestCase):
             path=self.root/'bad.json';path.write_text(json.dumps({**dict(schema_version=1,template_id='SurveyShort',enabled=True,template_hash='a'*64,font_sha256='b'*64),**change}))
             with self.assertRaises(ContractError):load_installed_video_settings(path)
 
+    def test_duplicate_enabled_keys_cannot_silently_override_activation(self):
+        path=self.root/'duplicate.json'
+        raw=json.dumps(dict(schema_version=1,template_id='SurveyShort',enabled=False,
+            template_hash='a'*64,font_sha256='b'*64))
+        path.write_text(raw[:-1]+', "enabled": true}')
+        with self.assertRaises(ContractError):load_installed_video_settings(path)
+        self.assertFalse((self.root/'managed').exists())
+
     def test_fixed_registration_has_real_manual_authorizer_and_deferred_review(self):
         calls=[]
         class Installed:

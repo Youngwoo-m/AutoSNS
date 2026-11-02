@@ -18,6 +18,15 @@ class InstalledVideoSettings:
     font_sha256: str
 
 
+def _unique_settings(pairs):
+    value={}
+    for key,item in pairs:
+        if key in value:
+            raise ValueError('duplicate setting')
+        value[key]=item
+    return value
+
+
 def load_installed_video_settings(path):
     path=Path(path)
     if not path.is_absolute() or path.is_symlink() or not path.is_file():
@@ -25,7 +34,7 @@ def load_installed_video_settings(path):
     try:
         with path.open('rb') as stream:raw=stream.read(8193)
         if len(raw)>8192:raise ValueError()
-        value=json.loads(raw)
+        value=json.loads(raw,object_pairs_hook=_unique_settings)
         if (not isinstance(value,dict) or set(value)!={'schema_version','template_id','enabled','template_hash','font_sha256'}
             or type(value['schema_version']) is not int or value['schema_version']!=1 or value['template_id']!='SurveyShort'
             or type(value['enabled']) is not bool or not all(isinstance(value[k],str) and re.fullmatch(r'[0-9a-f]{64}',value[k]) for k in ('template_hash','font_sha256'))):
