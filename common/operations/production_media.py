@@ -200,7 +200,12 @@ def _video_manifest(manifest, root):
 
 
 def render_registered_media(kind: str, manifest: Mapping, *, artifact_root: Path, runners: Mapping) -> dict:
-    """서버 registry에 없는 기능/검사기는 완료 불가. 결과는 불변 자산 ingest 자료다."""
+    """서버 registry에 없는 기능/검사기는 완료 불가. 결과는 불변 자산 ingest 자료다.
+
+    runners['defer_video_review'] is True(remotion_video 전용, 기본 꺼짐)이면 영상 파일과 규격은
+    모두 검증하되 사람 검토가 부족한 경우에 한해 status='awaiting_review'를 돌려준다. 이 결과의
+    evidence에는 검토 완료 flag(audio_checked/font_checked/scenes)가 없어 ingest 계약을 통과할 수 없다.
+    """
     try:
         _require(kind in KINDS, 'missing_required_media')
         _require(isinstance(manifest, Mapping) and isinstance(runners, Mapping))
@@ -208,6 +213,8 @@ def render_registered_media(kind: str, manifest: Mapping, *, artifact_root: Path
         _require(root.is_dir() and not root.is_symlink(), 'unsafe_artifact_path')
         manifest = thaw(manifest)
         evidence = {'kind': kind}
+        defer = kind == 'remotion_video' and runners.get('defer_video_review') is True
+        deferred = False
         if kind == 'reuse_image':
             _require(set(manifest) == {'path', 'sha256', 'source', 'reuse_request_id'})
             _require(_hash(manifest['sha256']) and _strings(manifest, ('source', 'reuse_request_id'))
@@ -264,22 +271,37 @@ def render_registered_media(kind: str, manifest: Mapping, *, artifact_root: Path
                     _require(isinstance(check, Mapping) and all(check.get(k) is True for k in ('checked', 'script_matches', 'intelligible')), 'audio_unchecked')
                     evidence.update(voice_label=VOICE_LABEL, audio_checked=True)
                 else:
+                    # 잘못된 파일/규격은 defer 여부와 상관없이 항상 blocked다.
                     _require((measured.get('width'), measured.get('height')) == (1080, 1920) and measured.get('has_audio') is True, 'video_dimensions_or_audio')
                     _require(_hash(rendered.get('font_sha256')), 'font_unchecked')
                     inspect = runners.get('inspect_video')
-                    _require(callable(inspect), 'video_unchecked')
-                    check = inspect(asset=dict(asset), manifest=manifest, probe=measured)
-                    _require(isinstance(check, Mapping) and all(check.get(k) is True for k in ('audio_checked', 'font_checked', 'disclosure_checked')), 'video_unchecked')
-                    scenes = check.get('scenes')
-                    _require(isinstance(scenes, (list, tuple)) and len(scenes) == len(manifest['scenes'])
-                             and all(isinstance(s, Mapping) and s.get('index') == i and s.get('checked') is True for i, s in enumerate(scenes, 1)), 'video_scenes_unchecked')
-                    evidence.update(font_sha256=rendered['font_sha256'], scenes=thaw(scenes), audio_checked=True, font_checked=True, disclosure=manifest['disclosure'])
-        # 검사 도중 입력/산출물 변경도 완료하지 않는다.
+                    shortfall, reviewed = None, {}
+                    if not callable(inspect):
+                        shortfall = 'video_unchecked'
+                    else:
+                        check = inspect(asset=dict(asset), manifest=manifest, probe=measured)
+                        if not (isinstance(check, Mapping) and all(check.get(k) is True for k in ('audio_checked', 'font_checked', 'disclosure_checked'))):
+                            shortfall = 'video_unchecked'
+                        else:
+                            scenes = check.get('scenes')
+                            if not (isinstance(scenes, (list, tuple)) and len(scenes) == len(manifest['scenes'])
+                                    and all(isinstance(s, Mapping) and s.get('index') == i and s.get('checked') is True for i, s in enumerate(scenes, 1))):
+                                shortfall = 'video_scenes_unchecked'
+                            else:
+                                reviewed = dict(scenes=thaw(scenes), audio_checked=True, font_checked=True)
+                    evidence.update(font_sha256=rendered['font_sha256'], disclosure=manifest['disclosure'])
+                    if shortfall is None:
+                        evidence.update(reviewed)
+                    else:
+                        # 부족한 사람 검토만 보류할 수 있다. 부분 검토 결과는 증거로 남기지 않는다.
+                        _require(defer, shortfall)
+                        deferred = True
+        # 검사 도중 입력/산출물 변경도 완료하지 않는다(보류도 동일).
         for item in evidence.get('inputs', ()):
             _require(_sha(_path(root, item['path'])) == item['sha256'], 'asset_changed')
         _require(_sha(Path(asset['path'])) == asset['sha256'], 'asset_changed')
         asset['evidence'] = dict(evidence)
-        return dict(status='completed', assets=[asset], evidence=evidence)
+        return dict(status='awaiting_review' if deferred else 'completed', assets=[asset], evidence=evidence)
     except ContractError as exc:
         return dict(status='blocked', reason_code=exc.code, assets=[])
     except (OSError, ValueError, TypeError, KeyError, RuntimeError, subprocess.SubprocessError):

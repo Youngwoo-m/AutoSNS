@@ -66,8 +66,12 @@ def prepare_short_media(record,*,content_store,attempt_id):
         freeze(dict(content_id=snapshot['id'],content_revision=revision,manifest_hash=snapshot['manifest_hash'],owner_account_id=snapshot['owner_account_id'])))
 
 
-def render_prepared_short(prepared,*,runner_factory=None,reuse_authorization=None,probe=None,inspect_video=None):
-    """명시 실행 전용. 등록 leaf와 실측/검토자를 주입하지 않으면 완료되지 않는다."""
+def render_prepared_short(prepared,*,runner_factory=None,reuse_authorization=None,probe=None,inspect_video=None,
+                          defer_video_review=False):
+    """명시 실행 전용. 등록 leaf와 실측/검토자를 주입하지 않으면 완료되지 않는다.
+
+    defer_video_review=True이면 사람 검토만 부족한 영상이 awaiting_review로 반환된다(기본 False).
+    """
     if not isinstance(prepared,PreparedShortMedia):raise StoreError('invalid')
     if not callable(runner_factory):return dict(status='blocked',reason_code='renderer_unavailable',assets=[])
     runner=runner_factory(scene_assets=prepared.scene_assets,reuse_authorization=reuse_authorization)
@@ -75,6 +79,7 @@ def render_prepared_short(prepared,*,runner_factory=None,reuse_authorization=Non
     runners={'remotion_video':runner,'scene_assets':prepared.scene_assets,'reuse_authorization':reuse_authorization}
     if probe is not None:runners['probe']=probe
     if inspect_video is not None:runners['inspect_video']=inspect_video
+    if defer_video_review is True:runners['defer_video_review']=True
     return render_registered_media('remotion_video',prepared.manifest,artifact_root=prepared.artifact_root,runners=runners)
 
 

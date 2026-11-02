@@ -4,11 +4,17 @@
 SQLite(video-tasks.sqlite3)에 보존한다. create는 대기열 등록만 하고 파일 복사/렌더/외부 호출을 하지 않는다.
 렌더는 명시 호출한 run_next 한 건뿐이며 자동 재렌더, lease, 프로세스 시작, worker thread는 없다.
 성공 결과는 검토 전 영상 자산 등록이고 review_status는 항상 not_checked다.
+
+defer_video_review=True로 구성한 서비스는 기술 조건을 모두 통과했지만 사람 검토가 비어 있는 영상을
+awaiting_review로 보존한다(재렌더/재시도 없음, ContentStore 등록 없음). confirm_review의 pass는 사람이
+수동으로 남긴 확인 기록(manual_review)이며 독립적인 AI 검증이 아니다. 콘텐츠의 최종 review_status는
+어떤 경우에도 not_checked로 남는다.
 """
 from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -19,33 +25,43 @@ from uuid import UUID, uuid4
 from .content_store import ConflictError, StoreError
 from .media_plan_runtime import prepare_short_media, render_prepared_short
 from .media_plans import media_plan_readiness
-from .models import ContractError
+from .models import ContractError, thaw
+from .production_media import MAX_ASSET_BYTES
 
 DB_NAME = 'video-tasks.sqlite3'
 LOCK_NAME = 'video-worker.lock'
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+LEGACY_SCHEMA_VERSION = 1
 APPLICATION_ID = 0x56494445
 ARTIFACT_DIR = 'media-artifacts'
 OUTPUT_NAME = 'short.mp4'
 OUTPUT_TYPE = 'video/mp4'
 REVIEW_STATUS = 'not_checked'
 MAX_JSON_CHARS = 1000000
-STATES = ('queued', 'preparing', 'rendering', 'rendered', 'completed', 'blocked', 'failed', 'unknown',
-          'content_changed')
-NONTERMINAL = ('queued', 'preparing', 'rendering', 'rendered', 'unknown')
+STATES = ('queued', 'preparing', 'rendering', 'rendered', 'awaiting_review', 'completed', 'blocked', 'failed',
+          'unknown', 'content_changed')
+LEGACY_STATES = tuple(s for s in STATES if s != 'awaiting_review')
+NONTERMINAL = ('queued', 'preparing', 'rendering', 'rendered', 'awaiting_review', 'unknown')
 COLUMNS = ('task_id', 'intent_hash', 'owner_account_id', 'content_id', 'input_revision', 'manifest_hash',
            'plan_revision', 'plan_hash', 'state', 'reason_code', 'prepared', 'result', 'attempt',
            'output_revision', 'asset_id', 'version')
 MUTABLE = frozenset({'state', 'reason_code', 'prepared', 'result', 'attempt', 'output_revision', 'asset_id'})
-DDL = (
-    'CREATE TABLE video_tasks(task_id TEXT PRIMARY KEY, intent_hash TEXT NOT NULL UNIQUE, '
-    'owner_account_id TEXT NOT NULL, content_id TEXT NOT NULL, input_revision INTEGER NOT NULL, '
-    'manifest_hash TEXT NOT NULL, plan_revision INTEGER NOT NULL, plan_hash TEXT NOT NULL, '
-    'state TEXT NOT NULL CHECK(state IN (' + ','.join("'" + s + "'" for s in STATES) + ')), '
-    'reason_code TEXT, prepared TEXT, result TEXT, attempt INTEGER NOT NULL DEFAULT 0, '
-    'output_revision INTEGER, asset_id TEXT, version INTEGER NOT NULL DEFAULT 1)',
-    'CREATE INDEX video_tasks_content ON video_tasks(content_id, input_revision)',
-)
+
+
+def _ddl(states):
+    return (
+        'CREATE TABLE video_tasks(task_id TEXT PRIMARY KEY, intent_hash TEXT NOT NULL UNIQUE, '
+        'owner_account_id TEXT NOT NULL, content_id TEXT NOT NULL, input_revision INTEGER NOT NULL, '
+        'manifest_hash TEXT NOT NULL, plan_revision INTEGER NOT NULL, plan_hash TEXT NOT NULL, '
+        'state TEXT NOT NULL CHECK(state IN (' + ','.join("'" + s + "'" for s in states) + ')), '
+        'reason_code TEXT, prepared TEXT, result TEXT, attempt INTEGER NOT NULL DEFAULT 0, '
+        'output_revision INTEGER, asset_id TEXT, version INTEGER NOT NULL DEFAULT 1)',
+        'CREATE INDEX video_tasks_content ON video_tasks(content_id, input_revision)',
+    )
+
+
+DDL = _ddl(STATES)
+LEGACY_DDL = _ddl(LEGACY_STATES)
 # 공개 reason_code 허용 목록. 이 밖의 값은 저장하지 않고 renderer reason은 media_render_blocked로 바꾼다.
 SAFE_REASONS = frozenset({
     'content_changed', 'plan_changed', 'content_store_unavailable', 'media_inputs_required',
@@ -58,8 +74,15 @@ SAFE_REASONS = frozenset({
     'video_dimensions_or_audio', 'font_unchecked', 'video_unchecked', 'video_scenes_unchecked',
     'invalid_media_result', 'template_changed', 'artifact_already_exists', 'remotion_render_failed',
     'media_render_failed', 'media_validation_failed', 'invalid_remotion_registration',
+    'video_review_required', 'video_review_changes_requested',
 })
 RESULT_KEYS = {'filename', 'media_type', 'size', 'sha256', 'evidence'}
+CANDIDATE_KEYS = {'candidate', 'manifest'}
+EVIDENCE_KEYS = {'kind', 'probe', 'font_sha256', 'inputs', 'disclosure'}
+INPUT_KEYS = {'asset_id', 'path', 'sha256', 'source', 'origin', 'provenance', 'provenance_hash', 'reuse_request_id'}
+CHECK_KEYS = {'audio_checked', 'font_checked', 'disclosure_checked', 'scenes_checked'}
+DECISIONS = ('pass', 'changes_requested')
+MAX_NOTES_CHARS = 2000
 DIGEST = re.compile(r'[0-9a-f]{64}')
 
 
@@ -128,17 +151,22 @@ class VideoTaskStore:
                 and conn.execute("SELECT COUNT(*) FROM sqlite_master").fetchone()[0] == 0)
 
     @staticmethod
-    def _verify(conn):
+    def _verify(conn, legacy=False):
+        """application_id/버전/테이블·인덱스 DDL/컬럼이 정확히 알려진 스키마일 때만 통과한다. 버전을 돌려준다."""
+        version = conn.execute('PRAGMA user_version').fetchone()[0]
         if (conn.execute('PRAGMA application_id').fetchone()[0] != APPLICATION_ID
-                or conn.execute('PRAGMA user_version').fetchone()[0] != SCHEMA_VERSION):
+                or version not in ((SCHEMA_VERSION, LEGACY_SCHEMA_VERSION) if legacy else (SCHEMA_VERSION,))):
             raise ContractError('video_storage_foreign')
-        names = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")}
+        expected = DDL if version == SCHEMA_VERSION else LEGACY_DDL
+        objects = {r[0]: r[1] for r in conn.execute("SELECT name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'")}
         columns = tuple(r[1] for r in conn.execute('PRAGMA table_info(video_tasks)'))
-        if names != {'video_tasks', 'video_tasks_content'} or columns != COLUMNS:
+        if objects != {'video_tasks': expected[0], 'video_tasks_content': expected[1]} or columns != COLUMNS:
             raise ContractError('video_storage_foreign')
+        return version
 
     @contextmanager
     def _db(self, writable=False):
+        """읽기 전용은 schema 1도 허용하지만 자동 migration은 하지 않는다. 쓰기는 schema 2만 허용한다."""
         if writable and not self._initialized:
             raise ContractError('video_storage_error', 'initialize() required')
         path = self._db_path()
@@ -150,7 +178,7 @@ class VideoTaskStore:
         conn = None
         try:
             conn = self._connect(path, 'rw' if writable else 'ro')
-            self._verify(conn)
+            self._verify(conn, legacy=not writable)
             yield conn
         except ContractError:
             raise
@@ -161,9 +189,10 @@ class VideoTaskStore:
                 conn.close()
 
     def initialize(self):
-        """유일한 생성 지점. 외부/foreign DB와 symlink는 건드리지 않고 거부한다."""
+        """유일한 생성/migration 지점. 외부/foreign DB와 symlink는 건드리지 않고 거부한다."""
         path = self._db_path()
         conn = None
+        migrate = False
         try:
             self.root.mkdir(parents=True, exist_ok=True)
             if path.exists():
@@ -172,8 +201,8 @@ class VideoTaskStore:
                     if self._is_empty(probe):
                         mode = 'rw'
                     else:
-                        self._verify(probe)
-                        mode = None
+                        migrate = self._verify(probe, legacy=True) == LEGACY_SCHEMA_VERSION
+                        mode = 'rw' if migrate else None
                 finally:
                     probe.close()
                 if mode is None:
@@ -184,12 +213,15 @@ class VideoTaskStore:
             conn = self._connect(path, mode)
             conn.execute('BEGIN IMMEDIATE')
             try:
-                if not self._is_empty(conn):
-                    raise ContractError('video_storage_foreign')
-                for statement in DDL:
-                    conn.execute(statement)
-                conn.execute('PRAGMA application_id=%d' % APPLICATION_ID)
-                conn.execute('PRAGMA user_version=%d' % SCHEMA_VERSION)
+                if migrate:
+                    self._migrate(conn)
+                else:
+                    if not self._is_empty(conn):
+                        raise ContractError('video_storage_foreign')
+                    for statement in DDL:
+                        conn.execute(statement)
+                    conn.execute('PRAGMA application_id=%d' % APPLICATION_ID)
+                    conn.execute('PRAGMA user_version=%d' % SCHEMA_VERSION)
                 conn.commit()
             except BaseException:
                 conn.rollback()
@@ -202,6 +234,32 @@ class VideoTaskStore:
             if conn is not None:
                 conn.close()
         self._initialized = True
+
+    def _migrate(self, conn):
+        """schema 1 -> 2. 호출자의 BEGIN IMMEDIATE 안에서 table/index를 재생성하고 모든 row를 그대로 옮긴다."""
+        if self._verify(conn, legacy=True) != LEGACY_SCHEMA_VERSION:
+            raise ContractError('video_storage_foreign')
+        columns = ','.join(COLUMNS)
+        conn.execute('DROP INDEX video_tasks_content')
+        conn.execute('ALTER TABLE video_tasks RENAME TO video_tasks_v1')
+        conn.execute(DDL[0])
+        conn.execute('INSERT INTO video_tasks(rowid,%s) SELECT rowid,%s FROM video_tasks_v1 ORDER BY rowid'
+                     % (columns, columns))
+        self._verify_migrated(conn)
+        conn.execute('DROP TABLE video_tasks_v1')
+        conn.execute(DDL[1])
+        conn.execute('PRAGMA user_version=%d' % SCHEMA_VERSION)
+        self._verify(conn)
+
+    @staticmethod
+    def _verify_migrated(conn):
+        columns = ','.join(COLUMNS)
+        old = conn.execute('SELECT COUNT(*) FROM video_tasks_v1').fetchone()[0]
+        new = conn.execute('SELECT COUNT(*) FROM video_tasks').fetchone()[0]
+        lost = conn.execute('SELECT COUNT(*) FROM (SELECT %s FROM video_tasks_v1 EXCEPT SELECT %s FROM video_tasks)'
+                            % (columns, columns)).fetchone()[0]
+        if old != new or lost:
+            raise ContractError('video_storage_error', 'migration verification failed')
 
     # --- 전체 worker 잠금 -------------------------------------------------
     @contextmanager
@@ -275,20 +333,25 @@ class VideoTaskStore:
                 raise
             return dict(row) if changed == 1 else None
 
-    def transition(self, task_id, from_states, **fields):
-        """CAS: 현재 state가 from_states일 때만 갱신한다. 성공 여부를 돌려준다."""
+    def transition(self, task_id, from_states, *, expected_version=None, **fields):
+        """CAS: 현재 state가 from_states(그리고 주어지면 version이 expected_version)일 때만 갱신한다."""
         _task_id(task_id)
         reason = fields.get('reason_code')
         if (not fields or set(fields) - MUTABLE or fields.get('state') not in STATES or not from_states
                 or set(from_states) - set(STATES) or (reason is not None and reason not in SAFE_REASONS)
+                or (expected_version is not None and (type(expected_version) is not int or expected_version < 1))
                 or any(fields.get(k) is not None and (not isinstance(fields[k], str) or len(fields[k]) > MAX_JSON_CHARS)
                        for k in ('prepared', 'result'))):
             raise ContractError('video_storage_error', 'invalid transition')
         columns = sorted(fields)
         sql = ('UPDATE video_tasks SET ' + ','.join(c + '=?' for c in columns) + ',version=version+1 '
                'WHERE task_id=? AND state IN (' + ','.join('?' * len(from_states)) + ')')
+        args = [fields[c] for c in columns] + [task_id, *from_states]
+        if expected_version is not None:
+            sql += ' AND version=?'
+            args.append(expected_version)
         with self._db(True) as conn:
-            changed = conn.execute(sql, [fields[c] for c in columns] + [task_id, *from_states]).rowcount
+            changed = conn.execute(sql, args).rowcount
         return changed == 1
 
     def get_row(self, task_id):
@@ -340,10 +403,11 @@ def _revision(value):
 
 class VideoTaskService:
     def __init__(self, store, content_store, plan_store, *, enabled=False, runner_factory=None,
-                 reuse_authorization=None, probe=None, inspect_video=None):
+                 reuse_authorization=None, probe=None, inspect_video=None, defer_video_review=False):
         self.store, self.content_store, self.plan_store = store, content_store, plan_store
         self.enabled, self.runner_factory = enabled is True, runner_factory
         self.reuse_authorization, self.probe, self.inspect_video = reuse_authorization, probe, inspect_video
+        self.defer_video_review = defer_video_review is True
 
     def get(self, task_id): return self.store.get(task_id)
 
@@ -396,6 +460,19 @@ class VideoTaskService:
             ready = False
         if not ready:
             raise ContractError('media_inputs_required')
+        # 새 버전/계획의 명시 제작 요청은 더는 승인할 수 없는 옛 검토 대기를
+        # 보관 상태로 옮긴다. 파일·검토 입력은 보존하고, 같은 입력의 재시도는 위에서 반환한다.
+        for waiting in self.store.list_for_content(content_id):
+            if waiting['state']!='awaiting_review':
+                continue
+            old=self.store.get_row(waiting['task_id'])
+            if old is None or old['owner_account_id']!=snapshot['owner_account_id']:
+                continue
+            stale_content=old['input_revision']!=revision or old['manifest_hash']!=snapshot['manifest_hash']
+            stale_plan=old['plan_revision']!=plan_revision or old['plan_hash']!=plan_hash
+            if stale_content or stale_plan:
+                self.store.transition(old['task_id'],('awaiting_review',),expected_version=old['version'],
+                    state='content_changed',reason_code='content_changed' if stale_content else 'plan_changed')
         row, _ = self.store.claim(owner_account_id=snapshot['owner_account_id'], content_id=content_id,
                                   input_revision=revision, manifest_hash=snapshot['manifest_hash'],
                                   plan_revision=plan_revision, plan_hash=plan_hash, intent_hash=intent)
@@ -449,20 +526,24 @@ class VideoTaskService:
         if not self.store.transition(task_id, ('preparing',), state='rendering', prepared=prepared_json):
             return self.store.get_row(task_id)
         row = self.store.get_row(task_id)
+        # defer 옵션이 꺼져 있으면 기존과 완전히 같은 호출이다.
+        options = {'defer_video_review': True} if self.defer_video_review else {}
         try:  # 이 시점부터 렌더가 시작됐을 수 있다.
             result = render_prepared_short(prepared, runner_factory=self.runner_factory,
                                            reuse_authorization=self.reuse_authorization, probe=self.probe,
-                                           inspect_video=self.inspect_video)
+                                           inspect_video=self.inspect_video, **options)
         except Exception:
             return self._move(row, ('rendering',), state='unknown', reason_code='render_outcome_unknown')
-        row = self._settle(row, prepared.artifact_root, result)
+        row = self._settle(row, prepared.artifact_root, result, prepared.manifest)
         return self._ingest(row) if row['state'] == 'rendered' else row
 
-    def _settle(self, row, root, result):
+    def _settle(self, row, root, result, manifest=None):
         status = result.get('status') if isinstance(result, dict) else None
         if status in ('blocked', 'error'):
             return self._move(row, ('rendering',), state='blocked',
                               reason_code=_reason(result.get('reason_code'), 'media_render_blocked'))
+        if status == 'awaiting_review' and self.defer_video_review and manifest is not None:
+            return self._settle_awaiting(row, root, result, manifest)
         if status != 'completed':
             return self._move(row, ('rendering',), state='unknown', reason_code='render_result_invalid')
         assets = result.get('assets')
@@ -478,6 +559,29 @@ class VideoTaskService:
         except (TypeError, ValueError, RecursionError):
             return self._move(row, ('rendering',), state='failed', reason_code='render_result_invalid')
         return self._move(row, ('rendering',), state='rendered', result=stored)
+
+    def _settle_awaiting(self, row, root, result, manifest):
+        """leaf 보고를 믿지 않고 기술 조건을 독립 검증한 뒤 candidate+manifest를 durable하게 보존한다."""
+        candidate = None
+        try:
+            review = self._review_manifest(manifest)
+            assets = result.get('assets')
+            item = assets[0] if isinstance(assets, (list, tuple)) and len(assets) == 1 else None
+            if (isinstance(item, dict) and Path(item['path']) == root / OUTPUT_NAME
+                    and item.get('media_type') == OUTPUT_TYPE):
+                candidate = dict(filename=OUTPUT_NAME, media_type=OUTPUT_TYPE, size=item['size'],
+                                 sha256=item['sha256'], evidence=thaw(item['evidence']))
+            if candidate is not None and self._candidate_raw(root, candidate, review) is None:
+                candidate = None
+            stored = json.dumps(dict(candidate=candidate, manifest=review), sort_keys=True, allow_nan=False)
+        except (KeyError, TypeError, ValueError, RecursionError, OSError):
+            candidate = stored = None
+        if candidate is None:
+            return self._move(row, ('rendering',), state='blocked', reason_code='invalid_production_result')
+        if len(stored) > MAX_JSON_CHARS:
+            return self._move(row, ('rendering',), state='failed', reason_code='render_result_invalid')
+        return self._move(row, ('rendering',), state='awaiting_review', reason_code='video_review_required',
+                          result=stored)
 
     @staticmethod
     def _validated(root, item):
@@ -496,7 +600,7 @@ class VideoTaskService:
 
     # --- resume -----------------------------------------------------------
     def resume(self, task_id):
-        """rendered만 저장된 결과를 다시 검증해 CAS 등록한다. 그 밖의 상태는 렌더 없이 그대로 돌려준다."""
+        """rendered만 저장된 결과를 다시 검증해 CAS 등록한다. 그 밖의 상태(awaiting_review 포함)는 렌더 없이 그대로 돌려준다."""
         if not self.enabled:
             raise ContractError('video_disabled')
         row = self.store.get_row(_task_id(task_id))
@@ -593,3 +697,224 @@ class VideoTaskService:
         if _hash(data) != asset['sha256']:
             return changed
         return ('done', head['revision'], added['id'])
+
+    # --- 사람 검토 --------------------------------------------------------
+    @staticmethod
+    def _review_manifest(plan):
+        """검토자에게 보이는 원고/장면 정보. 경로·음성·provenance는 포함하지 않는다."""
+        plan = thaw(plan)
+        scenes = [dict(index=i, kind=s['kind'], seconds=s['seconds'], title=s['title'], caption=s['caption'])
+                  for i, s in enumerate(plan['scenes'], 1)]
+        return dict(exam=plan['exam'], field=plan['field'], source=plan['source'], footer=plan['footer'],
+                    disclosure=plan['disclosure'], scenes=scenes)
+
+    @staticmethod
+    def _read_file(path):
+        """symlink가 아닌 일반 파일의 bytes. 아니면 None."""
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_ASSET_BYTES:
+            return None
+        return path.read_bytes()
+
+    def _candidate_raw(self, root, candidate, review):
+        """저장/보고된 candidate를 실제 파일과 독립적으로 대조한다. 통과하면 영상 bytes, 아니면 None.
+
+        leaf 보고(evidence)를 그대로 믿지 않고 bytes hash/size/MP4 header, 규격(1080x1920, 소리, 0<초<=20),
+        font hash, 합성 고지, 입력 이미지 hash를 다시 확인한다. 검토 완료 flag가 섞인 evidence는 거부한다.
+        """
+        try:
+            root = Path(root)
+            if (root.is_symlink() or not isinstance(candidate, dict) or set(candidate) != RESULT_KEYS
+                    or candidate['filename'] != OUTPUT_NAME or candidate['media_type'] != OUTPUT_TYPE
+                    or type(candidate['size']) is not int or not isinstance(candidate['sha256'], str)
+                    or not DIGEST.fullmatch(candidate['sha256'])):
+                return None
+            raw = self._read_file(root / OUTPUT_NAME)
+            if (raw is None or len(raw) < 12 or raw[4:8] != b'ftyp' or len(raw) != candidate['size']
+                    or _hash(raw) != candidate['sha256']):
+                return None
+            evidence = candidate['evidence']
+            if not isinstance(evidence, dict) or set(evidence) != EVIDENCE_KEYS or evidence['kind'] != 'remotion_video':
+                return None
+            probe = evidence['probe']
+            seconds = probe['seconds']
+            if (not isinstance(probe, dict) or type(seconds) not in (int, float) or not math.isfinite(seconds)
+                    or not 0 < seconds <= 20 or (probe['width'], probe['height']) != (1080, 1920)
+                    or probe['has_audio'] is not True):
+                return None
+            disclosure = evidence['disclosure']
+            if (not isinstance(evidence['font_sha256'], str) or not DIGEST.fullmatch(evidence['font_sha256'])
+                    or not isinstance(disclosure, str) or 'AI 합성 음성' not in disclosure
+                    or disclosure != review['disclosure']):
+                return None
+            inputs = evidence['inputs']
+            if not isinstance(inputs, list) or len(inputs) != len(review['scenes']):
+                return None
+            for item in inputs:
+                if (not isinstance(item, dict) or set(item) != INPUT_KEYS or not isinstance(item['sha256'], str)
+                        or not DIGEST.fullmatch(item['sha256']) or not isinstance(item['path'], str)):
+                    return None
+                path = Path(item['path'])
+                if not path.is_absolute() or path.parent != root:
+                    return None
+                data = self._read_file(path)
+                if data is None or _hash(data) != item['sha256']:
+                    return None
+            return raw
+        except (KeyError, TypeError, ValueError, OSError, RecursionError):
+            return None
+
+    def _load_result(self, row):
+        try:
+            data = json.loads(row['result'], parse_constant=_reject_constant)
+        except (TypeError, ValueError):
+            return None
+        if not isinstance(data, dict) or set(data) not in (CANDIDATE_KEYS, CANDIDATE_KEYS | {'changes_requested'}):
+            return None
+        return data
+
+    def _verify_review(self, row):
+        """awaiting_review 행을 저장물·실제 파일·현재 원고/계획과 모두 대조한다. (root, data, raw, fingerprint)."""
+        try:
+            root = self._artifact_root(row)
+            data = self._load_result(row)
+            if root is None or data is None or set(data) != CANDIDATE_KEYS:
+                raise ContractError('video_review_invalid')
+            try:
+                head = self.content_store.get(row['content_id'])
+                record = self.plan_store.get(row['content_id'], row['input_revision']) if head is not None else None
+            except StoreError:
+                raise ContractError('content_store_unavailable') from None
+            if (head is None or head['owner_account_id'] != row['owner_account_id']
+                    or head['revision'] != row['input_revision'] or head['manifest_hash'] != row['manifest_hash']):
+                raise ContractError('content_changed')
+            if (record is None or record['plan_revision'] != row['plan_revision']
+                    or record['owner_account_id'] != row['owner_account_id']
+                    or record['manifest_hash'] != row['manifest_hash'] or self._plan_hash(record) != row['plan_hash']):
+                raise ContractError('plan_changed')
+            review = self._review_manifest(record['plan'])
+            if data['manifest'] != review:
+                raise ContractError('video_review_invalid')
+            candidate = data['candidate']
+            raw = self._candidate_raw(root, candidate, review)
+            if raw is None:
+                raise ContractError('video_review_invalid')
+            fingerprint = _hash(_canonical(dict(
+                version=row['version'], task_id=row['task_id'], owner=row['owner_account_id'],
+                input=dict(content_id=row['content_id'], input_revision=row['input_revision'],
+                           manifest_hash=row['manifest_hash']),
+                plan=dict(plan_revision=row['plan_revision'], plan_hash=row['plan_hash']),
+                output=dict(sha256=candidate['sha256'], size=candidate['size']),
+                manifest=data['manifest'], evidence=candidate['evidence'])).encode('utf-8'))
+            return root, data, raw, fingerprint
+        except ContractError:
+            raise
+        except (OSError, ValueError, TypeError, KeyError, RecursionError):
+            raise ContractError('video_review_invalid') from None
+
+    def _review_row(self, task_id):
+        if not self.enabled:
+            raise ContractError('video_disabled')  # 어떤 I/O도 하기 전에 거부
+        row = self.store.get_row(_task_id(task_id))
+        if row is None:
+            raise ContractError('task_not_found')
+        if row['state'] != 'awaiting_review':
+            raise ContractError('video_review_unavailable')
+        return row
+
+    def review_context(self, task_id):
+        """검토 화면용 읽기 전용 context. 경로/음성/provenance/actor는 노출하지 않는다."""
+        row = self._review_row(task_id)
+        _, data, _, fingerprint = self._verify_review(row)
+        candidate = data['candidate']
+        probe = candidate['evidence']['probe']
+        media = dict(filename=OUTPUT_NAME, media_type=OUTPUT_TYPE, size=candidate['size'], sha256=candidate['sha256'],
+                     seconds=probe['seconds'], width=probe['width'], height=probe['height'],
+                     has_audio=probe['has_audio'])
+        return dict(task_id=row['task_id'], state=row['state'], content_id=row['content_id'],
+                    input_revision=row['input_revision'], plan_revision=row['plan_revision'],
+                    context_fingerprint=fingerprint, scene_count=len(data['manifest']['scenes']), media=media,
+                    manifest=data['manifest'], review_status=REVIEW_STATUS)
+
+    def review_video(self, task_id):
+        """(metadata, bytes). review_context와 같은 검증을 거치며 렌더/파일 쓰기/상태 전이가 없다."""
+        row = self._review_row(task_id)
+        _, data, raw, _ = self._verify_review(row)
+        candidate = data['candidate']
+        return (dict(filename=OUTPUT_NAME, media_type=OUTPUT_TYPE, size=candidate['size'], sha256=candidate['sha256']),
+                raw)
+
+    def confirm_review(self, task_id, context_fingerprint, decision, checks, notes, *, actor='console_user'):
+        """사람이 직접 남기는 수동 검토 기록. 독립적인 AI 검증이 아니며 actor는 서버가 정한 값만 쓴다.
+
+        pass: 모든 확인 항목이 True여야 하며 manual_review를 evidence에 남겨 기존 production 검증을 통과해야
+        rendered로 저장하고 _ingest를 한 번 호출한다. changes_requested: blocked로 보존하고 등록/재렌더는 없다.
+        """
+        if not self.enabled:
+            raise ContractError('video_disabled')
+        task_id = _task_id(task_id)
+        try:
+            valid_notes=isinstance(notes,str) and len(notes)<=MAX_NOTES_CHARS and '\x00' not in notes
+            if valid_notes:notes.encode('utf-8')
+        except UnicodeError:
+            valid_notes=False
+        if (not isinstance(context_fingerprint, str) or not DIGEST.fullmatch(context_fingerprint)
+                or not isinstance(decision, str) or decision not in DECISIONS
+                or not isinstance(checks, dict) or set(checks) != CHECK_KEYS
+                or any(type(v) is not bool for v in checks.values())
+                or not valid_notes
+                or not isinstance(actor, str) or not actor.strip() or len(actor) > 100 or '\x00' in actor):
+            raise ContractError('invalid_video_review')
+        if (decision == 'pass' and not all(checks.values())) or (decision == 'changes_requested' and not notes.strip()):
+            raise ContractError('invalid_video_review')
+        record = dict(actor=actor, notes=notes, fingerprint=context_fingerprint, checks=dict(checks))
+        with self.store.worker_lock():
+            row = self.store.get_row(task_id)
+            if row is None:
+                raise ContractError('task_not_found')
+            if row['state'] != 'awaiting_review':
+                return self._replay_review(row, decision, record)
+            root, data, _, fingerprint = self._verify_review(row)
+            if fingerprint != context_fingerprint:
+                raise ContractError('video_review_stale')
+            candidate = data['candidate']
+            if decision == 'changes_requested':
+                stored = json.dumps(dict(data, changes_requested=record), sort_keys=True, allow_nan=False)
+                fields = dict(state='blocked', reason_code='video_review_changes_requested', result=stored)
+            else:
+                evidence = dict(candidate['evidence'], audio_checked=True, font_checked=True,
+                                scenes=[dict(index=i, checked=True) for i in range(1, len(data['manifest']['scenes']) + 1)],
+                                manual_review=dict(record))
+                item = dict(path=str(root / OUTPUT_NAME), filename=OUTPUT_NAME, media_type=OUTPUT_TYPE,
+                            size=candidate['size'], sha256=candidate['sha256'], evidence=evidence)
+                if self._validated(root, item) is None:
+                    raise ContractError('video_review_invalid')
+                stored = json.dumps(dict(filename=OUTPUT_NAME, media_type=OUTPUT_TYPE, size=candidate['size'],
+                                         sha256=candidate['sha256'], evidence=evidence), sort_keys=True, allow_nan=False)
+                fields = dict(state='rendered', reason_code=None, result=stored)
+            if not self.store.transition(task_id, ('awaiting_review',), expected_version=row['version'], **fields):
+                raise ContractError('video_review_stale')
+            row = self.store.get_row(task_id)
+            if decision == 'pass':
+                row = self._ingest(row)  # 한 번만. 실패/중단은 rendered로 남아 resume이 읽기 복구한다.
+            return _public(row)
+
+    def _replay_review(self, row, decision, record):
+        """응답을 잃은 같은 요청의 재시도. 저장된 수동 기록과 정확히 같을 때만 읽기만으로 같은 공개 상태를 돌려준다."""
+        conflict = ContractError('video_review_conflict')
+        try:
+            data = json.loads(row['result'], parse_constant=_reject_constant) if row['result'] else None
+            root = self._artifact_root(row)
+            if decision == 'pass' and row['state'] in ('rendered', 'completed'):
+                saved = data['evidence']['manual_review'] if set(data) == RESULT_KEYS else None
+                stored = data
+            elif (decision == 'changes_requested' and row['state'] == 'blocked'
+                  and row['reason_code'] == 'video_review_changes_requested' and set(data) == CANDIDATE_KEYS | {'changes_requested'}):
+                saved, stored = data['changes_requested'], data['candidate']
+            else:
+                raise conflict
+            raw = self._read_file(root / OUTPUT_NAME) if root is not None else None
+        except (KeyError, TypeError, ValueError, OSError):
+            raise conflict from None
+        if saved != record or raw is None or len(raw) != stored['size'] or _hash(raw) != stored['sha256']:
+            raise conflict
+        return _public(row)

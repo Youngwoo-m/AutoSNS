@@ -115,7 +115,7 @@ class VideoTaskTests(unittest.TestCase):
         conn = sqlite3.connect(root / DB_NAME)
         self.addCleanup(conn.close)
         self.assertEqual(conn.execute('PRAGMA application_id').fetchone()[0], 0x56494445)
-        self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], 1)
+        self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], 2)
 
     def test_foreign_database_and_symlinks_are_rejected(self):
         tmp = tempfile.TemporaryDirectory()

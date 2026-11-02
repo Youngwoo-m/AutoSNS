@@ -49,7 +49,7 @@ from common.operations.media_plans import MediaPlanStore
 from common.operations.voice_tasks import VoiceTaskStore,VoiceTaskService
 from common.operations.video_tasks import VideoTaskStore,VideoTaskService
 from web_voice_tasks import recognizes as voice_tasks_path, handle as handle_voice_tasks, CONTENT as VOICE_CONTENT_ROUTE
-from web_video_tasks import recognizes as video_tasks_path, handle as handle_video_tasks, CONTENT as VIDEO_CONTENT_ROUTE
+from web_video_tasks import recognizes as video_tasks_path, handle as handle_video_tasks, CONTENT as VIDEO_CONTENT_ROUTE, VideoPreview, preview_response
 from web_media_plans import recognizes as media_plan_path, handle as handle_media_plans
 from web_production_settings import recognizes as production_settings_path, handle as handle_production_settings
 from common.shared.axlock import AxLock, LockPaths
@@ -458,6 +458,9 @@ class _Handler(BaseHTTPRequestHandler):
                 result = handle_video_tasks(self.server.video_task_store, self.server.video_task_service, method, path, query,
                     lambda: self._read_body(16384, json_body=True))
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                if isinstance(result,VideoPreview):
+                    status,raw,headers=preview_response(result,self.headers.get('Range'))
+                    return self._send(status,body=raw,content_type='video/mp4',headers=headers)
                 return self._send(200, result)
             if media_plan_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')

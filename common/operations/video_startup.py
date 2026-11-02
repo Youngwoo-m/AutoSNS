@@ -13,11 +13,12 @@ class VideoRegistration:
     reuse_authorization: object
     probe: object
     inspect_video: object
+    defer_video_review: bool = False
 
 
 def validate_video_registration(registration):
     """웹의 경로·명령·검토 플래그를 등록으로 취급하지 않는다."""
-    if not isinstance(registration,VideoRegistration) or not all(callable(getattr(registration,key)) for key in
+    if not isinstance(registration,VideoRegistration) or type(registration.defer_video_review) is not bool or not all(callable(getattr(registration,key)) for key in
             ('runner_factory','reuse_authorization','probe','inspect_video')):
         raise ContractError('video_registration_required')
     return registration
@@ -35,4 +36,4 @@ def build_video_task_service(*,config,content_store,registration=None,activate=F
     return VideoTaskService(VideoTaskStore(root),content_store,
         MediaPlanStore(root,content_store),enabled=True,
         runner_factory=registration.runner_factory,reuse_authorization=registration.reuse_authorization,
-        probe=registration.probe,inspect_video=registration.inspect_video)
+        probe=registration.probe,inspect_video=registration.inspect_video,defer_video_review=registration.defer_video_review)

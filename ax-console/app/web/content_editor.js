@@ -82,9 +82,9 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
   const childBlocksRevision=()=>video.isBusy()||video.isDirty()||voice.isBusy()||voice.isDirty()||media.isBusy()||media.isDirty()||toolkit.isBusy()||delivery.hasUnsavedChanges()||delivery.isBusy()||!!execution?.isDirty()||!!execution?.isBusy();
   function updateRevisionControls(){
     const base=canWrite()&&!session.dirty()&&!delivery.isBusy()&&!delivery.hasUnsavedChanges()&&!execution?.isBusy()&&!execution?.isDirty()&&!toolkit.isBusy();
-    const allowed=base&&!video.isBusy()&&!voice.isBusy()&&!voice.isDirty();
+    const allowed=base&&!video.isBusy()&&!video.isDirty()&&!voice.isBusy()&&!voice.isDirty();
     if(allowed!==mediaWritable){mediaWritable=allowed;media.refreshControls({writable:allowed});}
-    const voiceAllowed=base&&!video.isBusy()&&!media.isBusy()&&!media.isDirty();
+    const voiceAllowed=base&&!video.isBusy()&&!video.isDirty()&&!media.isBusy()&&!media.isDirty();
     if(voiceAllowed!==voiceWritable){voiceWritable=voiceAllowed;voice.refreshControls({writable:voiceAllowed});}
     const videoAllowed=base&&!voice.isBusy()&&!voice.isDirty()&&!media.isBusy()&&!media.isDirty();
     if(videoAllowed!==videoWritable){videoWritable=videoAllowed;video.refreshControls({writable:videoAllowed});}
@@ -93,7 +93,7 @@ export function createContentEditor({api,onSaved=()=>{},writable=()=>false,execu
     root.querySelectorAll('[data-revision-write]').forEach(node=>node.disabled=!canWrite()||blocked||(node.getAttribute?.('type')==='file'&&session.dirty()));
     const select=root.querySelector('[data-parent-switch]');if(select)select.disabled=busy||blocked;
     const notice=root.querySelector('[data-child-block]');
-    if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':video.isBusy()?'영상 작업을 조회·접수하는 중입니다.':voice.isBusy()?'음성 작업을 처리하는 중입니다.':voice.isDirty()?'음성 대본·복구 입력이 남아 있습니다. 처리 또는 입력 버리기 후 원본을 변경하세요.':media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.') : '';
+    if(notice)notice.textContent=blocked?(execution?.isBusy()?'실행 요청 처리 중입니다. 완료 후 원본 변경을 검토하세요.':execution?.isDirty()?'실행 요청·발행 확인 입력이 보존되어 있습니다. 처리 상태 조회와 명시적 검토 후 원본을 변경하세요.':video.isBusy()?'영상 작업을 조회·접수하는 중입니다.':video.isDirty()?'영상 검토 입력이 남아 있습니다. 검토 저장 또는 입력 버리기 후 원본을 변경하세요.':voice.isBusy()?'음성 작업을 처리하는 중입니다.':voice.isDirty()?'음성 대본·복구 입력이 남아 있습니다. 처리 또는 입력 버리기 후 원본을 변경하세요.':media.isBusy()?'숏츠 제작 계획을 조회·저장하는 중입니다.':media.isDirty()?'숏츠 제작 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 변경하세요.':toolkit.isBusy()?'로컬 도구 처리 중입니다. 완료 후 원본 저장과 버전 전환을 검토하세요.':delivery.isBusy()?'배포 계획 처리 중입니다. 완료 후 원본을 저장할 수 있습니다.':'배포 계획에 미저장 입력이 있습니다. 계획 저장 또는 입력 버리기 후 원본을 저장하세요.') : '';
   }
   const hasChanges=()=>video.isDirty()||voice.isDirty()||media.isDirty()||toolkit.isDirty()||!!execution?.isDirty()||delivery.hasUnsavedChanges()||session.dirty()||Boolean(reviewDraft.notes)||reviewDraft.kind!=='general'||reviewDraft.decision!=='pass';
   function field(label,value,onChange,{type='input',options,maxLength,locked=false}={}) {
