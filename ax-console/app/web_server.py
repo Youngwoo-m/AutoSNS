@@ -46,6 +46,8 @@ from web_operations import handle as handle_operations, recognizes as operations
 from common.operations.production_store import ProductionStore
 from common.operations.production_settings import ProductionSettingsStore
 from common.operations.media_plans import MediaPlanStore
+from common.operations.image_tasks import ImageTaskStore,ImageTaskService
+from web_image_tasks import recognizes as image_tasks_path, handle as handle_image_tasks, CONTENT as IMAGE_CONTENT_ROUTE
 from common.operations.voice_tasks import VoiceTaskStore,VoiceTaskService
 from common.operations.video_tasks import VideoTaskStore,VideoTaskService
 from common.operations.reuse_approvals import ReuseApprovalStore,ReuseApprovalService
@@ -72,6 +74,7 @@ _STATIC = {
     'account_navigation.js': 'text/javascript; charset=utf-8',
     'production_settings_panel.js': 'text/javascript; charset=utf-8',
     'media_plan_panel.js': 'text/javascript; charset=utf-8',
+    'image_task_panel.js': 'text/javascript; charset=utf-8',
     'voice_task_panel.js': 'text/javascript; charset=utf-8',
     'video_task_panel.js': 'text/javascript; charset=utf-8',
     'reuse_approval_panel.js': 'text/javascript; charset=utf-8',
@@ -341,7 +344,7 @@ class _Handler(BaseHTTPRequestHandler):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
         elif (re.fullmatch(r'/api/v2/contents/' + CONTENT_ID, parsed.path) or media_plan_path(parsed.path)
-              or VOICE_CONTENT_ROUTE.fullmatch(parsed.path) or VIDEO_CONTENT_ROUTE.fullmatch(parsed.path) or REUSE_CONTENT_ROUTE.fullmatch(parsed.path)):
+              or IMAGE_CONTENT_ROUTE.fullmatch(parsed.path) or VOICE_CONTENT_ROUTE.fullmatch(parsed.path) or VIDEO_CONTENT_ROUTE.fullmatch(parsed.path) or REUSE_CONTENT_ROUTE.fullmatch(parsed.path)):
             if (set(query) - {'revision'} or any(len(values) != 1 for values in query.values())
                     or ('revision' in query and not re.fullmatch(r'[1-9][0-9]{0,9}', query['revision'][0]))):
                 self._error(400, '올바르지 않은 버전입니다')
@@ -449,6 +452,12 @@ class _Handler(BaseHTTPRequestHandler):
                 if method != 'GET' and query: raise StoreError('invalid')
                 result = handle_deliveries(self.server.ledger, method, path, query, lambda: self._read_body(1024*1024,json_body=True))
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200,result)
+            if image_tasks_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                result=handle_image_tasks(self.server.image_task_store,self.server.image_task_service,method,path,query,
+                    lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
                 return self._send(200,result)
             if voice_tasks_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
@@ -698,7 +707,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
                   oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
-                  planning_registry=None, voice_task_service=None, video_task_service=None) -> ThreadingHTTPServer:
+                  planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -727,6 +736,11 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         for job_id, job in execution_service.base_registry.jobs.items():
             if job_id in planning_registry.jobs and planning_registry.jobs[job_id] != job:
                 raise ValueError('조회 등록부와 제작 작업 식별자가 충돌합니다')
+    if image_task_service is not None:
+        if (not isinstance(image_task_service,ImageTaskService) or workspace_root is None or
+                image_task_service.store.root.resolve()!=workspace_root or
+                image_task_service.content_store.root.resolve()!=workspace_root):
+            raise ValueError('invalid image task service workspace')
     if voice_task_service is not None:
         if (not isinstance(voice_task_service, VoiceTaskService) or workspace_root is None or
                 voice_task_service.store.root.resolve()!=workspace_root or
@@ -767,6 +781,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.media_plan_store = media_plans
     server.reuse_approval_store = ReuseApprovalStore(managed_content.root) if managed_content is not None else None
     server.reuse_approval_service = ReuseApprovalService(server.reuse_approval_store,managed_content,media_plans) if managed_content is not None else None
+    server.image_task_service=image_task_service
+    server.image_task_store=image_task_service.store if image_task_service is not None else ImageTaskStore(workspace_root) if workspace_root is not None else None
     server.voice_task_service = voice_task_service
     server.voice_task_store = voice_task_service.store if voice_task_service is not None else VoiceTaskStore(workspace_root) if workspace_root is not None else None
     server.video_task_service = video_task_service
@@ -838,6 +854,7 @@ def main():
             server.metrics_store.initialize()
             server.production_settings_store.initialize()
             server.media_plan_store.initialize()
+            server.image_task_store.initialize()
             server.voice_task_store.initialize()
             server.video_task_store.initialize()
             server.reuse_approval_store.initialize()
