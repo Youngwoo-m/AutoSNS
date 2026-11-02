@@ -44,6 +44,8 @@ from common.operations.models import Registry
 from web_deliveries import handle as handle_deliveries
 from web_operations import handle as handle_operations, recognizes as operations_path, OperationsBlocked
 from common.operations.production_store import ProductionStore
+from common.operations.production_settings import ProductionSettingsStore
+from web_production_settings import recognizes as production_settings_path, handle as handle_production_settings
 from common.shared.axlock import AxLock, LockPaths
 from web_execution import handle_request as handle_execution, recognizes as execution_path, ExecutionBlocked, ExecutionUnavailable, REASONS
 from common.operations.runtime_store import RuntimeStore
@@ -60,6 +62,7 @@ _STATIC = {
     'api.js': 'text/javascript; charset=utf-8',
     'app.js': 'text/javascript; charset=utf-8',
     'account_navigation.js': 'text/javascript; charset=utf-8',
+    'production_settings_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -312,7 +315,7 @@ class _Handler(BaseHTTPRequestHandler):
                     or ('account' in query and query['account'][0] not in ('all','personal','dept'))):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
-        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities'):
+        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -391,6 +394,12 @@ class _Handler(BaseHTTPRequestHandler):
                 self.server.toolkit_service.registry = self.server.metrics_registry()
                 result = handle_tools(self.server.toolkit_service, method, path, query,
                                       lambda: self._read_body(1024*1024, json_body=True))
+                if result is None: return self._error(405, '지원하지 않는 요청입니다')
+                return self._send(200, result)
+            if production_settings_path(path):
+                if not self._authed(): return self._error(401, '로그인이 필요합니다')
+                result = handle_production_settings(self.server.production_settings_store, method, path, query,
+                    lambda: self._read_body(16384, json_body=True))
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200, result)
             if execution_path(path):
@@ -700,6 +709,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.workspace_root = workspace_root
     server.content_store = service_store.content_store if service_store is not None else ContentStore(workspace_root) if workspace_root is not None else None
     server.integration_store = IntegrationStore(workspace_root) if workspace_root is not None else None
+    server.production_settings_store = ProductionSettingsStore(workspace_root) if workspace_root is not None else None
     server.ledger = execution_service.ledger if service_store is not None and planning_registry is None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
     server.runtime_store = service_store if service_store is not None else RuntimeStore(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
@@ -765,6 +775,7 @@ def main():
             server.ledger.initialize()
             server.runtime_store.initialize()
             server.metrics_store.initialize()
+            server.production_settings_store.initialize()
         server.serve_forever()
     except KeyboardInterrupt:
         pass

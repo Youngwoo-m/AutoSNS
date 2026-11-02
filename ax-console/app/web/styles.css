@@ -68,3 +68,8 @@
   .sub-nav button { flex:1 1 calc(50% - .4rem); min-height:44px; font-size:15px; }
   .account-badge { font-size:15px; }
 }
+
+.production-settings { padding:1rem; margin-block:1rem; }
+.production-settings summary { cursor:pointer; font-weight:700; }
+.production-settings label { display:block; margin-block:.7rem; }
+.production-settings input[type=number] { display:block; width:12rem; max-width:100%; padding:.45rem; }
