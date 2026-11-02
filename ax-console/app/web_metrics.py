@@ -52,7 +52,7 @@ def _plan(source_root, registry):
     return build_import_plan(load_legacy_metrics(source_root, registry), registry)
 
 
-def handle(store, method, path, query, read_body, *, source_root, registry):
+def handle(store, method, path, query, read_body, *, source_root, registry, collection_service=None):
     writable = store is not None and bool(getattr(store, '_initialized', False))
     if path == BASE and method == 'GET':
         if set(query) - {'account'} or any(len(v) != 1 for v in query.values()):
@@ -60,6 +60,14 @@ def handle(store, method, path, query, read_body, *, source_root, registry):
         account = query.get('account', ['all'])[0]
         result = build_metrics_snapshot(account, registry, store or _EmptyStore(), writable=writable)
         result['observations'] = [_public_observation(row) for row in result['observations']]
+        if collection_service is not None:
+            result['collection_enabled']=collection_service.enabled is True
+            registered={collection_service.registry.connections[key].platform for key in collection_service.collectors
+                        if account=='all' or collection_service.registry.connections[key].account_id==account}
+            for item in result['support']:
+                if item['platform'] in registered:
+                    item['implementation_status']='implemented'
+                    item['collection_status']='collected' if any(row['platform']==item['platform'] and row['source_kind']=='verified_delivery' and row['status']=='ok' for row in result['observations']) else 'not_collected'
         return result
     if query:
         raise StoreError('invalid')

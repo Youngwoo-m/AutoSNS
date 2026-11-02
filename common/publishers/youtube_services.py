@@ -154,6 +154,23 @@ class GoogleYoutubeServices:
         rows = self.service.videos().list(part='snippet,status,contentDetails,processingDetails', id=remote_id).execute().get('items', [])
         return rows[0] if len(rows) == 1 else None
 
+    def read_statistics(self, target, remote_id):
+        """인증된 고정 채널의 공개 영상 하나만 읽는다. 업로드·목록 스캔·후처리 없음."""
+        if (not isinstance(target, Mapping) or not isinstance(remote_id, str)
+                or not remote_id.strip() or '\x00' in remote_id
+                or not _target_matches(self.inspect(target), target)):
+            return None
+        rows = self.service.videos().list(part='snippet,status,statistics', id=remote_id).execute().get('items', [])
+        if not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], Mapping):
+            return None
+        row = rows[0]
+        snippet, status = row.get('snippet'), row.get('status')
+        if (row.get('id') != remote_id or not isinstance(snippet, Mapping)
+                or snippet.get('channelId') != target.get('target_id')
+                or not isinstance(status, Mapping) or status.get('privacyStatus') != 'public'):
+            return None
+        return row
+
     def lookup(self, target, attempt):
         remote_id = attempt.get('remote_id') or (attempt.get('result') or {}).get('remote_id')
         if remote_id:

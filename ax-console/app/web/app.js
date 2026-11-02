@@ -1,3 +1,4 @@
+import {createMetricsCollectionPanel} from './metrics_collection_panel.js';
 import {createVoiceSettingsPanel} from './voice_settings_panel.js';
 import {createProductionSettingsPanel} from './production_settings_panel.js';
 import {createOAuthApi} from './oauth_api.js';
@@ -67,6 +68,8 @@ const integrationSettings=createIntegrationSettings({api:contentApi,onSaved:()=>
 const voiceSettings=createVoiceSettingsPanel({document,onChange:()=>renderStatus()});
 let voiceSettingsAccount=null;
 const productionSettings=createProductionSettingsPanel({document,onChange:()=>renderStatus()});
+const metricsCollection=createMetricsCollectionPanel({document,onChange:()=>renderStatus(),onCollected:()=>metrics.load(route.account)});
+let metricsCollectionAccount=null;
 const metrics=createMetricsPanel({api:createMetricsApi(),onChange:()=>{renderStatus();}});
 const operations=createOperationsPanel({api:createOperationsApi(),execution,onChange:()=>{renderStatus();}});
 // 화면별 컨트롤러를 분리하여 계정·원고·CSV 입력의 범위를 유지한다.
@@ -96,9 +99,10 @@ function toolkitSurface(section,extra={}) {
 const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
 const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(voiceSettings.isBusy()||productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
-  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty()||productionSettings.isDirty()||voiceSettings.isDirty());
+  if(metricsCollection.isBusy()||voiceSettings.isBusy()||productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty()||productionSettings.isDirty()||voiceSettings.isDirty()||metricsCollection.isDirty());
   if(accepted&&operations.isDirty())operations.discard();
+  if(accepted&&metricsCollection.isDirty())metricsCollection.discardChanges();
   if(accepted&&voiceSettings.isDirty())voiceSettings.discardChanges();
   if(accepted&&productionSettings.isDirty())productionSettings.discardChanges();return accepted;
 }
@@ -267,7 +271,9 @@ function renderAccounts() {
   return h('div',{},h('button',{class:'btn btn-primary',onclick:()=>openOAuth()},'공식 OAuth 연결·준비 상태'),execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
-  return h('div',{},metrics.render({account:route.account,writable:writable()}),toolkitSurface('analytics'));
+  if(metricsCollectionAccount!==route.account){metricsCollectionAccount=route.account;metricsCollection.open(route.account,{writable:writable()});}
+  else metricsCollection.refreshControls({writable:writable()});
+  return h('div',{},metrics.render({account:route.account,writable:writable()}),metricsCollection.element,toolkitSurface('analytics'));
 }
 function renderIssues() {
   const s=state.snapshot;let content;
@@ -356,8 +362,8 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 const loader=createSnapshotLoader(next=>{state=next;render();});
 // 상위 4개 메뉴: 계정(personal/dept)과 영역(accounts/publishing)을 함께 고른다. 발행 영역은 항상 콘텐츠 기획에서 시작한다.
 document.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>{const target=routeById(button.dataset.route);if(target)navigate({account:target.account,area:target.area,view:target.area==='accounts'?'accounts':(route.area==='publishing'&&target.account===route.account?view:'planning')});}));
-$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((typeof voiceSettings!=='undefined'&&(voiceSettings.isDirty()||voiceSettings.isBusy()))||(typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
+$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(metricsCollection.isBusy()||execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+window.addEventListener('beforeunload',event=>{if((typeof metricsCollection!=='undefined'&&(metricsCollection.isDirty()||metricsCollection.isBusy()))||(typeof voiceSettings!=='undefined'&&(voiceSettings.isDirty()||voiceSettings.isBusy()))||(typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
 operations.load(route.account);
 loader.select(route.account);

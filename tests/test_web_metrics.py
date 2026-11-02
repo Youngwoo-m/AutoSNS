@@ -89,7 +89,10 @@ class MetricsHTTPTests(unittest.TestCase):
         self.assertFalse(self.workspace.exists()); self.assertEqual(list(self.source.iterdir()), [])
         for query in ('account=bad','account=personal&account=dept','collect=true'):
             self.assertEqual(self.request('/api/v2/metrics?' + query)[0], 400)
-        self.assertEqual(self.request('/api/v2/metrics/collect', 'POST', {})[0], 405)
+        self.assertEqual(self.request('/api/v2/metrics/collect', 'POST', {})[0], 400)
+        self.assertEqual(self.request('/api/v2/metrics/collect', 'POST', {'delivery_id':'d'})[0], 503)
+        code,data=self.request('/api/v2/metrics/collection-targets?account=personal')
+        self.assertEqual(code,200);self.assertEqual(data,{'account_id':'personal','execution_enabled':False,'items':[]})
     def test_post_auth_origin_and_initialized_get_bytes_unchanged(self):
         import hashlib
         for path,body in (('/api/v2/metrics/import',dict(preview_digest='a'*64,request_key='unauth')),('/api/v2/metrics/proposals',dict(account_id='personal',observation_ids=['none'],title='제안',note='',request_key='unauth'))):

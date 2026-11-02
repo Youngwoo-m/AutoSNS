@@ -312,7 +312,7 @@ class ProductionApplication:
 
 def build_production_application(*, runtime, config, planning_registry, host='127.0.0.1', port=8769,
                                  web_root, auth_backend=None, toolkit_policy=None, server_factory=None, voice_task_service=None,
-                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None):
+                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None, metrics_collection_service=None):
     """검증 후 서버 소켓만 준비한다. worker/thread/serve_forever는 시작하지 않는다."""
     if not isinstance(config, BootstrapConfig):
         raise ContractError('invalid_bootstrap_config')
@@ -326,6 +326,7 @@ def build_production_application(*, runtime, config, planning_registry, host='12
     video_worker = _build_video_worker(video_task_service, config, video_worker_factory)
     factory = server_factory if server_factory is not None else _default_server_factory()
     extra = {'voice_task_service':voice_task_service} if voice_task_service is not None else {}
+    if metrics_collection_service is not None:extra['metrics_collection_service']=metrics_collection_service
     if image_task_service is not None:extra['image_task_service']=image_task_service
     if video_task_service is not None:extra['video_task_service']=video_task_service
     server = factory(host, port, source_root=config.source_root, web_root=Path(web_root),

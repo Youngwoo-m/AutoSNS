@@ -20,6 +20,9 @@ from common.operations.installed_claude import InstalledClaudeRunner
 from common.operations.registry import load_registry
 from common.operations.tool_cost_policy import ToolkitPolicy
 from common.operations.voicebox_client import LocalVoiceboxClient
+from common.operations.metrics_startup import build_metrics_collection_service
+from common.operations.metrics_startup_config import load_metrics_collection_settings
+from common.operations.metrics_store import MetricsStore
 from common.operations.voice_settings import VoiceSettingsStore,compile_voice_settings
 from common.operations.account_voice_service import AccountVoiceTaskService
 from common.operations.voice_tasks import VoiceTaskService,VoiceTaskStore
@@ -41,6 +44,8 @@ def parser():
     p.add_argument('--enable-production',action='store_true')
     p.add_argument('--enable-voicebox',action='store_true')
     p.add_argument('--image-config',type=Path,default=_APP.parent/'config/image-renderer.json')
+    p.add_argument('--enable-metrics',action='store_true')
+    p.add_argument('--metrics-config',type=Path,default=_APP.parent/'config/metrics-collection.json')
     p.add_argument('--enable-images',action='store_true',help='신뢰된 로컬 이미지 제작기가 등록되었을 때만 제작을 활성화합니다')
     p.add_argument('--enable-video',action='store_true',help='신뢰된 서버 제작기·검사기 등록이 있을 때 영상 worker를 활성화합니다')
     p.add_argument('--video-config',type=Path,default=_APP.parent/'config/video-renderer.json')
@@ -61,6 +66,7 @@ def _validate(args):
     except ValueError:raise ContractError('invalid_bootstrap_config') from None
     if not address.is_loopback or not 0<=args.port<=65535:raise ContractError('invalid_bootstrap_config')
     if args.enable_production and not args.serve:raise ContractError('activation_requires_serve')
+    if args.enable_metrics and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_images and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_video and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_production and not (args.claude_executable and args.claude_home and args.claude_user):
@@ -78,7 +84,7 @@ def _validate(args):
 def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_production_runtime,
         application_builder=build_production_application,quota_preparer=None,clock=None,
         voice_client_factory=LocalVoiceboxClient,voice_service_factory=VoiceTaskService,
-        video_registration=None,image_registration=None):
+        video_registration=None,image_registration=None,metrics_services_factory=None):
     """check는 읽기만 한다. serve/enable은 CLI에서 명시적으로 선택해야 한다."""
     config=_validate(args);clock=clock or (lambda:datetime.now(timezone.utc))
     if args.enable_images:
@@ -90,6 +96,10 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
             settings=load_installed_video_settings(args.video_config)
             video_registration=build_installed_video_registration(config=config,settings=settings)
         validate_video_registration(video_registration)
+    metrics_settings=None
+    if args.enable_metrics:
+        metrics_settings=load_metrics_collection_settings(args.metrics_config)
+        if not metrics_settings.enabled:raise ContractError('metrics_configuration_required')
     account_voice_profiles={}
     if args.enable_voicebox and args.voicebox_profile_id is None:
         voice_settings=VoiceSettingsStore(config.workspace_root)
@@ -102,7 +112,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         interpreter=Path(sys.executable).absolute(),activate=args.enable_production)
     summary=dict(mode='check',execution_enabled=False,settings_revision=compiled.registry.revision,
         accounts=[dict(account_id=row['account_id'],enabled_preference=row['enabled_preference'],daily_limit=row['daily_limit']) for row in rows],
-        native_probe_performed=False,quota_modified=False,voicebox_enabled=False,video_enabled=False,images_enabled=False)
+        native_probe_performed=False,quota_modified=False,voicebox_enabled=False,video_enabled=False,images_enabled=False,metrics_enabled=False)
     if not args.serve:return summary
     runner=None
     if args.enable_production:
@@ -116,6 +126,10 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
     runtime=runtime_builder(config=config,registry=compiled.registry,catalog=compiled.catalog,
         policy=compiled.policy,subscription_runner=runner,quota_preparer=quota_preparer if compiled.policy.enabled else None,clock=clock,initialize=False)
     extra={}
+    if args.enable_metrics:
+        extra['metrics_collection_service']=build_metrics_collection_service(config=config,registry=planning,
+            runtime_store=runtime.service.store,metrics_store=MetricsStore(config.workspace_root),locks=runtime.service.locks,
+            connection_ids=metrics_settings.connection_ids,services_factory=metrics_services_factory,activate=True)
     if args.enable_images:
         extra['image_task_service']=build_image_task_service(config=config,content_store=runtime.service.store.content_store,registration=image_registration,activate=True)
     if args.enable_video:
@@ -148,7 +162,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
         if not requested:app.serve_forever()
         return dict(summary,mode='serve',execution_enabled=compiled.policy.enabled,
                     native_probe_performed=runner is not None,quota_modified=compiled.policy.enabled,
-                    voicebox_enabled=bool(args.enable_voicebox),video_enabled=bool(args.enable_video),images_enabled=bool(args.enable_images))
+                    voicebox_enabled=bool(args.enable_voicebox),video_enabled=bool(args.enable_video),images_enabled=bool(args.enable_images),metrics_enabled=bool(args.enable_metrics))
     finally:
         for signum,handler in previous.items():signal.signal(signum,handler)
         if app.state=='built':app.close()

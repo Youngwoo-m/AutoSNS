@@ -38,6 +38,8 @@ from web_oauth import (handle as handle_oauth, recognizes as oauth_path,
 from common.operations.local_toolkit import LocalToolkitService
 from common.operations.tool_cost_policy import ToolkitPolicy
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
+from web_metrics_collection import handle as handle_metrics_collection, recognizes as metrics_collection_path
+from common.operations.metrics_collection import MetricsCollectionService
 from common.operations.metrics_store import MetricsStore
 from common.operations.registry import load_registry
 from common.operations.models import Registry
@@ -86,6 +88,7 @@ _STATIC = {
     'delivery_editor.js': 'text/javascript; charset=utf-8',
     'integration_settings.js': 'text/javascript; charset=utf-8',
     'operations_panel.js': 'text/javascript; charset=utf-8',
+    'metrics_collection_panel.js': 'text/javascript; charset=utf-8',
     'metrics_panel.js': 'text/javascript; charset=utf-8',
     'execution_panel.js': 'text/javascript; charset=utf-8',
     'execution_controller.js': 'text/javascript; charset=utf-8',
@@ -333,7 +336,7 @@ class _Handler(BaseHTTPRequestHandler):
                     or ('account' in query and query['account'][0] not in ('all','personal','dept'))):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
-        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
+        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/metrics/collection-targets', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -439,11 +442,16 @@ class _Handler(BaseHTTPRequestHandler):
                     status_info=(info() if callable(info) else info) if path=='/api/v2/execution/status' else None)
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200, result)
+            if metrics_collection_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_metrics_collection(self.server.metrics_collection_service,method,path,query,lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if metrics_path(path):
                 if not self._authed(): return self._error(401, '로그인이 필요합니다')
                 result = handle_metrics(self.server.metrics_store, method, path, query,
                                         lambda: self._read_body(1024*1024, json_body=True),
-                                        source_root=self.server.source_root, registry=self.server.metrics_registry())
+                                        source_root=self.server.source_root, registry=self.server.metrics_registry(),collection_service=self.server.metrics_collection_service)
                 if result is None: return self._error(405, '지원하지 않는 요청입니다')
                 return self._send(200, result)
             if operations_path(path):
@@ -719,7 +727,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
                   oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
-                  planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None) -> ThreadingHTTPServer:
+                  planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None, metrics_collection_service=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -748,6 +756,11 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         for job_id, job in execution_service.base_registry.jobs.items():
             if job_id in planning_registry.jobs and planning_registry.jobs[job_id] != job:
                 raise ValueError('조회 등록부와 제작 작업 식별자가 충돌합니다')
+    if metrics_collection_service is not None:
+        if (not isinstance(metrics_collection_service,MetricsCollectionService) or workspace_root is None or
+                metrics_collection_service.runtime_store.root.resolve()!=workspace_root or
+                metrics_collection_service.metrics_store.root.resolve()!=workspace_root):
+            raise ValueError('invalid metrics collection workspace')
     if image_task_service is not None:
         if (not isinstance(image_task_service,ImageTaskService) or workspace_root is None or
                 image_task_service.store.root.resolve()!=workspace_root or
@@ -801,7 +814,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.video_task_service = video_task_service
     server.video_task_store = video_task_service.store if video_task_service is not None else VideoTaskStore(workspace_root) if workspace_root is not None else None
     server.ledger = execution_service.ledger if service_store is not None and planning_registry is None else Ledger(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
-    server.metrics_store = MetricsStore(workspace_root) if workspace_root is not None else None
+    server.metrics_collection_service=metrics_collection_service
+    server.metrics_store = metrics_collection_service.metrics_store if metrics_collection_service is not None else MetricsStore(workspace_root) if workspace_root is not None else None
     server.runtime_store = service_store if service_store is not None else RuntimeStore(workspace_root, registry=registry, content_store=server.content_store) if workspace_root is not None else None
     server.production_store = execution_service.production_store if service_store is not None else ProductionStore(workspace_root, registry=registry) if workspace_root is not None else None
     server.execution_policy = execution_policy if execution_policy is not None else getattr(execution_service,'policy',ExecutionPolicy())
