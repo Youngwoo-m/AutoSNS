@@ -63,6 +63,6 @@ class InstagramMediaContractTests(unittest.TestCase):
             children.append(client.create_carousel_item(ctx.target_id,**option)['id'])
         client.create_carousel(ctx.target_id,children,prepared['caption'])
         self.assertEqual([lease.asset_id for lease in leases],['video1','image2','image1'])
-        self.assertEqual(parse_qs(calls[-1][3].decode())['children'],['701,702,703'])
+        self.assertEqual(parse_qs(calls[-1][3].decode())['children'],['["701","702","703"]'])
         self.assertEqual([lease.asset_sha256 for lease in leases],prepared['media_sha256'])
         self.assertEqual(len(staged),3)

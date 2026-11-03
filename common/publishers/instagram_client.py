@@ -154,7 +154,7 @@ class InstagramApiClient:
         if type(children) not in (list,tuple) or not 2<=len(children)<=10:_error('instagram_invalid_request')
         children=[_id(child) for child in children]
         if len(set(children))!=len(children):_error('instagram_invalid_request')
-        return self._create(account_id,{'media_type':'CAROUSEL','children':','.join(children),'caption':_text(caption,'instagram_invalid_request',caption=True)})
+        return self._create(account_id,{'media_type':'CAROUSEL','children':json.dumps(children,separators=(',',':')),'caption':_text(caption,'instagram_invalid_request',caption=True)})
     def container_status(self,container_id):
         container_id=_id(container_id);row=self._send('GET','/'+container_id+'?'+urlencode({'fields':'id,status_code'}))
         status=row.get('status_code')

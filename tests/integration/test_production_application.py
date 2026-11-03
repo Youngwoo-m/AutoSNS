@@ -323,6 +323,28 @@ class ProductionApplicationTests(unittest.TestCase):
             self.app(server_factory=broken)
         self.assertEqual(threading.active_count(), before)
 
+    def test_external_access_policy_explicit_forwarding_and_default_compatibility(self):
+        from web_external_access import ExternalAccessPolicy
+        plain=self.app(runtime=self.runtime(enabled=False))
+        self.assertNotIn('external_access_policy',self.factory_calls[-1][2])
+        plain.close()
+        policy=ExternalAccessPolicy('https://console.example.com')
+        runtime=self.runtime(enabled=False)
+        app=self.app(runtime=runtime,external_access_policy=policy)
+        host,port,kwargs=self.factory_calls[-1]
+        self.assertEqual(host,'127.0.0.1')
+        self.assertIs(kwargs['external_access_policy'],policy)
+        self.assertEqual(runtime.worker.run_calls,0)
+        self.assertEqual(self.servers[-1].serve_calls,0)
+        app.close()
+
+    def test_invalid_external_access_policy_rejected_before_server_factory(self):
+        for policy in ({'public_origin':'https://console.example.com'},True,'https://console.example.com'):
+            with self.subTest(policy=policy):
+                with self.assertRaises(ContractError):
+                    self.app(external_access_policy=policy)
+                self.assertEqual(self.factory_calls,[])
+
 
 if __name__ == '__main__':
     unittest.main()

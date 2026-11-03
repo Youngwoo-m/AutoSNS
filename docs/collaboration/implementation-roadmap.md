@@ -106,3 +106,9 @@ Threads의 기본 비활성 HTTPS transport 코드도 추가했다. 실제 인�
 Instagram 전달용 URL의 비공개 SQLite 바이트 저장·문맥 결속·만료·회수·payload 정리와 별도 loopback GET/HEAD/MP4 Range 서버를 추가했다. 실제 수동 검토 원장·변경된 원고/대상·STOP과의 격리 통합 시험을 추가했고, 4개 메뉴 안의 개인/학과 연결 화면에 접힌 현황·전달 중지를 연결했다. 기본 공개 서버와 실제 발행은 활성화하지 않는다.
 
 다음은 실제 서비스 조립·도메인/TLS·공개 fetch 수락, 추가 SNS adapter·OAuth 발행 권한·제작 품질 수락·실성과·계정 경로 이행·Mac/휴대폰 외부 접속과 최종 종합 수락이다. 임시 loopback 성공을 실제 Meta 접근이나 전체 자동 운영 완료로 간주하지 않는다.
+
+## Instagram 명시 조립·HTTPS 접속 정책
+
+호출별 미디어 factory와 검토·STOP·실행 허가 합성, 고정 Meta HTTPS transport, 공식 SDK 방식 캐러셀 JSON 직렬화를 구현했다. 관리 웹의 별도 외부 기동에 고정 HTTPS origin·Secure 쿠키·내부키 거부 정책과 `--public-origin`을 연결했다. 발행기 381개와 접속/기동/기존 서버 80개 시험이 통과했고 8769는 로컬 모드로만 재기동했다.
+
+실제 도메인은 확인되지 않아 질문을 남겼다. cloudflared 실행 파일 존재만 확인했으며 계정·설정·tunnel·DNS 소유나 실제 TLS 수락은 확인하지 않았다. 실제 공개 미디어 전달·Meta 앱/권한·native bootstrap·공개 probe와 나머지 SNS, 제작 품질·성과·자료 경로 이행·Mac/휴대폰 수락은 계속 필수다.

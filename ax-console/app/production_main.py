@@ -31,6 +31,7 @@ from common.operations.image_startup import build_image_task_service,validate_im
 from common.operations.video_startup import build_video_task_service,validate_video_registration
 from common.operations.installed_video_startup import load_installed_video_settings,build_installed_video_registration
 from production_application import build_production_application
+from web_external_access import ExternalAccessPolicy
 
 _VOICEBOX_PROFILE=re.compile(r'[A-Za-z0-9_-]{1,128}')
 
@@ -51,6 +52,7 @@ def parser():
     p.add_argument('--video-config',type=Path,default=_APP.parent/'config/video-renderer.json')
     p.add_argument('--voicebox-profile-id');p.add_argument('--voicebox-port',type=int,default=17493)
     p.add_argument('--host',default='127.0.0.1');p.add_argument('--port',type=int,default=8769)
+    p.add_argument('--public-origin', default=None, help='외부 HTTPS 출처를 명시합니다. loopback 바인딩과 제작 활성화 설정은 별도입니다')
     p.add_argument('--local-toolkit',action='store_true')
     p.add_argument('--claude-executable',type=Path);p.add_argument('--claude-home',type=Path);p.add_argument('--claude-user')
     p.add_argument('--model',default='sonnet')
@@ -65,6 +67,9 @@ def _validate(args):
     try:address=ipaddress.ip_address('127.0.0.1' if args.host=='localhost' else args.host)
     except ValueError:raise ContractError('invalid_bootstrap_config') from None
     if not address.is_loopback or not 0<=args.port<=65535:raise ContractError('invalid_bootstrap_config')
+    if args.public_origin is not None:
+        try:ExternalAccessPolicy(args.public_origin)
+        except ValueError:raise ContractError('invalid_external_access_policy') from None
     if args.enable_production and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_metrics and not args.serve:raise ContractError('activation_requires_serve')
     if args.enable_images and not args.serve:raise ContractError('activation_requires_serve')
@@ -126,6 +131,8 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
     runtime=runtime_builder(config=config,registry=compiled.registry,catalog=compiled.catalog,
         policy=compiled.policy,subscription_runner=runner,quota_preparer=quota_preparer if compiled.policy.enabled else None,clock=clock,initialize=False)
     extra={}
+    if args.public_origin is not None:
+        extra['external_access_policy']=ExternalAccessPolicy(args.public_origin)
     if args.enable_metrics:
         extra['metrics_collection_service']=build_metrics_collection_service(config=config,registry=planning,
             runtime_store=runtime.service.store,metrics_store=MetricsStore(config.workspace_root),locks=runtime.service.locks,

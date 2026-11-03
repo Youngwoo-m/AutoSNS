@@ -12,12 +12,18 @@ import time
 from socketserver import BaseServer
 from pathlib import Path
 import threading
+import sys
 
 from common.operations.bootstrap_config import BootstrapConfig
 from common.operations.models import ContractError, Registry
 from common.operations.production_startup import ProductionRuntime
 from common.operations.video_tasks import VideoTaskService
 from common.operations.video_worker import VideoTaskWorker
+
+_APP = Path(__file__).resolve().parent
+if str(_APP) not in sys.path:
+    sys.path.insert(0, str(_APP))
+from web_external_access import ExternalAccessPolicy
 
 DEFAULT_JOIN_TIMEOUT = 30.0
 _WEB_SERVER = Path(__file__).resolve().with_name('web_server.py')
@@ -312,8 +318,10 @@ class ProductionApplication:
 
 def build_production_application(*, runtime, config, planning_registry, host='127.0.0.1', port=8769,
                                  web_root, auth_backend=None, toolkit_policy=None, server_factory=None, voice_task_service=None,
-                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None, metrics_collection_service=None):
+                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None, metrics_collection_service=None, external_access_policy=None):
     """검증 후 서버 소켓만 준비한다. worker/thread/serve_forever는 시작하지 않는다."""
+    if external_access_policy is not None and not isinstance(external_access_policy, ExternalAccessPolicy):
+        raise ContractError('invalid_external_access_policy')
     if not isinstance(config, BootstrapConfig):
         raise ContractError('invalid_bootstrap_config')
     if not isinstance(planning_registry, Registry):
@@ -326,6 +334,7 @@ def build_production_application(*, runtime, config, planning_registry, host='12
     video_worker = _build_video_worker(video_task_service, config, video_worker_factory)
     factory = server_factory if server_factory is not None else _default_server_factory()
     extra = {'voice_task_service':voice_task_service} if voice_task_service is not None else {}
+    if external_access_policy is not None:extra['external_access_policy']=external_access_policy
     if metrics_collection_service is not None:extra['metrics_collection_service']=metrics_collection_service
     if image_task_service is not None:extra['image_task_service']=image_task_service
     if video_task_service is not None:extra['video_task_service']=video_task_service

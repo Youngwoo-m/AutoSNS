@@ -58,7 +58,7 @@ class InstagramClientTests(unittest.TestCase):
         self.assertEqual(client.create_carousel_item('123',video_url=VIDEO),{'id':'789'})
         self.assertEqual(client.create_carousel('123',['456','789'],'캐러셀'),{'id':'555'})
         forms=[parse_qs(row[3].decode(),keep_blank_values=True) for row in calls]
-        self.assertEqual(forms,[{'image_url':[IMAGE],'is_carousel_item':['true']},{'video_url':[VIDEO],'media_type':['VIDEO'],'is_carousel_item':['true']},{'media_type':['CAROUSEL'],'children':['456,789'],'caption':['캐러셀']}])
+        self.assertEqual(forms,[{'image_url':[IMAGE],'is_carousel_item':['true']},{'video_url':[VIDEO],'media_type':['VIDEO'],'is_carousel_item':['true']},{'media_type':['CAROUSEL'],'children':['["456","789"]'],'caption':['캐러셀']}])
         before=len(calls)
         for children in ([],['456'],['456']*2,[str(n) for n in range(11)],['456','bad'],True):self.code('instagram_invalid_request',lambda:client.create_carousel('123',children,''))
         for options in ({},{'image_url':IMAGE,'video_url':VIDEO}):self.code('instagram_invalid_request',lambda:client.create_carousel_item('123',**options))

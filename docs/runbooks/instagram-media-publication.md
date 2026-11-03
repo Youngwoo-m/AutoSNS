@@ -76,3 +76,7 @@ Facebook Login 기반 Instagram Graph 경로는 `graph.facebook.com`과 연결�
 만료나 회수는 serving 차단이고 로컬 파일 삭제와 다르다. `purge(now=...)`는 만료/회수 payload를 지우되 멱등 tombstone은 남긴다. 동일 요청의 활성 재시도는 같은 URL·원래 만료를 유지하고, 만료/회수/정리 후에는 자동 재노출하지 않는다. 원격 수신본의 삭제나 디스크 보안 삭제를 보장하지 않는다.
 
 실제 연결에 남은 필수 작업은 공개 DNS·HTTPS 역방향 프록시, media 경로만 별도 loopback listener에 전달, 토큰 경로 로그 제거, 캐시·변환·리다이렉트 금지, 정확한 Host 재작성과 forwarded 헤더 제거, Range/HEAD 보존이다. 공개 HTTPS 다운로드의 SHA256·TTL·회수 및 Meta 수락을 실측하기 전에는 실제 공급자/발행기로 활성화하지 않는다. 명시 기동·운영 배선과 외부 접근 수락은 아직 미완료다.
+
+`LeaseInstagramMediaFactory`는 `.prepare(ctx,prepared)`마다 실제 문맥에 결속한 stager를 만든다. `assemble_media_delivery`는 발급에 현재 실행 허가·수동 검토·STOP을 합성하고, fetch에는 현재 검토와 별도 STOP을 적용한다. 기본은 파일·소켓·스레드를 만들지 않는다. 명시 활성화도 loopback 바인딩까지만 수행하며 `serve_forever`와 종료는 운영 조립자가 담당한다.
+
+`InstagramHttpsTransport`는 Facebook Login의 `graph.facebook.com:443`으로만 현재 client의 명시 요청을 전달한다. 기본 비활성이며 자동 재시도·redirect·환경 proxy·다른 host를 사용하지 않는다. 캐러셀 children은 공식 SDK의 list 폼 직렬화와 같이 JSON 배열 문자열이다. [Meta SDK IGUser](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/iguser.py), [SDK 폼 직렬화](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/api.py), [Meta 공식 컬렉션](https://www.postman.com/meta/instagram/documentation/6yqw8pt/instagram-api)을 근거로 구현했으며 실제 앱 버전·토큰·권한 수락을 증명하지 않는다. native bootstrap의 실제 자격/계정 승인·공개 probe·운영 활성화는 계속 남아 있다.

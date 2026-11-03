@@ -39,6 +39,7 @@ from common.operations.local_toolkit import LocalToolkitService
 from common.operations.tool_cost_policy import ToolkitPolicy
 from web_channel_readiness import handle as handle_channel_readiness, recognizes as channel_readiness_path
 from web_media_leases import handle as handle_media_leases,recognizes as media_leases_path
+from web_external_access import ExternalAccessPolicy
 from common.operations.media_leases import MediaLeaseStore
 from common.operations.managed_connections import project_registry
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
@@ -265,15 +266,22 @@ class _Handler(BaseHTTPRequestHandler):
 
     def _send_response(self, status, obj=None, *, body=None, content_type='application/json; charset=utf-8', headers=None):
         data = body if body is not None else json.dumps(obj, ensure_ascii=False).encode()
+        response_headers=dict(headers or {})
+        if self.server.external_access_policy is not None:
+            for key,value in response_headers.items():
+                if key.lower()=='set-cookie':
+                    response_headers[key]=self.server.external_access_policy.cookie(value)
         self.send_response(status)
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
+        if self.server.external_access_policy is not None:
+            self.send_header('Strict-Transport-Security','max-age=86400')
         self.send_header('X-Frame-Options', 'DENY')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-        for key, value in (headers or {}).items():
+        for key, value in response_headers.items():
             self.send_header(key, value)
         self.end_headers()
         if self.command != 'HEAD':
@@ -313,6 +321,14 @@ class _Handler(BaseHTTPRequestHandler):
                 self._error(400, '중복된 요청 머리글입니다')
                 return None
         host = self.headers.get('Host', '')
+        external=self.server.external_access_policy
+        if external is not None:
+            if not external.accepts_host(host):
+                self._error(403,'허용되지 않은 호스트입니다')
+                return None
+            if self.headers.get('X-AX-Internal') is not None:
+                self._error(403,'외부 접속에서는 내부 인증 머리글을 사용할 수 없습니다')
+                return None
         callback = parsed.path.startswith('/oauth/callback/')
         callback_allowed = (callback and self.command == 'GET' and
             self.server.oauth_callback_policy is not None and
@@ -324,7 +340,8 @@ class _Handler(BaseHTTPRequestHandler):
             self._error(403, '허용되지 않은 호스트입니다')
             return None
         origin = self.headers.get('Origin')
-        if not callback_allowed and ((origin is not None and origin != 'http://' + host)
+        expected_origin=external.origin if external is not None else 'http://'+host
+        if not callback_allowed and ((origin is not None and origin != expected_origin)
                 or self.headers.get('Sec-Fetch-Site') == 'cross-site'):
             self._error(403, '같은 출처에서만 접근할 수 있습니다')
             return None
@@ -377,7 +394,7 @@ class _Handler(BaseHTTPRequestHandler):
         return self.server.auth_backend.cookie_of(self.headers.get('Cookie'))
 
     def _authed(self):
-        key = self.headers.get('X-AX-Internal', '')
+        key = self.headers.get('X-AX-Internal', '') if self.server.external_access_policy is None else ''
         keyfile = getattr(self.server.auth_backend, 'KEYFILE', None)
         if key and keyfile is not None:
             try:
@@ -757,7 +774,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
                   oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
-                  planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None, metrics_collection_service=None) -> ThreadingHTTPServer:
+                  planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None, metrics_collection_service=None,
+                  external_access_policy=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -765,6 +783,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다') from None
     if not address.is_loopback:
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다')
+    if external_access_policy is not None and type(external_access_policy) is not ExternalAccessPolicy:
+        raise ValueError('고정 외부 HTTPS 접속 정책이 필요합니다')
     if toolkit_policy is not None and type(toolkit_policy) is not ToolkitPolicy:
         raise ValueError('서버 소유 로컬 도구 정책이 필요합니다')
     if (type(oauth_test_only) is not bool or
@@ -869,6 +889,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         clock=server.operations_clock)
     server.web_root = web_root
     server.auth_backend = backend
+    server.external_access_policy=external_access_policy
     server.oauth_service = oauth_service
     server.oauth_callback_policy = oauth_callback_policy
     server.oauth_test_only = oauth_test_only
@@ -878,6 +899,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.launchagents_dir = Path(explicit_agents).resolve() if explicit_agents else None
     bound_host = f'[{address}]' if address.version == 6 else str(address)
     server.allowed_hosts = {f'{bound_host}:{server.server_port}', f'localhost:{server.server_port}'}
+    if external_access_policy is not None:server.allowed_hosts={external_access_policy.host}
     return server
 
 

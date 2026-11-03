@@ -75,3 +75,37 @@ class MainTests(unittest.TestCase):
             calls,deps=self.dependencies()
             with self.assertRaises(ContractError):module.run(args,**deps)
             self.assertEqual(calls,[])
+
+    def test_public_origin_check_is_readonly_and_does_not_activate(self):
+        calls,deps=self.dependencies();before=list(self.root.rglob('*'))
+        result=module.run(self.args('--check','--public-origin','https://console.example.com'),**deps)
+        self.assertEqual(result['mode'],'check')
+        self.assertFalse(result['execution_enabled'])
+        self.assertEqual(calls,[])
+        self.assertEqual(before,list(self.root.rglob('*')))
+
+    def test_public_origin_forwarded_only_when_explicit_and_preserves_loopback(self):
+        for origin in (None,'https://console.example.com'):
+            calls,deps=self.dependencies()
+            extra=[] if origin is None else ['--public-origin',origin]
+            result=module.run(self.args('--serve',*extra),**deps)
+            application=next(row[1] for row in calls if isinstance(row,tuple) and row[0]=='application')
+            self.assertEqual(application['host'],'127.0.0.1')
+            self.assertFalse(result['execution_enabled'])
+            self.assertNotIn('runner',calls)
+            self.assertNotIn('quota',calls)
+            if origin is None:self.assertNotIn('external_access_policy',application)
+            else:self.assertEqual(application['external_access_policy'].origin,origin)
+
+    def test_invalid_public_origins_rejected_in_check_and_serve_before_side_effects(self):
+        for mode in ('--check','--serve'):
+            for origin in ('http://console.example.com','https://user@console.example.com',
+                           'https://127.0.0.1','https://console.example.com:443',
+                           'https://console.example.com/path'):
+                with self.subTest(mode=mode,origin=origin):
+                    calls,deps=self.dependencies();before=list(self.root.rglob('*'))
+                    with self.assertRaises(ContractError) as error:
+                        module.run(self.args(mode,'--public-origin',origin),**deps)
+                    self.assertEqual(error.exception.code,'invalid_external_access_policy')
+                    self.assertEqual(calls,[])
+                    self.assertEqual(before,list(self.root.rglob('*')))
