@@ -1,4 +1,5 @@
 import {createChannelReadinessPanel} from './channel_readiness_panel.js';
+import {createMediaLeasesPanel} from './media_leases_panel.js';
 import {createMetricsCollectionPanel} from './metrics_collection_panel.js';
 import {createVoiceSettingsPanel} from './voice_settings_panel.js';
 import {createProductionSettingsPanel} from './production_settings_panel.js';
@@ -70,6 +71,8 @@ const voiceSettings=createVoiceSettingsPanel({document,onChange:()=>renderStatus
 let voiceSettingsAccount=null;
 const productionSettings=createProductionSettingsPanel({document,onChange:()=>renderStatus()});
 const channelReadiness=createChannelReadinessPanel({document,onChange:()=>renderStatus()});
+const mediaLeases=createMediaLeasesPanel({document,onChange:()=>renderStatus()});
+let mediaLeasesAccount=null;
 let channelReadinessAccount=null;
 const metricsCollection=createMetricsCollectionPanel({document,onChange:()=>renderStatus(),onCollected:()=>metrics.load(route.account)});
 let metricsCollectionAccount=null;
@@ -102,7 +105,7 @@ function toolkitSurface(section,extra={}) {
 const toolkitBusy=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isBusy());
 const toolkitDirty=()=>[...toolkitSurfaces.values()].some(s=>s.panel.isDirty());
 function confirmLeave(){
-  if(metricsCollection.isBusy()||voiceSettings.isBusy()||productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
+  if(mediaLeases.isBusy()||metricsCollection.isBusy()||voiceSettings.isBusy()||productionSettings.isBusy()||oauthBusy()||execution.isBusy()||operations.isBusy()||metrics.isBusy()||toolkitBusy()||(editorActive&&editor.isBusy()))return false;
   const accepted=confirmSettingsNavigation(integrationSettings,message=>globalThis.confirm(message),(editorActive&&editor.hasUnsavedChanges())||operations.isDirty()||metrics.isDirty()||execution.isDirty()||toolkitDirty()||oauthDirty()||productionSettings.isDirty()||voiceSettings.isDirty()||metricsCollection.isDirty());
   if(accepted&&operations.isDirty())operations.discard();
   if(accepted&&metricsCollection.isDirty())metricsCollection.discardChanges();
@@ -267,12 +270,13 @@ function renderIntegrations() {
 function renderAccounts() {
   const s=state.snapshot;
   if(channelReadinessAccount!==route.account){channelReadinessAccount=route.account;channelReadiness.open(route.account);}
+  if(mediaLeasesAccount!==route.account){mediaLeasesAccount=route.account;mediaLeases.open(route.account);}
   const channels=s.channels.length?h('div',{class:'channel-card-grid'},['dept','personal'].filter(id=>route.account===id).map(id=>{
     const items=s.channels.filter(c=>c.account_id===id);
     return panel(`${accountLabel(id,s.accounts)} 채널`,items.length?items.map(c=>h('article',{class:'record-row'},h('div',{class:'pill-row'},account(c.account_id),h('strong',{},text(c.label))),h('dl',{class:'detail-kv'},h('dt',{},'플랫폼'),h('dd',{},text(c.platform)),h('dt',{},'실제 게시 대상'),h('dd',{},text(c.target_label)),h('dt',{},'설정 상태'),h('dd',{},text(c.configured_status)),h('dt',{},'인증 확인'),h('dd',{},'미확인 · 로그인 검사 미실행'),h('dt',{},'운영 활성'),h('dd',{},c.enabled===true?'설정상 활성':c.enabled===false?'설정상 중지':'미확인'),h('dt',{},'최근 게시 성공'),h('dd',{},'미수집'),h('dt',{},'기능 지원'),h('dd',{},'조회만 지원 · 연결·재인증 미지원')),disabled('로그인·연결 변경 미지원'))):empty('채널 자료 없음','이 계정의 채널 설정이 수집되지 않았습니다.'));
   })):panel('채널 설정',empty('수집된 채널 설정이 없습니다','설정 누락 안내를 확인해 주세요. 로그인 성공이나 채널 미등록으로 단정하지 않습니다.'));
   if(writable()){if(integrationAccount!==route.account){integrationAccount=route.account;integrationSettings.load(route.account);}}
-  return h('div',{},h('button',{class:'btn btn-primary',onclick:()=>openOAuth()},'공식 OAuth 연결·준비 상태'),channelReadiness.element,execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
+  return h('div',{},h('button',{class:'btn btn-primary',onclick:()=>openOAuth()},'공식 OAuth 연결·준비 상태'),channelReadiness.element,mediaLeases.element,execution.renderStatus(),operations.render('accounts'),writable()?integrationSettings.element:null,h('div',{class:'inline-note'},'인증 상태는 이번 단계에서 미확인입니다. 설정 등록과 최근 로그인·게시 성공은 서로 다른 정보입니다.'),renderIntegrations(),toolkitSurface('accounts'),h('div',{class:'integration-channel-section'},channels));
 }
 function renderAnalytics() {
   if(metricsCollectionAccount!==route.account){metricsCollectionAccount=route.account;metricsCollection.open(route.account,{writable:writable()});}
@@ -366,8 +370,8 @@ $('#detail-dialog').addEventListener('keydown',e=>{
 const loader=createSnapshotLoader(next=>{state=next;render();});
 // 상위 4개 메뉴: 계정(personal/dept)과 영역(accounts/publishing)을 함께 고른다. 발행 영역은 항상 콘텐츠 기획에서 시작한다.
 document.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>{const target=routeById(button.dataset.route);if(target)navigate({account:target.account,area:target.area,view:target.area==='accounts'?'accounts':(route.area==='publishing'&&target.account===route.account?view:'planning')});}));
-$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(metricsCollection.isBusy()||execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
-window.addEventListener('beforeunload',event=>{if((typeof metricsCollection!=='undefined'&&(metricsCollection.isDirty()||metricsCollection.isBusy()))||(typeof voiceSettings!=='undefined'&&(voiceSettings.isDirty()||voiceSettings.isBusy()))||(typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
+$('#refresh').addEventListener('click',()=>{if(detailMode==='oauth'){if(oauthBusy()||oauthDirty())return;oauth.load();return;}if(mediaLeases.isBusy()||metricsCollection.isBusy()||execution.isBusy()||operations.isBusy()||(editorActive&&editor.isBusy()))return;execution.load();operations.load(route.account);metrics.load(route.account);refreshWorkspace({loader,integrationSettings,account:route.account,writable:writable(),editorDirty:false,confirm:message=>globalThis.confirm(message)});});
+window.addEventListener('beforeunload',event=>{if((typeof mediaLeases!=='undefined'&&mediaLeases.isBusy())||(typeof metricsCollection!=='undefined'&&(metricsCollection.isDirty()||metricsCollection.isBusy()))||(typeof voiceSettings!=='undefined'&&(voiceSettings.isDirty()||voiceSettings.isBusy()))||(typeof productionSettings!=='undefined'&&(productionSettings.isDirty()||productionSettings.isBusy()))||(typeof oauthBusy==='function'&&(oauthBusy()||oauthDirty()))||(editorActive&&editor.hasUnsavedChanges())||integrationSettings.hasUnsavedChanges()||operations.isDirty()||operations.isBusy()||metrics.isDirty()||metrics.isBusy()||execution.isDirty()||execution.isBusy()||toolkitDirty()||toolkitBusy()){event.preventDefault();event.returnValue='';}});
 execution.load();
 operations.load(route.account);
 loader.select(route.account);

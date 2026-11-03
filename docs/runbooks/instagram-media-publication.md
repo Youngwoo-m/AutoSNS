@@ -65,3 +65,14 @@ Facebook Login 기반 Instagram Graph 경로는 `graph.facebook.com`과 연결�
 기존 교차 게시 23개 중 `news.instagram`, `career.instagram`, `disaster.instagram`은 모두 학과 YouTube→학과 Instagram의 `legacy` 실행 소유 경로다. 새 구현 때문에 이를 `managed`로 전환하거나 동일 콘텐츠를 중복 게시하지 않는다. 첫 댓글·캡션 보완도 별도 후처리 승인과 원장 작업으로 남긴다.
 
 공식 계약 근거: [Meta IGUser SDK](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/iguser.py), [Meta IGMedia SDK](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/igmedia.py), [공식 Instagram Platform API Postman collection](https://github.com/fbsamples/messenger-platform-samples/blob/main/postman/instagram-platform-api.postman_collection.json). 현재 앱·버전·권한·비용 및 실제 네트워크 수락은 별도로 확인해야 한다.
+# 전달용 미디어 임대 구현 (2026-11-04)
+
+`MediaLeaseStore`는 별도 `media-leases.sqlite3`에 고정 바이트와 비공개 발행 문맥을 저장한다. 생성·조회는 파일을 만들지 않고 명시 `initialize()`만 초기화한다. `BoundInstagramMediaStager`는 실제 `PublicationContext`와 준비물 전체를 보유하고 요청 13필드·실제 바이트를 대조한다. 주입하는 쓰기 guard는 실행 허가·현재 최종 검토·STOP을 모두 검증해야 한다. 단순 검토 승인만으로 발급을 허용하지 않는다.
+
+`build_media_server`는 별도 loopback 전용 서버이며 기본 비활성이다. 관리 웹 8769에 익명 다운로드 경로를 추가하지 않는다. 실제로 등록할 때는 현재 원고·대상·검토를 검증하는 `InstagramLeaseAuthorityGuard(reviews.authorize)`와 STOP을 확인하는 `serving_allowed`를 별도 주입한다. 소비된 발행 permit을 GET에서 다시 사용하지 않는다. 전체 검토는 요청 시작/응답 직전에, STOP·임대 회수·만료는 64KiB 청크 사이에 확인한다. 검토 변경 자체는 다음 요청에 적용되며 즉시 전송 중단이 필요하면 임대도 명시 회수한다. 이미 전달된 바이트는 회수되지 않는다.
+
+관리 웹의 개인/학과 계정 연결 메뉴에 접힌 ‘전달용 미디어 현황’이 있다. 대상 계정으로 조회하며 원본 계정은 별도로 표시한다. 임대가 있는 경우 ‘전달 중지’로 이후 요청을 차단한다. URL·token·private authority는 관리 API 응답에 포함하지 않는다. 목록 조회는 저장소를 초기화하지 않으며 이 화면에서 URL 발급·발행은 하지 않는다.
+
+만료나 회수는 serving 차단이고 로컬 파일 삭제와 다르다. `purge(now=...)`는 만료/회수 payload를 지우되 멱등 tombstone은 남긴다. 동일 요청의 활성 재시도는 같은 URL·원래 만료를 유지하고, 만료/회수/정리 후에는 자동 재노출하지 않는다. 원격 수신본의 삭제나 디스크 보안 삭제를 보장하지 않는다.
+
+실제 연결에 남은 필수 작업은 공개 DNS·HTTPS 역방향 프록시, media 경로만 별도 loopback listener에 전달, 토큰 경로 로그 제거, 캐시·변환·리다이렉트 금지, 정확한 Host 재작성과 forwarded 헤더 제거, Range/HEAD 보존이다. 공개 HTTPS 다운로드의 SHA256·TTL·회수 및 Meta 수락을 실측하기 전에는 실제 공급자/발행기로 활성화하지 않는다. 명시 기동·운영 배선과 외부 접근 수락은 아직 미완료다.

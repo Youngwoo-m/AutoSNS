@@ -38,6 +38,8 @@ from web_oauth import (handle as handle_oauth, recognizes as oauth_path,
 from common.operations.local_toolkit import LocalToolkitService
 from common.operations.tool_cost_policy import ToolkitPolicy
 from web_channel_readiness import handle as handle_channel_readiness, recognizes as channel_readiness_path
+from web_media_leases import handle as handle_media_leases,recognizes as media_leases_path
+from common.operations.media_leases import MediaLeaseStore
 from common.operations.managed_connections import project_registry
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
 from web_metrics_collection import handle as handle_metrics_collection, recognizes as metrics_collection_path
@@ -95,6 +97,7 @@ _STATIC = {
     'operations_panel.js': 'text/javascript; charset=utf-8',
     'metrics_collection_panel.js': 'text/javascript; charset=utf-8',
     'channel_readiness_panel.js': 'text/javascript; charset=utf-8',
+    'media_leases_panel.js': 'text/javascript; charset=utf-8',
     'metrics_panel.js': 'text/javascript; charset=utf-8',
     'execution_panel.js': 'text/javascript; charset=utf-8',
     'execution_controller.js': 'text/javascript; charset=utf-8',
@@ -342,7 +345,7 @@ class _Handler(BaseHTTPRequestHandler):
                     or ('account' in query and query['account'][0] not in ('all','personal','dept'))):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
-        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/metrics/collection-targets', '/api/v2/channels/readiness', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
+        elif parsed.path in ('/api/v2/snapshot', '/api/v2/contents', '/api/v2/integrations/settings', '/api/v2/operations', '/api/v2/metrics', '/api/v2/metrics/collection-targets', '/api/v2/channels/readiness', '/api/v2/media-leases', '/api/v2/tools/capabilities', '/api/v2/production/settings'):
             if set(query) - {'account'} or any(len(values) != 1 for values in query.values()):
                 self._error(400, '올바르지 않은 조회 조건입니다')
                 return None
@@ -455,6 +458,12 @@ class _Handler(BaseHTTPRequestHandler):
                     service=self.server.oauth_service
                     current=project_registry(service.registry_supplier(),service.connection_store.snapshot())
                 result=handle_channel_readiness(current,method,path,query)
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
+            if media_leases_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_media_leases(self.server.media_lease_store,method,path,query,
+                    lambda:self._read_body(16384,json_body=True),now=self.server.operations_clock())
                 if result is None:return self._error(405,'지원하지 않는 요청입니다')
                 return self._send(200,result)
             if metrics_collection_path(path):
@@ -850,6 +859,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.lock_probe = lock_probe
     server.operations_clock = operations_clock if operations_clock is not None else lambda: datetime.now(timezone.utc)
     server.instagram_review_store=InstagramReviewStore(managed_content.root) if managed_content is not None else None
+    server.media_lease_store=MediaLeaseStore(workspace_root/'media-leases') if workspace_root is not None else None
     server.instagram_review_service=InstagramReviewService(server.instagram_review_store,managed_content,
         server.ledger.get_delivery,server.ledger.registry,server.operations_clock) if managed_content is not None else None
     server.toolkit_service = LocalToolkitService(registry=server.metrics_registry(),
