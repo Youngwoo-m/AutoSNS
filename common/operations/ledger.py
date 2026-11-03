@@ -142,7 +142,7 @@ class Ledger:
         connection=registry.connections[body['connection_id']]
         # Capabilities are explicit allowlisted option names (or their conventional aliases).
         caps=set(connection.capabilities)
-        if 'text_only' in options and connection.platform not in ('threads','facebook'): invalid()
+        if 'text_only' in options and connection.platform not in ('threads','facebook','x'): invalid()
         if connection.platform=='instagram':
             if 'instagram' not in options or 'plan' not in caps:invalid()
             from common.publishers.instagram_payloads import select_instagram_assets

@@ -27,7 +27,7 @@ def snapshot_fingerprints(context, snapshot):
     assets = snapshot.get('assets')
     if not isinstance(text, str) or not isinstance(assets, (list, tuple)) or any(not isinstance(a, Mapping) or not isinstance(a.get('sha256'), str) or not a['sha256'] for a in assets):
         raise StoreError('insufficient_evidence')
-    media=[] if context.get('platform') in ('threads','facebook') and context.get('options',{}).get('text_only') is True else [a['sha256'] for a in assets]
+    media=[] if context.get('platform') in ('threads','facebook','x') and context.get('options',{}).get('text_only') is True else [a['sha256'] for a in assets]
     return hashlib.sha256(text.encode('utf-8')).hexdigest(), media
 
 
@@ -131,11 +131,17 @@ def verify_delivery(store, delivery_id, adapter, snapshot, *, now=None, expected
     if result.outcome=='verified' and delivery['context'].get('platform')=='facebook':
         verified_url=_facebook_url(result.evidence.get('url'))
         if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
+    if result.outcome=='verified' and delivery['context'].get('platform')=='x':
+        from .x_evidence import safe_x_url
+        verified_url=safe_x_url(result.evidence.get('url'),delivery['remote_id'])
+        if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
     if result.outcome=='verified' and delivery['context'].get('platform')=='instagram':
         from .instagram_evidence import safe_instagram_url
         verified_url=safe_instagram_url(result.evidence.get('url'))
         if verified_url is None:result=VerificationResult('pending',now,{'reason':'insufficient_publication_evidence'})
     safe_keys = ('remote_id', 'target_id', 'destination_account_id', 'created_at', 'body_sha256', 'media_sha256', 'visibility')
+    if result.outcome=='verified' and delivery['context'].get('platform')=='x':
+        safe_keys+=('remote_text_sha256',)
     if result.outcome=='verified' and delivery['context'].get('platform')=='youtube':safe_keys+=('verification_method',)
     if result.outcome=='verified' and delivery['context'].get('platform')=='instagram':
         safe_keys+=('verification_method','upload_receipt','media_format','children','media_status')

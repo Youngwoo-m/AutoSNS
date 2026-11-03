@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "revision": "2026-10-30-plan-1",
+  "revision": "2026-11-04-x-text-plan-1",
   "accounts": {
     "dept": {
       "label": "학과 (세명대 재난안전학과)",
@@ -190,7 +190,8 @@
       "profile_ref": "dept.browser",
       "capabilities": [
         "plan",
-        "visibility:public"
+        "visibility:public",
+        "text_only"
       ],
       "enabled": false,
       "planning_enabled": true,

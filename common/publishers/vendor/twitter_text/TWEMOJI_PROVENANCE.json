@@ -1,0 +1,9 @@
+{
+  "package": "twemoji-parser",
+  "version": "11.0.2",
+  "tarball": "https://registry.npmjs.org/twemoji-parser/-/twemoji-parser-11.0.2.tgz",
+  "sha256": "cf1a2505eded1ae19c917e35c2a5ca59f6aabc14e1496470c22c682b621a9ab2",
+  "npm_integrity": "sha512-5kO2XCcpAql6zjdLwRwJjYvAZyDy3+Uj7v1ipBzLthQmDL7Ce19bEqHr3ImSNeoSW2OA8u02XmARbXHaNO8GhA==",
+  "upstream_regex_sha256": "b623e8e4120c7575c308b95480ec3bb36c5fb9dccb37f652d69b766193382adf",
+  "generated_python_regex_sha256": "338effafdb92d686c28621279c53783d39141bab3f05cfbd7a0cef3db282b9b5"
+}

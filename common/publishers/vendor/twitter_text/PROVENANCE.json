@@ -1,0 +1,14 @@
+{
+  "project": "https://github.com/swen128/twitter-text-python",
+  "version": "3.0.0",
+  "wheel": "twitter_text_parser-3.0.0-py3-none-any.whl",
+  "url": "https://files.pythonhosted.org/packages/49/10/7ef9bd301d70cb92a35eee7d38a6378c8b327dc16bdac3089386bd5f3231/twitter_text_parser-3.0.0-py3-none-any.whl",
+  "sha256": "b36bd22e147db2234e79c73b021f10c3073e8c54f22b68c31696239b6917cdd3",
+  "local_changes": [
+    "Use package-relative imports; no global installation",
+    "Remove pkg_resources and runtime resource reads",
+    "Replace Unicode12 emoji table with exact official twemoji-parser11.0.2 UTF16 regex; indices translated to Python",
+    "Use NFC only, preserving CR and CRLF for parity with official JS parseTweet",
+    "No network, subprocess, persistence, or credentials"
+  ]
+}

@@ -186,6 +186,32 @@ test('Facebook 실제 계획 미리보기 화면에 텍스트 전용 승인 범�
 });
 
 const igAssets=[{id:'jpeg-a',filename:'a.jpg',media_type:'image/jpeg',size:20,sha256:'b'.repeat(64)},{id:'jpeg-b',filename:'b.jpg',media_type:'image/jpeg',size:21,sha256:'c'.repeat(64)},{id:'video-a',filename:'a.mp4',media_type:'video/mp4',size:22,sha256:'d'.repeat(64)},{id:'png-a',filename:'a.png',media_type:'image/png',size:23,sha256:'e'.repeat(64)}];
+const xConnections=[...facebookConnections,
+ {id:'personal.x',account_id:'personal',platform:'x',planning_enabled:true,capabilities:['text_only','visibility:public']},
+ {id:'dept.x',account_id:'dept',platform:'x',planning_enabled:true,capabilities:['visibility:public']}];
+test('X 텍스트 전용은 등록 기능이 있어야 표시하고 선택 해제·연결 전환은 명시 선택을 초기화한다',async()=>{
+ const restore=useTestDocument();try{
+  const editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:xConnections})}),writable:()=>true});await editor.open(fullContent);
+  selectConnection(editor,'personal.x');let box=editor.element.querySelector('[data-x-text-only]');assert.ok(box);assert.equal(box.checked,false);assert.match(editor.element.textContent,/X API 비용 확인/);assert.match(editor.element.textContent,/비용 허용 전에는 실제 조회·발행을 실행하지 않습니다/);
+  box.checked=true;box.listeners.change({target:box});box.checked=false;box.listeners.change({target:box});assert.equal(box.checked,false);
+  box.checked=true;box.listeners.change({target:box});selectConnection(editor,'dept.threads');assert.equal(editor.element.querySelector('[data-threads-text-only]').checked,false);
+  selectConnection(editor,'personal.x');assert.equal(editor.element.querySelector('[data-x-text-only]').checked,false);
+  selectConnection(editor,'dept.x');assert.equal(editor.element.querySelector('[data-x-text-only]'),null);
+  selectConnection(editor,'personal.youtube');assert.equal(editor.element.querySelector('[data-x-text-only]'),null);
+ }finally{restore();}
+});
+test('X 텍스트 전용 계획은 명시 true를 저장하며 원문·원본 자산을 보존한다',async()=>{
+ const restore=useTestDocument();try{
+  const source={...fullContent,assets:igAssets},before=structuredClone(source),calls=[];
+  const result=body=>({...selectedPlan,...body,platform:'x',options:body.options,crossposts:[]});
+  const api=stubApi({listConnections:async()=>({items:xConnections}),deliveryEvents:async()=>({items:[]}),previewDelivery:async body=>{calls.push(['preview',body]);return result(body);},createDelivery:async body=>{calls.push(['save',body]);return result(body);},submit:async()=>{throw new Error('발행 금지');}});
+  const editor=delivery.createDeliveryEditor({api,writable:()=>true});await editor.open(source);selectConnection(editor,'personal.x');
+  let box=editor.element.querySelector('[data-x-text-only]');box.checked=true;box.listeners.change({target:box});inputValue(editor,'예정 시각 (예: 2026-11-01T10:00:00+09:00)','2026-11-02T10:00:00+09:00');
+  await findButton(editor.element,'계획 미리보기').listeners.click();assert.match(editor.element.textContent,/X 텍스트 전용/);assert.match(editor.element.textContent,/이미지·영상은 이 배포에 포함하지 않습니다/);
+  await findButton(editor.element,'로컬 계획 저장').listeners.click();assert.deepEqual(calls.map(([kind])=>kind),['preview','save']);for(const [,body]of calls){assert.deepEqual(body.options,{text_only:true});assert.equal(body.connection_id,'personal.x');}assert.deepEqual(source,before);
+  const draft={connection_id:'personal.x',schedule_slot:'main',scheduled_at:'2026-11-02T10:00:00+09:00'};for(const value of [false,undefined,'true',1])assert.deepEqual(delivery.deliveryPayload(source,{...draft,text_only:value}).options,{});
+ }finally{restore();}
+});
 const igContent={...fullContent,manifest_hash:'a'.repeat(64),assets:igAssets};
 const igConnection={id:'dept.instagram',account_id:'dept',platform:'instagram',target_id:'123456',target_status:'verified',planning_enabled:true,auth_status:'unknown',capabilities:['plan','visibility:public']};
 const igPlan={...selectedPlan,content_id:igContent.id,manifest_hash:igContent.manifest_hash,connection_id:igConnection.id,target_id:igConnection.target_id,platform:'instagram',target_label:'Instagram 구성',options:{instagram:{format:'image',asset_ids:['jpeg-a']}}};

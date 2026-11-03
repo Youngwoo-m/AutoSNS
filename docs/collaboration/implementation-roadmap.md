@@ -112,3 +112,9 @@ Instagram 전달용 URL의 비공개 SQLite 바이트 저장·문맥 결속·만
 호출별 미디어 factory와 검토·STOP·실행 허가 합성, 고정 Meta HTTPS transport, 공식 SDK 방식 캐러셀 JSON 직렬화를 구현했다. 관리 웹의 별도 외부 기동에 고정 HTTPS origin·Secure 쿠키·내부키 거부 정책과 `--public-origin`을 연결했다. 발행기 381개와 접속/기동/기존 서버 80개 시험이 통과했고 8769는 로컬 모드로만 재기동했다.
 
 실제 도메인은 확인되지 않아 질문을 남겼다. cloudflared 실행 파일 존재만 확인했으며 계정·설정·tunnel·DNS 소유나 실제 TLS 수락은 확인하지 않았다. 실제 공개 미디어 전달·Meta 앱/권한·native bootstrap·공개 probe와 나머지 SNS, 제작 품질·성과·자료 경로 이행·Mac/휴대폰 수락은 계속 필수다.
+
+## X 텍스트 발행 기반
+
+원본·변환본 보존, 공식 자료에 대조한 한글/URL/emoji 가중 길이, 비용 기본 차단 client/HTTPS transport, 단일 POST 영속 원장, adapter/runtime·계획 UI와 공개 검증·읽기 복구를 추가했다. t.co 엔터티는 원격 구간과 승인 전체 원문을 대조하며 원격 해시와 승인 본문 해시를 구분한다. 같은 redirect 목적지는 원본 URL 동일성으로 인정하지 않는다. 응답 후 로컬 저장 실패의 원격 ID를 유지하고 알려진 ID만 읽기로 복구한다.
+
+웹 412·운영 1049(기존 skip 4)·발행기 425·관리 HTTP 41개가 성공했다. W registry의 학과 X 계획 기능만 확장했으며 연결 11개 모두 비활성, 기존 교차 경로 23개 legacy 소유를 유지했다. 실제 앱/권한/비용/native 등록·익명 공개 probe·실게시, X 미디어·성과와 전체 목표의 다른 미완료 범위는 계속 남아 있다.
