@@ -88,6 +88,9 @@ export function createOAuthPanel({controller, document, onClose = () => true, on
       for (const reason of [...(provider.blockers || []), ...(provider.policy_reasons || [])]) conditions.append(node('p', reasons[reason] || `준비 조건 미충족: ${reason}`));
       conditions.append(node('p', `요청할 읽기 권한 · 주체와 대상 확인용: ${(provider.read_scopes || []).join(', ') || '없음·미확인'}`));
       conditions.append(node('p', `발행 추가 권한 · 별도 동의 필요: ${(provider.publication_scopes || []).join(', ') || '미지원·미확인'}`));
+      if(controller.canRequestPublicationConsent?.()){
+        const label=node('label'),box=node('input');box.type='checkbox';box.setAttribute('data-oauth-publication-consent','');box.checked=(provider.publication_scopes||[]).some(scope=>state.requested_scopes.includes(scope));box.disabled=busy||!!state.pending;box.addEventListener('change',()=>controller.setPublicationConsent(box.checked));label.append(box,node('span','발행 추가 권한도 요청 · 실제 발행 승인은 별도'));conditions.append(label,node('p','실제 토큰에서 허용된 권한은 요청보다 적을 수 있습니다. 별도 권한 증거와 실제 대상 검증이 필요하며 자동 업로드하지 않습니다.'));
+      }
       if (provider.provider_id === 'naver') conditions.append(node('p', '회원 로그인은 네이버 블로그 게시 권한이 아닙니다.'));
       if (['youtube', 'blogger'].includes(provider.provider_id)) conditions.append(node('p', 'Google 원격 해지는 같은 프로젝트의 다른 클라이언트에도 영향을 줄 수 있습니다. 영향 미확인 시 차단합니다.'));
       if (provider.provider_id === 'tiktok') conditions.append(node('p', 'Display 읽기·inbox 업로드·Direct Post는 별개입니다. 앱 심사와 사용 목적 미확인입니다.'));

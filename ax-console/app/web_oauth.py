@@ -104,7 +104,7 @@ def _public(value):
         'proposal_id','target_id','target_label','expected_base_revision','expected_connection_revision',
         'authorize_url','id','target_status','capabilities','planning_enabled','auth_status','scopes',
         'read_status','available_actions','csrf_token','authorization','observed_scopes',
-        'credential_expires_at','publication_status','credential_status'}
+        'credential_expires_at','publication_status','credential_status','scope_consent','available','policy_revision','requested_scopes'}
     states={'registration_blocked','consent_pending','callback_staged','resume_pending','token_exchanged',
         'principal_pending','target_confirmation','connected','denied','expired','error','revoked','unknown',
         'disconnected','reauth_required'}

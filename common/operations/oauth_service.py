@@ -17,6 +17,7 @@ from .credential_backend import CredentialError
 from .managed_connections import project_registry
 from .oauth_catalog import provider_catalog
 from .oauth_models import AttemptContext, CredentialRef, OAuthClientRegistration, OAuthPolicy, TokenBundle, validate_authorization
+from .oauth_scope_consent import PublicationScopeConsentPolicy
 from .oauth_policy import assert_zero_cost
 from .oauth_store import _time
 from .oauth_stage_models import OwnedCredentialRef, logical_ref
@@ -66,7 +67,7 @@ def _token_from_bytes(value):
 class OAuthConnectionService:
     def __init__(self,registry_supplier,client_registrations,attempt_store,connection_store,backend,
                  providers,policy=None,clock=None,*,cost_guard=None,workspace_context=None,
-                 stage_store=None,owned_backend=None):
+                 stage_store=None,owned_backend=None,scope_consent_policy=None):
         injected=(workspace_context,stage_store,owned_backend)
         if any(value is not None for value in injected):
             if any(value is None for value in injected): raise StoreError('oauth_workspace_mismatch')
@@ -83,6 +84,8 @@ class OAuthConnectionService:
         self.attempt_store=attempt_store; self.connection_store=connection_store
         self.backend=backend; self.providers=MappingProxyType(dict(providers or {}))
         self.policy=policy if policy is not None else OAuthPolicy()
+        if scope_consent_policy is not None and type(scope_consent_policy) is not PublicationScopeConsentPolicy:raise StoreError('oauth_scope_blocked')
+        self.scope_consent_policy=scope_consent_policy if scope_consent_policy is not None else PublicationScopeConsentPolicy()
         self.clock=clock or (lambda:datetime.now(timezone.utc))
         self.cost_guard=cost_guard if cost_guard is not None else assert_zero_cost
         definitions={p.id:p for p in provider_catalog()}
@@ -163,6 +166,10 @@ class OAuthConnectionService:
                 context.client_ref!=client.client_id or context.evidence_revision!=client.cost_evidence_revision or
                 not set(context.requested_scopes)<=set(client.approved_scopes)):
             raise StoreError('oauth_registration_changed')
+        self.scope_consent_policy.validate(definition,client,context.requested_scopes)
+        publication=not set(context.requested_scopes)<=set(definition.read_scopes)
+        if publication and context.scope_policy_revision!=self.scope_consent_policy.revision or not publication and context.scope_policy_revision is not None:
+            raise StoreError('oauth_scope_blocked')
         rule=next((r for r in definition.operations if r.operation==operation),None)
         if rule is None or rule.contract_status!='verified' or not rule.endpoint:
             raise StoreError('oauth_contract_blocked')
@@ -288,6 +295,15 @@ class OAuthConnectionService:
             row.update(registration_status='registration_blocked' if 'registration_blocked' in blockers else 'ready',
                 cost_gate='no_additional_cost' if cost else 'unknown',policy_gate='allowed' if not definition.policy_reasons else 'blocked',
                 blockers=blockers,ready=not blockers and not definition.policy_reasons and self.policy.live_enabled)
+            consent=dict(available=False,policy_revision=None,requested_scopes=[])
+            if row['ready'] and definition.publication_scopes:
+                try:
+                    client,_=self._registration(definition.id)
+                    scopes=list(dict.fromkeys((*definition.read_scopes,*definition.publication_scopes)))
+                    self.scope_consent_policy.validate(definition,client,scopes)
+                    consent=dict(available=True,policy_revision=self.scope_consent_policy.revision,requested_scopes=scopes)
+                except StoreError:pass
+            row['scope_consent']=consent
             items.append(row)
         return dict(items=items,live_enabled=self.policy.live_enabled)
 
@@ -327,6 +343,12 @@ class OAuthConnectionService:
                 context.client_ref!=client.client_id or context.evidence_revision!=client.cost_evidence_revision or
                 not set(context.requested_scopes)<=set(client.approved_scopes)):
             return []
+        try:
+            self.scope_consent_policy.validate(definition,client,context.requested_scopes)
+            publication=not set(context.requested_scopes)<=set(definition.read_scopes)
+            if (publication and context.scope_policy_revision!=self.scope_consent_policy.revision
+                    or not publication and context.scope_policy_revision is not None):return []
+        except StoreError:return []
         return [rule.operation for rule in definition.operations if rule.operation in ('refresh','revoke') and
                 rule.contract_status=='verified' and rule.endpoint and rule.cost_kind=='no_additional_cost' and
                 rule.evidence_revision==client.cost_evidence_revision and
@@ -379,7 +401,9 @@ class OAuthConnectionService:
             raise StoreError('oauth_operation_failed') from None
 
     def _state(self,context,receipt_id,key):
-        message=json.dumps(dict(receipt_id=receipt_id,context=asdict(context)),sort_keys=True,separators=(',',':')).encode()
+        canonical=asdict(context)
+        if canonical.get('scope_policy_revision') is None:canonical.pop('scope_policy_revision',None)
+        message=json.dumps(dict(receipt_id=receipt_id,context=canonical),sort_keys=True,separators=(',',':')).encode()
         return base64.urlsafe_b64encode(hmac.new(key,message,hashlib.sha256).digest()).rstrip(b'=').decode()
 
     def _authorize_url(self,provider,wrapper,client):
@@ -424,12 +448,12 @@ class OAuthConnectionService:
             client,definition=self._registration(provider_id)
             scopes=body['requested_scopes']
             if not isinstance(scopes,list) or not all(isinstance(s,str) for s in scopes) or len(set(scopes))!=len(scopes): raise StoreError('invalid')
-            if not set(scopes)<=set(client.approved_scopes) or not set(scopes)<=set(definition.read_scopes):
-                raise StoreError('oauth_scope_blocked')
+            self.scope_consent_policy.validate(definition,client,scopes)
             if type(body['expected_connection_revision']) is not int or body['expected_connection_revision']<0: raise StoreError('invalid')
             context=AttemptContext(session.actor,session.session_binding,account,provider_id,connection_id,
                 body['expected_base_revision'],body['expected_connection_revision'],tuple(scopes),client.redirect_uri,
-                client.client_id,client.client_revision,client.cost_evidence_revision)
+                client.client_id,client.client_revision,client.cost_evidence_revision,
+                self.scope_consent_policy.revision if not set(scopes)<=set(definition.read_scopes) else None)
             base,_,projected=self._current(context)
             if body['connection_id'] is not None and connection_id not in projected.connections:
                 raise StoreError('not_found')

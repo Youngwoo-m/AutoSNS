@@ -22,7 +22,14 @@ export function createOAuthController({api, onChange = () => {}}) {
   const blocked = row => !row || !providerIds.includes(row.provider_id) || row.login_method === 'unsupported' ||
     row.registration_status !== 'ready' || row.cost_gate !== 'no_additional_cost' || row.policy_gate !== 'allowed' ||
     (row.blockers || []).length > 0 || (row.policy_reasons || []).length > 0;
-  const canStart = () => state.account_id !== 'all' && state.live_enabled && !blocked(provider()) && !state.busy && !state.connectionsStale;
+  const publicationScopes = () => {
+    const p=provider(),c=p?.scope_consent,known=[...new Set([...(p?.read_scopes||[]),...(p?.publication_scopes||[])])];
+    if(!p||['tiktok','naver','tistory'].includes(p.provider_id)||blocked(p)||!p.publication_scopes?.length||!c||Object.keys(c).sort().join(',')!=='available,policy_revision,requested_scopes'||c.available!==true||typeof c.policy_revision!=='string'||!c.policy_revision.trim()||!Array.isArray(c.requested_scopes)||c.requested_scopes.length!==known.length||new Set(c.requested_scopes).size!==known.length||!known.every(s=>c.requested_scopes.includes(s)))return null;
+    return c.requested_scopes;
+  };
+  const validScopes = () => state.requested_scopes.every(scope=>provider()?.read_scopes?.includes(scope)) || !!publicationScopes()&&state.requested_scopes.length===publicationScopes().length&&publicationScopes().every(scope=>state.requested_scopes.includes(scope));
+  function setPublicationConsent(value){if(typeof value!=='boolean'||state.busy||state.pending)return;const scopes=publicationScopes();if(value&&!scopes)return;state.requested_scopes=[...(value?scopes:provider()?.read_scopes||[])];emit();}
+  const canStart = () => state.account_id !== 'all' && state.live_enabled && !blocked(provider()) && !state.busy && !state.connectionsStale && validScopes();
   function setContext(context = {}) {
     const value = context.account_id ?? context.account ?? 'all';
     if (!accounts.has(value)) throw new Error('계정 범위가 올바르지 않습니다.');
@@ -36,12 +43,12 @@ export function createOAuthController({api, onChange = () => {}}) {
     state.connection_id = ''; state.connection_revision = 0;
   }
   function selectProvider(value) {
-    if (state.busy) return;
+    if (state.busy || state.pending) return;
     clearSelection(); state.provider_id = providerIds.includes(value) ? value : ''; state.connection_id = '';
     state.requested_scopes = [...(provider()?.read_scopes || [])]; emit();
   }
   function selectConnection(value) {
-    if (state.busy) return;
+    if (state.busy || state.pending) return;
     const row = state.connections.find(item => (item.connection_id || item.id) === value);
     clearSelection();
     state.connection_id = row && row.account_id === state.account_id && matchesOAuthConnection(row, provider()) ? value : '';
@@ -153,7 +160,7 @@ export function createOAuthController({api, onChange = () => {}}) {
     if (!await load() || state.pending?.request_key !== pending.request_key) return;
     const selectedConnection = connection();
     if ((state.connection_id && (!selectedConnection || !matchesOAuthConnection(selectedConnection, provider()))) ||
-        (pending.operation === 'start' && (!canStart() || state.requested_scopes.some(scope => !provider()?.read_scopes?.includes(scope))))) {
+        (pending.operation === 'start' && (!canStart() || !validScopes()))) {
       state.message = '최신 등록·권한·비용·연결 조건이 맞지 않습니다. 원래 대기 요청과 입력은 보존했습니다.'; emit(); return;
     }
     state.connection_revision = selectedConnection?.connection_revision ?? selectedConnection?.revision ?? 0;
@@ -196,6 +203,6 @@ export function createOAuthController({api, onChange = () => {}}) {
     clearSelection() {if (!state.busy) {clearSelection(); state.provider_id = ''; state.connection_id = ''; emit();}},
     reloadOwnedResult, selectOwnedAttempt, retryPending, revalidatePending, start, continue: continueAttempt, inspect, confirmTarget,
     refresh: () => connectionAction('refresh'), disconnect: () => connectionAction('disconnect'), revoke: () => connectionAction('revoke'),
-    canStart, canConfirmTarget, close, isBusy: () => state.busy, hasUnsavedChanges: () => !!state.pending,
+    setPublicationConsent, canRequestPublicationConsent:()=>!!publicationScopes(), canStart, canConfirmTarget, close, isBusy: () => state.busy, hasUnsavedChanges: () => !!state.pending,
   };
 }

@@ -79,28 +79,42 @@ class BridgeHost:
             job.get('execution_owner')!='managed' or ctx.connection_id not in connection_ids or
             job.get('owner_account_id')!=ctx.owner_account_id or job.get('policy_revision')!=ctx.policy_revision):
             raise ContractError('bridge_job_mismatch')
-        # credential 준비는 승인/STOP writer를 막지 않는 허가 이전 단계다.
-        if callable(getattr(self.credential_resolver,'use',None)):
-            raise ContractError('managed_publication_unverified')
-        credentials=self._credentials(ctx,'publication')
-        with self.locks.publication_guard(job='bridge-leaf',wait=10):
-            _clear(self.locks)
-            check_parent_evidence(self.registry,self.locks,ctx.to_dict(),request['parent'],parent_pid=parent_pid)
-            checked=utc(self.clock())
-            lease=fresh_lease(self.store,ctx.run_id,checked)
-            _time_valid(self.store,ctx,lease,checked,permit)
-            require_publication_approval(self.store,attempt['delivery_id'],ctx)
-            # 새 heartbeat lease와 실제 gate/DB 대기 뒤 clock을 다시 사용한다.
-            self.store.redeem_bridge(permit,executor_id,action,request['prepared_hash'],checked,clock=self.clock)
-        # 허가는 redemption commit에서 선형화됐다. 이후 STOP/철회는 이미 시작된
-        # 요청의 취소 성공을 뜻하지 않으며 외부 I/O 동안 gate를 잡지 않는다.
-        return handler(ctx.to_dict(),request['payload'],credentials)
+        # OAuth writer -> publication gate -> DB 순서를 유지한다. 자격 enter와
+        # 검증이 끝나기 전에는 child redemption을 수행하지 않는다.
+        managed=(callable(getattr(self.credential_resolver,'use',None))
+                 and self.registry.connections[ctx.connection_id].credential_ref is not None)
+        with self._credential_scope(ctx,'publication') as credentials:
+            if managed:self._assert_managed_publication(credentials)
+            with self.locks.publication_guard(job='bridge-leaf',wait=10):
+                _clear(self.locks)
+                check_parent_evidence(self.registry,self.locks,ctx.to_dict(),request['parent'],parent_pid=parent_pid)
+                checked=utc(self.clock())
+                lease=fresh_lease(self.store,ctx.run_id,checked)
+                _time_valid(self.store,ctx,lease,checked,permit)
+                require_publication_approval(self.store,attempt['delivery_id'],ctx)
+                if managed:self._assert_managed_publication(credentials)
+                self.store.redeem_bridge(permit,executor_id,action,request['prepared_hash'],checked,clock=self.clock)
+            # publication gate만 해제한다. 관리 OAuth scope는 외부 handler가
+            # 끝날 때까지 유지하며 이후 cached SDK 사용은 guard가 거부한다.
+            return handler(ctx.to_dict(),request['payload'],credentials)
+
+    @staticmethod
+    def _assert_managed_publication(credentials):
+        assertion=getattr(credentials,'assert_publication_authority',None)
+        failed=not callable(assertion)
+        if not failed:
+            try:assertion()
+            except Exception:failed=True
+        if failed:raise ContractError('managed_publication_unverified') from None
 
     @contextmanager
     def _credential_scope(self,ctx,scope):
         use=getattr(self.credential_resolver,'use',None)
         if not callable(use):
             yield self._credentials(ctx,scope)
+            return
+        if self.registry.connections[ctx.connection_id].credential_ref is None:
+            yield None
             return
         scoped=resolve_registered_credentials(ctx.connection_id,registry=self.registry,
             credential_catalog=self.credential_catalog,

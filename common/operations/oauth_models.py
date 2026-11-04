@@ -97,6 +97,7 @@ class AttemptContext:
     client_ref: str
     client_revision: int
     evidence_revision: str
+    scope_policy_revision: str | None = None
 
     def __post_init__(self):
         for name in ('actor', 'session_binding', 'account_id', 'provider_id', 'connection_id', 'base_revision', 'redirect_uri', 'client_ref', 'evidence_revision'):
@@ -106,6 +107,8 @@ class AttemptContext:
         for name in ('connection_revision', 'client_revision'):
             if type(getattr(self, name)) is not int or getattr(self, name) < 0:
                 _invalid()
+        if self.scope_policy_revision is not None:
+            _text(self.scope_policy_revision)
         _https(self.redirect_uri)
         object.__setattr__(self, 'requested_scopes', _tuple(self.requested_scopes))
 

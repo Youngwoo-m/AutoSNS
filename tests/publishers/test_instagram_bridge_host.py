@@ -80,9 +80,10 @@ class InstagramBridgeHostTests(unittest.TestCase):
             with self.assertRaises(ContractError):self.execute(self.host(),forged)
             with self.assertRaises(ContractError):self.execute(self.host(wrong_owner=True),frame)
         self.assertEqual(self.resolved,[]);self.assertEqual(self.factories,[]);self.assertEqual(self.redemptions(),0)
-    def test_managed_oauth_publication_stays_blocked_before_resolver_and_leaf(self):
+    def test_managed_oauth_publication_missing_authority_never_redeems_or_calls_leaf(self):
         class Managed:
-            def use(self,*a,**kw):raise AssertionError('managed credentials must not be accessed')
+            @contextmanager
+            def use(self,*a,**kw):yield object()
         with self.request() as frame:
             with self.assertRaises(ContractError) as caught:self.execute(self.host(resolver=Managed()),frame)
         self.assertEqual(caught.exception.code,'managed_publication_unverified');self.assertEqual(self.factories,[]);self.assertEqual(self.redemptions(),0)

@@ -118,7 +118,7 @@ class FacebookRuntimeTests(unittest.TestCase):
         with self.assertRaises(ContractError):host.handlers[('facebook.dept','publish')](context().to_dict(),payload(),None)
         self.assertEqual(len([c for c in self.services.calls if c[0]=='write']),before)
 
-    def test_managed_oauth_publication_is_still_rejected_by_common_host_before_resolver_or_leaf(self):
+    def test_managed_oauth_missing_credential_catalog_rejected_before_resolver_or_leaf(self):
         ctx=context();data=payload();digest=prepared_digest(data);pid=os.getpid()
         store=SimpleNamespace(get_attempt=lambda _:dict(context_hash=ctx.context_hash),get_run=lambda _:dict(process_identity={'pid':pid},occurrence={'job_id':'job','phase':'submit','mode':'live'}))
         locks=AxLock(LockPaths.from_root(self.root/'source'),process_probe=lambda _:False)
@@ -131,7 +131,7 @@ class FacebookRuntimeTests(unittest.TestCase):
         with patch('common.publishers.bridge_host._registered_spec',return_value=spec),patch('common.publishers.bridge_host.validate_job_binding'),patch('common.publishers.bridge_host.check_parent_evidence'):
             with self.assertRaises(ContractError) as caught:
                 host.execute('facebook.dept','publish',request,'nonce',bootstrap_module='common.publishers.facebook',parent_pid=pid,secret_binding=dict(executor_id='facebook.dept',action='publish',context_hash=ctx.context_hash,prepared_hash=digest))
-        self.assertEqual(caught.exception.code,'managed_publication_unverified');self.assertEqual(self.factories,[])
+        self.assertEqual(caught.exception.code,'credential_owner_mismatch');self.assertEqual(self.factories,[])
 
     def test_actual_service_adapter_and_runtime_preserve_crosspost_and_verified_public_url(self):
         import json

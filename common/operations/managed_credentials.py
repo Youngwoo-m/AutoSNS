@@ -1,6 +1,6 @@
 """서버 소유 OAuth 자격의 읽기 전용 임대.
 
-실제 OAuth 정책/비용/권한 부여를 바꾸지 않는다. 현재 publication은 항상 거부한다.
+실제 OAuth 정책/비용/권한 부여를 바꾸지 않는다. publication은 별도 명시 승인자가 없으면 거부한다.
 read 역시 자격을 전달할 뿐 API 실행을 허가하지 않는다. caller의 기존 읽기 정책과
 대상 확인이 필요하며, use 블록 전체에서 OAuth writer guard를 유지한다. 생성자는
 vault·파일 생성·provider·SDK를 호출하지 않고 legacy 자격으로 fallback하지 않는다.
@@ -10,7 +10,9 @@ from contextlib import contextmanager,ExitStack
 from dataclasses import dataclass
 from datetime import datetime,timezone
 import json
+import os
 from pathlib import Path
+import threading
 
 from .content_store import StoreError
 from .credential_backend import CredentialError
@@ -79,15 +81,33 @@ class ResolvedManagedCredential:
     scope: str
     reference: str
     generation: int
+    guard: object=None
     def __repr__(self):return 'ResolvedManagedCredential(<private>)'
     def to_dict(self,*,public=True):return {}
+    def assert_current(self):
+        if self.guard is None:_error('credential_changed')
+        self.guard.check()
+    def assert_publication_authority(self):
+        if self.scope!='publication':_error('oauth_publication_unverified')
+        self.assert_current()
+
+
+class _CredentialUseGuard:
+    def __init__(self,check):
+        self._check=check;self._active=True;self._pid=os.getpid();self._thread=threading.get_ident()
+    def __repr__(self):return 'ManagedCredentialUseGuard(<private>)'
+    def close(self):self._active=False
+    def check(self):
+        if not self._active or self._pid!=os.getpid() or self._thread!=threading.get_ident():_error('credential_changed')
+        self._check()
 
 
 class ManagedCredentialResolver:
-    def __init__(self,connection_store,owned_backend,workspace_context,registry_supplier,*,clock=None):
+    def __init__(self,connection_store,owned_backend,workspace_context,registry_supplier,*,clock=None,publication_authorizer=None):
         if (not callable(getattr(connection_store,'snapshot',None)) or not isinstance(owned_backend,OwnedStageBackend)
                 or not isinstance(workspace_context,OAuthWorkspaceContext) or not callable(registry_supplier)
-                or (clock is not None and not callable(clock))):_error('credential_owner_mismatch')
+                or (clock is not None and not callable(clock))
+                or publication_authorizer is not None and any(not callable(getattr(publication_authorizer,name,None)) for name in ('precheck','authorize'))):_error('credential_owner_mismatch')
         try:
             roots=(Path(connection_store.root).resolve(),Path(owned_backend.context.root).resolve(),Path(workspace_context.root).resolve())
             if len(set(roots))!=1 or owned_backend.context.owner!=workspace_context.owner:_error('credential_owner_mismatch')
@@ -95,6 +115,7 @@ class ManagedCredentialResolver:
             raise StoreError('credential_owner_mismatch') from None
         self.connection_store=connection_store;self.owned_backend=owned_backend;self.workspace_context=workspace_context
         self.registry_supplier=registry_supplier;self.clock=clock or (lambda:datetime.now(timezone.utc))
+        self.publication_authorizer=publication_authorizer
 
     def _selected(self,reference,account_id,platform,target_id,now):
         context=validate_workspace_context(self.workspace_context)
@@ -133,8 +154,8 @@ class ManagedCredentialResolver:
 
     @contextmanager
     def use(self,reference,*,account_id,platform,scope,target_id=None):
-        if scope=='publication':_error('oauth_publication_unverified')
-        if (scope!='read' or type(reference) is not str or not reference
+        if scope=='publication' and self.publication_authorizer is None:_error('oauth_publication_unverified')
+        if (scope not in ('read','publication') or type(reference) is not str or not reference
                 or type(account_id) is not str or account_id not in ('personal','dept')
                 or type(platform) is not str or not platform
                 or target_id is not None and (type(target_id) is not str or not target_id)):
@@ -146,10 +167,21 @@ class ManagedCredentialResolver:
                 now=_time(self.clock())
                 selected=self._selected(reference,account_id,platform,target_id,now)
                 snapshot,base,row,ref,definition,required,known,observed=selected
+                state=dict(reference=reference,account_id=account_id,platform=platform,target_id=row['target_id'],
+                    snapshot=snapshot,registry=base,connection=row,credential_ref=ref,
+                    observed_scopes=tuple(sorted(observed)),now=now)
+                if scope=='publication':
+                    if definition.id in ('tiktok','naver','tistory'):_error('oauth_publication_unverified')
+                    required=required|set(definition.publication_scopes)
+                    if (not definition.publication_scopes or not required<=observed
+                            or self.publication_authorizer.precheck(**state) is not True):_error('oauth_publication_unverified')
                 bundle=_token(self.owned_backend.read_owned(ref))
                 _expiry(bundle.expires_at,now)
                 granted=_scopes(bundle.scopes,known)
                 if not required<=granted or not observed<=granted:_error('oauth_scope_unverified')
+                if scope=='publication' and self.publication_authorizer.authorize(**state,
+                        granted_scopes=tuple(sorted(granted)),credential_expires_at=_time(bundle.expires_at)) is not True:
+                    _error('oauth_publication_unverified')
             except Exception as exc:
                 code=exc.code if isinstance(exc,StoreError) and exc.code in _SAFE_ERRORS else 'oauth_credential_invalid'
                 raise StoreError(code) from None
@@ -162,5 +194,24 @@ class ManagedCredentialResolver:
             except Exception:raise StoreError('credential_changed') from None
             resolved=ResolvedManagedCredential(bundle,account_id,platform,logical_ref(ref).connection_id,
                 row['target_id'],definition.id,scope,reference,logical_ref(ref).generation)
+            def revalidate():
+                try:
+                    checked=_time(self.clock())
+                    current=self._selected(reference,account_id,platform,target_id,checked)
+                    _expiry(bundle.expires_at,checked)
+                    if (current[0].generation!=snapshot.generation or current[0].workspace_owner!=snapshot.workspace_owner
+                            or current[0].base_revision!=snapshot.base_revision or current[1]!=base or current[2]!=row or current[3]!=ref):
+                        _error('credential_changed')
+                    if scope=='publication' and self.publication_authorizer.authorize(**dict(state,now=checked),
+                            granted_scopes=tuple(sorted(granted)),credential_expires_at=_time(bundle.expires_at)) is not True:
+                        _error('oauth_publication_unverified')
+                except Exception as exc:
+                    code=exc.code if isinstance(exc,StoreError) and exc.code in _SAFE_ERRORS else 'credential_changed'
+                    raise StoreError(code) from None
+            guard=_CredentialUseGuard(revalidate)
+            from dataclasses import replace
+            resolved=replace(resolved,guard=guard)
+            guard.check()
             # guard 유지 중에만 SDK 변환 및 신뢰된 호출자가 자격을 사용할 수 있다.
-            yield resolved
+            try:yield resolved
+            finally:guard.close()

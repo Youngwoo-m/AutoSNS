@@ -119,3 +119,84 @@ class ManagedGoogleCredentialTests(unittest.TestCase):
         self.assertFalse(underlying.active);self.assertEqual(underlying.calls[-1],('exit',))
         self.assertNotIn(SECRET,str(caught.exception));self.assertTrue(caught.exception.__suppress_context__)
         self.assertNotIn(SECRET,''.join(traceback.format_exception(caught.exception)))
+
+
+class FakeSDKCredential:
+    def __init__(self,calls):self.calls=calls
+    def apply(self,headers,token=None):self.calls.append('apply');headers['authorization']='Bearer '+SECRET
+    def before_request(self,request,method,url,headers):self.calls.append('before_request');self.apply(headers)
+    def refresh(self,request):self.calls.append('refresh')
+    def with_quota_project(self,project):self.calls.append('clone');return FakeSDKCredential(self.calls)
+
+
+class ScopedGoogleCredentialTests(unittest.TestCase):
+    def fixture(self,scope='publication'):
+        underlying=Resolver(resolved(scope=scope));calls=[];valid=[True]
+        def current():
+            if not underlying.active or not valid[0]:raise RuntimeError(SECRET)
+        def publication():
+            current()
+            if scope!='publication':raise RuntimeError(SECRET)
+        underlying.value.assert_current=current;underlying.value.assert_publication_authority=publication
+        wrapper=ManagedGoogleCredentialResolver(underlying,credentials_factory=lambda **kwargs:FakeSDKCredential(calls))
+        return underlying,wrapper,calls,valid
+    def use(self,wrapper,scope='publication'):
+        return wrapper.use(REF,account_id='dept',platform='youtube',scope=scope,target_id='UC-dept')
+    def test_guarded_sdk_and_clones_share_current_scope_then_deny_cached_reuse(self):
+        underlying,wrapper,calls,valid=self.fixture()
+        with self.use(wrapper) as credential:
+            credential.assert_publication_authority();credential.apply({})
+            credential.before_request(None,'POST','https://www.googleapis.com/',{})
+            clone=credential.with_quota_project('project');clone.apply({})
+            with self.assertRaises(ContractError):credential.refresh(None)
+        self.assertFalse(underlying.active);self.assertNotIn('refresh',calls)
+        before=list(calls)
+        for sdk in (credential,clone):
+            for fn in (lambda:sdk.apply({}),lambda:sdk.before_request(None,'POST','https://www.googleapis.com/',{}),lambda:sdk.refresh(None),lambda:sdk.assert_publication_authority(),lambda:sdk.with_quota_project('new')):
+                with self.assertRaises(ContractError) as caught:fn()
+                self.assertEqual(caught.exception.code,'managed_google_credentials_unavailable');self.assertNotIn(SECRET,str(caught.exception))
+        self.assertEqual(calls,before)
+    def test_revoked_expired_or_changed_guard_blocks_sdk_before_transport(self):
+        underlying,wrapper,calls,valid=self.fixture()
+        with self.use(wrapper) as credential:
+            clone=credential.with_quota_project('p');valid[0]=False;before=list(calls)
+            for sdk in (credential,clone):
+                for fn in (lambda:sdk.apply({}),lambda:sdk.before_request(None,'POST','url',{}),lambda:sdk.refresh(None),sdk.assert_publication_authority):
+                    with self.assertRaises(ContractError) as caught:fn()
+                    self.assertNotIn(SECRET,str(caught.exception))
+            self.assertEqual(calls,before)
+    def test_publication_without_current_and_authority_proof_denies_before_factory(self):
+        for kind in ('no-current','no-authority'):
+            underlying,wrapper,calls,valid=self.fixture()
+            delattr(underlying.value,'assert_current' if kind=='no-current' else 'assert_publication_authority')
+            with self.assertRaises(ContractError):
+                with self.use(wrapper):self.fail('unguarded publication yielded')
+            self.assertEqual(calls,[]);self.assertFalse(underlying.active)
+    def test_guarded_resolver_with_unguardable_sdk_fails_closed(self):
+        underlying,wrapper,calls,valid=self.fixture()
+        class Slotted:
+            __slots__=()
+            def apply(self,*args,**kwargs):pass
+            def before_request(self,*args,**kwargs):pass
+            def refresh(self,*args,**kwargs):pass
+        for factory in (lambda **kwargs:object(),lambda **kwargs:{},lambda **kwargs:Slotted()):
+            wrapper.credentials_factory=factory
+            with self.assertRaises(ContractError):
+                with self.use(wrapper):self.fail('unguarded SDK yielded')
+        self.assertFalse(underlying.active)
+    def test_read_guard_is_enforced_and_cannot_be_promoted_to_publication(self):
+        underlying,wrapper,calls,valid=self.fixture('read')
+        with self.use(wrapper,'read') as credential:
+            credential.apply({})
+            with self.assertRaises(ContractError):credential.assert_publication_authority()
+        with self.assertRaises(ContractError):credential.apply({})
+
+    def test_sdk_method_failure_is_redacted_before_returning_to_caller(self):
+        underlying,wrapper,calls,valid=self.fixture()
+        class Broken(FakeSDKCredential):
+            def apply(self,*args,**kwargs):raise RuntimeError(SECRET)
+        wrapper.credentials_factory=lambda **kwargs:Broken(calls)
+        with self.use(wrapper) as credential:
+            with self.assertRaises(ContractError) as caught:credential.apply({})
+            self.assertNotIn(SECRET,str(caught.exception))
+            self.assertIsNone(caught.exception.__context__)
