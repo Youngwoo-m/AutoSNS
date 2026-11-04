@@ -8,7 +8,8 @@
       "_headers",
       "**/node_modules/**",
       "firestore.rules",
-      "**/*.md"
+      "**/*.md",
+      "functions/**"
     ],
     "cleanUrls": false,
     "trailingSlash": true,
@@ -101,7 +102,7 @@
     ]
   },
   "functions": {
-    "source": "../functions",
+    "source": "functions",
     "codebase": "default",
     "ignore": [
       "node_modules",
