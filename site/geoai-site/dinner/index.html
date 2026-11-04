@@ -624,13 +624,13 @@ async function buildNear(){
     if(preset === 'near') $('subtitle').textContent = (e.message || '위치를 확인하지 못했어요.') + ' 기본 메뉴로 돌려요.';
   }
 }
-// 오늘의 학식: /.netlify/functions/hak(세명대 학생회관 학생식당, 포털 식단 중계, 30분 캐시)
+// 오늘의 학식: /fn/hak(세명대 학생회관 학생식당, 포털 식단 중계, 30분 캐시)
 const HAK_DAYS = ['일','월','화','수','목','금','토'];
 const kstDate = (off=0) => new Date(Date.now() + 9*3600e3 + off*86400e3).toISOString().slice(0,10);
 let hakOff = 0, hakCache = {};
 async function loadHak(){
   const date = kstDate(hakOff);
-  if(!hakCache[date]) hakCache[date] = fetch('/.netlify/functions/hak?date='+date).then(r=>r.ok ? r.json() : null).catch(()=>null);
+  if(!hakCache[date]) hakCache[date] = fetch('/fn/hak?date='+date).then(r=>r.ok ? r.json() : null).catch(()=>null);
   const h = await hakCache[date];
   const d = new Date(date+'T00:00:00Z');
   $('hdate').textContent = `${hakOff===0?'오늘 · ':''}${d.getUTCMonth()+1}/${d.getUTCDate()}(${HAK_DAYS[d.getUTCDay()]}) · 학생회관`;
@@ -719,7 +719,7 @@ function sidoNames(full){
   return [full, ...(SIDO_EXTRA[full]||[]), short].filter(Boolean);
 }
 let wxData = null, region = null;
-const loadWx = () => wxData || (wxData = fetch('/.netlify/functions/wthr').then(r=>r.ok ? r.json() : null).catch(()=>null));
+const loadWx = () => wxData || (wxData = fetch('/fn/wthr').then(r=>r.ok ? r.json() : null).catch(()=>null));
 async function myRegion(){
   if(region && region.lat===pos.lat && region.lon===pos.lon) return region;
   try{
@@ -747,7 +747,7 @@ function wxMatch(lines, r){
   return out;
 }
 // ---- 헤더 재난 소식 띠: 내 위치 특보 + 충북 기상특보·예비특보 + 재난뉴스(geoai-na 함수 alerts, 셔틀 앱과 공용) ----
-const ALERTS = 'https://geoai-na.netlify.app/.netlify/functions/alerts';
+const ALERTS = '/fn/alerts';
 let localWx = [], alertItems = [];
 function renderTicker(){
   // 내 위치 특보가 있으면 같은 내용의 충북 특보 줄은 빼지 않고 맨 앞에 내 위치 줄만 더한다

@@ -2,7 +2,7 @@
 import argparse, datetime, html, json, re, urllib.request, xml.etree.ElementTree as ET
 from pathlib import Path
 from email.utils import parsedate_to_datetime
-from netlify_api import api, SITE_ID, SITE_DIR
+from firebase_api import collect, SITE_DIR
 ROOT=Path(__file__).resolve().parent
 STATE=ROOT/'state.json'
 UTC=datetime.timezone.utc
@@ -17,24 +17,17 @@ def save(state):
 
 def sync():
     state=read()
-    forms=api('/sites/'+SITE_ID+'/forms')
-    matches=[form for form in forms if form['name']==FORM_NAME]
-    if not matches: raise RuntimeError('Netlify에서 문제 접수 양식을 찾지 못했습니다')
-    form_id=matches[0]['id'];page=1;added=0
-    while True:
-        submissions=api(f'/forms/{form_id}/submissions?per_page=100&page={page}')
-        for entry in submissions:
-            sid=entry['id']
-            if sid in state['jobs'] or sid in state['ignored']: continue
-            data=entry.get('data',{})
-            title=str(data.get('title','')).strip()[:120]
-            question=str(data.get('question','')).strip()[:5000]
-            if not title or len(question)<10 or data.get('bot-field') or data.get('consent')!='동의':
-                state['ignored'].append(sid); continue
-            state['jobs'][sid]={'id':sid,'created_at':entry['created_at'],'status':'queued','title':title,'question':question,'topic':str(data.get('topic',''))[:80],'reference':str(data.get('reference',''))[:500],'nickname':str(data.get('nickname',''))[:40],'source':'untrusted_netlify_submission'}
-            added+=1
-        if len(submissions)<100: break
-        page+=1
+    added=0
+    for entry in collect(FORM_NAME):
+        sid=entry['id']
+        if sid in state['jobs'] or sid in state['ignored']: continue
+        data=entry.get('data',{})
+        title=str(data.get('title','')).strip()[:120]
+        question=str(data.get('question','')).strip()[:5000]
+        if not title or len(question)<10 or data.get('bot-field') or data.get('consent')!='동의':
+            state['ignored'].append(sid); continue
+        state['jobs'][sid]={'id':sid,'created_at':entry['created_at'],'status':'queued','title':title,'question':question,'topic':str(data.get('topic',''))[:80],'reference':str(data.get('reference',''))[:500],'nickname':str(data.get('nickname',''))[:40],'source':'untrusted_firebase_submission'}
+        added+=1
     save(state)
     pending=sorted([job for job in state['jobs'].values() if job['status'] in ['queued','processing','published']],key=lambda x:x['created_at'])
     print(json.dumps({'added':added,'pending':pending},ensure_ascii=False,indent=2))
