@@ -213,6 +213,27 @@ test('X 텍스트 전용 계획은 명시 true를 저장하며 원문·원본 �
  }finally{restore();}
 });
 const igContent={...fullContent,manifest_hash:'a'.repeat(64),assets:igAssets};
+const ttConnection={id:'dept.tiktok',account_id:'dept',platform:'tiktok',planning_enabled:true,capabilities:['plan','visibility:public']};
+test('TikTok 준비는 실제 MP4 한 개를 직접 선택하고 원본과 게시 실행을 바꾸지 않는다',async()=>{
+ const restore=useTestDocument();try{
+  const source={...igContent,variants:[{destination_account_id:'dept',platform:'tiktok',text:'저장된 캡션'}]},before=structuredClone(source),calls=[];
+  const result=body=>({...selectedPlan,...body,platform:'tiktok',options:body.options,crossposts:[]});
+  const editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:[ttConnection,igConnection]}),deliveryEvents:async()=>({items:[]}),previewDelivery:async body=>{calls.push(['preview',body]);return result(body);},createDelivery:async body=>{calls.push(['save',body]);return result(body);}}),writable:()=>true});
+  await editor.open(source);selectConnection(editor,'dept.tiktok');let select=findInput(editor.element,'TikTok 준비용 영상 (MP4 1개)');assert.equal(select.value,'');assert.deepEqual(select.children.map(n=>n.attrs.value),['','video-a']);assert.match(editor.element.textContent,/TikTok 영상 준비 · 실제 업로드·게시 아님/);assert.match(editor.element.textContent,/게시 방식 확인 대기/);
+  inputValue(editor,'예정 시각 (예: 2026-11-01T10:00:00+09:00)','2026-11-04T10:00:00+09:00');await findButton(editor.element,'계획 미리보기').listeners.click();assert.equal(calls.length,0);
+  inputValue(editor,'TikTok 준비용 영상 (MP4 1개)','video-a');selectConnection(editor,'dept.instagram');selectConnection(editor,'dept.tiktok');assert.equal(findInput(editor.element,'TikTok 준비용 영상 (MP4 1개)').value,'');
+  inputValue(editor,'TikTok 준비용 영상 (MP4 1개)','video-a');await findButton(editor.element,'계획 미리보기').listeners.click();assert.match(editor.element.textContent,/선택 자산: video-a/);await findButton(editor.element,'로컬 계획 저장').listeners.click();assert.deepEqual(calls.map(x=>x[0]),['preview','save']);for(const [,body]of calls)assert.deepEqual(body.options,{tiktok:{asset_ids:['video-a']}});assert.deepEqual(source,before);
+ }finally{restore();}
+});
+test('TikTok 준비 자산의 형식·선택·중복을 엄격히 검사하고 원본 갱신 시 선택을 비운다',async()=>{
+ const draft={connection_id:'dept.tiktok',schedule_slot:'main',scheduled_at:'2026-11-04T10:00:00+09:00',tiktok_asset_id:'video-a'};
+ for(const value of ['',true,['video-a'],'jpeg-a','missing'])assert.throws(()=>delivery.deliveryPayload(igContent,{...draft,tiktok_asset_id:value},ttConnection),/TikTok/);
+ for(const change of [{size:true},{size:0},{sha256:'bad'},{media_type:'image/png'}])assert.throws(()=>delivery.deliveryPayload({...igContent,assets:igAssets.map(a=>a.id==='video-a'?{...a,...change}:a)},draft,ttConnection),/TikTok/);
+ assert.throws(()=>delivery.deliveryPayload({...igContent,assets:[...igAssets,igAssets[2]]},draft,ttConnection),/TikTok/);
+ const restore=useTestDocument();try{
+  const source=structuredClone(igContent),editor=delivery.createDeliveryEditor({api:stubApi({listConnections:async()=>({items:[ttConnection]})}),writable:()=>true});await editor.open(source);selectConnection(editor,'dept.tiktok');inputValue(editor,'TikTok 준비용 영상 (MP4 1개)','video-a');source.assets=[];editor.refreshControls();assert.equal(findInput(editor.element,'TikTok 준비용 영상 (MP4 1개)').value,'');await editor.open({...source,revision:5});selectConnection(editor,'dept.tiktok');assert.equal(findInput(editor.element,'TikTok 준비용 영상 (MP4 1개)').value,'');
+ }finally{restore();}
+});
 const igConnection={id:'dept.instagram',account_id:'dept',platform:'instagram',target_id:'123456',target_status:'verified',planning_enabled:true,auth_status:'unknown',capabilities:['plan','visibility:public']};
 const igPlan={...selectedPlan,content_id:igContent.id,manifest_hash:igContent.manifest_hash,connection_id:igConnection.id,target_id:igConnection.target_id,platform:'instagram',target_label:'Instagram 구성',options:{instagram:{format:'image',asset_ids:['jpeg-a']}}};
 const igChecks={rights_confirmed:false,visual_checked:false,caption_checked:false,composition_checked:false,audio_checked:false};

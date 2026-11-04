@@ -47,6 +47,8 @@ export function createContentApi({fetcher=globalThis.fetch}={}) {
     getDelivery:id=>request(`/deliveries/${encodeURIComponent(id)}`),
     getInstagramReview:id=>request(`/deliveries/${encodeURIComponent(id)}/instagram-review`),
     recordInstagramReview:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/instagram-review`,'POST',body),
+    getTikTokPreparation:id=>request(`/deliveries/${encodeURIComponent(id)}/tiktok-preparation`),
+    checkTikTokPreparation:(id,body)=>json(`/deliveries/${encodeURIComponent(id)}/tiktok-preparation/check`,'POST',body),
     deliveryEvents:id=>request(`/deliveries/${encodeURIComponent(id)}/events`),
     previewDelivery:body=>json('/deliveries/preview','POST',body),
     createDelivery:body=>json('/deliveries','POST',body),

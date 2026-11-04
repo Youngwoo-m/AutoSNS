@@ -12,6 +12,7 @@ _APP=Path(__file__).resolve().parent
 for root in (_APP.parents[1],_APP):
     if str(root) not in sys.path:sys.path.insert(0,str(root))
 from common.operations.bootstrap_config import BootstrapConfig
+from common.operations.tiktok_media_probe import TikTokMediaProbe
 from common.operations.models import ContractError
 from common.operations.content_store import StoreError
 from common.operations.production_settings import ProductionSettingsStore,compile_production_settings
@@ -54,6 +55,7 @@ def parser():
     p.add_argument('--host',default='127.0.0.1');p.add_argument('--port',type=int,default=8769)
     p.add_argument('--public-origin', default=None, help='외부 HTTPS 출처를 명시합니다. loopback 바인딩과 제작 활성화 설정은 별도입니다')
     p.add_argument('--local-toolkit',action='store_true')
+    p.add_argument('--tiktok-ffprobe',type=Path,help='선택 MP4 검사에만 사용할 신뢰된 ffprobe 절대 경로. 기동 시 검사는 실행하지 않습니다')
     p.add_argument('--claude-executable',type=Path);p.add_argument('--claude-home',type=Path);p.add_argument('--claude-user')
     p.add_argument('--model',default='sonnet')
     return p
@@ -62,6 +64,8 @@ def parser():
 def _validate(args):
     for path in (args.source_root,args.workspace_root,args.registry):
         if not path.is_absolute():raise ContractError('invalid_bootstrap_config')
+    if args.tiktok_ffprobe is not None and not args.tiktok_ffprobe.is_absolute():
+        raise ContractError('invalid_tiktok_media_probe')
     source,workspace=args.source_root.resolve(),args.workspace_root.resolve()
     if source.is_relative_to(workspace) or workspace.is_relative_to(source):raise ContractError('invalid_bootstrap_config')
     try:address=ipaddress.ip_address('127.0.0.1' if args.host=='localhost' else args.host)
@@ -89,7 +93,8 @@ def _validate(args):
 def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_production_runtime,
         application_builder=build_production_application,quota_preparer=None,clock=None,
         voice_client_factory=LocalVoiceboxClient,voice_service_factory=VoiceTaskService,
-        video_registration=None,image_registration=None,metrics_services_factory=None):
+        video_registration=None,image_registration=None,metrics_services_factory=None,
+        tiktok_probe_factory=TikTokMediaProbe):
     """check는 읽기만 한다. serve/enable은 CLI에서 명시적으로 선택해야 한다."""
     config=_validate(args);clock=clock or (lambda:datetime.now(timezone.utc))
     if args.enable_images:
@@ -118,7 +123,13 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
     summary=dict(mode='check',execution_enabled=False,settings_revision=compiled.registry.revision,
         accounts=[dict(account_id=row['account_id'],enabled_preference=row['enabled_preference'],daily_limit=row['daily_limit']) for row in rows],
         native_probe_performed=False,quota_modified=False,voicebox_enabled=False,video_enabled=False,images_enabled=False,metrics_enabled=False)
+    if args.tiktok_ffprobe is not None:summary['tiktok_media_check_configured']=True
     if not args.serve:return summary
+    tiktok_media_probe=None
+    if args.tiktok_ffprobe is not None:
+        tiktok_media_probe=tiktok_probe_factory(str(args.tiktok_ffprobe))
+        if not callable(getattr(tiktok_media_probe,'inspect',None)):
+            raise ContractError('invalid_tiktok_media_probe')
     runner=None
     if args.enable_production:
         if not compiled.policy.enabled:raise ContractError('production_settings_required')
@@ -131,6 +142,7 @@ def run(args,*,runner_factory=InstalledClaudeRunner,runtime_builder=build_produc
     runtime=runtime_builder(config=config,registry=compiled.registry,catalog=compiled.catalog,
         policy=compiled.policy,subscription_runner=runner,quota_preparer=quota_preparer if compiled.policy.enabled else None,clock=clock,initialize=False)
     extra={}
+    if tiktok_media_probe is not None:extra['tiktok_media_probe']=tiktok_media_probe
     if args.public_origin is not None:
         extra['external_access_policy']=ExternalAccessPolicy(args.public_origin)
     if args.enable_metrics:

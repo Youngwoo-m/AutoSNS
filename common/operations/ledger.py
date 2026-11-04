@@ -128,7 +128,7 @@ class Ledger:
         version(body['revision'])
         if not isinstance(body['manifest_hash'],str) or not re.fullmatch('[0-9a-f]{64}',body['manifest_hash']): invalid()
         options=body.get('options',{})
-        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override','text_only','instagram'}: invalid()
+        if not isinstance(options,dict) or set(options)-{'visibility','title_override','description_override','text_only','instagram','tiktok'}: invalid()
         if 'text_only' in options and options['text_only'] is not True: invalid()
         if 'visibility' in options and options['visibility'] not in ('public','unlisted','private'): invalid()
         for key,limit in [('title_override',300),('description_override',200000)]:
@@ -149,10 +149,16 @@ class Ledger:
             try:select_instagram_assets(snapshot,options['instagram'])
             except ContractError:invalid()
         elif 'instagram' in options:invalid()
+        if connection.platform=='tiktok' and 'tiktok' in options:
+            if 'plan' not in caps:invalid()
+            from common.publishers.tiktok_payloads import select_tiktok_assets
+            try:select_tiktok_assets(snapshot,options['tiktok'])
+            except ContractError:invalid()
+        elif 'tiktok' in options:invalid()
         for key in options:
             if key=='visibility':
                 if 'visibility:'+options[key] not in caps: invalid()
-            elif key=='instagram':
+            elif key in ('instagram','tiktok'):
                 # 명시 미디어 선택은 기존 plan 능력의 입력이다. 게시 권한/활성화를 만들지 않는다.
                 if 'plan' not in caps:invalid()
             elif key not in caps: invalid()

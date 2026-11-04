@@ -100,3 +100,6 @@
 .reuse-approval label { display:block; margin-block:.6rem; }
 .reuse-approval textarea { box-sizing:border-box; width:100%; max-width:100%; min-height:4rem; }
 .reuse-approval-row { border:1px solid var(--line); border-radius:8px; padding:.7rem; margin-block:.6rem; }
+.tiktok-preparation{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.tiktok-preparation pre{max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;user-select:text}
+.tiktok-preparation .btn{min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere;margin:.25rem .4rem .25rem 0}

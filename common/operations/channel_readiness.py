@@ -15,7 +15,7 @@ _LABELS={'naver_blog':'네이버 블로그','blogger':'Blogger','tistory':'Tisto
 _AUTH_STATUSES=frozenset(('connected','unknown','not_checked','needs_auth','reauth_required',
                          'disconnected','revoked','expired','error'))
 _PUBLISHERS={'naver_blog':'browser_implemented','blogger':'implemented','tistory':'browser_implemented',
-             'youtube':'implemented','instagram':'implemented','threads':'text_only_implemented','facebook':'text_only_implemented','x':'text_only_implemented'}
+             'youtube':'implemented','instagram':'implemented','threads':'text_only_implemented','facebook':'text_only_implemented','x':'text_only_implemented','tiktok':'local_preparation_only'}
 _VERIFIERS={'naver_blog':'hash_implemented','blogger':'hash_implemented','tistory':'hash_implemented',
             'youtube':'receipt_implemented','instagram':'public_probe_required','threads':'public_probe_required','facebook':'public_probe_required','x':'public_probe_required'}
 _ACTIONS={
@@ -33,7 +33,9 @@ _ACTIONS={
       '이미지·영상 게시와 성과 수집은 후속 개발 범위입니다.'),
  'facebook':('Facebook 페이지를 명시 선택하고 로그인 주체와 페이지 자격·관리 권한(tasks)을 확인해야 합니다.',
              '텍스트 게시 기반은 개발됐으며, 실제 서버 전송·로그인 연결과 익명 공개 페이지 확인은 아직 등록·검증되지 않았습니다.'),
- 'tiktok':('업로드와 직접 게시를 구분하고 앱 심사·동의를 확인해야 합니다. 실제 게시 연결은 개발이 남아 있습니다.',),
+ 'tiktok':('영상·캡션 로컬 준비와 명시 기술 검사를 사용할 수 있습니다. 업로드·게시는 실행하지 않습니다.',
+           '본인·팀 계정용 내부 도구는 공식 Direct Post 적합 사례가 아니므로 자동 공개 게시 가능성을 전제하지 않습니다.',
+           '최종 게시 방식은 확인 대기이며, 기존 중지 대기열은 그대로 유지합니다.'),
 }
 
 

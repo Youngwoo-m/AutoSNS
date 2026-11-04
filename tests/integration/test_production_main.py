@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
+from unittest.mock import patch
 from common.operations.models import ContractError
 from common.operations.production_settings import ProductionSettingsStore
 SPEC=importlib.util.spec_from_file_location('production_main_fixture',Path(__file__).resolve().parents[2]/'ax-console/app/production_main.py')
@@ -109,3 +110,47 @@ class MainTests(unittest.TestCase):
                     self.assertEqual(error.exception.code,'invalid_external_access_policy')
                     self.assertEqual(calls,[])
                     self.assertEqual(before,list(self.root.rglob('*')))
+
+    def test_tiktok_ffprobe_check_is_format_only_and_default_summary_unchanged(self):
+        calls,deps=self.dependencies();before=list(self.root.rglob('*'))
+        def forbidden(*args):raise AssertionError('probe must not be constructed in check')
+        with patch('subprocess.Popen',side_effect=AssertionError('no native process')),patch('common.operations.tiktok_media_probe.tempfile.TemporaryDirectory',side_effect=AssertionError('no asset temporary files')):
+            result=module.run(self.args('--check','--tiktok-ffprobe','/fixture/trusted-ffprobe'),tiktok_probe_factory=forbidden,**deps)
+        self.assertTrue(result['tiktok_media_check_configured'])
+        self.assertFalse(result['native_probe_performed']);self.assertFalse(result['execution_enabled'])
+        self.assertTrue(all(result[key] is False for key in ('voicebox_enabled','video_enabled','images_enabled','metrics_enabled')))
+        self.assertEqual(calls,[]);self.assertEqual(before,list(self.root.rglob('*')))
+        plain=module.run(self.args('--check'),**deps)
+        self.assertNotIn('tiktok_media_check_configured',plain)
+
+    def test_tiktok_ffprobe_serve_constructs_and_forwards_without_inspecting(self):
+        calls,deps=self.dependencies();probe=SimpleNamespace(inspect=lambda raw:(_ for _ in ()).throw(AssertionError('must not inspect')))
+        factory_calls=[]
+        def factory(path):factory_calls.append(path);return probe
+        with patch('subprocess.Popen',side_effect=AssertionError('no native process')):
+            result=module.run(self.args('--serve','--tiktok-ffprobe','/fixture/trusted-ffprobe'),tiktok_probe_factory=factory,**deps)
+        application=next(row[1] for row in calls if isinstance(row,tuple) and row[0]=='application')
+        self.assertIs(application['tiktok_media_probe'],probe);self.assertEqual(factory_calls,['/fixture/trusted-ffprobe'])
+        self.assertFalse(result['execution_enabled']);self.assertFalse(result['native_probe_performed'])
+        self.assertTrue(all(result[key] is False for key in ('voicebox_enabled','video_enabled','images_enabled','metrics_enabled')))
+        self.assertNotIn('runner',calls);self.assertNotIn('quota',calls)
+        for name in ('voice_task_service','video_task_service','image_task_service','metrics_collection_service'):
+            self.assertNotIn(name,application)
+
+    def test_tiktok_ffprobe_default_serve_does_not_add_argument_or_use_environment(self):
+        calls,deps=self.dependencies()
+        with patch.dict('os.environ',{'TIKTOK_FFPROBE':'/untrusted/environment-probe'}):
+            result=module.run(self.args('--serve'),tiktok_probe_factory=lambda _:(_ for _ in ()).throw(AssertionError('no default probe')),**deps)
+        application=next(row[1] for row in calls if isinstance(row,tuple) and row[0]=='application')
+        self.assertNotIn('tiktok_media_probe',application);self.assertNotIn('tiktok_media_check_configured',result)
+
+    def test_tiktok_ffprobe_relative_path_and_invalid_object_rejected_before_builders(self):
+        for mode in ('--check','--serve'):
+            calls,deps=self.dependencies()
+            with self.assertRaises(ContractError) as error:
+                module.run(self.args(mode,'--tiktok-ffprobe','relative/ffprobe'),**deps)
+            self.assertEqual(error.exception.code,'invalid_tiktok_media_probe');self.assertEqual(calls,[])
+        calls,deps=self.dependencies()
+        with self.assertRaises(ContractError) as error:
+            module.run(self.args('--serve','--tiktok-ffprobe','/fixture/ffprobe'),tiktok_probe_factory=lambda _:object(),**deps)
+        self.assertEqual(error.exception.code,'invalid_tiktok_media_probe');self.assertEqual(calls,[])

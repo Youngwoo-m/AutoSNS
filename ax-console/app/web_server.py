@@ -40,6 +40,8 @@ from common.operations.tool_cost_policy import ToolkitPolicy
 from web_channel_readiness import handle as handle_channel_readiness, recognizes as channel_readiness_path
 from web_media_leases import handle as handle_media_leases,recognizes as media_leases_path
 from web_external_access import ExternalAccessPolicy
+from web_tiktok_preparation import handle as handle_tiktok_preparation,recognizes as tiktok_preparation_path
+from common.operations.tiktok_preparation import TikTokPreparationService
 from common.operations.media_leases import MediaLeaseStore
 from common.operations.managed_connections import project_registry
 from web_metrics import handle as handle_metrics, recognizes as metrics_path
@@ -91,6 +93,7 @@ _STATIC = {
     'video_task_panel.js': 'text/javascript; charset=utf-8',
     'reuse_approval_panel.js': 'text/javascript; charset=utf-8',
     'instagram_review_panel.js': 'text/javascript; charset=utf-8',
+    'tiktok_preparation_panel.js': 'text/javascript; charset=utf-8',
     'view_helpers.js': 'text/javascript; charset=utf-8',
     'content_editor.js': 'text/javascript; charset=utf-8',
     'delivery_editor.js': 'text/javascript; charset=utf-8',
@@ -507,6 +510,12 @@ class _Handler(BaseHTTPRequestHandler):
                     lambda:self._read_body(16384,json_body=True))
                 if result is None:return self._error(405,'지원하지 않는 요청입니다')
                 return self._send(200,result)
+            if tiktok_preparation_path(path):
+                if not self._authed():return self._error(401,'로그인이 필요합니다')
+                result=handle_tiktok_preparation(self.server.tiktok_preparation_service,method,path,query,
+                    lambda:self._read_body(16384,json_body=True))
+                if result is None:return self._error(405,'지원하지 않는 요청입니다')
+                return self._send(200,result)
             if deliveries:
                 if path == '/api/v2/connections' and self.server.oauth_service is not None:
                     return handle_oauth(self, method, '/api/v2/oauth/connections', query)
@@ -775,7 +784,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
                   oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
                   planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None, metrics_collection_service=None,
-                  external_access_policy=None) -> ThreadingHTTPServer:
+                  external_access_policy=None,tiktok_media_probe=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
     try:
         address = ipaddress.ip_address(host if host != 'localhost' else '127.0.0.1')
@@ -785,6 +794,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         raise ValueError('조회 서버는 localhost에서만 실행할 수 있습니다')
     if external_access_policy is not None and type(external_access_policy) is not ExternalAccessPolicy:
         raise ValueError('고정 외부 HTTPS 접속 정책이 필요합니다')
+    if tiktok_media_probe is not None and not callable(getattr(tiktok_media_probe,'inspect',None)):
+        raise ValueError('고정 로컬 영상 검사기가 필요합니다')
     if toolkit_policy is not None and type(toolkit_policy) is not ToolkitPolicy:
         raise ValueError('서버 소유 로컬 도구 정책이 필요합니다')
     if (type(oauth_test_only) is not bool or
@@ -882,6 +893,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.media_lease_store=MediaLeaseStore(workspace_root/'media-leases') if workspace_root is not None else None
     server.instagram_review_service=InstagramReviewService(server.instagram_review_store,managed_content,
         server.ledger.get_delivery,server.ledger.registry,server.operations_clock) if managed_content is not None else None
+    server.tiktok_preparation_service=TikTokPreparationService(managed_content,server.ledger.get_delivery,
+        server.ledger.registry,probe=tiktok_media_probe,clock=server.operations_clock) if managed_content is not None else None
     server.toolkit_service = LocalToolkitService(registry=server.metrics_registry(),
         content_store=server.content_store, metrics_store=server.metrics_store,
         runtime_store=server.runtime_store, policy=toolkit_policy if toolkit_policy is not None else ToolkitPolicy(),

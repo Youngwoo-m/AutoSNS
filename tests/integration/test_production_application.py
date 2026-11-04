@@ -346,5 +346,35 @@ class ProductionApplicationTests(unittest.TestCase):
                 self.assertEqual(self.factory_calls,[])
 
 
+    def test_tiktok_media_probe_forwarded_explicitly_without_inspection(self):
+        plain=self.app(runtime=self.runtime(enabled=False))
+        self.assertNotIn('tiktok_media_probe',self.factory_calls[-1][2]);plain.close()
+        calls=[]
+        probe=SimpleNamespace(inspect=lambda raw:calls.append(raw))
+        runtime=self.runtime(enabled=False)
+        app=self.app(runtime=runtime,tiktok_media_probe=probe)
+        self.assertIs(self.factory_calls[-1][2]['tiktok_media_probe'],probe)
+        self.assertEqual(calls,[]);self.assertEqual(runtime.worker.run_calls,0)
+        self.assertEqual(self.servers[-1].serve_calls,0);app.close()
+
+    def test_invalid_tiktok_media_probe_rejected_before_server_factory(self):
+        for probe in (object(),True,'/fixture/ffprobe',SimpleNamespace(inspect=False)):
+            with self.subTest(probe=probe),self.assertRaises(ContractError) as error:
+                self.app(tiktok_media_probe=probe)
+            self.assertEqual(error.exception.code,'invalid_tiktok_media_probe')
+            self.assertEqual(self.factory_calls,[])
+
+    def test_initialize_storage_preserves_instagram_review_store_only(self):
+        app=self.app(runtime=self.runtime(enabled=False))
+        calls=[]
+        self.servers[-1].instagram_review_store=SimpleNamespace(initialize=lambda:calls.append('instagram_review'))
+        self.servers[-1].media_lease_store=SimpleNamespace(initialize=lambda:(_ for _ in ()).throw(AssertionError('media leases remain inert')))
+        with patch('subprocess.Popen',side_effect=AssertionError('no native process')):
+            app.initialize_storage()
+        self.assertEqual(calls,['instagram_review'])
+        self.assertEqual(self.servers[-1].serve_calls,0)
+        self.assertEqual(app.runtime.worker.run_calls,0)
+        app.close()
+
 if __name__ == '__main__':
     unittest.main()

@@ -131,7 +131,7 @@ class ProductionApplication:
             if self.state != 'built':
                 raise ProductionApplicationError('application_' + self.state)
             for name in ('content_store', 'integration_store', 'ledger', 'runtime_store',
-                         'production_store', 'metrics_store', 'production_settings_store', 'media_plan_store', 'voice_task_store', 'video_task_store', 'reuse_approval_store', 'image_task_store', 'voice_settings_store'):
+                         'production_store', 'metrics_store', 'production_settings_store', 'media_plan_store', 'voice_task_store', 'video_task_store', 'reuse_approval_store', 'image_task_store', 'voice_settings_store', 'instagram_review_store'):
                 store = getattr(self.server, name, None)
                 if store is not None:
                     store.initialize()
@@ -318,8 +318,10 @@ class ProductionApplication:
 
 def build_production_application(*, runtime, config, planning_registry, host='127.0.0.1', port=8769,
                                  web_root, auth_backend=None, toolkit_policy=None, server_factory=None, voice_task_service=None,
-                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None, metrics_collection_service=None, external_access_policy=None):
+                                 video_task_service=None, video_worker_factory=VideoTaskWorker, image_task_service=None, metrics_collection_service=None, external_access_policy=None, tiktok_media_probe=None):
     """검증 후 서버 소켓만 준비한다. worker/thread/serve_forever는 시작하지 않는다."""
+    if tiktok_media_probe is not None and not callable(getattr(tiktok_media_probe,'inspect',None)):
+        raise ContractError('invalid_tiktok_media_probe')
     if external_access_policy is not None and not isinstance(external_access_policy, ExternalAccessPolicy):
         raise ContractError('invalid_external_access_policy')
     if not isinstance(config, BootstrapConfig):
@@ -334,6 +336,7 @@ def build_production_application(*, runtime, config, planning_registry, host='12
     video_worker = _build_video_worker(video_task_service, config, video_worker_factory)
     factory = server_factory if server_factory is not None else _default_server_factory()
     extra = {'voice_task_service':voice_task_service} if voice_task_service is not None else {}
+    if tiktok_media_probe is not None:extra['tiktok_media_probe']=tiktok_media_probe
     if external_access_policy is not None:extra['external_access_policy']=external_access_policy
     if metrics_collection_service is not None:extra['metrics_collection_service']=metrics_collection_service
     if image_task_service is not None:extra['image_task_service']=image_task_service
