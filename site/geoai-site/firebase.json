@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": ["firebase.json", "**/.*", "_redirects", "_headers", "**/node_modules/**"],
+    "cleanUrls": false,
+    "trailingSlash": true,
+    "redirects": [
+      { "source": "/ch", "destination": "/links/", "type": 301 },
+      { "source": "/channels", "destination": "/links/", "type": 301 }
+    ],
+    "headers": [
+      { "source": "/questions/published.json", "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }] },
+      { "source": "/questions/**", "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" } ] }
+    ]
+  }
+}
