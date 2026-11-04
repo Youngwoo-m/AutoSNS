@@ -32,6 +32,21 @@ export function assertSafeOAuthResponse(value) {
   }
   return value;
 }
+const exactGrantObject=(value,keys)=>!!value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));
+const grantText=(value,max=500)=>typeof value==='string'&&value.length>0&&value.length<=max&&!/[\x00-\x1f\x7f-\x9f]/.test(value);
+const grantTime=value=>value===null||typeof value==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(value)&&Number.isFinite(Date.parse(value));
+export function assertPublicationGrantResponse(value,binding={}) {
+  assertSafeOAuthResponse(value);
+  const fields=['connection_id','account_id','platform','provider_id','target_id','revision','status','approved_at','expires_at','policy_revision'];
+  const invalid=()=>{throw new Error('발행 사용 승인 응답의 계정과 형식을 확인할 수 없습니다.');};
+  if(!exactGrantObject(value,['publication_grant','available_actions','reason_codes','base_revision','connection_revision']))invalid();
+  const grant=value.publication_grant;
+  if(!exactGrantObject(grant,fields)||!['personal','dept'].includes(grant.account_id)||!providerIds.includes(grant.provider_id)||!['blocked','granted','revoked','expired'].includes(grant.status)||!Number.isSafeInteger(grant.revision)||grant.revision<0||!['connection_id','platform','target_id','policy_revision'].every(key=>grantText(grant[key]))||!grantTime(grant.approved_at)||!grantTime(grant.expires_at))invalid();
+  if(grant.status==='granted'&&(grant.approved_at===null||grant.expires_at===null||Date.parse(grant.expires_at)<=Date.parse(grant.approved_at)))invalid();
+  for(const key of ['account_id','connection_id','platform','provider_id','target_id'])if(binding[key]!==undefined&&grant[key]!==binding[key])invalid();
+  if(!grantText(value.base_revision)||!Number.isSafeInteger(value.connection_revision)||value.connection_revision<0||!Array.isArray(value.available_actions)||value.available_actions.length>2||new Set(value.available_actions).size!==value.available_actions.length||!value.available_actions.every(action=>['approve','revoke'].includes(action))||!Array.isArray(value.reason_codes)||value.reason_codes.length>30||!value.reason_codes.every(reason=>typeof reason==='string'&&/^[a-z0-9_.-]{1,160}$/.test(reason)))invalid();
+  return value;
+}
 const id = value => {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_.-]{1,160}$/.test(value)) throw new Error('식별자가 올바르지 않습니다.');
   return encodeURIComponent(value);
@@ -59,7 +74,7 @@ export function createOAuthApi(request = globalThis.fetch) {
     if ('requested_scopes' in body && (!Array.isArray(body.requested_scopes) || body.requested_scopes.some(scope => typeof scope !== 'string' || !scope))) throw new Error('권한 범위가 올바르지 않습니다.');
     if ('provider_id' in body && !providerIds.includes(body.provider_id)) throw new Error('제공자가 올바르지 않습니다.');
     if ('account_id' in body && !['personal', 'dept'].includes(body.account_id)) throw new Error('연결 계정이 올바르지 않습니다.');
-    for (const key of ['expected_revision', 'expected_connection_revision']) if (key in body && (!Number.isInteger(body[key]) || body[key] < 0)) throw new Error('예상 버전이 올바르지 않습니다.');
+    for (const key of ['expected_revision', 'expected_connection_revision', 'expected_grant_revision']) if (key in body && (!Number.isInteger(body[key]) || body[key] < 0)) throw new Error('예상 버전이 올바르지 않습니다.');
     const csrf = await get('/csrf');
     if (typeof csrf.csrf_token !== 'string' || !csrf.csrf_token) throw new Error('세션 확인이 필요합니다.');
     return send(path, body, csrf.csrf_token);
@@ -74,6 +89,11 @@ export function createOAuthApi(request = globalThis.fetch) {
     continue: (value, body) => post(`/attempts/${id(value)}/continue`, body, ['expected_revision']),
     inspect: (value, body) => post(`/attempts/${id(value)}/inspect`, body, ['expected_revision']),
     confirmTarget: (value, body) => post(`/targets/${id(value)}/confirm`, body, revisions),
+    grant: async value => assertPublicationGrantResponse(await get(`/connections/${id(value)}/publication-grant`),{connection_id:value}),
+  };
+  for (const operation of ['approve','revoke']) api[operation+'Grant']=async(value,body)=>{
+    if(!body||!grantText(body.expected_base_revision))throw new Error('예상 기준 버전이 올바르지 않습니다.');
+    return assertPublicationGrantResponse(await post(`/connections/${id(value)}/publication-grant/${operation}`,body,[...revisions,'expected_grant_revision']),{connection_id:value});
   };
   for (const operation of ['refresh', 'disconnect', 'revoke']) api[operation] = (value, body) => post(`/connections/${id(value)}/${operation}`, body, revisions);
   return api;

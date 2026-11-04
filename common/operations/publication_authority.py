@@ -50,7 +50,8 @@ class ManagedPublicationAuthorizer:
             evidence_revision=client.cost_evidence_revision)
         grant=self.store.current(binding,now=now)
         if (grant is None or set(grant.observed_scopes)!=set(observed_scopes)
-                or not set(grant.observed_scopes)<=set(client.approved_scopes)):return None
+                or not set(grant.observed_scopes)<=set(client.approved_scopes)
+                or utc(grant.expires_at)>utc(connection['authorization']['credential_expires_at'])):return None
         return grant
 
     def precheck(self,**state):

@@ -1,15 +1,16 @@
-import {providerIds, assertSafeOAuthResponse} from './oauth_api.js';
+import {providerIds, assertSafeOAuthResponse, assertPublicationGrantResponse} from './oauth_api.js';
 const accounts = new Set(['all', 'personal', 'dept']);
 const requestKey = () => globalThis.crypto.randomUUID();
 const clean = account_id => ({account_id, provider_id: '', connection_id: '', base_revision: null, connection_revision: 0,
   catalog: [], connections: [], ownedResults: [], attempt: null, pending: null, requested_scopes: [], live_enabled: false,
+  publicationGrantResult:null, publicationGrantBusy:false, publicationGrantUnknown:false, publicationGrantMessage:'발행 사용 승인은 수동으로 조회하세요.',
   connectionsStale: false, busy: false, message: '계정과 연결 방식을 선택하세요.', errorStatus: null});
 export function matchesOAuthConnection(row, provider) {
   if (!row || !provider) return false;
   return row.provider_id != null ? row.provider_id === provider.provider_id : row.platform === provider.platform;
 }
 export function createOAuthController({api, onChange = () => {}}) {
-  let state = clean('all'), generation = 0, selection = 0;
+  let state = clean('all'), generation = 0, selection = 0, grantGeneration = 0;
   const listeners = new Set();
   const emit = () => { onChange(getState()); for (const listener of listeners) listener(getState()); };
   const getState = () => structuredClone(state);
@@ -33,13 +34,14 @@ export function createOAuthController({api, onChange = () => {}}) {
   function setContext(context = {}) {
     const value = context.account_id ?? context.account ?? 'all';
     if (!accounts.has(value)) throw new Error('계정 범위가 올바르지 않습니다.');
-    generation++; selection++;
+    generation++; selection++; grantGeneration++;
     state = {...clean(value), provider_id: context.provider_id || '', connection_id: context.connection_id || '',
       base_revision: context.base_revision ?? null, connection_revision: context.connection_revision ?? 0};
     emit();
   }
+  function clearPublicationGrant(preserveUnknown=false){grantGeneration++;state.publicationGrantResult=null;state.publicationGrantBusy=false;if(!preserveUnknown||!state.publicationGrantUnknown){state.publicationGrantUnknown=false;state.publicationGrantMessage='발행 사용 승인은 수동으로 조회하세요.';}}
   function clearSelection() {
-    selection++; state.attempt = null; state.pending = null; state.requested_scopes = []; state.errorStatus = null;
+    clearPublicationGrant();selection++; state.attempt = null; state.pending = null; state.requested_scopes = []; state.errorStatus = null;
     state.connection_id = ''; state.connection_revision = 0;
   }
   function selectProvider(value) {
@@ -57,7 +59,7 @@ export function createOAuthController({api, onChange = () => {}}) {
   }
   async function load() {
     if (state.busy) return false;
-    const current = ++generation; let loaded = false; state.busy = true; emit();
+    clearPublicationGrant(true);const current = ++generation; let loaded = false; state.busy = true; emit();
     try {
       const [catalog, connections] = await Promise.all([api.catalog(state.account_id), api.connections(state.account_id)]);
       if (current !== generation) return;
@@ -87,7 +89,7 @@ export function createOAuthController({api, onChange = () => {}}) {
   }
   async function selectOwnedAttempt(value) {
     if (state.busy || !state.ownedResults.some(row => row.attempt_id === value && row.account_id === state.account_id)) return;
-    const current = generation, selected = ++selection;
+    clearPublicationGrant();const current = generation, selected = ++selection;
     state.attempt = null; state.pending = null; state.busy = true; emit();
     try {
       const result = assertSafeOAuthResponse(await api.attempt(value));
@@ -111,7 +113,7 @@ export function createOAuthController({api, onChange = () => {}}) {
     if (!state.pending) state.pending = {operation, target, signature, ...payload, request_key: requestKey()};
     const {request_key} = state.pending;
     const current = generation, selected = selection;
-    state.busy = true; state.errorStatus = null; emit();
+    clearPublicationGrant();state.busy = true; state.errorStatus = null; emit();
     try {
       const result = assertSafeOAuthResponse(await (operation === 'start' ? api.start({...payload, request_key}) : api[operation](target, {...payload, request_key})));
       if (current !== generation || selected !== selection) return;
@@ -198,11 +200,41 @@ export function createOAuthController({api, onChange = () => {}}) {
     if (operation !== 'disconnect' && (!row.available_actions?.includes(operation) || blocked(provider()))) return;
     return mutate(operation, state.connection_id, revisions());
   }
+  function grantBinding(){
+    const row=connection(),p=provider();
+    if(!row||!p||!['personal','dept'].includes(state.account_id)||row.account_id!==state.account_id||!matchesOAuthConnection(row,p))return null;
+    return {account_id:state.account_id,connection_id:state.connection_id,provider_id:p.provider_id,platform:p.platform,...(typeof row.target_id==='string'?{target_id:row.target_id}:{})};
+  }
+  const canPublicationGrantAction=action=>!state.busy&&!state.pending&&!state.publicationGrantBusy&&!state.connectionsStale&&!state.publicationGrantUnknown&&!!grantBinding()&&!!state.publicationGrantResult?.available_actions.includes(action)&&typeof api[action+'Grant']==='function';
+  async function publicationGrantRequest(action=null){
+    const binding=grantBinding();
+    if(!binding||state.busy||state.pending||state.publicationGrantBusy)return;
+    if(action&&!canPublicationGrantAction(action))return;
+    const method=action?action+'Grant':'grant';
+    if(typeof api[method]!=='function'){clearPublicationGrant();state.publicationGrantMessage='발행 사용 승인 조회 기능이 등록되지 않았습니다.';emit();return;}
+    const current=generation,selected=selection,token=++grantGeneration,mine=state.connection_id;
+    const prior=state.publicationGrantResult;
+    state.publicationGrantBusy=true;state.publicationGrantUnknown=false;state.publicationGrantResult=null;
+    state.publicationGrantMessage=action?'발행 사용 승인 변경 결과 확인 중':'발행 사용 승인 조회 중';emit();
+    try{
+      const result=action?await api[method](mine,{request_key:requestKey(),expected_base_revision:prior.base_revision,expected_connection_revision:prior.connection_revision,expected_grant_revision:prior.publication_grant.revision}):await api.grant(mine);
+      if(current!==generation||selected!==selection||token!==grantGeneration)return;
+      assertPublicationGrantResponse(result,binding);
+      state.publicationGrantResult=result;state.publicationGrantMessage=action==='approve'?'게시 권한 검사와 발행 사용 승인 결과를 확인하세요.':action==='revoke'?'발행 사용 승인 회수 결과를 확인하세요.':'현재 발행 사용 승인 상태를 조회했습니다.';
+    }catch{
+      if(current!==generation||selected!==selection||token!==grantGeneration)return;
+      state.publicationGrantResult=null;state.publicationGrantUnknown=true;
+      state.publicationGrantMessage=action?'변경 결과를 확인할 수 없습니다. 자동 재시도하지 않습니다. 현재 상태를 직접 다시 조회하세요.':'발행 사용 승인 상태를 확인할 수 없습니다. 직접 다시 조회하세요.';
+    }finally{
+      if(current===generation&&selected===selection&&token===grantGeneration){state.publicationGrantBusy=false;emit();}
+    }
+  }
   function close() { generation++; selection++; state = clean(state.account_id); emit(); }
   return {getState, subscribe(listener) {listeners.add(listener); return () => listeners.delete(listener);}, setContext, load, selectProvider, selectConnection,
     clearSelection() {if (!state.busy) {clearSelection(); state.provider_id = ''; state.connection_id = ''; emit();}},
     reloadOwnedResult, selectOwnedAttempt, retryPending, revalidatePending, start, continue: continueAttempt, inspect, confirmTarget,
     refresh: () => connectionAction('refresh'), disconnect: () => connectionAction('disconnect'), revoke: () => connectionAction('revoke'),
+    reloadPublicationGrant:()=>publicationGrantRequest(),approvePublicationGrant:()=>publicationGrantRequest('approve'),revokePublicationGrant:()=>publicationGrantRequest('revoke'),canPublicationGrantAction,
     setPublicationConsent, canRequestPublicationConsent:()=>!!publicationScopes(), canStart, canConfirmTarget, close, isBusy: () => state.busy, hasUnsavedChanges: () => !!state.pending,
   };
 }

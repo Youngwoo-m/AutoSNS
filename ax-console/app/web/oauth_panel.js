@@ -4,12 +4,26 @@ const providerNames = {instagram_login: 'Instagram Login', instagram_facebook: '
 const stateNames = {registration_blocked: '로그인 준비 안 됨', consent_pending: '공식 서비스 동의 대기', callback_staged: '돌아오기 수신 · 연결 계속 필요', resume_pending: '같은 사이트 연결 계속 대기', token_exchanged: '주체 조회 필요', principal_pending: '주체 조회 대기', target_confirmation: '대상 확인 필요', connected: '서버에서 연결 확인', denied: '동의 거부 · 기존 연결 유지', expired: '시도 만료 · 기존 연결 유지', error: '연결 오류 · 기존 연결 유지', revoked: '권한 해지', unknown: '결과 불확실 · 자동 재전송 없음', disconnected: '로컬 연결 해제'};
 const accountName = value => ({personal: '개인', dept: '학과', all: '전체 · 조회 전용'})[value] || '미확인';
 const reasons = {cost_evidence_unverified: '추가 비용 0원 근거 미확인', app_registration_unverified: '앱 등록 미확인', https_callback_unaccepted: 'HTTPS 복귀 경계 미수락', paid_gate_unverified: '유료 사용 차단', profile_only: '회원 프로필만 지원', blog_publication_unsupported: '블로그 API 글쓰기 미지원', official_api_discontinued: '공식 API 종료', remote_revoke_project_impact_unverified: '프로젝트의 다른 연결에 미치는 해지 영향 미확인'};
+const publicationGrantReasons={
+  oauth_publication_verifier_unavailable:'게시 권한 검사기가 등록되지 않았습니다.',
+  publication_verifier_unregistered:'게시 권한 검사기가 등록되지 않았습니다.',
+  oauth_publication_scope_consent_required:'발행에 필요한 추가 권한에 먼저 동의해야 합니다.',
+  oauth_scope_unverified:'발행에 필요한 추가 권한을 확인하지 못했습니다.',
+  oauth_publication_binding_changed:'현재 연결이 변경되었습니다. 연결 상태를 다시 확인하세요.',
+  credential_changed:'현재 연결이 변경되었습니다. 연결 상태를 다시 확인하세요.',
+  credential_owner_mismatch:'현재 연결을 확인하지 못했습니다. 연결 상태를 다시 확인하세요.',
+  oauth_credential_expired:'자격이 만료되었습니다. 연결을 갱신하거나 다시 동의하세요.',
+  oauth_publication_storage_uninitialized:'발행 사용 승인 저장소가 준비되지 않았습니다.',
+  oauth_publication_authorization_unavailable:'앱·비용 조건 검사기가 등록되지 않았습니다.',
+  oauth_publication_provider_blocked:'이 연결 방식의 발행 사용을 정책에서 허용하지 않습니다.',
+  oauth_publication_policy_blocked:'정책에서 이 연결의 발행 사용을 허용하지 않습니다.',
+};
 export function createOAuthPanel({controller, document, onClose = () => true, onContextChange = () => true, onClosed = () => {}}) {
   const root = document.createElement('section');
   root.className = 'oauth-panel';
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', '채널·계정 OAuth 연결');
   root.style.maxWidth = '100%'; root.style.minWidth = '0'; root.style.overflowWrap = 'anywhere';
-  let opener = null, opened = false, guardGeneration = 0;
+  let opener = null, opened = false, guardGeneration = 0, grantExpanded=false, grantSelection='';
   function node(tag, text) {
     const item = document.createElement(tag);
     if (text !== undefined) item.textContent = text;
@@ -121,13 +135,34 @@ export function createOAuthPanel({controller, document, onClose = () => true, on
       authorizationDetails(root, attempt.authorization);
     }
     const connection = state.connections.find(row => (row.connection_id || row.id) === state.connection_id);
+    if(!connection||state.account_id==='all'){grantSelection='';grantExpanded=false;}
     if (connection && state.account_id !== 'all') {
       const lifecycle = node('section'); lifecycle.append(node('h3', '연결 수명주기')); authorizationDetails(lifecycle, connection.authorization); lifecycle.append(node('p', '로컬 연결 해제는 이 콘솔의 관리 연결 사용만 중단합니다. 원격 권한 해지와 기존 발행 자격 삭제는 별개입니다.'));
       if (connection.reason_codes?.includes('oauth_operation_pending_manual_check')) lifecycle.append(node('p', '이전 갱신·해지 결과를 확인할 수 없습니다. 자동 재시도하지 말고 수동 확인하세요.'));
       button(lifecycle, 'disconnect', '로컬 연결만 해제', controller.disconnect, busy);
       button(lifecycle, 'refresh', '명시적으로 자격 갱신', controller.refresh, busy || !connection.available_actions?.includes('refresh'));
       button(lifecycle, 'revoke', '제공자 원격 권한 해지', controller.revoke, busy || !connection.available_actions?.includes('revoke'));
-      lifecycle.append(node('p', '원격 해지 영향과 비용이 확인되지 않으면 차단합니다. 로컬 해제를 원격 해지 성공으로 표시하지 않습니다.')); root.append(lifecycle);
+      lifecycle.append(node('p', '원격 해지 영향과 비용이 확인되지 않으면 차단합니다. 로컬 해제를 원격 해지 성공으로 표시하지 않습니다.'));
+      const selected=state.account_id+':'+state.connection_id+':'+state.provider_id;
+      if(selected!==grantSelection){grantSelection=selected;grantExpanded=false;}
+      const grantDetails=node('details');grantDetails.setAttribute('data-oauth-publication-grant','');grantDetails.open=grantExpanded;
+      grantDetails.append(node('summary','발행 사용 승인'));
+      const grantBody=node('div');grantBody.append(node('p','이 연결의 자격을 발행에 사용할 수 있도록 승인하는 절차입니다. 실제 콘텐츠 발행 승인은 별도이며, 이 동작으로 콘텐츠를 게시하지 않습니다.'));
+      const currentGrant=state.publicationGrantResult?.publication_grant;
+      const grantNames={blocked:'차단',granted:'발행 사용 승인됨',revoked:'발행 사용 승인 회수됨',expired:'발행 사용 승인 만료'};
+      grantBody.append(node('p',`상태: ${state.publicationGrantUnknown?'결과 미확인':currentGrant?grantNames[currentGrant.status]:'조회 전'}`));
+      if(currentGrant){grantBody.append(node('p',`승인 시각: ${currentGrant.approved_at||'없음'} · 만료: ${currentGrant.expires_at||'없음'}`));}
+      if(state.publicationGrantResult?.reason_codes.length){
+        const notices=[...new Set(state.publicationGrantResult.reason_codes.map(code=>publicationGrantReasons[code]||'서버에서 승인 조건을 확인하지 못했습니다.'))];
+        for(const notice of notices)grantBody.append(node('p',notice));
+      }
+      const grantBusy=busy||state.publicationGrantBusy||!!state.pending||!grantExpanded;
+      button(grantBody,'publication-grant-load','발행 사용 승인 상태 조회',controller.reloadPublicationGrant,grantBusy);
+      button(grantBody,'publication-grant-approve','게시 권한 확인 후 발행 사용 승인',controller.approvePublicationGrant,grantBusy||!controller.canPublicationGrantAction?.('approve'));
+      button(grantBody,'publication-grant-revoke','발행 사용 승인 회수',controller.revokePublicationGrant,grantBusy||!controller.canPublicationGrantAction?.('revoke'));
+      grantBody.append(node('p',state.publicationGrantMessage));grantDetails.append(grantBody);
+      grantDetails.addEventListener('toggle',()=>{if(selected!==grantSelection)return;if(grantDetails.open!==grantExpanded){grantExpanded=grantDetails.open;paint();}});
+      lifecycle.append(grantDetails);root.append(lifecycle);
     }
     if (focused) {
       const replacement = [...root.querySelectorAll('button,select,a[href]')].find(item => !item.disabled && (focusAction ? item.getAttribute('data-oauth-action') === focusAction : item.name === focusName));

@@ -49,6 +49,13 @@ class ManagedPublicationAuthorityTests(unittest.TestCase):
     def use(self,scope='publication'):
         return self.resolver.use(self.fixture.reference,account_id='personal',platform='youtube',scope=scope,target_id='channel')
 
+    def test_shortened_current_credential_expiry_invalidates_grant_before_vault(self):
+        self.approve()
+        self.fixture.row['authorization']['credential_expires_at']=(self.now+timedelta(minutes=10)).isoformat()
+        with self.assertRaises(StoreError):
+            with self.use():self.fail('grant exceeds current credential expiry')
+        self.assertEqual(self.fixture.reads,0)
+
     def test_unapproved_grant_denies_before_vault_and_never_creates_db(self):
         with self.assertRaises(StoreError):
             with self.use():self.fail('grant required')

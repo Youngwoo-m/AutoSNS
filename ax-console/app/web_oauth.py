@@ -118,6 +118,32 @@ def _public(value):
     check(value);return value
 
 
+
+def _grant_public(value,connection_id):
+    keys={'connection_id','account_id','platform','provider_id','target_id','revision','status','approved_at','expires_at','policy_revision'}
+    if type(value) is not dict or set(value)!={'publication_grant','available_actions','reason_codes','base_revision','connection_revision'}:raise StoreError('oauth_response_invalid')
+    grant=value['publication_grant']
+    if (type(grant) is not dict or set(grant)!=keys or grant['connection_id']!=connection_id
+            or grant['account_id'] not in ('personal','dept') or grant['status'] not in ('blocked','granted','revoked','expired')
+            or type(grant['revision']) is not int or grant['revision']<0
+            or type(value['connection_revision']) is not int or value['connection_revision']<1):raise StoreError('oauth_response_invalid')
+    for text in ('connection_id','platform','provider_id','target_id','policy_revision'):
+        if type(grant[text]) is not str or not grant[text] or len(grant[text])>300 or any(ord(c)<32 for c in grant[text]):raise StoreError('oauth_response_invalid')
+    if grant['provider_id'] not in {p.id for p in provider_catalog() if p.platform==grant['platform']}:raise StoreError('oauth_response_invalid')
+    for field in ('approved_at','expires_at'):
+        if grant[field] is not None:
+            from datetime import datetime
+            try:
+                stamp=datetime.fromisoformat(grant[field].replace('Z','+00:00'))
+                if stamp.tzinfo is None or stamp.utcoffset() is None:raise ValueError()
+            except (TypeError,ValueError,AttributeError):raise StoreError('oauth_response_invalid') from None
+    if (type(value['base_revision']) is not str or not value['base_revision'] or len(value['base_revision'])>256
+            or type(value['available_actions']) is not list or len(set(value['available_actions']))!=len(value['available_actions'])
+            or not set(value['available_actions'])<={'approve','revoke'}
+            or type(value['reason_codes']) is not list or any(type(v) is not str or not re.fullmatch(r'oauth_[a-z_]{1,64}',v) for v in value['reason_codes'])):raise StoreError('oauth_response_invalid')
+    return value
+
+
 def _callback(handler,method,path,query):
     if method!='GET':return handler._error(405,'지원하지 않는 요청입니다')
     # _validated_target에서 fixed 정책 검증 후 이 경로만 쿠키 없이 수신한다.
@@ -147,6 +173,11 @@ def handle(handler,method,path,query):
             elif path==BASE+'/connections':
                 result=service.connections(session,account) if service else dict(items=[],base_revision=handler.server.metrics_registry().revision)
             elif path==BASE+'/result':result=service.result_for_session(session) if service else dict(items=[])
+            elif (grant_match:=re.fullmatch(BASE+'/connections/('+ID+')/publication-grant',path)):
+                grants=getattr(handler.server,'publication_grant_service',None)
+                if grants is None:raise StoreError('storage_unavailable')
+                result=_grant_public(grants.read(session,grant_match[1]),grant_match[1])
+                return handler._send(200,result)
             else:
                 match=re.fullmatch(BASE+'/attempts/('+ID+')',path)
                 if not match:raise StoreError('not_found')
@@ -154,11 +185,23 @@ def handle(handler,method,path,query):
                 result=service.read_attempt(session,match[1])
             return handler._send(200,_public(result))
         if method!='POST':return handler._error(405,'지원하지 않는 요청입니다')
-        if handler.headers.get('Origin')!='http://'+handler.headers.get('Host',''):
+        external=getattr(handler.server,'external_access_policy',None)
+        expected_origin=external.origin if external is not None else 'http://'+handler.headers.get('Host','')
+        if handler.headers.get('Origin')!=expected_origin:
             raise OAuthSessionError(403,'oauth_origin_required')
         if not verify_csrf(session,handler.headers.get('X-CSRF-Token'),handler.server.oauth_csrf_key):
             raise OAuthSessionError(403,'oauth_csrf_invalid')
         body=handler._read_body(1024*1024,json_body=True)
+        grant_match=re.fullmatch(BASE+'/connections/('+ID+')/publication-grant/(approve|revoke)',path)
+        if grant_match:
+            names=('expected_base_revision','expected_connection_revision','expected_grant_revision')
+            _fields(body,names)
+            if (type(body['expected_grant_revision']) is not int or body['expected_grant_revision']<0
+                    or body['expected_connection_revision']<1):raise StoreError('invalid')
+            grants=getattr(handler.server,'publication_grant_service',None)
+            if grants is None or handler.server.workspace_root is None:raise StoreError('storage_unavailable')
+            result=getattr(grants,grant_match[2])(session,grant_match[1],body)
+            return handler._send(200,_grant_public(result,grant_match[1]))
         if path==BASE+'/attempts':
             names=('account_id','provider_id','connection_id','expected_base_revision','expected_connection_revision','requested_scopes')
             operation='start';identifier=None

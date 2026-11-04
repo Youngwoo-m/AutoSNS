@@ -782,7 +782,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
                   recovery_adapters=None, process_probe=None, lock_probe=None, operations_clock=None,
                   execution_service=None, execution_status_info=None, operations_locks=None,
                   toolkit_policy=None, toolkit_renderer=None, toolkit_asset_authorizer=None,
-                  oauth_service=None, oauth_callback_policy=None, oauth_test_only=False,
+                  oauth_service=None, oauth_callback_policy=None, oauth_test_only=False, publication_grant_service=None,
                   planning_registry=None, voice_task_service=None, video_task_service=None, image_task_service=None, metrics_collection_service=None,
                   external_access_policy=None,tiktok_media_probe=None) -> ThreadingHTTPServer:
     """loopback 소켓만 준비한다. serve_forever와 스레드 시작은 호출자 책임이다."""
@@ -796,6 +796,8 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
         raise ValueError('고정 외부 HTTPS 접속 정책이 필요합니다')
     if tiktok_media_probe is not None and not callable(getattr(tiktok_media_probe,'inspect',None)):
         raise ValueError('고정 로컬 영상 검사기가 필요합니다')
+    if publication_grant_service is not None and any(not callable(getattr(publication_grant_service,name,None)) for name in ('read','approve','revoke')):
+        raise ValueError('서버 소유 발행 사용 승인 서비스가 필요합니다')
     if toolkit_policy is not None and type(toolkit_policy) is not ToolkitPolicy:
         raise ValueError('서버 소유 로컬 도구 정책이 필요합니다')
     if (type(oauth_test_only) is not bool or
@@ -903,6 +905,7 @@ def create_server(host: str = '127.0.0.1', port: int = 0, *, source_root: Path,
     server.web_root = web_root
     server.auth_backend = backend
     server.external_access_policy=external_access_policy
+    server.publication_grant_service = publication_grant_service
     server.oauth_service = oauth_service
     server.oauth_callback_policy = oauth_callback_policy
     server.oauth_test_only = oauth_test_only
