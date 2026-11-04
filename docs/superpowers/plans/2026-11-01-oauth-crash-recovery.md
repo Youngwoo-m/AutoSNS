@@ -111,10 +111,10 @@ journal identity만으로 소유가 증명되지 않는다. 삭제하려면 **�
 
 **Interfaces:** `OAuthStageStore(context, clock)`의 생성자는 I/O0. `migrate_to_owned_schema(context)`만 명시 schema2 migration을 수행한다. `begin_stage(owner, owned_ref, operation_id, expected_revision) -> StageRecord`, `mark_stored(stage_id, expected_revision)`, `mark_referenced(stage_id, expected_revision, graph_revision)`, `mark_preserved(stage_id, expected_revision, reason_code)`, `mark_deleted(stage_id, expected_revision)`는 CAS다. `recovery_snapshot(owner) -> RecoverySnapshot(journal_revision, stages, protected_refs, blockers)`은 단일 read transaction에서 **모든** OAuth table을 읽는다.
 
-- [ ] schema1→2 명시 전환·중복 초기화·unknown schema 거부·schema1 GET 미전환·비밀 없는 journal·crash 직후 intent/stored durable·journal CAS·graph 세대 일치 RED를 작성한다. schema2에는 owner metadata와 stage/events table을 추가하고 기존 OAuth table의 데이터를 삭제하지 않는다. 기존 operations schema3/metrics schema1과 registry bytes 불변을 단언한다.
-- [ ] `test_graph_protects_active_unknown_and_every_attempt_proposal_receipt_lease_ref`에서 연결 active credential, operation lease old/new ref, 모든 미완/unknown attempt의 code/ticket/verifier/state_key/token ref, 미소비 proposal과 pending/unknown receipt가 결속하는 ref를 보호한다. 완료/만료 row에 ref가 남아 있어도 자동 제외하지 않는다. 미지 payload/ref 형식·누락된 연결·graph 파싱 오류는 snapshot blocker로 전체 삭제를 거부한다.
-- [ ] `python3 -m unittest tests.operations.test_oauth_stage_store tests.operations.test_oauth_store tests.operations.test_managed_connections -v` RED→GREEN을 확인한다.
-- [ ] journal intent를 backend put **전에** commit한다. 소유 marker가 없거나 다른 workspace이면 intent 생성0. pointer/attempt/proposal 연결과 journal referenced 전환은 가능한 경우 같은 SQLite transaction에 둔다. 불가능한 중간 crash도 graph가 ref를 보호하도록 한다. 기존 ref는 legacy protected로 읽으며 새 owned-ref 형식을 엄격히 구분한다.
+- [x] schema1→2 명시 전환·중복 초기화·unknown schema 거부·schema1 GET 미전환·비밀 없는 journal·crash 직후 intent/stored durable·journal CAS·graph 세대 일치 RED를 작성한다. schema2에는 owner metadata와 stage/events table을 추가하고 기존 OAuth table의 데이터를 삭제하지 않는다. 기존 operations schema3/metrics schema1과 registry bytes 불변을 단언한다.
+- [x] `test_graph_protects_active_unknown_and_every_attempt_proposal_receipt_lease_ref`에서 연결 active credential, operation lease old/new ref, 모든 미완/unknown attempt의 code/ticket/verifier/state_key/token ref, 미소비 proposal과 pending/unknown receipt가 결속하는 ref를 보호한다. 완료/만료 row에 ref가 남아 있어도 자동 제외하지 않는다. 미지 payload/ref 형식·누락된 연결·graph 파싱 오류는 snapshot blocker로 전체 삭제를 거부한다.
+- [x] `python3 -m unittest tests.operations.test_oauth_stage_store tests.operations.test_oauth_store tests.operations.test_managed_connections -v` RED→GREEN을 확인한다.
+- [x] journal intent를 backend put **전에** commit한다. 소유 marker가 없거나 다른 workspace이면 intent 생성0. pointer/attempt/proposal 연결과 journal referenced 전환은 가능한 경우 같은 SQLite transaction에 둔다. 불가능한 중간 crash도 graph가 ref를 보호하도록 한다. 기존 ref는 legacy protected로 읽으며 새 owned-ref 형식을 엄격히 구분한다.
 
 ### Task3: 공통 writer/recovery 배타 잠금
 
@@ -122,10 +122,10 @@ journal identity만으로 소유가 증명되지 않는다. 삭제하려면 **�
 
 **Interfaces:** `oauth_write_guard(context: OAuthWorkspaceContext, timeout: float) -> context manager`는 동일 canonical workspace/owner에 대해 process 간 `flock`과 thread 내 직렬화를 결합한다. 생성자·GET는 획득/파일 생성하지 않는다. start/callback/continue/inspect-confirm pointer 전환/refresh/disconnect/revoke/정리 writer와 recovery가 동일 guard를 사용한다.
 
-- [ ] 별도 프로세스 recovery가 graph를 읽은 후 정지시켜 writer 진입이 막히고, writer가 stage→commit 중이면 recovery가 기다리거나 busy로 끝나는 RED를 작성한다. thread·process 경쟁 모두 포함한다. 프로세스 종료 시 OS lock만 풀리고 durable pending/unknown은 그대로 남는지 검사한다.
-- [ ] 잠금은 journal intent 전부터 backend stage·pointer CAS·journal 전환까지 보호한다. recovery는 snapshot→항목 소유 검사→즉시 graph 재검증→delete→journal 결과까지 같은 guard를 유지한다. 잠금을 timeout/기한만 보고 강제로 빼앗거나 lease를 지우지 않는다. callback도 동일 writer 경계에 포함해 정리 중 참조 추가를 막는다.
-- [ ] 서로 다른 workspace는 scoped backend identity가 분리되어야 한다. 복제 marker/같은 owner의 다른 root는 Task1 검증으로 진입 자체를 거부한다. legacy/unscoped 항목은 이 잠금이 타 writer를 통제한다고 가정하지 않고 cleanup에서 제외한다.
-- [ ] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_service -v` GREEN/skip0. 잠금은 `workspace guard`를 가장 바깥에서 유지한다. journal/graph용 짧은 SQLite transaction을 닫은 뒤 scoped backend 작업을 하고, 결과 기록은 새 짧은 transaction으로 수행한다. native I/O 중 SQLite transaction은 유지하지 않는다. guard 안에서는 다른 writer가 graph를 바꾸지 못하고, 삭제 직전 새 snapshot의 revision을 다시 비교한다. 기존 callback/provider lease/CAS의 중복 호출 차단을 완화하지 않는다.
+- [x] 별도 프로세스 recovery가 graph를 읽은 후 정지시켜 writer 진입이 막히고, writer가 stage→commit 중이면 recovery가 기다리거나 busy로 끝나는 RED를 작성한다. thread·process 경쟁 모두 포함한다. 프로세스 종료 시 OS lock만 풀리고 durable pending/unknown은 그대로 남는지 검사한다.
+- [x] 잠금은 journal intent 전부터 backend stage·pointer CAS·journal 전환까지 보호한다. recovery는 snapshot→항목 소유 검사→즉시 graph 재검증→delete→journal 결과까지 같은 guard를 유지한다. 잠금을 timeout/기한만 보고 강제로 빼앗거나 lease를 지우지 않는다. callback도 동일 writer 경계에 포함해 정리 중 참조 추가를 막는다.
+- [x] 서로 다른 workspace는 scoped backend identity가 분리되어야 한다. 복제 marker/같은 owner의 다른 root는 Task1 검증으로 진입 자체를 거부한다. legacy/unscoped 항목은 이 잠금이 타 writer를 통제한다고 가정하지 않고 cleanup에서 제외한다.
+- [x] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_service -v` GREEN/skip0. 잠금은 `workspace guard`를 가장 바깥에서 유지한다. journal/graph용 짧은 SQLite transaction을 닫은 뒤 scoped backend 작업을 하고, 결과 기록은 새 짧은 transaction으로 수행한다. native I/O 중 SQLite transaction은 유지하지 않는다. guard 안에서는 다른 writer가 graph를 바꾸지 못하고, 삭제 직전 새 snapshot의 revision을 다시 비교한다. 기존 callback/provider lease/CAS의 중복 호출 차단을 완화하지 않는다.
 
 ### Task4: 명시 recovery 판정·idempotency와 service journal 통합
 
@@ -133,21 +133,21 @@ journal identity만으로 소유가 증명되지 않는다. 삭제하려면 **�
 
 **Interfaces:** `inspect_recovery(owner, journal, owned_backend, guard) -> RecoveryReport`는 **명시 호출** 때만 후보를 점검한다. `cleanup_recovery(..., expected_journal_revision, expected_graph_revision) -> RecoveryReport`는 같은 guard와 최신 snapshot으로 다시 판정한다. CLI는 `python3 -m common.operations.oauth_recovery --workspace <임시W> --mode inspect|cleanup --expected-workspace-id <id>`이며 cleanup에는 `--expected-journal-revision <int>`와 `--expected-graph-revision <int>`도 필요하다. root/actor/owner 입력은 설정 marker로 검증하고 HTTP route에는 연결하지 않는다. report는 안전한 개수·고정 reason·revision만 반환하며 payload/key/ref를 노출하지 않는다.
 
-- [ ] 신규 stage의 `intent → stored → referenced` 전이를 service의 state_key/verifier/code/ticket/token stage에 연결한다. `put` 전 intent crash는 항목 부재로 안전히 완료 처리하되 duplicate/put 결과 불명확은 envelope/tag를 별도 입증하기 전 삭제0이다. refresh의 새 세대 stage와 old active pointer를 분리한다.
-- [ ] 후보는 journal에 **현 owner가 직접 발급한 stage**로 있고, scoped 항목과 envelope/tag가 일치하고, snapshot 전체 참조graph에 없고, operation 결과도 확정된 미사용 stage일 때만 된다. 원격 성공/실패가 불명확한 stage·pending receipt/lease는 보존한다. 시간 경과만으로 후보가 되지 않는다.
-- [ ] 삭제는 exact owned item만 수행한다. delete 성공→journal 기록 직전 crash는 다음 명시 호출에서 항목 부재 확인 후 idempotent하게 완료한다. delete denied/locked/storage failure는 고정 오류와 보존 상태를 기록하며 성공으로 표시하지 않는다. 조사 중 graph_revision/owner/tag가 바뀌면 삭제 전 중단한다.
-- [ ] 기존 `_delete`/`_discard_unreferenced` 경로를 모두 점검해 신규 소유 증명 없는 legacy ref 삭제 권한이 recovery로 확대되지 않게 한다. 신규 cleanup 경로는 journal/guard/graph를 우회하지 않는다. 이전 활성 자격·unknown 항목을 orphan 회수 명목으로 자동 삭제하지 않는다. 기존 remote revoke/local disconnect 결과를 recovery가 성공/connected로 바꾸지 않는다.
-- [ ] `test_constructor_get_restart_and_inspect_never_delete`, `test_unknown_remote_result_is_preserved`, `test_same_cleanup_twice_is_idempotent`, `test_delete_denied_is_not_reported_success`, `test_no_marker_and_legacy_ref_are_preserved` RED→GREEN. inspect는 vault 조회가 있을 수 있는 **명시 관리 행위**이며 일반 GET에 연결하지 않는다. 개발 시험에서는 Memory/fake bridge만 사용한다.
+- [x] 신규 stage의 `intent → stored → referenced` 전이를 service의 state_key/verifier/code/ticket/token stage에 연결한다. `put` 전 intent crash는 항목 부재로 안전히 완료 처리하되 duplicate/put 결과 불명확은 envelope/tag를 별도 입증하기 전 삭제0이다. refresh의 새 세대 stage와 old active pointer를 분리한다.
+- [x] 후보는 journal에 **현 owner가 직접 발급한 stage**로 있고, scoped 항목과 envelope/tag가 일치하고, snapshot 전체 참조graph에 없고, operation 결과도 확정된 미사용 stage일 때만 된다. 원격 성공/실패가 불명확한 stage·pending receipt/lease는 보존한다. 시간 경과만으로 후보가 되지 않는다.
+- [x] 삭제는 exact owned item만 수행한다. delete 성공→journal 기록 직전 crash는 다음 명시 호출에서 항목 부재 확인 후 idempotent하게 완료한다. delete denied/locked/storage failure는 고정 오류와 보존 상태를 기록하며 성공으로 표시하지 않는다. 조사 중 graph_revision/owner/tag가 바뀌면 삭제 전 중단한다.
+- [x] 기존 `_delete`/`_discard_unreferenced` 경로를 모두 점검해 신규 소유 증명 없는 legacy ref 삭제 권한이 recovery로 확대되지 않게 한다. 신규 cleanup 경로는 journal/guard/graph를 우회하지 않는다. 이전 활성 자격·unknown 항목을 orphan 회수 명목으로 자동 삭제하지 않는다. 기존 remote revoke/local disconnect 결과를 recovery가 성공/connected로 바꾸지 않는다.
+- [x] `test_constructor_get_restart_and_inspect_never_delete`, `test_unknown_remote_result_is_preserved`, `test_same_cleanup_twice_is_idempotent`, `test_delete_denied_is_not_reported_success`, `test_no_marker_and_legacy_ref_are_preserved` RED→GREEN. inspect는 vault 조회가 있을 수 있는 **명시 관리 행위**이며 일반 GET에 연결하지 않는다. 개발 시험에서는 Memory/fake bridge만 사용한다.
 
 ### Task5: crash matrix·다른 workspace·HTTP 순수성과 문서 gate
 
 **Files:** 신규 recovery 시험, 기존 `test_oauth_service.py`, `tests/test_web_oauth.py`; 운영 안내/수락 문서.
 
-- [ ] crash 지점별 subprocess 종료/reopen 시험을 작성한다: journal intent commit 전후, put 성공 직후, stored 기록 전후, attempt/proposal/pointer CAS 전후, 원격 refresh 응답 직후, delete 직후와 journal deleted 기록 전후. 정상 exception cleanup만 호출해 crash를 위장하지 않는다. fake provider·Memory backend의 durable 시험용 fake 저장소만 사용하며 실제 native/provider0이다.
-- [ ] 서로 다른 W가 같은 legacy ref를 가진 경우, stage identity 충돌, copied marker, missing marker, backend duplicate, envelope/tag 변조, 알 수 없는 schema/ref, active/unknown/미완 graph 참조, cleanup 중 writer 경합, 중복 명령을 각각 검증한다. 보호 대상 byte/ref/generation/lease/receipt와 기존 사용자 자료가 보존되어야 한다.
-- [ ] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_stage_backend tests.operations.test_oauth_stage_store tests.operations.test_oauth_recovery tests.operations.test_oauth_service tests.test_web_oauth -v`를 한 번 실행해 PASS/skip0과 실제 실행 수를 기록한다. GET/factory/main 미주입 시험에서 marker/journal 생성0·schema migration0·vault/native/provider0·삭제0을 단언한다. 실제 이미지/다른 전체 suite는 부모의 최종 영향 범위에 따라 별도로 한 번 실행한다.
-- [ ] 문서에 code_ready/isolated_recovery_verified/real_keychain_accepted/real_oauth_ready/live_publish_ready를 구별한다. fake crash 시험을 실제 Keychain/OS 재시작 수락으로 표시하지 않는다. schema2 이전 전체 OAuth W 백업과 실패 보존·호환 코드 원복을 기록한다. DB를 과거 backup으로 덮어 신규 credential/unknown journal을 지우는 자동 원복은 금지한다.
-- [ ] 독립 검토로 journal intent만을 소유 증명으로 오인하지 않는지, 보호graph 누락/TOCTOU/duplicate 삭제가 없는지 확인한다. 실 Keychain bridge의 scoped exact query·OS 접근권한·workspace 물리 이행은 별도 실환경 수락 gate로 남긴다. 이 계획의 격리 구현 완료로 실인증이나 cleanup 실행을 자동 활성화하지 않는다.
+- [x] crash 지점별 subprocess 종료/reopen 시험을 작성한다: journal intent commit 전후, put 성공 직후, stored 기록 전후, attempt/proposal/pointer CAS 전후, 원격 refresh 응답 직후, delete 직후와 journal deleted 기록 전후. 정상 exception cleanup만 호출해 crash를 위장하지 않는다. fake provider·Memory backend의 durable 시험용 fake 저장소만 사용하며 실제 native/provider0이다.
+- [x] 서로 다른 W가 같은 legacy ref를 가진 경우, stage identity 충돌, copied marker, missing marker, backend duplicate, envelope/tag 변조, 알 수 없는 schema/ref, active/unknown/미완 graph 참조, cleanup 중 writer 경합, 중복 명령을 각각 검증한다. 보호 대상 byte/ref/generation/lease/receipt와 기존 사용자 자료가 보존되어야 한다.
+- [x] `python3 -m unittest tests.operations.test_oauth_workspace tests.operations.test_oauth_stage_backend tests.operations.test_oauth_stage_store tests.operations.test_oauth_recovery tests.operations.test_oauth_service tests.test_web_oauth -v`를 한 번 실행해 PASS/skip0과 실제 실행 수를 기록한다. GET/factory/main 미주입 시험에서 marker/journal 생성0·schema migration0·vault/native/provider0·삭제0을 단언한다. 실제 이미지/다른 전체 suite는 부모의 최종 영향 범위에 따라 별도로 한 번 실행한다.
+- [x] 문서에 code_ready/isolated_recovery_verified/real_keychain_accepted/real_oauth_ready/live_publish_ready를 구별한다. fake crash 시험을 실제 Keychain/OS 재시작 수락으로 표시하지 않는다. schema2 이전 전체 OAuth W 백업과 실패 보존·호환 코드 원복을 기록한다. DB를 과거 backup으로 덮어 신규 credential/unknown journal을 지우는 자동 원복은 금지한다.
+- [x] 독립 검토로 journal intent만을 소유 증명으로 오인하지 않는지, 보호graph 누락/TOCTOU/duplicate 삭제가 없는지 확인한다. 실 Keychain bridge의 scoped exact query·OS 접근권한·workspace 물리 이행은 별도 실환경 수락 gate로 남긴다. 이 계획의 격리 구현 완료로 실인증이나 cleanup 실행을 자동 활성화하지 않는다.
 
 ## 실행 순서와 자체 검토
 
@@ -162,3 +162,9 @@ Task1→Task2→Task3→Task4→Task5 순서다. 새 소유 모델/잠금/graph�
 - Task5용 durable fake 시험 도구는4df8f32에서 선행 구현했다. 임시SQLite/Pipe/SIGKILL 네 경계와6개 시험/독립검토를 통과했다. Task5 전체 crash matrix나 journal/recovery 검증 완료로 합산하지 않는다.
 - 부모가 위 두 범위를 함께33개 집중 시험으로 재검증했다. 전체 suite는 아직 실행하지 않았다.
 - Task2 저장 형식/operation/journal/graph와 Task3A 공용 잠금 코어를 파일 소유가 겹치지 않도록 병렬 구현 중이다. Task3의 전체 writer/service 결합과 Task4 명시 recovery는 그 뒤 진행한다. 운영 DB/schema 전환이나실계정 활성화는 하지 않았다.
+
+
+2026-11-02 후속: Task2는9f64d3b에서 schema2/operation/journal/fullgraph/ownedcodec과directstoreguard를 구현했다. 독립 검토에서 발견한 strict graph와version전환경합3건을 수정한뒤재검토PASS, 부모174개 집중시험+23개HTTP시험 통과. 공용guard코어edefa53은fork FD경합을수정후재검토PASS. Task3전체serviceguard와Task4servicejournal/explicitcleanup은파일별병렬구현중이고, Task5강제종료통합시험을별도파일에서준비중이다. 운영migration/실계정/실제삭제·발행0을유지한다.
+
+
+2026-11-02 Task3B/4/5 코드·집중검토와 전체 회귀 확보: ownedservice de65e74, explicitrecovery72aa6a2, 확장19 SIGKILL+ownedHTTP시험a602f4f. 부모 전체Python1180/Node252 통과. 최종whole-branch독립검토는별도마지막gate이며 아직대기다. 실제OAuth/Keychain수락을완료했다는뜻이아니다.

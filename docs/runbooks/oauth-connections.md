@@ -29,6 +29,48 @@
 
 갱신/원격 해지의 operation lease가 남으면 읽기·자격 상태를 불확실로 표시하고 수동 확인을 안내한다. GET은 DB·vault를 변경하거나 외부 작업을 재시도하지 않는다. 로컬 해제와 원격 권한 해지는 다르다.
 
-강제 종료 후 비활성 orphan을 정리하는 명시 recovery는 아직 구현되지 않았다. 실제 인증을 활성화하기 전에 stage journal, workspace/stage 소유 증명, 공통 배타 잠금, 활성·결과불명 참조 보존, 명시 정리와 crash 회귀 검증을 완료해야 한다. 표식 없는 기존 자격은 자동 삭제하지 않는다. 이 항목이 남은 상태에서는 실제 OAuth/Keychain 서비스를 운영 main에 주입하지 않는다.
+강제 종료 후 명시 recovery의 stage journal·workspace/stage 소유 증명·공통 배타 잠금·전체 참조 graph·inspect/cleanup API와 CLI는 코드에 구현됐다. 임시 durable fake를 사용한 SIGKILL/reopen 집중 검증을 통과했으며, 최종 전체 회귀·확장 matrix·통합 수락 gate는 아직 대기다. 실제 Keychain·실 OAuth·운영 삭제·발행 수락과 구별한다. 기본 main에는 여전히 OAuth 서비스·vault·provider transport를 주입하지 않는다. 자세한 범위와 미실행 항목은 [crash recovery 수락 기록](../audits/2026-11-02-oauth-crash-recovery-acceptance.md)을 따른다.
 
 관리 자격 projection은 operation_lease/명시 비활성 자격을 실행용 catalog에서 제외하도록 보완했다. 실행 어댑터를 연결할 때는 별도로 최신 snapshot/세대·scope·기한·permit 결속 resolver 검증이 필수다. 현재 관리 Connection.enabled는 false이며 실제 실행기로 자동 전달하지 않는다.
+
+
+## 명시 recovery 사용 계약
+
+아래 명령은 **사용법 예시이며 이번 구현에서 실제 실행하지 않았다.** 2026-11-02 승인은 격리 코드 구현에 한정된다. 실제 Keychain 읽기·쓰기·삭제, SNS 로그인, 운영 schema 전환과 발행은 포함하지 않는다.
+
+`R`은 원본/source checkout, `W`는 **`oauth.sqlite3`를 직접 포함하는 OAuth 저장 디렉터리**다. `--workspace`에 R이나 이 개발 worktree 경로를 대신 넣지 않는다. CLI import가 가능한 호환 코드 checkout에서 실행하되 데이터 대상은 별도의 W로 지정한다. marker를 다른 W로 복사하거나 root 경로를 옮겨 재사용하면 root binding 검증에 실패한다. 자동 adoption·이식·key 재결속은 제공하지 않는다.
+
+이미 명시 초기화된 W의 workspace ID만 확인하는 Python 예시는 다음과 같다. `load_workspace_owner`는 기존 marker를 검증하며 새 marker를 만들지 않는다. marker 전체에는 소유 key가 있으므로 `cat`하거나 로그에 복사하지 않는다. 이 예시는 ID만 출력하며 vault를 호출하지 않는다.
+
+```bash
+python3 -c 'import sys; from common.operations.oauth_workspace import load_workspace_owner; print(load_workspace_owner(sys.argv[1]).owner.workspace_id)' '/path/to/oauth-storage'
+```
+
+CLI는 `--workspace`, `--mode inspect|cleanup`, `--expected-workspace-id`를 필수로 받는다. 일반 CLI에는 backend가 기본 구성되지 않는다. 다음 형태는 `backend_required`, `status=blocked`, exit 2를 반환하며 Memory backend로 대체하지 않는다.
+
+```bash
+python3 -m common.operations.oauth_recovery --workspace '/path/to/oauth-storage' --mode inspect --expected-workspace-id '<검증한 workspace ID>'
+```
+
+실 Keychain 수락과 명시 실행 승인을 따로 마친 뒤에만 아래 `--keychain` 형태를 사용할 수 있다. 이 옵션은 lazy `SecurityFrameworkBridge`와 전용 scoped backend를 명시 구성하며 실제 후보 항목을 조회할 수 있다. 임의 module/env loader는 없다. 테스트의 `backend_factory` 주입은 격리 fake 검증용 Python API이고 production CLI 옵션이 아니다.
+
+```bash
+python3 -m common.operations.oauth_recovery --workspace '/path/to/oauth-storage' --mode inspect --expected-workspace-id '<검증한 workspace ID>' --keychain
+python3 -m common.operations.oauth_recovery --workspace '/path/to/oauth-storage' --mode cleanup --expected-workspace-id '<검증한 workspace ID>' --expected-journal-revision '<inspect의 정수>' --expected-graph-revision '<inspect의 정수>' --keychain
+```
+
+`inspect`는 명시 관리 행위다. 공용 workspace guard를 잡고 후보의 소유 envelope/HMAC를 조회할 수 있지만 DB·vault 쓰기와 삭제는 0이다. guard lockfile은 생성될 수 있다. 일반 GET·생성자·재기동은 recovery를 호출하지 않는다. cleanup은 같은 owner와 inspect에서 관측한 **journal/graph 두 revision 모두**를 새 snapshot과 비교한다. stale이면 `revision_conflict`로 보존한다. 새 inspect 결과를 검토한 뒤 별도 명시 cleanup을 해야 하며 자동 재전송하지 않는다.
+
+삭제 후보는 현 workspace의 journal에 등록된 `intent/stored/preserved` stage 중 operation이 확정 `unused`이고 remote state가 `local_only/not_started/returned`인 항목뿐이다. marker·journal·scoped 주소·인증 envelope의 owner/root/stage/ref 전체가 일치해야 한다. full graph의 attempt code/ticket/verifier/state_key/token, 모든 proposal, connection, lease old/new ref는 완료·만료·소비 여부와 무관하게 보호한다. pending/unknown receipt·operation·lease의 간접 참조도 보호한다. 알 수 없는 schema/ref/JSON, 끊긴 필수 관계, owner 오류는 전체 정리를 막는다. catalog에 안 보인다는 사실이나 기한·generation 크기로 unused를 추정하지 않는다.
+
+cleanup은 전체 snapshot → 후보 exact 소유 증명 → 두 revision 재검증 → `delete_intent` → fresh graph → exact owned 삭제 → fresh graph → `deleted/absent` event와 journal 완료 순서로 진행한다. 모든 OAuth writer와 같은 guard를 유지하고 native I/O 동안 SQLite transaction은 닫는다. event만 추가하면 journal revision만 증가하며 graph는 그대로다. stage/참조 변경은 별도 graph revision을 증가시킨다. managed generation은 이 revision들과 별개이고 신규 stage까지 포함한 high-water를 보존한다.
+
+legacy/unscoped 항목은 조회·열거·삭제·자동 envelope 변환하지 않는다. 과거 attempt/proposal과 이전 활성 자격의 직접 참조도 보존하므로 이 명령은 전체 orphan 회수를 보장하지 않는다. duplicate put 항목을 채택·덮어쓰지 않는다. denied/locked/unavailable/integrity 실패는 고정 reason으로 보존한다. `in_flight/unknown` 결과, pending receipt와 남은 lease는 재기동이나 시간 경과로 해제하지 않는다. provider refresh/revoke/exchange·OAuth request·발행을 재시도하지 않는다.
+
+공개 JSON 필드는 `mode`, `status`, `journal_revision`, `graph_revision`, `stage_count`, `candidate_count`, `deleted_count`, `absent_count`, `preserved_count`, `already_deleted_count`, `legacy_protected_count`, `reason_counts`다. key/payload/ref/경로/원문 예외는 출력하지 않는다. `inspected/cleaned`는 exit 0, `blocked/partial`은 exit 2다. `cleaned`는 해당 journal 검사 완료이며 전체 회수나 실환경 readiness를 뜻하지 않는다. `candidate_count`는 실제 소유 증명을 시도한 수다. `deleted_count`는 backend 삭제와 metadata 완료까지 확인한 수이며 exact not-found는 `absent_count`로 구별한다. inspect의 `preserved_count`는 모든 nondeleted stage여서 absent와 겹칠 수 있고, cleanup에서는 미완료 stage 수다. 이미 deleted인 stage는 backend 재호출 없이 `already_deleted_count`로 집계한다. 삭제 뒤 journal 완료 전에 종료되면 다음 **명시** cleanup이 absent로 완료하며 과거 삭제 성공을 추정하지 않는다.
+
+## schema 호환과 복구 보존
+
+현재 코드는 schema1/2를 읽는다. schema2 전환은 이미 명시 초기화된 schema1 DB와 검증된 owner/context, held workspace guard 아래의 `migrate_to_owned_schema(context)`로만 수행한다. 일반 시작·GET·생성자·CLI는 marker 초기화나 migration을 수행하지 않는다. recovery HTTP route도 없다. schema1에 owned ref를 넣거나 unknown version을 허용하지 않는다.
+
+향후 운영 전환 전에 W 전체의 일관된 백업을 별도로 확보해야 한다. DB만으로 scoped 자격이나 marker key가 복구되지 않으며 실제 Keychain 백업·복원과 root 재결속은 별도 수락 범위다. 호환 코드와 신규 DB/journal/receipt/lease를 보존한 채 기능을 비활성화하는 방식으로 원복한다. schema2를 읽지 못하는 구버전 binary로 내리거나 `user_version`을 수동으로 낮추지 않는다. 과거 백업으로 현재 W를 덮어 새 generation·credential·unknown operation/receipt를 지우지 않는다. 실패 자료와 백업을 분리 보존하고 필요한 복구를 검토한다. 초기 prototype schema2에 대한 idempotent migration은 owner 검증 뒤 무변경이며 예전 trigger를 자동 보정하지 않는다.
