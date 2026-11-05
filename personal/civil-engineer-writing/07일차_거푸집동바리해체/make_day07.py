@@ -15,7 +15,7 @@ TITLE = '[토목시공기술사] 콘크리트 거푸집 및 동바리 해체 시
 PDF_NAME = '07일차_거푸집동바리해체_답안예시_따라쓰기.pdf'
 FIG_NAME = '거푸집해체_기준과순서_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_슬래브밑면_해체강도.png', '수식2_계산예.png', '도식_강도발현과_해체시점.gif'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day07/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day07/'
 PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
@@ -177,7 +177,7 @@ SOURCES = [
 def body(img_html, f1_html, f2_html, gif_html, pdf_html):
     src = ''.join(f'<li><a href="{u}">{t}</a></li>' for t, u in SOURCES)
     return f'''<p>거푸집 해체 시기 문제는 날짜보다 강도 기준이 중심인 문제다. KCS 14 20 12는 해체 시기를 콘크리트 압축강도로 정하고, 강도시험 없이 재령만으로 해체하는 기준은 측면 거푸집에만 쓰도록 한다. 답안의 중심은 부재별 강도 기준표 하나와, 그 기준을 현장양생 공시체로 확인하고 책임기술자 승인을 받는 절차다.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2 data-ke-size="size26">오늘의 문제</h2>
 <p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 콘크리트공(거푸집·동바리) / 유형: 단답형 / 관련 기출: 2024년 제132회 1교시 5번</strong></p>

@@ -16,7 +16,7 @@ PDF_NAME = '12일차_보강토옹벽붕괴_답안예시_따라쓰기.pdf'
 FIG_NAME = '보강토옹벽_붕괴원인과대책_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_랭킨토압.png', '수식2_계산예.png', '도식_배면수압토압비교.gif'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day12/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day12/'
 PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시): 배면 수위 유무에 따른 수평력 ─────────────────
@@ -260,7 +260,7 @@ def body(img_html, f1_html, f2_html, gif_html, pdf_html, banner_html):
                    ('q', '등분포 상재하중', 'kPa', '가정값'),
                    ('P', '벽 1 m 폭당 수평력', 'kN/m', '계산값')])
     return f'''{banner_html}<p>보강토옹벽은 2025년 제137회부터 2026년 제140회까지 네 회 연속 논술형으로 나왔어요. 가장 최근 문제인 제140회 4교시 3번은 다짐, 보강토체 배면 수압, 상재토압이라는 세 측면을 직접 정해 줬어요. 답안도 이에 맞춰 세 갈래로 나눠 원인과 대책을 짝지어 쓰면 돼요. 설계 기준은 KDS 11 80 10:2021을 제3자 요약으로 확인했고, 국가건설기준센터 원문과 뒤채움재 수치 기준(KCS 11 80 10)은 직접 대조하지 못했습니다.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2 data-ke-size="size26">오늘의 문제</h2>
 <p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 옹벽·지반(보강토) / 유형: 논술형 / 관련 기출: 2026년 제140회 4교시 3번</strong></p>

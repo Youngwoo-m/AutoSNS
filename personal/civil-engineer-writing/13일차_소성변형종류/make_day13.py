@@ -6,7 +6,7 @@ TITLE = '[토목시공기술사] 아스팔트 포장 소성변형의 종류와 �
 PDF_NAME = '13일차_소성변형종류_답안예시_따라쓰기.pdf'
 FIG_NAME = '소성변형_종류별_횡단형상.jpg'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day13/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day13/'
 QNET = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq={}&brdId=Q006&gSite=Q'
 
 SOURCES = []          # (제목, 주소) — 출처 확인 뒤 채운다(sources.py)
@@ -102,7 +102,7 @@ def body(banner_html, img_html, pdf_html):
 <h2 data-ke-size="size26">따라쓰기 PDF</h2>
 {pdf_html}
 <p>Q-net 답안지 형식의 2쪽 따라쓰기 PDF예요. 정의, 종류별 특징 표, 횡단 모식도, 판별 방법, 종류별 대책이 옅은 회색 글씨로 들어 있어 출력해서 그대로 따라 쓸 수 있어요.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>'''
 
 

@@ -125,7 +125,7 @@ with (D/'내부검수_성과심사_비교표.csv').open('w') as f:csv.writer(f).
 with (D/'품질검수_항목표.csv').open('w') as f:csv.writer(f).writerows(checkrows)
 def table(rs):return '<table border="1" style="width:100%;border-collapse:collapse">'+''.join('<tr>'+''.join(('<th' if i==0 else '<td')+' style="padding:9px;text-align:left">'+html.escape(t)+('</th>' if i==0 else '</td>') for t in row)+'</tr>' for i,row in enumerate(rs))+'</table>'
 body='''<p>이 글은 공공측량 성과의 내부 품질검수와 법정 성과심사를 구분하고, 검수 항목부터 오류 보완·최종 성과 인계까지를 논술형 모범답안으로 정리했습니다. 실제 업무에서 검사 결과와 수정 근거를 어떻게 남겨야 하는지 비교표·흐름도와 3쪽 따라쓰기 PDF로 학습할 수 있습니다.</p>
-<h2 style="font-size:26px;font-weight:bold;overflow-wrap:anywhere;word-break:break-word"><a href="https://geoai-na.netlify.app/questions/">함께 푸는 측량및지형공간정보기술사 답안지 요청</a></h2>
+<h2 style="font-size:26px;font-weight:bold;overflow-wrap:anywhere;word-break:break-word"><a href="https://geoai-na.web.app/questions/">함께 푸는 측량및지형공간정보기술사 답안지 요청</a></h2>
 <p>요청한 문제는 매일 밤 11시부터 접수 순서대로 검토해 정답 예시를 블로그에 게시합니다.</p>
 <p><strong>과목·학습 분야: 관련 제도·실무 / 세부 유형: 성과 품질검수·성과심사 / 연계 분야: 오차론·망조정, GIS·공간정보</strong><br>순환 1차. 위 구분은 학습용 분류이며 독립된 공식 시험과목이나 교시별 공식 분류가 아닙니다.</p>
 <h2>창작 연습문제</h2><p>'''+problem+'''</p>

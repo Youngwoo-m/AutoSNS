@@ -1,6 +1,6 @@
 # 측량및지형공간정보기술사 문제 접수
 
-공개 페이지: https://geoai-na.netlify.app/questions/
+공개 페이지: https://geoai-na.web.app/questions/
 
 - Netlify Forms가 `engineer-questions` 이름으로 접수한다.
 - `queue.py sync`가 기존 Netlify CLI 로그인으로 접수 내용을 로컬 `state.json`에 가져온다.
@@ -30,7 +30,7 @@ python3 queue.py finish 접수ID
 
 ## 토목시공기술사 전용 접수
 
-- 공개 페이지: https://geoai-na.netlify.app/civil-questions/
+- 공개 페이지: https://geoai-na.web.app/civil-questions/
 - 별도 폼: `civil-engineer-questions`, 별도 대기열: `civil-state.json`
 - 모든 queue 명령 앞에 `--exam civil`을 넣으면 토목시공 접수/목록을 사용한다. 생략하면 기존 측량 동작을 유지한다.
 - 예: `python3 queue.py --exam civil sync`, `python3 queue.py --exam civil add-post --url URL --title 제목 --date YYYY-MM-DD --kind daily --day 2 --tags 콘크리트공 --pdf`
