@@ -36,7 +36,7 @@ def public_count(n):
         return n, -1, -1
 
 
-def find_posts(last=200):
+def find_posts(last=int(os.environ.get("REWRITE_LAST", "200"))):
     with concurrent.futures.ThreadPoolExecutor(8) as ex:
         rs = list(ex.map(public_count, range(1, last + 1)))
     return [n for n, o, _ in rs if o > 0]
