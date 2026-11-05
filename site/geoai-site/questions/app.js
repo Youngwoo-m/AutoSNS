@@ -11,7 +11,7 @@ form.addEventListener('submit', async event => {
   const button = form.querySelector('[type=submit]'), status = document.getElementById('form-status');
   button.disabled = true; status.className = ''; status.textContent = '문제를 접수하고 있습니다…';
   try {
-    const response = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(form)).toString() });
+    const response = await fetch('/fn/submit', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(form)).toString() });
     if (!response.ok) throw new Error('submission failed');
     location.assign('/questions/thanks/');
   } catch (error) {

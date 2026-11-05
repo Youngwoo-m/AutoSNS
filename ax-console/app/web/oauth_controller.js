@@ -1,0 +1,240 @@
+import {providerIds, assertSafeOAuthResponse, assertPublicationGrantResponse} from './oauth_api.js';
+const accounts = new Set(['all', 'personal', 'dept']);
+const requestKey = () => globalThis.crypto.randomUUID();
+const clean = account_id => ({account_id, provider_id: '', connection_id: '', base_revision: null, connection_revision: 0,
+  catalog: [], connections: [], ownedResults: [], attempt: null, pending: null, requested_scopes: [], live_enabled: false,
+  publicationGrantResult:null, publicationGrantBusy:false, publicationGrantUnknown:false, publicationGrantMessage:'발행 사용 승인은 수동으로 조회하세요.',
+  connectionsStale: false, busy: false, message: '계정과 연결 방식을 선택하세요.', errorStatus: null});
+export function matchesOAuthConnection(row, provider) {
+  if (!row || !provider) return false;
+  return row.provider_id != null ? row.provider_id === provider.provider_id : row.platform === provider.platform;
+}
+export function createOAuthController({api, onChange = () => {}}) {
+  let state = clean('all'), generation = 0, selection = 0, grantGeneration = 0;
+  const listeners = new Set();
+  const emit = () => { onChange(getState()); for (const listener of listeners) listener(getState()); };
+  const getState = () => structuredClone(state);
+  const feedback = error => {
+    state.errorStatus = error?.status || null;
+    state.message = ({401: '다시 로그인하세요. 선택과 대기 요청은 보존했습니다.', 409: '연결이 변경되었습니다. 선택을 보존했으니 최신 상태를 확인하세요.', 503: '저장소 또는 연결 기능을 사용할 수 없습니다. 기존 연결과 입력은 보존했습니다.'})[error?.status] || '요청을 처리하지 못했습니다. 기존 연결과 입력은 보존했습니다.';
+  };
+  const provider = () => state.catalog.find(row => row.provider_id === state.provider_id);
+  const connection = () => state.connections.find(row => (row.connection_id || row.id) === state.connection_id);
+  const blocked = row => !row || !providerIds.includes(row.provider_id) || row.login_method === 'unsupported' ||
+    row.registration_status !== 'ready' || row.cost_gate !== 'no_additional_cost' || row.policy_gate !== 'allowed' ||
+    (row.blockers || []).length > 0 || (row.policy_reasons || []).length > 0;
+  const publicationScopes = () => {
+    const p=provider(),c=p?.scope_consent,known=[...new Set([...(p?.read_scopes||[]),...(p?.publication_scopes||[])])];
+    if(!p||['tiktok','naver','tistory'].includes(p.provider_id)||blocked(p)||!p.publication_scopes?.length||!c||Object.keys(c).sort().join(',')!=='available,policy_revision,requested_scopes'||c.available!==true||typeof c.policy_revision!=='string'||!c.policy_revision.trim()||!Array.isArray(c.requested_scopes)||c.requested_scopes.length!==known.length||new Set(c.requested_scopes).size!==known.length||!known.every(s=>c.requested_scopes.includes(s)))return null;
+    return c.requested_scopes;
+  };
+  const validScopes = () => state.requested_scopes.every(scope=>provider()?.read_scopes?.includes(scope)) || !!publicationScopes()&&state.requested_scopes.length===publicationScopes().length&&publicationScopes().every(scope=>state.requested_scopes.includes(scope));
+  function setPublicationConsent(value){if(typeof value!=='boolean'||state.busy||state.pending)return;const scopes=publicationScopes();if(value&&!scopes)return;state.requested_scopes=[...(value?scopes:provider()?.read_scopes||[])];emit();}
+  const canStart = () => state.account_id !== 'all' && state.live_enabled && !blocked(provider()) && !state.busy && !state.connectionsStale && validScopes();
+  function setContext(context = {}) {
+    const value = context.account_id ?? context.account ?? 'all';
+    if (!accounts.has(value)) throw new Error('계정 범위가 올바르지 않습니다.');
+    generation++; selection++; grantGeneration++;
+    state = {...clean(value), provider_id: context.provider_id || '', connection_id: context.connection_id || '',
+      base_revision: context.base_revision ?? null, connection_revision: context.connection_revision ?? 0};
+    emit();
+  }
+  function clearPublicationGrant(preserveUnknown=false){grantGeneration++;state.publicationGrantResult=null;state.publicationGrantBusy=false;if(!preserveUnknown||!state.publicationGrantUnknown){state.publicationGrantUnknown=false;state.publicationGrantMessage='발행 사용 승인은 수동으로 조회하세요.';}}
+  function clearSelection() {
+    clearPublicationGrant();selection++; state.attempt = null; state.pending = null; state.requested_scopes = []; state.errorStatus = null;
+    state.connection_id = ''; state.connection_revision = 0;
+  }
+  function selectProvider(value) {
+    if (state.busy || state.pending) return;
+    clearSelection(); state.provider_id = providerIds.includes(value) ? value : ''; state.connection_id = '';
+    state.requested_scopes = [...(provider()?.read_scopes || [])]; emit();
+  }
+  function selectConnection(value) {
+    if (state.busy || state.pending) return;
+    const row = state.connections.find(item => (item.connection_id || item.id) === value);
+    clearSelection();
+    state.connection_id = row && row.account_id === state.account_id && matchesOAuthConnection(row, provider()) ? value : '';
+    state.connection_revision = state.connection_id ? row.connection_revision ?? row.revision ?? 0 : 0;
+    state.requested_scopes = [...(provider()?.read_scopes || [])]; emit();
+  }
+  async function load() {
+    if (state.busy) return false;
+    clearPublicationGrant(true);const current = ++generation; let loaded = false; state.busy = true; emit();
+    try {
+      const [catalog, connections] = await Promise.all([api.catalog(state.account_id), api.connections(state.account_id)]);
+      if (current !== generation) return;
+      assertSafeOAuthResponse(catalog); assertSafeOAuthResponse(connections);
+      state.catalog = (catalog.items || []).filter(row => providerIds.includes(row.provider_id));
+      state.live_enabled = catalog.live_enabled === true;
+      state.connections = (connections.items || []).filter(row => state.account_id === 'all' || row.account_id === state.account_id);
+      state.base_revision = connections.base_revision; state.connectionsStale = false;
+      const selectedConnection = connection();
+      if (selectedConnection) state.connection_revision = selectedConnection.connection_revision ?? selectedConnection.revision ?? 0;
+      loaded = true;
+      state.message = '권한·비용·준비 상태를 확인하세요. 발행 실행은 비활성입니다.';
+    } catch (error) { if (current === generation) feedback(error); }
+    finally { if (current === generation) { state.busy = false; emit(); } }
+    return loaded;
+  }
+  async function reloadOwnedResult() {
+    if (state.busy) return;
+    const current = generation; state.busy = true; emit();
+    try {
+      const result = assertSafeOAuthResponse(await api.result());
+      if (current !== generation) return;
+      state.ownedResults = result.items || []; state.attempt = null;
+      state.message = '이 세션의 돌아온 시도를 직접 선택하세요. 연결 계속은 별도 확인입니다.';
+    } catch (error) { if (current === generation) feedback(error); }
+    finally { if (current === generation) { state.busy = false; emit(); } }
+  }
+  async function selectOwnedAttempt(value) {
+    if (state.busy || !state.ownedResults.some(row => row.attempt_id === value && row.account_id === state.account_id)) return;
+    clearPublicationGrant();const current = generation, selected = ++selection;
+    state.attempt = null; state.pending = null; state.busy = true; emit();
+    try {
+      const result = assertSafeOAuthResponse(await api.attempt(value));
+      if (current !== generation || selected !== selection) return;
+      if (result.account_id !== state.account_id || result.attempt_id !== value || !providerIds.includes(result.provider_id)) throw new Error();
+      state.attempt = result; state.provider_id = result.provider_id;
+      state.connection_id = typeof result.connection_id === 'string' ? result.connection_id : '';
+      const selectedConnection = connection();
+      state.connection_revision = selectedConnection?.connection_revision ?? selectedConnection?.revision ?? result.connection_revision ?? 0;
+      if (!selectedConnection && typeof result.base_revision === 'string') state.base_revision = result.base_revision;
+      state.message = '동의 복귀는 연결 완료가 아닙니다. 상태를 확인하고 계속하세요.';
+    } catch (error) { if (current === generation && selected === selection) feedback(error); }
+    finally { if (current === generation && selected === selection) { state.busy = false; emit(); } }
+  }
+  async function mutate(operation, target, payload) {
+    if (state.busy) return;
+    const signature = JSON.stringify([operation, target, payload]);
+    if (state.pending && state.pending.signature !== signature) {
+      state.message = '이전 대기 요청을 확인하거나 선택을 취소한 뒤 다른 동작을 진행하세요.'; emit(); return;
+    }
+    if (!state.pending) state.pending = {operation, target, signature, ...payload, request_key: requestKey()};
+    const {request_key} = state.pending;
+    const current = generation, selected = selection;
+    clearPublicationGrant();state.busy = true; state.errorStatus = null; emit();
+    try {
+      const result = assertSafeOAuthResponse(await (operation === 'start' ? api.start({...payload, request_key}) : api[operation](target, {...payload, request_key})));
+      if (current !== generation || selected !== selection) return;
+      if (result.account_id && result.account_id !== state.account_id) throw new Error();
+      if (result.provider_id && result.provider_id !== state.provider_id) throw new Error();
+      if (['continue', 'inspect'].includes(operation) && result.attempt_id !== target) throw new Error();
+      if (result.connection_id && state.connection_id && result.connection_id !== state.connection_id) throw new Error();
+      state.pending = null;
+      if (result.attempt_id) state.attempt = result;
+      if (operation === 'start' && typeof result.connection_id === 'string') {
+        state.connection_id = result.connection_id;
+        state.connection_revision = result.connection_revision ?? 0;
+      }
+      state.message = operation === 'disconnect' ? '로컬 연결을 해제했습니다. 제공자의 원격 권한 해지는 수행하지 않았습니다.' :
+        operation === 'revoke' ? '원격 권한 해지 결과를 확인하세요. 다른 연결의 영향은 별도입니다.' : '서버 결과를 확인하세요. 발행 실행은 비활성입니다.';
+      if (['confirmTarget', 'refresh', 'disconnect', 'revoke'].includes(operation)) {
+        state.connectionsStale = true;
+        // POST receipt는 이미 성공했다. 후속 조회 실패가 mutation 재전송을 만들면 안 된다.
+        try {
+          const listing = assertSafeOAuthResponse(await api.connections(state.account_id));
+          if (current !== generation || selected !== selection) return;
+          state.connections = (listing.items || []).filter(row => row.account_id === state.account_id);
+          state.base_revision = listing.base_revision; state.connectionsStale = false;
+          const row = connection();
+          state.connection_revision = row?.connection_revision ?? row?.revision ?? 0;
+        } catch {
+          if (current !== generation || selected !== selection) return;
+          state.message += ' 요청은 성공했습니다. 최신 연결 조회에 실패했으니 등록·연결 상태 조회를 직접 누르세요.';
+        }
+      }
+    } catch (error) { if (current === generation && selected === selection) feedback(error); }
+    finally { if (current === generation && selected === selection) { state.busy = false; emit(); } }
+  }
+  function retryPending() {
+    if (!state.pending || state.busy) return;
+    const {operation, target, signature, request_key, ...payload} = state.pending;
+    if (operation === 'start' && !canStart()) {state.message = '현재 등록·비용·정책 상태에서 대기 요청을 재전송할 수 없습니다.'; emit(); return;}
+    return mutate(operation, target, payload);
+  }
+  async function revalidatePending() {
+    if (state.busy || !state.pending || state.errorStatus !== 409) return;
+    const pending = state.pending;
+    if (!['start', 'refresh', 'disconnect', 'revoke'].includes(pending.operation)) {
+      state.message = '이 시도는 돌아온 결과에서 최신 상태와 대상을 다시 확인해야 합니다. 대기 요청은 보존했습니다.'; emit(); return;
+    }
+    if (!await load() || state.pending?.request_key !== pending.request_key) return;
+    const selectedConnection = connection();
+    if ((state.connection_id && (!selectedConnection || !matchesOAuthConnection(selectedConnection, provider()))) ||
+        (pending.operation === 'start' && (!canStart() || !validScopes()))) {
+      state.message = '최신 등록·권한·비용·연결 조건이 맞지 않습니다. 원래 대기 요청과 입력은 보존했습니다.'; emit(); return;
+    }
+    state.connection_revision = selectedConnection?.connection_revision ?? selectedConnection?.revision ?? 0;
+    state.pending = null; state.errorStatus = null;
+    state.message = '최신 기준으로 재검증했습니다. 입력을 검토한 뒤 다시 누르면 새 요청 키로 제출합니다.'; emit();
+  }
+  const revisions = () => ({expected_base_revision: state.base_revision, expected_connection_revision: state.connection_revision});
+  const start = () => {
+    if (!canStart()) {state.message = '로그인 준비가 되지 않았습니다. 계정·등록·권한·비용·정책 차단을 확인하세요.'; emit(); return;}
+    return mutate('start', null, {account_id: state.account_id, provider_id: state.provider_id, connection_id: state.connection_id || null,
+      ...revisions(), requested_scopes: [...state.requested_scopes]});
+  };
+  const continueAttempt = () => ['callback_staged', 'resume_pending'].includes(state.attempt?.state) ? mutate('continue', state.attempt.attempt_id, {expected_revision: state.attempt.revision}) : undefined;
+  const inspect = () => ['token_exchanged', 'principal_pending'].includes(state.attempt?.state) ? mutate('inspect', state.attempt.attempt_id, {expected_revision: state.attempt.revision}) : undefined;
+  const canConfirmTarget = () => {
+    const proposal = state.attempt?.target_proposal;
+    return state.attempt?.state === 'target_confirmation' &&
+      state.attempt.account_id === state.account_id && state.attempt.provider_id === state.provider_id &&
+      Number.isInteger(state.attempt.revision) && state.attempt.revision >= 0 && !!proposal &&
+      typeof proposal.proposal_id === 'string' && !!proposal.proposal_id &&
+      typeof proposal.target_id === 'string' && !!proposal.target_id &&
+      typeof proposal.target_label === 'string' &&
+      typeof proposal.expected_base_revision === 'string' && !!proposal.expected_base_revision &&
+      Number.isInteger(proposal.expected_connection_revision) && proposal.expected_connection_revision >= 0;
+  };
+  function confirmTarget() {
+    const proposal = state.attempt?.target_proposal;
+    if (!canConfirmTarget()) {state.message = '대상 제안의 ID와 기준 버전이 미확인입니다. 새 서버 상태를 확인하세요.'; emit(); return;}
+    return mutate('confirmTarget', proposal.proposal_id, {expected_base_revision: proposal.expected_base_revision, expected_connection_revision: proposal.expected_connection_revision});
+  }
+  function connectionAction(operation) {
+    if (state.connectionsStale) {state.message = '성공한 요청의 현재 연결 revision을 먼저 조회하세요. 등록·연결 상태 조회가 필요합니다.'; emit(); return;}
+    const row = connection();
+    if (!row || state.account_id === 'all') return;
+    if (operation !== 'disconnect' && (!row.available_actions?.includes(operation) || blocked(provider()))) return;
+    return mutate(operation, state.connection_id, revisions());
+  }
+  function grantBinding(){
+    const row=connection(),p=provider();
+    if(!row||!p||!['personal','dept'].includes(state.account_id)||row.account_id!==state.account_id||!matchesOAuthConnection(row,p))return null;
+    return {account_id:state.account_id,connection_id:state.connection_id,provider_id:p.provider_id,platform:p.platform,...(typeof row.target_id==='string'?{target_id:row.target_id}:{})};
+  }
+  const canPublicationGrantAction=action=>!state.busy&&!state.pending&&!state.publicationGrantBusy&&!state.connectionsStale&&!state.publicationGrantUnknown&&!!grantBinding()&&!!state.publicationGrantResult?.available_actions.includes(action)&&typeof api[action+'Grant']==='function';
+  async function publicationGrantRequest(action=null){
+    const binding=grantBinding();
+    if(!binding||state.busy||state.pending||state.publicationGrantBusy)return;
+    if(action&&!canPublicationGrantAction(action))return;
+    const method=action?action+'Grant':'grant';
+    if(typeof api[method]!=='function'){clearPublicationGrant();state.publicationGrantMessage='발행 사용 승인 조회 기능이 등록되지 않았습니다.';emit();return;}
+    const current=generation,selected=selection,token=++grantGeneration,mine=state.connection_id;
+    const prior=state.publicationGrantResult;
+    state.publicationGrantBusy=true;state.publicationGrantUnknown=false;state.publicationGrantResult=null;
+    state.publicationGrantMessage=action?'발행 사용 승인 변경 결과 확인 중':'발행 사용 승인 조회 중';emit();
+    try{
+      const result=action?await api[method](mine,{request_key:requestKey(),expected_base_revision:prior.base_revision,expected_connection_revision:prior.connection_revision,expected_grant_revision:prior.publication_grant.revision}):await api.grant(mine);
+      if(current!==generation||selected!==selection||token!==grantGeneration)return;
+      assertPublicationGrantResponse(result,binding);
+      state.publicationGrantResult=result;state.publicationGrantMessage=action==='approve'?'게시 권한 검사와 발행 사용 승인 결과를 확인하세요.':action==='revoke'?'발행 사용 승인 회수 결과를 확인하세요.':'현재 발행 사용 승인 상태를 조회했습니다.';
+    }catch{
+      if(current!==generation||selected!==selection||token!==grantGeneration)return;
+      state.publicationGrantResult=null;state.publicationGrantUnknown=true;
+      state.publicationGrantMessage=action?'변경 결과를 확인할 수 없습니다. 자동 재시도하지 않습니다. 현재 상태를 직접 다시 조회하세요.':'발행 사용 승인 상태를 확인할 수 없습니다. 직접 다시 조회하세요.';
+    }finally{
+      if(current===generation&&selected===selection&&token===grantGeneration){state.publicationGrantBusy=false;emit();}
+    }
+  }
+  function close() { generation++; selection++; state = clean(state.account_id); emit(); }
+  return {getState, subscribe(listener) {listeners.add(listener); return () => listeners.delete(listener);}, setContext, load, selectProvider, selectConnection,
+    clearSelection() {if (!state.busy) {clearSelection(); state.provider_id = ''; state.connection_id = ''; emit();}},
+    reloadOwnedResult, selectOwnedAttempt, retryPending, revalidatePending, start, continue: continueAttempt, inspect, confirmTarget,
+    refresh: () => connectionAction('refresh'), disconnect: () => connectionAction('disconnect'), revoke: () => connectionAction('revoke'),
+    reloadPublicationGrant:()=>publicationGrantRequest(),approvePublicationGrant:()=>publicationGrantRequest('approve'),revokePublicationGrant:()=>publicationGrantRequest('revoke'),canPublicationGrantAction,
+    setPublicationConsent, canRequestPublicationConsent:()=>!!publicationScopes(), canStart, canConfirmTarget, close, isBusy: () => state.busy, hasUnsavedChanges: () => !!state.pending,
+  };
+}

@@ -25,9 +25,22 @@ import re
 import sys
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-from common import log  # noqa: E402
-import tistory_crosspost as tc  # noqa: E402
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('personal', 'tistory', 'tistory-post-cli'))
+
+def log(*args, **kwargs):
+    from common import log as implementation
+    return implementation(*args, **kwargs)
+
+class _LegacyTistory:
+    def __getattr__(self, name):
+        import tistory_crosspost
+        return getattr(tistory_crosspost, name)
+
+tc = _LegacyTistory()
+
 
 def out(status, url="", message=""):
     print(json.dumps({"status": status, "url": url, "message": message}, ensure_ascii=False))
@@ -69,19 +82,22 @@ MARKER = re.compile(r'<p[^>]*\bdata-ax-attach="[^"]*"[^>]*>.*?</p>', re.S)
 _LEAD_EMPTY = re.compile(r'^\s*(?:<p>(?:\s|&nbsp;|<br[^>]*>)*</p>\s*)+')
 
 
-def upload_at(d, path):
+def upload_at(d, path, *, managed=False):
     """파일을 편집기에 끌어다 놓아 티스토리 첨부로 올리고, 생긴 첨부 토큰을 첫 자리표시 자리로 옮긴다.
 
     파일 입력칸(#attach-file)에 경로를 넣는 방식은 업로드가 시작되지 않았다(2026-10-18 시험).
     끌어다 놓기는 그림·PDF 모두 올라가지만 글 맨 앞에 들어가서, [##_Image|…_##] / [##_File|…_##]
     토큰을 찾아 자리표시와 바꾼다."""
+    emit = (lambda *args: None) if managed else log
     import base64
     import mimetypes
     get = "return tinymce.activeEditor.getContent()"
     before = d.execute_script(get)
     old = set(TOKEN.findall(before))
     mt = mimetypes.guess_type(path)[0] or "application/octet-stream"
-    d.execute_script(_DROP_JS, base64.b64encode(open(path, "rb").read()).decode(), os.path.basename(path), mt)
+    with open(path, "rb") as asset_file:
+        encoded = base64.b64encode(asset_file.read()).decode()
+    d.execute_script(_DROP_JS, encoded, os.path.basename(path), mt)
     t0, new = time.time(), None
     while time.time() - t0 < 180:
         time.sleep(1.5)
@@ -90,15 +106,16 @@ def upload_at(d, path):
         if new:
             break
     else:
-        tc._shot(d, "attach_timeout")
-        log(f"  첨부 대기 중 본문 앞부분: {c[:200]!r}")
+        if not managed:
+            tc._shot(d, "attach_timeout")
+        emit(f"  첨부 대기 중 본문 앞부분: {c[:200]!r}")
         raise RuntimeError(f"첨부 업로드 시간 초과: {os.path.basename(path)}")
     token = new[0]
     head, rest = token.split("[##_", 1)
     if len(MARKER.findall(c)) < len(MARKER.findall(before)):
         # 끌어다 놓은 자리가 빈 첫 자리표시 <p> 면 편집기가 그 문단을 첨부 문단으로 바꿔 자리표시가 사라진다 —
         # 첨부는 이미 제자리다(2026-10-25 토목 9일차: 여기서 자리표시를 또 쓰면 하나씩 밀려 PDF 가 실패)
-        log(f"  첨부 올림(첫 자리표시 대체): {os.path.basename(path)} ({mt})")
+        emit(f"  첨부 올림(첫 자리표시 대체): {os.path.basename(path)} ({mt})")
         return
     if "data-ax-attach" in head:
         # 첫 요소가 자리표시(맨 위 배너 등)면 토큰이 그 <p> 안에 들어간다 — 이미 제자리이니
@@ -106,7 +123,7 @@ def upload_at(d, path):
         c = c.replace(token, re.sub(r'\s*\bdata-ax-[\w-]+="[^"]*"', "", head) + "[##_" + rest, 1)
         d.execute_script("tinymce.activeEditor.setContent(arguments[0]); tinymce.activeEditor.fire('change');"
                          "tinymce.activeEditor.save();", c)
-        log(f"  첨부 올림(첫 자리표시 안): {os.path.basename(path)} ({mt})")
+        emit(f"  첨부 올림(첫 자리표시 안): {os.path.basename(path)} ({mt})")
         return
     c = c.replace(token, "", 1)
     c = _LEAD_EMPTY.sub("", c)           # 끌어다 놓으려고 만든 빈 문단이 남았으면 지운다
@@ -117,7 +134,7 @@ def upload_at(d, path):
                      "tinymce.activeEditor.save();", c)
     if token.split("|")[1][:40] not in d.execute_script(get):
         raise RuntimeError(f"첨부 토큰이 본문에서 사라짐: {os.path.basename(path)}")
-    log(f"  첨부 올림: {os.path.basename(path)} ({mt})")
+    emit(f"  첨부 올림: {os.path.basename(path)} ({mt})")
 
 
 def publish(args, body, files):
@@ -206,6 +223,8 @@ def edit_body(args, body):
 
 
 def main():
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('personal', 'tistory', 'tistory-post-cli'))
     ap = argparse.ArgumentParser(description="티스토리 공용 발행기")
     ap.add_argument("--html", required=True, help="본문 HTML 파일")
     ap.add_argument("--title", required=True)
@@ -283,3 +302,53 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('tistory', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    from common.publishers.blog_legacy import load_tistory_support
+    return load_tistory_support().managed_inspect(target, services)
+
+
+def _managed_input(driver, prepared):
+    driver.find_element('css selector', '#post-title-inp').send_keys(prepared['title'])
+    driver.execute_script('''/* AX_BLOG_EDITOR_INPUT */
+if(!window.tinymce||!tinymce.activeEditor)throw Error('TinyMCE unavailable');
+tinymce.activeEditor.setContent(arguments[0]);tinymce.activeEditor.fire('change');tinymce.activeEditor.save();
+''', prepared['body_html'] + ''.join('<p data-ax-attach="' + asset['id'] + '"></p>' for asset in prepared.get('assets', [])))
+    for tag in prepared.get('tags', []):
+        field = driver.find_element('css selector', '#tagText')
+        field.send_keys(tag)
+        field.send_keys('\ue007')
+
+
+
+def _managed_options(driver, prepared):
+    driver.execute_script('''/* AX_BLOG_PUBLISH_OPTIONS */
+const category=arguments[0];if(category){const c=[...document.querySelectorAll('#category-list [role="option"]')].find(e=>[category,'- '+category].includes(e.getAttribute('aria-label')));if(!c)throw Error('category unavailable');c.click();}
+const open=document.querySelector('#publish-layer-btn');if(!open)throw Error('publish options unavailable');open.click();
+const pub=document.querySelector('#open20');if(!pub)throw Error('public option unavailable');pub.click();
+''', prepared.get('category', ''))
+
+def _managed_upload(driver, path):
+    # 기존 drag/drop 첨부 leaf. 파일은 서버 ContentStore에서 검증한 임시 복사만 받는다.
+    upload_at(driver, path, managed=True)
+
+
+def managed_submit(prepared, target, services):
+    return services.submit(prepared, target, _managed_input, _managed_upload, _managed_options)
+
+
+def managed_lookup(target, attempt, services):
+    from common.publishers.blog_legacy import load_tistory_support
+    return load_tistory_support().managed_lookup(target, attempt, services)
+
+
+def managed_verify(target, remote_id, services):
+    from common.publishers.blog_legacy import load_tistory_support
+    return load_tistory_support().managed_verify(target, remote_id, services)

@@ -1,0 +1,823 @@
+{
+  "schema_version": 1,
+  "revision": "2026-11-04-x-text-plan-1",
+  "accounts": {
+    "dept": {
+      "label": "학과 (세명대 재난안전학과)",
+      "catalog_candidates": [
+        "facebook"
+      ]
+    },
+    "personal": {
+      "label": "개인",
+      "catalog_candidates": [
+        "facebook",
+        "instagram",
+        "tiktok"
+      ]
+    },
+    "common": {
+      "label": "common"
+    }
+  },
+  "credentials": {
+    "dept.youtube.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.youtube"
+    },
+    "dept.blogger.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.blogger"
+    },
+    "dept.instagram.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.instagram"
+    },
+    "dept.naver_blog.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.naver_blog"
+    },
+    "dept.tiktok.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.tiktok"
+    },
+    "dept.x.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.x"
+    },
+    "dept.threads.credential": {
+      "account_id": "dept",
+      "symbolic_ref": "credential:dept.threads"
+    },
+    "personal.blogger.credential": {
+      "account_id": "personal",
+      "symbolic_ref": "credential:personal.blogger"
+    },
+    "personal.tistory.credential": {
+      "account_id": "personal",
+      "symbolic_ref": "credential:personal.tistory"
+    },
+    "personal.naver_blog.credential": {
+      "account_id": "personal",
+      "symbolic_ref": "credential:personal.naver_blog"
+    },
+    "personal.youtube.credential": {
+      "account_id": "personal",
+      "symbolic_ref": "credential:personal.youtube"
+    }
+  },
+  "profiles": {
+    "dept.browser": {
+      "account_id": "dept",
+      "symbolic_ref": "profile:dept"
+    },
+    "personal.browser": {
+      "account_id": "personal",
+      "symbolic_ref": "profile:personal"
+    }
+  },
+  "connections": {
+    "dept.youtube": {
+      "id": "dept.youtube",
+      "account_id": "dept",
+      "platform": "youtube",
+      "target_id": null,
+      "credential_ref": "dept.youtube.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public",
+        "visibility:unlisted",
+        "visibility:private"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · YouTube",
+      "target_evidence": []
+    },
+    "dept.blogger": {
+      "id": "dept.blogger",
+      "account_id": "dept",
+      "platform": "blogger",
+      "target_id": null,
+      "credential_ref": "dept.blogger.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · Blogger",
+      "target_evidence": []
+    },
+    "dept.instagram": {
+      "id": "dept.instagram",
+      "account_id": "dept",
+      "platform": "instagram",
+      "target_id": null,
+      "credential_ref": "dept.instagram.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · Instagram",
+      "target_evidence": []
+    },
+    "dept.naver_blog": {
+      "id": "dept.naver_blog",
+      "account_id": "dept",
+      "platform": "naver_blog",
+      "target_id": "studs23",
+      "credential_ref": "dept.naver_blog.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": "smuds",
+      "target_label": "학과 (세명대 재난안전학과) · 네이버 블로그",
+      "target_evidence": [
+        "ax-console/config/accounts.json:dept.naver.blog"
+      ]
+    },
+    "dept.tiktok": {
+      "id": "dept.tiktok",
+      "account_id": "dept",
+      "platform": "tiktok",
+      "target_id": null,
+      "credential_ref": "dept.tiktok.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · TikTok",
+      "target_evidence": []
+    },
+    "dept.x": {
+      "id": "dept.x",
+      "account_id": "dept",
+      "platform": "x",
+      "target_id": null,
+      "credential_ref": "dept.x.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public",
+        "text_only"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · X",
+      "target_evidence": []
+    },
+    "dept.threads": {
+      "id": "dept.threads",
+      "account_id": "dept",
+      "platform": "threads",
+      "target_id": null,
+      "credential_ref": "dept.threads.credential",
+      "profile_ref": "dept.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "학과 (세명대 재난안전학과) · Threads",
+      "target_evidence": []
+    },
+    "personal.blogger": {
+      "id": "personal.blogger",
+      "account_id": "personal",
+      "platform": "blogger",
+      "target_id": null,
+      "credential_ref": "personal.blogger.credential",
+      "profile_ref": "personal.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "개인 · Blogger",
+      "target_evidence": []
+    },
+    "personal.tistory": {
+      "id": "personal.tistory",
+      "account_id": "personal",
+      "platform": "tistory",
+      "target_id": null,
+      "credential_ref": "personal.tistory.credential",
+      "profile_ref": "personal.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "개인 · Tistory",
+      "target_evidence": []
+    },
+    "personal.naver_blog": {
+      "id": "personal.naver_blog",
+      "account_id": "personal",
+      "platform": "naver_blog",
+      "target_id": "safeworking",
+      "credential_ref": "personal.naver_blog.credential",
+      "profile_ref": "personal.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": "safeworking",
+      "target_label": "개인 · 네이버 블로그",
+      "target_evidence": [
+        "channels/naver-blog-auto/naver_crosspost_personal.py:34"
+      ],
+      "warnings": [
+        "accounts.json 개인 로그인 등록 메모와 전용 실행기 공개 대상 근거가 다름; 인증 상태 미확인"
+      ]
+    },
+    "personal.youtube": {
+      "id": "personal.youtube",
+      "account_id": "personal",
+      "platform": "youtube",
+      "target_id": "UCbHDlxMFIackeJRwW2iTYew",
+      "credential_ref": "personal.youtube.credential",
+      "profile_ref": "personal.browser",
+      "capabilities": [
+        "plan",
+        "visibility:public",
+        "visibility:unlisted",
+        "visibility:private"
+      ],
+      "enabled": false,
+      "planning_enabled": true,
+      "auth_status": "unknown",
+      "auth_checked_at": null,
+      "last_success_at": null,
+      "expected_login_subject": null,
+      "target_label": "개인 · YouTube",
+      "target_evidence": [
+        "dept/youtube-shorts-auto/geoai_short_post.py:33"
+      ]
+    }
+  },
+  "jobs": {
+    "managed.dept.plan": {
+      "owner_account_id": "dept",
+      "executor_id": "local-plan",
+      "schedule_owner": "console",
+      "execution_owner": "managed",
+      "planning_enabled": true,
+      "enabled": false,
+      "policy_revision": "plan-1"
+    },
+    "managed.personal.plan": {
+      "owner_account_id": "personal",
+      "executor_id": "local-plan",
+      "schedule_owner": "console",
+      "execution_owner": "managed",
+      "planning_enabled": true,
+      "enabled": false,
+      "policy_revision": "plan-1"
+    },
+    "ytshorts.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 18:29 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인) · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "ytcareer.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "ytshorts.trigger": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "captionbackfill.daily": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 18:36 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인) · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "disastershorts.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "disastershorts.crosspost": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "tiktok.queue": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-17 13:30 사용자 요청으로 중지(launchd bootout+disable, tiktok_web.daily=false). 캡션 입력칸을 못 찾는 실패가 반복된 뒤. 다시 켜려면 둘 다 되돌린다. · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "xpromo.daily": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "instacards.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "captionautofix.daily": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 18:27 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인) · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "captionrecheck.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 18:27 콘솔에서 끔 — 사유 미기록(장애 목록 정리 때 launchd_control.log 로 확인) · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "naverblog.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "blogcareer.daily": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "naverjobs.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 사용자가 일부러 끔. 켜기 전에 사용자에게 확인. · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "naverbuddy.weekly": {
+      "owner_account_id": "dept",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "geoai.daily": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "geoai.evening": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "tistory": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "2026-10-18 사용자가 일부러 끔. 켜기 전에 사용자에게 확인. · 카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "indexcheck.daily": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "report.weekly": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "report.monthly": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "promoreport.monthly": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "cacheprune.daily": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "disastershorts.cleanup": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "axconsole": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "digest.daily": {
+      "owner_account_id": "common",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.survey-daily": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.survey-shorts": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.civil-daily": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.survey-friend": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.civil-friend": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.building-daily": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.building-friend": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.safety-daily": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.safety-friend": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.safekorea": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    },
+    "claude.nordic": {
+      "owner_account_id": "personal",
+      "executor_id": "legacy",
+      "schedule_owner": null,
+      "execution_owner": "legacy",
+      "enabled": false,
+      "planning_enabled": false,
+      "policy_revision": "plan-1",
+      "activation_status": "unknown",
+      "source_evidence": "ax-console/config/automations.json",
+      "warning": "카탈로그 항목만으로 실제 일정 소유자를 확정하지 않음; 설치 plist와의 대응 미검증",
+      "schedule_owner_status": "unknown"
+    }
+  },
+  "policies": {
+    "plan-1": {
+      "scope": "plan",
+      "execution_enabled": false
+    }
+  },
+  "crossposts": {}
+}

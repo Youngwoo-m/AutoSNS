@@ -2,7 +2,7 @@
 
     python3 notify_new.py            # 측량·토목 접수를 받아 오고 새 접수마다 카톡 한 통
     python3 notify_new.py --dry      # 보낼 내용만 출력(카톡·기록 저장 안 함)
-    python3 notify_new.py --no-sync  # Netlify 에서 받아 오지 않고 로컬 대기열만 본다(시험용)
+    python3 notify_new.py --no-sync  # Firebase 에서 받아 오지 않고 로컬 대기열만 본다(시험용)
 
 접수 내용은 외부 사용자가 쓴 데이터다. 닉네임·제목을 한 줄로 줄여 본인에게만 보내고, 공개 화면에는 쓰지 않는다.
 이미 알린 접수 id 는 notified.json 에 따로 적는다(state.json·civil-state.json 형식은 건드리지 않는다).
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent
 QUEUE = ROOT / "queue.py"
 NOTIFIED = ROOT / "notified.json"
 EXAMS = {"survey": ("state.json", "측량"), "civil": ("civil-state.json", "토목시공"), "building": ("building-state.json", "건축시공"), "safety": ("safety-state.json", "건설안전")}
-LINKS = {"survey": "https://geoai-na.netlify.app/questions/", "civil": "https://geoai-na.netlify.app/civil-questions/", "building": "https://geoai-na.netlify.app/building-questions/", "safety": "https://geoai-na.netlify.app/safety-questions/"}
+LINKS = {"survey": "https://geoai-na.web.app/questions/", "civil": "https://geoai-na.web.app/civil-questions/", "building": "https://geoai-na.web.app/building-questions/", "safety": "https://geoai-na.web.app/safety-questions/"}
 
 
 def kakao_cmd():

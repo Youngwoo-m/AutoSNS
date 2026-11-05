@@ -9,12 +9,29 @@ import json
 import os
 from datetime import datetime, timezone
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+import html as _html
+import urllib.parse as _urlparse
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+POSTS_DIR = os.path.join(BASE_DIR, 'posts')
+SCOPES = ['https://www.googleapis.com/auth/blogger']
 
-from common import BASE_DIR, POSTS_DIR, load_config, log
-from post_blogger import SCOPES, _esc, _url
+def load_config(*args, **kwargs):
+    from common import load_config as implementation
+    return implementation(*args, **kwargs)
+
+def log(*args, **kwargs):
+    from common import log as implementation
+    return implementation(*args, **kwargs)
+
+def build(*args, **kwargs):
+    from googleapiclient.discovery import build as implementation
+    return implementation(*args, **kwargs)
+
+def _esc(value):
+    return _html.escape((value or '').strip())
+
+def _url(value):
+    return _esc(_urlparse.quote((value or '').strip(), safe=":/?&=#%+@!$,;~*'()[]"))
 
 TOKEN_PATH = os.path.join(BASE_DIR, "token_blogger_geoai.json")
 
@@ -267,3 +284,26 @@ if __name__ == "__main__":     # 연결·권한 점검용(발행하지 않는다
         print(f"쓰기 권한: 없음 — {str(e)[:120]}")
     print("오늘 올라간 글:", posted_today(svc, bid) or "없음")
     print("최근 제목 수:", len(posted_titles(svc, bid)))
+
+
+# 관리 leaf는 legacy compose/publish의 credential·제목중복·한도 부작용과 분리한다.
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('blogger', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    return services.inspect(target)
+
+
+def managed_submit(prepared, target, services):
+    return services.submit(prepared, target)
+
+
+def managed_lookup(target, attempt, services):
+    return services.lookup(target, attempt)
+
+
+def managed_verify(target, remote_id, services):
+    return services.verify(target, remote_id)

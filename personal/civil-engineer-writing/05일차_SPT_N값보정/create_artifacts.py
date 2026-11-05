@@ -76,7 +76,7 @@ table2='''<table border="1" style="border-collapse:collapse;width:100%"><thead><
 <tr><td>상재압 보정</td><td>(N<sub>1</sub>)<sub>60</sub> = 1.234 × 24.0</td><td>29.6 ≒ 30</td></tr>
 </tbody></table>'''
 body=f'''<p>N값 보정 답안은 '해머 효율 보정, 상재압 보정'을 나열하는 데서 끝나면 답안이 얕아진다. <strong>왜 측정 N값을 그대로 쓰면 안 되는지(장비·깊이·토질), 어떤 식으로 어떤 기준값에 맞추는지(N<sub>60</sub>, (N<sub>1</sub>)<sub>60</sub>), 보정한 값을 어디에 쓰고 어디에 쓰지 말아야 하는지</strong>를 계산 예와 함께 짧게 보여 주어야 한다.</p>
-<h2><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2>오늘의 문제</h2>
 <p><strong>시험 종목:</strong> 토목시공기술사 / <strong>과목(학습 분류):</strong> 토질·기초(지반조사) / <strong>유형:</strong> 단답형 / <strong>관련 기출:</strong> 2025년 제137회 1교시 7번</p>
@@ -113,7 +113,7 @@ tis=body.replace(f'<!--FIGURE:{FIG}-->',f'<p data-ax-attach="{FIG}"></p>').repla
 tis=re.sub(r'<figure>.*?</figure>','<p style="font-size:14px;color:#52616a">직접 작성한 개념도. 축척을 나타내지 않는다.</p>',tis,flags=re.S)
 tis=re.sub(r'<p><a href="\{\{PDF_URL\}\}">[^<]*</a></p>','',tis)
 (OUT/'티스토리게시본문.html').write_text(tis)
-pub='https://geoai-na.netlify.app/civil-questions/materials/day05/'
+pub='https://geoai-na.web.app/civil-questions/materials/day05/'
 blog=body.replace('{{FIGURE_URL}}',pub+'spt-correction.jpg').replace('{{PDF_URL}}',pub+'answer-tracing.pdf')
 blog=re.sub(r'<!--(FIGURE|PDF):[^>]*-->','',blog)
 (OUT/'Blogger게시본문.html').write_text(blog)

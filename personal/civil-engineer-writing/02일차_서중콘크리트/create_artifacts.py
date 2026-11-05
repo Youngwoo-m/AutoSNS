@@ -49,7 +49,7 @@ past=''.join(f'<li>{q["year"]}년 제{q["round"]}회 {q["period"]}교시 {q["num
 sourcehtml=''.join(f'<li><a href="{u}">{t}</a></li>' for t,u in SOURCES)
 table='''<table border="1" style="border-collapse:collapse;width:100%"><thead><tr><th>구분</th><th>발생 원리</th><th>우선 관리</th></tr></thead><tbody><tr><td>소성수축균열</td><td>응결 전 표면 증발이 블리딩에 의한 수분 공급을 앞질러 표층 수축</td><td>타설 직후 증발 억제, 마감과 양생 사이 공백 축소</td></tr><tr><td>건조수축균열</td><td>경화 후 수분 손실에 따른 수축이 구속되어 인장응력 발생</td><td>적절한 배합·습윤양생, 이음·구속조건 검토</td></tr><tr><td>온도균열</td><td>수화열·일사·냉각에 따른 온도변형이 내·외부 구속을 받음</td><td>타설온도·온도이력·내외부 온도차와 급냉 관리</td></tr></tbody></table>'''
 body=f'''<p>서중콘크리트 답안은 고온에 따른 응결 촉진과 표면 건조를 구분하고, 각 원인을 시공 단계별 대책에 연결해야 한다. 핵심은 타설온도 관리와 양생의 연속성이다. 2025년 말 개정된 서중콘크리트 적용범위도 함께 정리한다.</p>
-<h2><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2>오늘의 문제</h2>
 <p><strong>시험 종목:</strong> 토목시공기술사 / <strong>과목(학습 분류):</strong> 콘크리트공·서중 시공 / <strong>유형:</strong> 논술형 / <strong>관련 기출:</strong> 2023년 제130회 4교시 1번, 2026년 제139회 4교시 5번·제140회 3교시 4번</p>

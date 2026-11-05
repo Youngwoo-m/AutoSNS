@@ -16,7 +16,7 @@ PDF_NAME = '10일차_하천제방파괴_답안예시_따라쓰기.pdf'
 FIG_NAME = '하천제방_파괴원인과대책_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_한계동수경사.png', '수식2_계산예.png', '도식_제방파이핑검토.gif'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day10/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day10/'
 PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
@@ -215,7 +215,7 @@ SOURCES = [
 def body(img_html, f1_html, f2_html, gif_html, pdf_html, banner_html):
     src = ''.join(f'<li><a href="{u}">{t}</a></li>' for t, u in SOURCES)
     return f'''{banner_html}<p>하천제방의 파괴원인과 방지대책은 2022~2026년 토목시공기술사에서 같은 뼈대로 두 번, 제방 누수·파이핑·외력·응급대책처럼 가까운 주제로 여러 번 나온 논술형 문제다. 답안은 제방의 종류, 월류·세굴·침투(파이핑)·비탈면 활동·침하·구조물 접합부로 나눈 파괴 원인, 원인과 짝을 맞춘 방지대책, 안정성 검토 기준(여유고·활동·파이핑 안전율), 유지관리 순서로 짠다. 기준값은 2009년 하천설계기준 개정(안)과 2012년 제방 안전점검 해설서에서 옮겼으며, 현행 KDS 원문과는 대조하지 못했다.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2 data-ke-size="size26">오늘의 문제</h2>
 <p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 하천·제방 / 유형: 논술형 / 관련 기출: 2026년 제140회 3교시 2번, 2022년 제126회 4교시 2번</strong></p>

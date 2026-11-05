@@ -26,7 +26,21 @@ import time
 import urllib.request
 from datetime import datetime
 
-from common import BASE_DIR, LOGS_DIR, load_config, log, start_chrome
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+
+def load_config(*args, **kwargs):
+    from common import load_config as implementation
+    return implementation(*args, **kwargs)
+
+def log(*args, **kwargs):
+    from common import log as implementation
+    return implementation(*args, **kwargs)
+
+def start_chrome(*args, **kwargs):
+    from common import start_chrome as implementation
+    return implementation(*args, **kwargs)
+
 
 SOURCE = "https://geoaina.blogspot.com"
 BLOG = "https://na-geoai.tistory.com"
@@ -661,3 +675,41 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def build_read_driver(*, profile=None, headless=True):
+    """관리 읽기 전용 생성자. restore/save/relogin·legacy common을 호출하지 않는다."""
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    options = Options()
+    options.add_argument('--user-data-dir=' + str(profile or PROFILE))
+    options.add_argument('--lang=ko-KR')
+    options.add_experimental_option('excludeSwitches', ['enable-automation', 'use-mock-keychain'])
+    options.set_capability('unhandledPromptBehavior', 'dismiss')
+    if headless:
+        options.add_argument('--headless=new')
+    return webdriver.Chrome(options=options)
+
+
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('tistory', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    return services.inspect(target)
+
+
+def managed_submit(prepared, target, services):
+    from common.publishers.blog_legacy import load_blog_leaf
+    leaf = load_blog_leaf('personal.tistory')
+    return services.submit(prepared, target, leaf._managed_input, leaf._managed_upload, leaf._managed_options)
+
+
+def managed_lookup(target, attempt, services):
+    return services.lookup(target, attempt)
+
+
+def managed_verify(target, remote_id, services):
+    return services.verify(target, remote_id)

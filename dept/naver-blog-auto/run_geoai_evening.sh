@@ -1,6 +1,9 @@
 #!/bin/bash
 # AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
 [ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job geoai.evening -- "$0" "$@"
+# 단일 실행 주인 검사: 실패하면 legacy 본문으로 진행하지 않는다.
+_AX_OWNER_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+/usr/bin/python3 -I "$_AX_OWNER_ROOT/common/operations/legacy_fences.py" personal blogger geoai.evening || exit $?
 # GeoAI 블로그 저녁 1편 — launchd 가 매일 18:00 호출한다(아침 07:40 은 run_geoai.sh).
 #
 # 아침과 다른 점은 영상을 만들지 않는 것뿐이다(--no-video). 카드 쇼츠를 하루 두 편

@@ -19,4 +19,4 @@ Allow: /
 User-agent: PerplexityBot
 Allow: /
 
-Sitemap: https://geoai-na.netlify.app/sitemap.xml
+Sitemap: https://geoai-na.web.app/sitemap.xml

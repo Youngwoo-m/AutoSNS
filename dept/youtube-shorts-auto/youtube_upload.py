@@ -13,6 +13,13 @@ import os
 import re
 import sys
 
+# 직접 CLI는 legacy common.py/인증 라이브러리 import 전 주인을 확인한다.
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from shared.owner_fence import require_legacy_cli
+    require_legacy_cli(('dept', 'youtube', 'youtube-upload-cli'))
+    require_legacy_cli(('personal', 'youtube', 'youtube-upload-cli'))
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -242,6 +249,21 @@ def _preflight(title, description, keywords):
         bad = [c for c in "<>" if c in val]
         if bad:
             raise ValueError(f"{name}에 유튜브가 거부하는 문자 {bad} 가 남아 있습니다 — 업로드 중단")
+
+
+def managed_upload(prepared, target, services):
+    """관리 관문이 허가한 영상 insert만 수행한다. 후속 변경은 별도 intent다."""
+    return services.submit(prepared, target)
+
+
+def managed_read_target(target, services):
+    """등록 credential의 불변 채널 ID를 관측한다. legacy 기본 토큰은 쓰지 않는다."""
+    return services.inspect(target)
+
+
+def managed_read_video(target, remote_id, services):
+    """읽기 전용 원격 video/status 조회. 로컬 해시는 원격 증거가 아니다."""
+    return services.read_video(target, remote_id)
 
 
 def upload(data, dry_run=None, privacy=None, token_path=None):

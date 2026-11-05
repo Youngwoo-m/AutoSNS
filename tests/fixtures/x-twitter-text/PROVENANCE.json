@@ -1,0 +1,20 @@
+{
+  "upstream": "twitter/twitter-text",
+  "commit": "30e2430d90cff3b46393ea54caf511441983c260",
+  "files": {
+    "validate.yml": {
+      "url": "https://raw.githubusercontent.com/twitter/twitter-text/30e2430d90cff3b46393ea54caf511441983c260/conformance/validate.yml",
+      "sha256": "29fa1be663676f3d0bb0a67f393b32c15d92c5dd10db9be401bf7708d7c5b703"
+    },
+    "extract.yml": {
+      "url": "https://raw.githubusercontent.com/twitter/twitter-text/30e2430d90cff3b46393ea54caf511441983c260/conformance/extract.yml",
+      "sha256": "2b4f65d43462eb9785785eb94b633d1eccf920d5047fa17d98a45ea219851c71"
+    },
+    "tlds.yml": {
+      "url": "https://raw.githubusercontent.com/twitter/twitter-text/30e2430d90cff3b46393ea54caf511441983c260/conformance/tlds.yml",
+      "sha256": "4b69fe590c825c2d6dfc9e6fb458a0c5d7f3c8c5adad91a781c826b0a9b7cef4"
+    }
+  },
+  "conversion": "Ruby stdlib YAML to JSON; retain weighted v2/v3/directional, URL extraction and all TLD groups; expected values unchanged",
+  "conformance_sha256": "3355a00574afaa603d26ce6991a277b54723678b832e1a960b543e8b0a34ca1f"
+}

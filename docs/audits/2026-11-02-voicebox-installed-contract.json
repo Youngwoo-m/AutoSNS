@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "checked_date": "2026-11-02",
+  "application_version": "0.5.0",
+  "installed_binary": "/Applications/Voicebox.app/Contents/MacOS/voicebox-server",
+  "binary_sha256": "3e284ee760b83faed579e51970dff8dc05d0e25cec5b0a7d4063e58523bc0a5c",
+  "embedded_python": 312,
+  "method": "Read-only CArchive/PYZ parse, zlib decompression and data-only Python 3.12 marshal code-object field decoding; application code never imported or executed",
+  "modules": [
+    {
+      "module": "backend.routes.generations",
+      "payload_sha256": "c2ce4e8043a6c638f017947413a0e056aeaafceadc92f4474e23bfe783ef79f4",
+      "handlers": [
+        "generate_speech",
+        "cancel_generation_job"
+      ],
+      "observed_status_constants": [
+        "generating",
+        "queued",
+        "completed",
+        "failed",
+        "loading_model"
+      ]
+    },
+    {
+      "module": "backend.routes.history",
+      "payload_sha256": "fe9794c3a9aacf58b3ddf66ffa70c3ccc91cb38834056e2ce26f4ad76fdccd19",
+      "handlers": [
+        "get_generation"
+      ],
+      "observed_status_constants": [
+        "completed"
+      ]
+    }
+  ],
+  "client_change": {
+    "wire_status": "generating",
+    "canonical_status": "running",
+    "scope": [
+      "generate response",
+      "history poll",
+      "recovery projection"
+    ]
+  },
+  "live_schema_verified": false,
+  "limitations": [
+    "127.0.0.1:17493 refused GET connection; application was not started",
+    "Static constant evidence does not prove every runtime branch or complete response schema",
+    "loading_model is observed in cancellation code but is not accepted without a matching client contract",
+    "Static schemas confirm accepted fields but do not verify installed profile availability, model readiness, actual synthesis or emitted WAV"
+  ],
+  "mutations": {
+    "app_started": false,
+    "generation_requested": false,
+    "profiles_changed": false,
+    "authentication_accessed": false
+  },
+  "static_contract": {
+    "generation_request": {
+      "module": "backend.models",
+      "class": "GenerationRequest",
+      "line": 79,
+      "fields_observed": [
+        "profile_id",
+        "text",
+        "language",
+        "seed",
+        "model_size",
+        "instruct",
+        "engine",
+        "personality",
+        "max_chunk_chars",
+        "crossfade_ms",
+        "normalize",
+        "effects_chain"
+      ],
+      "language_default": "en",
+      "language_ko_allowed": true,
+      "engine_default": "qwen",
+      "model_size_default": "1.7B",
+      "model_size_0_6B_pattern_match": true,
+      "normalize_default": true,
+      "max_chunk_chars_default": 800,
+      "max_chunk_chars_bounds": [
+        100,
+        5000
+      ],
+      "client_max_chunk_chars_250_within_bounds": true,
+      "personality_default": false
+    },
+    "generation_response": {
+      "module": "backend.models",
+      "class": "GenerationResponse",
+      "line": 105,
+      "fields_observed": [
+        "id",
+        "profile_id",
+        "text",
+        "language",
+        "audio_path",
+        "duration",
+        "seed",
+        "instruct",
+        "engine",
+        "model_size",
+        "status",
+        "error",
+        "is_favorited",
+        "source",
+        "created_at",
+        "versions",
+        "active_version_id"
+      ]
+    },
+    "generate_handler": {
+      "module": "backend.routes.generations",
+      "handler": "generate_speech",
+      "line": 56,
+      "initial_status_constant": "generating",
+      "source": "manual",
+      "run_arguments_observed": [
+        "generation_id",
+        "profile_id",
+        "text",
+        "language",
+        "engine",
+        "model_size",
+        "seed",
+        "normalize",
+        "effects_chain",
+        "instruct",
+        "mode",
+        "max_chunk_chars",
+        "crossfade_ms"
+      ]
+    },
+    "history_handler": {
+      "module": "backend.routes.history",
+      "handler": "get_generation",
+      "line": 72,
+      "response_model": "HistoryResponse",
+      "fields_observed": [
+        "id",
+        "profile_id",
+        "profile_name",
+        "text",
+        "language",
+        "audio_path",
+        "duration",
+        "seed",
+        "instruct",
+        "engine",
+        "model_size",
+        "status",
+        "error",
+        "is_favorited",
+        "created_at"
+      ],
+      "engine_fallback": "qwen",
+      "status_fallback": "completed"
+    },
+    "profile_list": {
+      "module": "backend.routes.profiles",
+      "handler": "list_profiles",
+      "line": 39,
+      "delegates_to": "backend.services.profiles.list_profiles",
+      "service_line": 319,
+      "service_return_documentation": "List of profiles",
+      "wrapper_profiles_not_observed": true
+    },
+    "audio": {
+      "module": "backend.routes.audio",
+      "route": "/audio/{generation_id}",
+      "handler": "get_audio",
+      "line": 47,
+      "returns": "FileResponse with resolved stored audio path",
+      "default_version": true
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "installed_version": "0.5.0",
+  "api_reachable": false,
+  "health_get": "connection_refused",
+  "openapi_get": "connection_refused",
+  "database_generation_columns": [
+    "id",
+    "profile_id",
+    "text",
+    "language",
+    "audio_path",
+    "duration",
+    "seed",
+    "instruct",
+    "engine",
+    "model_size",
+    "status",
+    "error",
+    "is_favorited",
+    "source",
+    "created_at"
+  ],
+  "recovery_fields_present": true,
+  "api_schema_verified": false,
+  "app_started": false,
+  "synthesis_performed": false,
+  "private_values_collected": false
+}

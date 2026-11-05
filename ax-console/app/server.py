@@ -13,6 +13,8 @@ CONSOLE = Path(__file__).resolve().parents[1]
 ROOT = CONSOLE.parent
 import sys
 sys.path.insert(0, str(ROOT))
+from common.operations.entrypoints import route_legacy_action
+from common.operations.legacy_fences import legacy_services, ACTION_ROUTES
 from shared import axlock  # noqa: E402  잠금·대기·비상 정지
 sys.path.insert(0, str(CONSOLE / 'app'))
 import watcher  # noqa: E402  실패 대응 감시기
@@ -224,14 +226,55 @@ def task_reschedule(tid, b):
         return t
 
 
+def route_console_action(task, *, dry=False):
+    """서버가 만든 request와 등록 action만 연결한다. legacy fallback은 없다."""
+    services = dict(legacy_services())
+    key = (task['account'], task['channel'], task['action'])
+    spec = services.get('action_routes', ACTION_ROUTES).get(key)
+    if spec and 'request' not in services:
+        scheduled = task.get('schedule') or task.get('_entrypoint_at') or now().astimezone().isoformat()
+        at = datetime.datetime.fromisoformat(scheduled)
+        if at.tzinfo is None:
+            at = at.astimezone()
+        services['request'] = dict(job_id=spec['job_ids'][0], scheduled_at_utc=at.astimezone(datetime.timezone.utc).isoformat(),
+            phase=spec.get('phase', 'submit'), source=spec.get('source', 'console'),
+            request_kind='new_publication', mode='dry' if dry else 'live')
+    return route_legacy_action(key, services=services)
+
+
+def _record_managed_task(task, result):
+    with LOCK:
+        tasks = load()
+        current = next((x for x in tasks if x['id'] == task['id']), None)
+        if current:
+            # 접수는 공개 완료가 아니다. 재호출에서도 같은 회차/run_id를 보존한다.
+            current.update(status='queued', run_id=result['run_id'], result=result)
+            current.pop('_was', None)
+            save(tasks)
+    return result
+
+
 def run_task(tid, manual=False):
     with LOCK:
         tasks = load()
         t = next((x for x in tasks if x['id'] == tid), None)
         if not t or t['status'] == 'running':
             return
+        t.setdefault('_entrypoint_at', now().astimezone().isoformat())
         t['status'] = 'running'
         save(tasks)
+    try:
+        routed = route_console_action(t)
+    except Exception as error:
+        with LOCK:
+            tasks = load()
+            current = next((x for x in tasks if x['id'] == tid), None)
+            if current:
+                current.update(status='failed', result={'status': 'error', 'detail': getattr(error, 'code', 'owner_fence_failed')})
+                save(tasks)
+        return {'status': 'error', 'detail': getattr(error, 'code', 'owner_fence_failed')}
+    if routed['route'] == 'managed':
+        return _record_managed_task(t, routed)
     if t.get('action') == 'publish':
         return run_publish(t, manual)
     act = find_action(t['account'], t['channel'], t['action'])
@@ -1332,6 +1375,9 @@ PUBLISH_LOCKS = {  # 자동 발행이 함께 잡는 자원 — launchd 작업과
 
 
 def publish_call(cid, account, channel, dry):
+    routed = route_console_action({'account': account, 'channel': channel, 'action': 'publish', 'content': cid}, dry=dry)
+    if routed['route'] != 'legacy':
+        return routed, ''
     folder = AUTO_PUBLISH[(account, channel)]
     args = [str(ROOT / folder / '.venv' / 'bin' / 'python'), str(CONSOLE / 'app' / 'publishers.py'),
             str(_cdir(cid)), account, channel] + (['--dry'] if dry else [])
@@ -1345,6 +1391,9 @@ def publish_call(cid, account, channel, dry):
 
 
 def run_publish(t, manual):
+    routed = route_console_action(t)
+    if routed['route'] == 'managed':
+        return _record_managed_task(t, routed)
     start = now()
     day = RUNS / start.strftime('%Y-%m-%d')
     day.mkdir(parents=True, exist_ok=True)

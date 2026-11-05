@@ -14,7 +14,7 @@ TEMPLATE = Path('/Volumes/USB256/기술사/2026기술사 답안지-1교시(안�
 TITLE = '[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 해석 | 하루 한 문제 6일차'
 PDF_NAME = '06일차_말뚝재하시험_답안예시_따라쓰기.pdf'
 FIG_NAME = '말뚝재하시험_하중침하_개념도.jpg'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day06/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day06/'
 PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(학습용 가정) ─────────────────────────────────────────────
@@ -208,7 +208,7 @@ SOURCES = [
 def body(img_html, pdf_html):
     src = ''.join(f'<li><a href="{u}">{t}</a></li>' for t, u in SOURCES)
     return f'''<p>말뚝 재하시험 답안은 시험 이름을 나열하는 데서 끝나면 25점 문제의 절반만 쓴 셈이다. 정재하·동재하·인발·수평 시험이 각각 무엇을 재는지, 그리고 측정한 하중-침하 곡선에서 항복하중과 극한하중을 어떤 기준으로 읽어 내는지까지 써야 '결과의 해석(평가)'에 답한 것이 된다. 해석 부분은 Davisson 오프셋 한계선으로 극한하중을 구하는 계산 예로 보인다.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2 data-ke-size="size26">오늘의 문제</h2>
 <p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 기초·흙막이(말뚝기초) / 유형: 논술형 / 관련 기출: 2022년 제128회 4교시 2번</strong></p>

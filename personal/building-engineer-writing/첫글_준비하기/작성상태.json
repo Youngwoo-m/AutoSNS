@@ -11,7 +11,7 @@
     "합격": "100점 만점에 60점 이상",
     "출제기준": "2023.1.1~2027.12.31"
   },
-  "친구요청": "https://geoai-na.netlify.app/building-questions/ — 2026-10-28 Netlify 배포(200, 폼 building-engineer-questions 등록), make_draft.py --req-live 로 글 맨 위 링크·안내 문장 넣어 182 반영. 매일 밤 11시 20분 launchd com.smuds.claude.building-friend",
+  "친구요청": "https://geoai-na.web.app/building-questions/ — 2026-10-28 Netlify 배포(200, 폼 building-engineer-questions 등록), make_draft.py --req-live 로 글 맨 위 링크·안내 문장 넣어 182 반영. 매일 밤 11시 20분 launchd com.smuds.claude.building-friend",
   "기출분석": {
     "범위": "2022~2026 제126~140회 15회분",
     "문항": 465,

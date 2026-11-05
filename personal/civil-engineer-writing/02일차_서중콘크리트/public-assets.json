@@ -5,11 +5,11 @@
     "build_id": null,
     "state": "ready",
     "name": "geoai-na",
-    "url": "http://geoai-na.netlify.app",
-    "ssl_url": "https://geoai-na.netlify.app",
+    "url": "http://geoai-na.web.app",
+    "ssl_url": "https://geoai-na.web.app",
     "admin_url": "https://app.netlify.com/projects/geoai-na",
-    "deploy_url": "http://6ad457af4f529497450e1c36--geoai-na.netlify.app",
-    "deploy_ssl_url": "https://6ad457af4f529497450e1c36--geoai-na.netlify.app",
+    "deploy_url": "http://6ad457af4f529497450e1c36--geoai-na.web.app",
+    "deploy_ssl_url": "https://6ad457af4f529497450e1c36--geoai-na.web.app",
     "created_at": "2026-10-18T05:22:55.640Z",
     "updated_at": "2026-10-18T05:23:03.594Z",
     "user_id": "6a69aebce8abd2a8b8faf64b",
@@ -124,8 +124,8 @@
     "plugin_state": "none",
     "lighthouse_plugin_scores": null,
     "links": {
-      "permalink": "https://6ad457af4f529497450e1c36--geoai-na.netlify.app",
-      "alias": "https://geoai-na.netlify.app",
+      "permalink": "https://6ad457af4f529497450e1c36--geoai-na.web.app",
+      "alias": "https://geoai-na.web.app",
       "branch": null
     },
     "framework": null,
@@ -189,22 +189,22 @@
   },
   "assets": [
     {
-      "url": "https://geoai-na.netlify.app/questions/materials/day10/answer-tracing.pdf",
+      "url": "https://geoai-na.web.app/questions/materials/day10/answer-tracing.pdf",
       "bytes": 208575,
       "sha256_verified": true
     },
     {
-      "url": "https://geoai-na.netlify.app/questions/materials/day10/quality-flow.jpg",
+      "url": "https://geoai-na.web.app/questions/materials/day10/quality-flow.jpg",
       "bytes": 233446,
       "sha256_verified": true
     },
     {
-      "url": "https://geoai-na.netlify.app/civil-questions/materials/day02/answer-tracing.pdf",
+      "url": "https://geoai-na.web.app/civil-questions/materials/day02/answer-tracing.pdf",
       "bytes": 212156,
       "sha256_verified": true
     },
     {
-      "url": "https://geoai-na.netlify.app/civil-questions/materials/day02/curing-flow.jpg",
+      "url": "https://geoai-na.web.app/civil-questions/materials/day02/curing-flow.jpg",
       "bytes": 254075,
       "sha256_verified": true
     }

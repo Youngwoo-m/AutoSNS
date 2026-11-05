@@ -1,0 +1,115 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "_redirects",
+      "_headers",
+      "**/node_modules/**",
+      "firestore.rules",
+      "**/*.md",
+      "functions/**"
+    ],
+    "cleanUrls": false,
+    "trailingSlash": true,
+    "redirects": [
+      {
+        "source": "/ch",
+        "destination": "/links/",
+        "type": 301
+      },
+      {
+        "source": "/channels",
+        "destination": "/links/",
+        "type": 301
+      }
+    ],
+    "headers": [
+      {
+        "source": "/questions/published.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=0, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/questions/**",
+        "headers": [
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "key": "Referrer-Policy",
+            "value": "strict-origin-when-cross-origin"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/fn/hak",
+        "function": {
+          "functionId": "hak",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/wthr",
+        "function": {
+          "functionId": "wthr",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/alerts",
+        "function": {
+          "functionId": "alerts",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/busarr",
+        "function": {
+          "functionId": "busarr",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/kroute",
+        "function": {
+          "functionId": "kroute",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/submit",
+        "function": {
+          "functionId": "submit",
+          "region": "asia-northeast3"
+        }
+      },
+      {
+        "source": "/fn/collect",
+        "function": {
+          "functionId": "collect",
+          "region": "asia-northeast3"
+        }
+      }
+    ]
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

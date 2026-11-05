@@ -16,7 +16,7 @@ PDF_NAME = '09일차_숏크리트리바운드_답안예시_따라쓰기.pdf'
 FIG_NAME = '숏크리트리바운드_원인과대책_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_반발률.png', '수식2_계산예.png', '도식_반발률과_분사량.gif'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day09/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day09/'
 PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
@@ -179,7 +179,7 @@ SOURCES = [
 def body(img_html, f1_html, f2_html, gif_html, pdf_html, banner_html):
     src = ''.join(f'<li><a href="{u}">{t}</a></li>' for t, u in SOURCES)
     return f'''{banner_html}<p>숏크리트 리바운드는 2022~2026년 토목시공기술사 1교시 단답형에서 같은 주제로 세 번 나온 문제다. 답안은 반발률을 정의하는 식 하나, 재료·배합과 타설 방법·순서·시공면으로 나눈 원인, 원인과 짝을 맞춘 저감대책, 반발재 처리와 측정 방법으로 짠다. 터널표준시방서(2015)는 반발률의 상한값을 정하지 않고(KCS 27 30 00은 확인한 발췌본 기준으로 같다) 측정 방법과 시공 원칙을 정하므로, 수치는 출처를 밝혀 실측 사례로만 쓴다.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2 data-ke-size="size26">오늘의 문제</h2>
 <p><strong>시험 종목: 토목시공기술사 / 과목(학습 분류): 터널(숏크리트) / 유형: 단답형 / 관련 기출: 2026년 제140회 1교시 7번, 2024년 제134회 1교시 9번, 2022년 제126회 1교시 7번</strong></p>

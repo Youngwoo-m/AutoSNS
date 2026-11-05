@@ -23,7 +23,8 @@ from common import log  # noqa: E402
 import tistory_crosspost as tc  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-OLD, NEW = "SMUDS-m/geoai-assets", "Youngwoo-m/geoai-assets"
+OLD = os.environ.get("REWRITE_OLD", "SMUDS-m/geoai-assets")
+NEW = os.environ.get("REWRITE_NEW", "Youngwoo-m/geoai-assets")  # 예: REWRITE_OLD=geoai-na.netlify.app REWRITE_NEW=geoai-na.web.app
 BK = os.path.join(ROOT, "backups", f"asset_urls_{datetime.date.today():%Y%m%d}", "tistory")
 
 
@@ -35,7 +36,7 @@ def public_count(n):
         return n, -1, -1
 
 
-def find_posts(last=200):
+def find_posts(last=int(os.environ.get("REWRITE_LAST", "200"))):
     with concurrent.futures.ThreadPoolExecutor(8) as ex:
         rs = list(ex.map(public_count, range(1, last + 1)))
     return [n for n, o, _ in rs if o > 0]

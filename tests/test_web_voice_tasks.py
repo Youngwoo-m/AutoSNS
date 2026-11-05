@@ -1,0 +1,201 @@
+"""임시 저장소·가짜 Voicebox 전송으로 HTTP 전체 경계를 검증한다."""
+import json
+from pathlib import Path
+import tempfile
+import threading
+import unittest
+from unittest.mock import patch
+
+from tests.test_web_execution_server import server_module, APP, NoSocketServer
+from tests import test_web_server as server_fixture
+from tests.operations.test_voice_tasks import FakeClient, FakeProbe, PROFILE, SCRIPT, make_wav
+from common.operations.content_store import ContentStore
+from common.operations.voice_tasks import VoiceTaskStore, VoiceTaskService
+from common.operations.voicebox_client import LocalVoiceboxClient
+
+
+class VoiceHTTPTests(unittest.TestCase):
+    request = server_fixture.WebServerTests.request
+    login = server_fixture.WebServerTests.login
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name) / 'workspace'
+        self.content = ContentStore(self.root)
+        self.content.initialize()
+        self.item = self.content.create('personal', dict(title='음성 시험', kind='short', original='원본', variants=[], sources=[]))
+        self.store = VoiceTaskStore(self.root)
+        self.store.initialize()
+        self.client = FakeClient()
+        self.service = VoiceTaskService(self.store, self.content, self.client, profile_id=PROFILE, enabled=True, probe=FakeProbe())
+        self.server = server_module.create_server(source_root=Path(self.tmp.name)/'source', workspace_root=self.root,
+            web_root=APP/'web', auth_backend=server_fixture.FakeAuth(), voice_task_service=self.service)
+        thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(lambda: (self.server.shutdown(), self.server.server_close(), thread.join()))
+        self.route = '/api/v2/contents/' + self.item['id'] + '/voice-tasks'
+        self.body = dict(expected_revision=1, script=SCRIPT, seed=14005)
+
+    def test_auth_origin_schema_and_disabled_are_before_native_calls(self):
+        self.assertEqual(self.request(self.route, 'POST', self.body)[0], 401)
+        cookie = self.login()
+        self.assertEqual(self.request(self.route, 'POST', self.body, {**cookie, 'Origin':'https://evil.example'})[0], 403)
+        for field in ('profile_id', 'host', 'output_path'):
+            self.assertEqual(self.request(self.route, 'POST', {**self.body, field:'untrusted'}, cookie)[0], 400)
+        self.server.voice_task_service = None
+        self.assertEqual(self.request(self.route, 'POST', self.body, cookie)[0], 503)
+        self.assertEqual(self.client.ready_calls, 0)
+        self.assertEqual(self.client.generate_calls, [])
+
+    def test_create_resume_replay_and_private_projection(self):
+        cookie = self.login()
+        status, _, raw = self.request('/api/v2/voicebox/capabilities', headers=cookie)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(raw)['readiness'], 'not_checked')
+        self.assertEqual(self.client.ready_calls, 0)
+        status, _, raw = self.request(self.route, 'POST', self.body, cookie)
+        self.assertEqual(status, 200)
+        pending = json.loads(raw)
+        self.assertEqual(pending['state'], 'pending')
+        route = '/api/v2/voice-tasks/' + pending['task_id']
+        status, _, raw = self.request(route + '/resume', 'POST', {}, cookie)
+        self.assertEqual(status, 200)
+        completed = json.loads(raw)
+        self.assertEqual(completed['state'], 'completed')
+        self.assertEqual(completed['review_status'], 'not_checked')
+        self.assertEqual(completed['output_revision'], 2)
+        self.assertEqual(self.content.get(self.item['id'], 1)['original'], '원본')
+        self.assertEqual(len(self.content.get(self.item['id'])['assets']), 1)
+        self.assertEqual(json.loads(self.request(self.route, 'POST', self.body, cookie)[2]), completed)
+        self.assertEqual(json.loads(self.request(route, headers=cookie)[2]), completed)
+        listed = self.request(self.route + '?revision=1', headers=cookie)
+        self.assertEqual(listed[0], 200)
+        self.assertEqual(json.loads(listed[2])['items'], [completed])
+        self.assertNotIn(PROFILE.encode(), listed[2])
+        self.assertNotIn(SCRIPT.encode(), listed[2])
+        self.assertNotIn(str(self.root).encode(), listed[2])
+        self.assertEqual(len(self.client.generate_calls), 1)
+
+    def test_profile_change_blocks_pending_resume_without_native_or_private_error(self):
+        cookie=self.login()
+        status,_,raw=self.request(self.route,'POST',self.body,cookie)
+        self.assertEqual(status,200);pending=json.loads(raw)
+        before=self.store.get_row(pending['task_id'])
+        other=VoiceTaskService(self.store,self.content,self.client,profile_id='different-profile',enabled=True,probe=FakeProbe())
+        self.server.voice_task_service=other
+        route='/api/v2/voice-tasks/'+pending['task_id']+'/resume'
+        status,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(status,409)
+        self.assertEqual(self.client.wait_calls,[]);self.assertEqual(self.client.audio_calls,[])
+        self.assertEqual(self.store.get_row(pending['task_id']),before)
+        self.assertNotIn(PROFILE.encode(),raw);self.assertNotIn(b'different-profile',raw)
+        self.server.voice_task_service=self.service
+        self.assertEqual(self.request(route,'POST',{},cookie)[0],200)
+
+    def test_mismatched_store_rejected_before_socket(self):
+        other = VoiceTaskService(VoiceTaskStore(Path(self.tmp.name)/'other'), self.content,
+            self.client, profile_id=PROFILE, enabled=True, probe=FakeProbe())
+        with patch.object(server_module, '_WebServer', NoSocketServer), self.assertRaises(ValueError):
+            server_module.create_server(source_root=Path(self.tmp.name)/'source', workspace_root=self.root,
+                web_root=APP/'web', auth_backend=server_fixture.FakeAuth(), voice_task_service=other)
+
+    def test_installed_generating_status_keeps_id_and_does_not_repeat_generate(self):
+        calls=[];status={'value':'generating'}
+        def transport(method,path,body=None):
+            calls.append((method,path))
+            payload={'/profiles':[{'id':PROFILE}],'/generate':{'id':'generation1','status':'generating'},
+                     '/history/generation1':{'id':'generation1','status':status['value']}}
+            return (200,{},make_wav() if path=='/audio/generation1' else json.dumps(payload[path]).encode())
+        self.service.client=LocalVoiceboxClient(PROFILE,transport=transport)
+        cookie=self.login()
+        code,_,raw=self.request(self.route,'POST',self.body,cookie)
+        self.assertEqual(code,200);pending=json.loads(raw)
+        self.assertEqual(pending['state'],'pending');self.assertEqual(pending['generation_id'],'generation1')
+        route='/api/v2/voice-tasks/'+pending['task_id']+'/resume'
+        code,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(json.loads(raw)['state'],'pending')
+        status['value']='completed'
+        code,_,raw=self.request(route,'POST',{},cookie)
+        self.assertEqual(json.loads(raw)['state'],'completed')
+        self.assertEqual(sum(method=='POST' for method,_ in calls),1)
+
+    def test_real_client_protocol_with_durable_service(self):
+        calls = []
+        def transport(method, path, body=None):
+            calls.append((method, path, body))
+            data = {'/profiles':[{'id':PROFILE}], '/generate':{'id':'generation1','status':'pending'},
+                    '/history/generation1':{'id':'generation1','status':'completed'}}
+            return (200, {}, make_wav() if path == '/audio/generation1' else json.dumps(data[path]).encode())
+        self.service.client = LocalVoiceboxClient(PROFILE, transport=transport)
+        first = self.service.create(self.item['id'], 1, SCRIPT)
+        final = self.service.resume(first['task_id'])
+        self.assertEqual(final['state'], 'completed')
+        self.assertEqual(self.service.create(self.item['id'], 1, SCRIPT), final)
+        posts = [call for call in calls if call[0] == 'POST']
+        self.assertEqual(len(posts), 1)
+        payload = json.loads(posts[0][2])
+        self.assertEqual(payload['profile_id'], PROFILE)
+        self.assertEqual(payload['engine'], 'qwen')
+        self.assertEqual(payload['text'], SCRIPT)
+
+    def test_real_client_resume_checks_once_and_persists_terminal_failure(self):
+        calls = []
+        status = ['running']
+        def transport(method, path, body=None):
+            calls.append((method, path))
+            payload = ([{'id':PROFILE}] if path == '/profiles' else
+                       {'id':'generation2','status':'pending' if path == '/generate' else status[0]})
+            return 200, {}, json.dumps(payload).encode()
+        self.service.client = LocalVoiceboxClient(PROFILE, transport=transport,
+            sleep=lambda _: self.fail('웹 상태 확인에서 대기하지 않아야 함'))
+        row = self.service.create(self.item['id'], 1, SCRIPT)
+        self.assertEqual(self.service.resume(row['task_id'])['state'], 'pending')
+        self.assertEqual(calls.count(('GET','/history/generation2')), 1)
+        status[0] = 'failed'
+        failed = self.service.resume(row['task_id'])
+        self.assertEqual(failed['state'], 'failed')
+        before = list(calls)
+        self.assertEqual(self.service.resume(row['task_id']), failed)
+        self.assertEqual(calls, before)
+
+    def recovery_candidate(self, **changes):
+        return dict(id='existing1',status='completed',profile_id=PROFILE,text=SCRIPT,seed=14005,
+                    language='ko',engine='qwen',model_size='0.6B',**changes)
+
+    def unknown_task(self):
+        self.client.generate_error=TimeoutError()
+        row=self.service.create(self.item['id'],1,SCRIPT)
+        self.assertEqual(row['state'],'unknown')
+        return row
+
+    def test_recovery_preview_confirm_and_resume_are_separate_without_generation(self):
+        row=self.unknown_task();native_posts=len(self.client.generate_calls);reads=[]
+        self.client.inspect_generation=lambda value:(reads.append(value) or self.recovery_candidate())
+        route='/api/v2/voice-tasks/'+row['task_id'];cookie=self.login()
+        status,_,raw=self.request(route+'/recovery-preview','POST',{'generation_id':'existing1'},cookie)
+        self.assertEqual(status,200);preview=json.loads(raw)
+        self.assertEqual(self.store.get(row['task_id'])['state'],'unknown')
+        self.assertNotIn(PROFILE.encode(),raw);self.assertNotIn(SCRIPT.encode(),raw)
+        body=dict(generation_id='existing1',recovery_fingerprint=preview['recovery_fingerprint'])
+        status,_,raw=self.request(route+'/recover','POST',body,cookie)
+        self.assertEqual(status,200);self.assertEqual(json.loads(raw)['state'],'pending')
+        self.assertEqual(reads,['existing1','existing1']);self.assertEqual(self.client.audio_calls,[])
+        self.assertEqual(len(self.client.generate_calls),native_posts)
+        replay=self.request(route+'/recover','POST',body,cookie)
+        self.assertEqual(replay[0],200);self.assertEqual(replay[2],raw)
+        self.assertEqual(self.request(route+'/resume','POST',{},cookie)[0],200)
+        self.assertEqual(len(self.client.generate_calls),native_posts)
+
+    def test_recovery_auth_schema_disabled_and_mismatch_preserve_unknown(self):
+        row=self.unknown_task();route='/api/v2/voice-tasks/'+row['task_id'];reads=[]
+        self.client.inspect_generation=lambda value:(reads.append(value) or {**self.recovery_candidate(),'text':'다른 대본'})
+        body={'generation_id':'existing1'}
+        self.assertEqual(self.request(route+'/recovery-preview','POST',body)[0],401)
+        cookie=self.login()
+        self.assertEqual(self.request(route+'/recovery-preview','POST',{**body,'profile_id':'other'},cookie)[0],400)
+        self.assertEqual(reads,[])
+        self.assertEqual(self.request(route+'/recovery-preview','POST',body,cookie)[0],409)
+        self.assertEqual(self.store.get(row['task_id'])['state'],'unknown')
+        self.server.voice_task_service=None
+        self.assertEqual(self.request(route+'/recover','POST',dict(generation_id='existing1',recovery_fingerprint='a'*64),cookie)[0],503)

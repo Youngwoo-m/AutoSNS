@@ -1,0 +1,2061 @@
+{
+  "schema_version": 1,
+  "status": "legacy_only_no_cutover",
+  "root": "worktree",
+  "source_audit": "docs/audits/2026-10-30-live-entrypoint-readiness.md",
+  "operations_baseline_sha256": "bca5e9cd15fd3987d6dbf9f433a049578c0fae7a2af0d3c94da98c5de87a83cf",
+  "crosspost_baseline_sha256": "9abca6063ec91aba0044714a18e143fa6fa131ddbda3854d6b32a6c739d0c7c1",
+  "entrypoints": [
+    {
+      "action_key": [
+        "dept",
+        "youtube",
+        "shorts_weekly"
+      ],
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "caller_id": "legacy.console.dept.youtube.shorts_weekly",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/youtube-shorts-auto/run.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "youtube",
+        "career_publish"
+      ],
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "caller_id": "legacy.console.dept.youtube.career_publish",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/youtube-shorts-auto/run_career_publish.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "youtube",
+        "caption_backfill"
+      ],
+      "job_ids": [
+        "captionbackfill.daily"
+      ],
+      "caller_id": "legacy.console.dept.youtube.caption_backfill",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/youtube-shorts-auto/run_caption_backfill.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "instagram",
+        "cards_weekly"
+      ],
+      "job_ids": [
+        "instacards.weekly"
+      ],
+      "caller_id": "legacy.console.dept.instagram.cards_weekly",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/insta-cardnews/run.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "instagram",
+        "caption_autofix"
+      ],
+      "job_ids": [
+        "captionautofix.daily"
+      ],
+      "caller_id": "legacy.console.dept.instagram.caption_autofix",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/insta-cardnews/run_caption_autofix.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "naver_weekly"
+      ],
+      "job_ids": [
+        "naverblog.weekly"
+      ],
+      "caller_id": "legacy.console.dept.naver_blog.naver_weekly",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/naver-blog-auto/run.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "career_series"
+      ],
+      "job_ids": [
+        "blogcareer.daily"
+      ],
+      "caller_id": "legacy.console.dept.naver_blog.career_series",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/naver-blog-auto/run_career_series.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "naver_jobs"
+      ],
+      "job_ids": [
+        "naverjobs.weekly"
+      ],
+      "caller_id": "legacy.console.dept.naver_blog.naver_jobs",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/naver-blog-auto/run_jobs.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "tiktok",
+        "tiktok_queue"
+      ],
+      "job_ids": [
+        "tiktok.queue"
+      ],
+      "caller_id": "legacy.console.dept.tiktok.tiktok_queue",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/youtube-shorts-auto/run_tiktok_queue.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "x",
+        "x_promo"
+      ],
+      "job_ids": [
+        "xpromo.daily"
+      ],
+      "caller_id": "legacy.console.dept.x.x_promo",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/youtube-shorts-auto/run_x_promo.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "geoai_morning"
+      ],
+      "job_ids": [
+        "geoai.daily"
+      ],
+      "caller_id": "legacy.console.personal.blogger.geoai_morning",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/naver-blog-auto/run_geoai.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "geoai_evening"
+      ],
+      "job_ids": [
+        "geoai.evening"
+      ],
+      "caller_id": "legacy.console.personal.blogger.geoai_evening",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → dept/naver-blog-auto/run_geoai_evening.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "tistory",
+        "tistory"
+      ],
+      "job_ids": [
+        "tistory"
+      ],
+      "caller_id": "legacy.console.personal.tistory.tistory",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py → personal/naver-blog-auto/run_tistory.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "blogger",
+        "publish"
+      ],
+      "job_ids": [
+        "console.dept.blogger"
+      ],
+      "caller_id": "legacy.console.dept.blogger.publish",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py:publish_call/run_publish",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "blogger",
+        "publish-cli"
+      ],
+      "job_ids": [
+        "console.dept.blogger"
+      ],
+      "caller_id": "legacy.console.dept.blogger.publish-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/publishers.py:main",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "publish"
+      ],
+      "job_ids": [
+        "console.dept.naver_blog"
+      ],
+      "caller_id": "legacy.console.dept.naver_blog.publish",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py:publish_call/run_publish",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "publish-cli"
+      ],
+      "job_ids": [
+        "console.dept.naver_blog"
+      ],
+      "caller_id": "legacy.console.dept.naver_blog.publish-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/publishers.py:main",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "x",
+        "publish"
+      ],
+      "job_ids": [
+        "console.dept.x"
+      ],
+      "caller_id": "legacy.console.dept.x.publish",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py:publish_call/run_publish",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "x",
+        "publish-cli"
+      ],
+      "job_ids": [
+        "console.dept.x"
+      ],
+      "caller_id": "legacy.console.dept.x.publish-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/publishers.py:main",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "publish"
+      ],
+      "job_ids": [
+        "console.personal.blogger"
+      ],
+      "caller_id": "legacy.console.personal.blogger.publish",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/server.py:publish_call/run_publish",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "publish-cli"
+      ],
+      "job_ids": [
+        "console.personal.blogger"
+      ],
+      "caller_id": "legacy.console.personal.blogger.publish-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": true,
+      "reason": "leaf/caller별 관문 연결 수락 전",
+      "file": "ax-console/app/publishers.py:main",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "survey-daily"
+      ],
+      "job_ids": [
+        "claude.survey-daily"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.survey-daily",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh survey-daily",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "survey-shorts"
+      ],
+      "job_ids": [
+        "claude.survey-shorts"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.survey-shorts",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh survey-shorts",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "civil-daily"
+      ],
+      "job_ids": [
+        "claude.civil-daily"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.civil-daily",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh civil-daily",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "survey-friend"
+      ],
+      "job_ids": [
+        "claude.survey-friend"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.survey-friend",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh survey-friend",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "civil-friend"
+      ],
+      "job_ids": [
+        "claude.civil-friend"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.civil-friend",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh civil-friend",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "building-daily"
+      ],
+      "job_ids": [
+        "claude.building-daily"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.building-daily",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh building-daily",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "building-friend"
+      ],
+      "job_ids": [
+        "claude.building-friend"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.building-friend",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh building-friend",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "safety-daily"
+      ],
+      "job_ids": [
+        "claude.safety-daily"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.safety-daily",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh safety-daily",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "safety-friend"
+      ],
+      "job_ids": [
+        "claude.safety-friend"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.safety-friend",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh safety-friend",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "safekorea"
+      ],
+      "job_ids": [
+        "claude.safekorea"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.safekorea",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh safekorea",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "claude",
+        "nordic"
+      ],
+      "job_ids": [
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.launchd.personal.claude.nordic",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "AX_HOUR별 모델/회차와 자율 발행 도구 미분해",
+      "file": "personal/claude-jobs/run_claude_job.sh nordic",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "geoai.daily"
+      ],
+      "job_ids": [
+        "geoai.daily"
+      ],
+      "caller_id": "legacy.launchd.personal.blogger.geoai.daily",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "다중 대상/큐 부수효과 미분해",
+      "file": "dept/naver-blog-auto/run_geoai.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "blogger",
+        "geoai.evening"
+      ],
+      "job_ids": [
+        "geoai.evening"
+      ],
+      "caller_id": "legacy.launchd.personal.blogger.geoai.evening",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "다중 대상/큐 부수효과 미분해",
+      "file": "dept/naver-blog-auto/run_geoai_evening.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "naver_blog",
+        "naverjobs.weekly"
+      ],
+      "job_ids": [
+        "naverjobs.weekly"
+      ],
+      "caller_id": "legacy.launchd.dept.naver_blog.naverjobs.weekly",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "다중 대상/큐 부수효과 미분해",
+      "file": "dept/naver-blog-auto/run_jobs.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "tiktok",
+        "tiktok.queue"
+      ],
+      "job_ids": [
+        "tiktok.queue"
+      ],
+      "caller_id": "legacy.launchd.dept.tiktok.tiktok.queue",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "다중 대상/큐 부수효과 미분해",
+      "file": "dept/youtube-shorts-auto/run_tiktok_queue.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "youtube",
+        "disastershorts.crosspost"
+      ],
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "caller_id": "legacy.launchd.dept.youtube.disastershorts.crosspost",
+      "source": "launchd",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "다중 대상/큐 부수효과 미분해",
+      "file": "dept/disaster-shorts/tools/run_crosspost.sh",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "dept",
+        "youtube",
+        "youtube-upload-cli"
+      ],
+      "job_ids": [
+        "ytshorts.weekly",
+        "ytshorts.trigger",
+        "ytcareer.weekly",
+        "disastershorts.weekly"
+      ],
+      "caller_id": "legacy.console.dept.youtube.youtube-upload-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "일반 업로드의 숨은 TikTok add와 내부 caller 분해 필요",
+      "file": "dept/youtube-shorts-auto/youtube_upload.py (__main__)",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "youtube",
+        "youtube-upload-cli"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.youtube.youtube-upload-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "일반 CLI edition으로 개인 업로드 가능; 개인 내부 caller 미분해",
+      "file": "dept/youtube-shorts-auto/youtube_upload.py (__main__)",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "youtube",
+        "geoai-short-upload"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.youtube.geoai-short-upload",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "개인 업로드/댓글/삭제와 학과 큐 분해 필요",
+      "file": "dept/youtube-shorts-auto/geoai_short_post.py:main upload",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "youtube",
+        "geoai-short-comment"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.youtube.geoai-short-comment",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "개인 업로드/댓글/삭제와 학과 큐 분해 필요",
+      "file": "dept/youtube-shorts-auto/geoai_short_post.py:main comment",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "youtube",
+        "geoai-short-delete"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.youtube.geoai-short-delete",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "개인 업로드/댓글/삭제와 학과 큐 분해 필요",
+      "file": "dept/youtube-shorts-auto/geoai_short_post.py:main delete",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "youtube",
+        "geoai-short-check"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.youtube.geoai-short-check",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "개인 업로드/댓글/삭제와 학과 큐 분해 필요",
+      "file": "dept/youtube-shorts-auto/geoai_short_post.py:main check",
+      "coverage_status": "owner_fenced_legacy"
+    },
+    {
+      "action_key": [
+        "personal",
+        "tistory",
+        "tistory-post-cli"
+      ],
+      "job_ids": [
+        "tistory",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "caller_id": "legacy.console.personal.tistory.tistory-post-cli",
+      "source": "console",
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "observed_unregistered": false,
+      "reason": "Tistory dry도 브라우저 쓰기 가능; 모든 Claude 내부 caller fence 필요",
+      "file": "personal/naver-blog-auto/tistory_post.py (__main__/main)",
+      "coverage_status": "owner_fenced_legacy"
+    }
+  ],
+  "audit_rows": [
+    {
+      "name": "기존 콘솔 일반 작업",
+      "files": [
+        "ax-console/app/server.py:run_task"
+      ],
+      "job_ids": [
+        "ytshorts.weekly",
+        "ytcareer.weekly",
+        "captionbackfill.daily",
+        "instacards.weekly",
+        "captionautofix.daily",
+        "naverblog.weekly",
+        "blogcareer.daily",
+        "naverjobs.weekly",
+        "tiktok.queue",
+        "xpromo.daily",
+        "geoai.daily",
+        "geoai.evening",
+        "tistory"
+      ],
+      "coverage_status": "owner_fenced_legacy",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "기존 콘솔 예약 생성",
+      "files": [
+        "ax-console/app/server.py:content_approve"
+      ],
+      "job_ids": [
+        "console.dept.blogger",
+        "console.dept.naver_blog",
+        "console.dept.x",
+        "console.personal.blogger"
+      ],
+      "coverage_status": "owner_fenced_legacy",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "기존 콘솔 자동 발행",
+      "files": [
+        "ax-console/app/server.py:run_publish",
+        "ax-console/app/server.py:publish_call"
+      ],
+      "job_ids": [
+        "console.dept.blogger",
+        "console.dept.naver_blog",
+        "console.dept.x",
+        "console.personal.blogger"
+      ],
+      "coverage_status": "owner_fenced_legacy",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "콘솔 Blogger",
+      "files": [
+        "ax-console/app/publishers.py:blogger",
+        "dept/naver-blog-auto/post_blogger.py",
+        "personal/naver-blog-auto/geoai_blogger.py"
+      ],
+      "job_ids": [
+        "console.dept.blogger",
+        "console.personal.blogger"
+      ],
+      "coverage_status": "bypass_pending_leaf_A6",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "콘솔 네이버·X",
+      "files": [
+        "ax-console/app/publishers.py:naver",
+        "ax-console/app/publishers.py:x",
+        "dept/naver-blog-auto/publish_naver.py",
+        "dept/youtube-shorts-auto/x_post.py"
+      ],
+      "job_ids": [
+        "console.dept.naver_blog",
+        "console.dept.x"
+      ],
+      "coverage_status": "bypass_pending_leaf_A6",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "개인 Claude 작업",
+      "files": [
+        "personal/claude-jobs/run_claude_job.sh"
+      ],
+      "job_ids": [
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "coverage_status": "owner_fenced_autonomous_body_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "GeoAI 아침/저녁",
+      "files": [
+        "dept/naver-blog-auto/run_geoai.sh",
+        "dept/naver-blog-auto/run_geoai_evening.sh",
+        "dept/naver-blog-auto/geoai_daily.py"
+      ],
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "coverage_status": "multi_effect_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "학과 채용 블로그",
+      "files": [
+        "dept/naver-blog-auto/run_jobs.sh",
+        "dept/naver-blog-auto/jobs_work24.py",
+        "dept/insta-cardnews/jobs_insta.py",
+        "dept/naver-blog-auto/tistory_jobs.py"
+      ],
+      "job_ids": [
+        "naverjobs.weekly"
+      ],
+      "coverage_status": "multi_account_effect_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "TikTok 큐 실행",
+      "files": [
+        "dept/youtube-shorts-auto/run_tiktok_queue.sh",
+        "dept/youtube-shorts-auto/tiktok_queue.py:main"
+      ],
+      "job_ids": [
+        "tiktok.queue"
+      ],
+      "coverage_status": "direct_queue_bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "개인 숏츠",
+      "files": [
+        "dept/youtube-shorts-auto/geoai_short_post.py:main",
+        "dept/youtube-shorts-auto/geoai_short_post.py:cmd_upload",
+        "dept/youtube-shorts-auto/geoai_short_post.py:cmd_comment",
+        "dept/youtube-shorts-auto/geoai_short_post.py:cmd_delete"
+      ],
+      "job_ids": [
+        "claude.survey-shorts",
+        "claude.survey-daily",
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "coverage_status": "internal_function_bypass_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "일반 YouTube 업로드",
+      "files": [
+        "dept/youtube-shorts-auto/youtube_upload.py:upload",
+        "dept/youtube-shorts-auto/youtube_upload.py:post_top_comment",
+        "dept/youtube-shorts-auto/youtube_upload.py:add_to_playlist"
+      ],
+      "job_ids": [
+        "ytshorts.weekly",
+        "ytshorts.trigger",
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "coverage_status": "internal_function_bypass_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "재난 숏츠 업로드",
+      "files": [
+        "dept/disaster-shorts/tools/publish.py:upload"
+      ],
+      "job_ids": [
+        "disastershorts.weekly"
+      ],
+      "coverage_status": "upload_schedule_private_fallback_queue_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "재난 교차 게시",
+      "files": [
+        "dept/disaster-shorts/tools/run_crosspost.sh",
+        "dept/disaster-shorts/tools/crosspost.py:run",
+        "dept/disaster-shorts/tools/crosspost.py:ensure_public"
+      ],
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "coverage_status": "visibility_four_targets_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "학과 채용 영상",
+      "files": [
+        "dept/youtube-shorts-auto/publish_career.py:_upload",
+        "dept/youtube-shorts-auto/publish_career.py:main"
+      ],
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "coverage_status": "internal_multitarget_bypass_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "학과 주간 뉴스 영상",
+      "files": [
+        "dept/youtube-shorts-auto/run_weekly.py"
+      ],
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "coverage_status": "internal_multitarget_bypass_pending_A7",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "name": "개인 Tistory→네이버",
+      "files": [
+        "personal/naver-blog-auto/tistory_crosspost.py:main"
+      ],
+      "job_ids": [
+        "tistory"
+      ],
+      "coverage_status": "direct_crosspost_bypass_pending_A6",
+      "managed_eligible": false,
+      "inventory_complete": false
+    }
+  ],
+  "internal_callers": [
+    {
+      "file": "dept/youtube-shorts-auto/check_trigger.py:upload",
+      "job_ids": [
+        "ytshorts.trigger"
+      ],
+      "reason": "upload内 TikTok add",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/geoai_video.py:upload/post_top_comment",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "reason": "개인 업로드·댓글",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "personal/naver-blog-auto/tistory_patch.py:tp.main",
+      "job_ids": [
+        "tistory"
+      ],
+      "reason": "main fence 있음; import와 편집 leaf는 A6 미분리",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "personal/civil-engineer-writing/01일차_흙의다짐/숏츠/upload_short.py",
+      "job_ids": [
+        "claude.civil-daily"
+      ],
+      "reason": "별도 직접 Google upload; 미이행 우회",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/backfill_playlist_links.py",
+      "job_ids": [
+        "captionbackfill.daily"
+      ],
+      "reason": "playlist metadata mutation",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/backfill_comments.py",
+      "job_ids": [
+        "captionbackfill.daily"
+      ],
+      "reason": "댓글 mutation",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/backfill_captions.py",
+      "job_ids": [
+        "captionbackfill.daily"
+      ],
+      "reason": "caption mutation",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/make_captions.py",
+      "job_ids": [
+        "ytshorts.weekly",
+        "ytcareer.weekly"
+      ],
+      "reason": "caption insert",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/naver-blog-auto/naver_crosspost_personal.py",
+      "job_ids": [
+        "naverblog.weekly"
+      ],
+      "reason": "naver→blogger",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/naver-blog-auto/blogger_crosspost_personal.py",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "reason": "blogger→tistory",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main",
+      "job_ids": [
+        "tiktok.queue",
+        "ytshorts.weekly",
+        "ytshorts.trigger",
+        "ytcareer.weekly",
+        "geoai.daily",
+        "disastershorts.weekly"
+      ],
+      "reason": "queue add와 submit 직접 호출",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    },
+    {
+      "file": "personal/naver-blog-auto/tistory_post.py:publish/edit_body",
+      "job_ids": [
+        "tistory",
+        "claude.survey-daily",
+        "claude.survey-shorts",
+        "claude.civil-daily",
+        "claude.survey-friend",
+        "claude.civil-friend",
+        "claude.building-daily",
+        "claude.building-friend",
+        "claude.safety-daily",
+        "claude.safety-friend",
+        "claude.safekorea",
+        "claude.nordic"
+      ],
+      "reason": "public main은 fence; 직접 내부 함수와 자율 도구 미분리",
+      "coverage_status": "bypass_pending",
+      "managed_eligible": false,
+      "inventory_complete": false
+    }
+  ],
+  "crossposts": [
+    {
+      "rule_id": "geoai-short.tiktok",
+      "job_ids": [
+        "claude.survey-shorts",
+        "claude.survey-daily"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "4b4023452aa81d4aea0a8304cd201dab8d8df979c80998799ab7455d56bf0a1c"
+    },
+    {
+      "rule_id": "youtube-generic-personal.tiktok",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "7a79ecf34160e370596570d8867fc4afe83673947c8fc617e5b5d7819f9decfe"
+    },
+    {
+      "rule_id": "youtube-generic-dept.tiktok",
+      "job_ids": [
+        "ytshorts.weekly",
+        "ytshorts.trigger"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "abcccd06bf61d503cfced4e499a6186b0650b717fb0956403bba680fc3fa0cdc"
+    },
+    {
+      "rule_id": "geoai.threads",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "c96617b95a4c44910a22eb029f9b346cc64b8e93906162b6ad6246865b910f12"
+    },
+    {
+      "rule_id": "jobs.tistory",
+      "job_ids": [
+        "naverjobs.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "b515ad03522d7469a229f581e6441872c3de40c50bd27ee7a6875324542a32b4"
+    },
+    {
+      "rule_id": "tistory.safeworking",
+      "job_ids": [
+        "tistory"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "eaf702edb55d4009c31bd84142cee56aa2ed507939492af349c5506f116a21ee"
+    },
+    {
+      "rule_id": "naver.blogger",
+      "job_ids": [
+        "naverblog.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "d8769ac2e4f61bcf2e98bf66b42bbefaaafa804b15ab2de48dd840cb6328a23e"
+    },
+    {
+      "rule_id": "blogger.tistory",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "a6511cfab494debf06d2ddb0f817f48abf0ce48e5913518f832e718627355296"
+    },
+    {
+      "rule_id": "geoai.community",
+      "job_ids": [
+        "geoai.daily",
+        "geoai.evening"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "48dbb08d6372e27a08c2aeb9b0ec0d90287973a6a844c282fb39ef5b564f1335"
+    },
+    {
+      "rule_id": "news.naver_blog",
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "47c1eaecb281f866c419c9fa8ddb99c83abf4c60d456046754857cadb3242a0e"
+    },
+    {
+      "rule_id": "news.instagram",
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "b5aa23328db832f1fc136fbca558d1a60811eea9668b7899e92bd673abdf22cc"
+    },
+    {
+      "rule_id": "news.threads",
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "0a8da1012d963f0bfcae07ca9b06bfbe4543557ce2c622b6881d2b8bbb9504bc"
+    },
+    {
+      "rule_id": "news.x",
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "b0ee58053c83aa59b600a8821b9e57c1eccbc3eeb072a85dedafbd4a0c26426d"
+    },
+    {
+      "rule_id": "news.tiktok",
+      "job_ids": [
+        "ytshorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": false,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "c1a6c0882a0ed45fe51f3b8547b29cb2c91b8b9c03469b8c71696410fa2dec31"
+    },
+    {
+      "rule_id": "career.tiktok",
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "353b77ef3c2e84e490268837598e9f705414f19c82819fd6d7b9a6d7e70932ad"
+    },
+    {
+      "rule_id": "career.instagram",
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "d6beb8ecbb94edb42da3e4e4a5114d64ae1c1c081021d6fc3af1aac92574da53"
+    },
+    {
+      "rule_id": "career.threads",
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "a8587221c6ed29da8b40bb6c45c68023b8623fe8ae34333836108eae76fd049f"
+    },
+    {
+      "rule_id": "career.x",
+      "job_ids": [
+        "ytcareer.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "2d396f64cb4b747fb41c42c42157168998b7988a4a051620af1da1ee862d8999"
+    },
+    {
+      "rule_id": "disaster.tiktok",
+      "job_ids": [
+        "disastershorts.weekly"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": true,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "c4b1d6b44fe4df5c84a4f06bbafd4f62e4a86cce8209cff4a147c5285eb710f3"
+    },
+    {
+      "rule_id": "disaster.instagram",
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "94e28f7d331fe0e87814adceffd72477354ca48896229cb4568a9af2adbccce1"
+    },
+    {
+      "rule_id": "disaster.blogger",
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "a2d394c6d72bf3305319207108e43b400a5ccf478a95d4634a1cefe6e649790b"
+    },
+    {
+      "rule_id": "disaster.naver_blog",
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "575489962f64b665d2f6398c7e17f9a838369be4e2ecd38b174e76587b6de22a"
+    },
+    {
+      "rule_id": "disaster.threads",
+      "job_ids": [
+        "disastershorts.crosspost"
+      ],
+      "delivery_owner": "legacy",
+      "enabled": null,
+      "enabled_present": true,
+      "managed_eligible": false,
+      "rule_sha256": "bf2a98c9425f1cfc3528528fc507db11fcef7132d20669ef39fe6b6aee7132fd"
+    }
+  ],
+  "jobs": {
+    "blogcareer.daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.naver_blog.career_series"
+      ],
+      "pending_paths": []
+    },
+    "captionautofix.daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.instagram.caption_autofix"
+      ],
+      "pending_paths": []
+    },
+    "captionbackfill.daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.youtube.caption_backfill"
+      ],
+      "pending_paths": [
+        "dept/youtube-shorts-auto/backfill_playlist_links.py",
+        "dept/youtube-shorts-auto/backfill_comments.py",
+        "dept/youtube-shorts-auto/backfill_captions.py"
+      ]
+    },
+    "claude.building-daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.building-daily",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.building-friend": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.building-friend",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.civil-daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.civil-daily",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/civil-engineer-writing/01일차_흙의다짐/숏츠/upload_short.py",
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.civil-friend": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.civil-friend",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.nordic": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.nordic",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.safekorea": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.safekorea",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.safety-daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.safety-daily",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.safety-friend": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.safety-friend",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.survey-daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.survey-daily",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        [
+          "dept/youtube-shorts-auto/geoai_short_post.py:main",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_upload",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_comment",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_delete"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.survey-friend": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.survey-friend",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "claude.survey-shorts": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.personal.claude.survey-shorts",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/claude-jobs/run_claude_job.sh"
+        ],
+        [
+          "dept/youtube-shorts-auto/geoai_short_post.py:main",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_upload",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_comment",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_delete"
+        ],
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "console.dept.blogger": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.blogger.publish",
+        "legacy.console.dept.blogger.publish-cli"
+      ],
+      "pending_paths": [
+        [
+          "ax-console/app/publishers.py:blogger",
+          "dept/naver-blog-auto/post_blogger.py",
+          "personal/naver-blog-auto/geoai_blogger.py"
+        ]
+      ]
+    },
+    "console.dept.naver_blog": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.naver_blog.publish",
+        "legacy.console.dept.naver_blog.publish-cli"
+      ],
+      "pending_paths": [
+        [
+          "ax-console/app/publishers.py:naver",
+          "ax-console/app/publishers.py:x",
+          "dept/naver-blog-auto/publish_naver.py",
+          "dept/youtube-shorts-auto/x_post.py"
+        ]
+      ]
+    },
+    "console.dept.x": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.x.publish",
+        "legacy.console.dept.x.publish-cli"
+      ],
+      "pending_paths": [
+        [
+          "ax-console/app/publishers.py:naver",
+          "ax-console/app/publishers.py:x",
+          "dept/naver-blog-auto/publish_naver.py",
+          "dept/youtube-shorts-auto/x_post.py"
+        ]
+      ]
+    },
+    "console.personal.blogger": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.personal.blogger.publish",
+        "legacy.console.personal.blogger.publish-cli"
+      ],
+      "pending_paths": [
+        [
+          "ax-console/app/publishers.py:blogger",
+          "dept/naver-blog-auto/post_blogger.py",
+          "personal/naver-blog-auto/geoai_blogger.py"
+        ]
+      ]
+    },
+    "disastershorts.crosspost": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.launchd.dept.youtube.disastershorts.crosspost"
+      ],
+      "pending_paths": [
+        [
+          "dept/disaster-shorts/tools/run_crosspost.sh",
+          "dept/disaster-shorts/tools/crosspost.py:run",
+          "dept/disaster-shorts/tools/crosspost.py:ensure_public"
+        ]
+      ]
+    },
+    "disastershorts.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.youtube.youtube-upload-cli"
+      ],
+      "pending_paths": [
+        [
+          "dept/disaster-shorts/tools/publish.py:upload"
+        ],
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    },
+    "geoai.daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.personal.blogger.geoai_morning",
+        "legacy.launchd.personal.blogger.geoai.daily",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check"
+      ],
+      "pending_paths": [
+        [
+          "dept/naver-blog-auto/run_geoai.sh",
+          "dept/naver-blog-auto/run_geoai_evening.sh",
+          "dept/naver-blog-auto/geoai_daily.py"
+        ],
+        [
+          "dept/youtube-shorts-auto/geoai_short_post.py:main",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_upload",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_comment",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_delete"
+        ],
+        [
+          "dept/youtube-shorts-auto/youtube_upload.py:upload",
+          "dept/youtube-shorts-auto/youtube_upload.py:post_top_comment",
+          "dept/youtube-shorts-auto/youtube_upload.py:add_to_playlist"
+        ],
+        "dept/youtube-shorts-auto/geoai_video.py:upload/post_top_comment",
+        "dept/naver-blog-auto/blogger_crosspost_personal.py",
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    },
+    "geoai.evening": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.personal.blogger.geoai_evening",
+        "legacy.launchd.personal.blogger.geoai.evening",
+        "legacy.console.personal.youtube.youtube-upload-cli",
+        "legacy.console.personal.youtube.geoai-short-upload",
+        "legacy.console.personal.youtube.geoai-short-comment",
+        "legacy.console.personal.youtube.geoai-short-delete",
+        "legacy.console.personal.youtube.geoai-short-check"
+      ],
+      "pending_paths": [
+        [
+          "dept/naver-blog-auto/run_geoai.sh",
+          "dept/naver-blog-auto/run_geoai_evening.sh",
+          "dept/naver-blog-auto/geoai_daily.py"
+        ],
+        [
+          "dept/youtube-shorts-auto/geoai_short_post.py:main",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_upload",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_comment",
+          "dept/youtube-shorts-auto/geoai_short_post.py:cmd_delete"
+        ],
+        [
+          "dept/youtube-shorts-auto/youtube_upload.py:upload",
+          "dept/youtube-shorts-auto/youtube_upload.py:post_top_comment",
+          "dept/youtube-shorts-auto/youtube_upload.py:add_to_playlist"
+        ],
+        "dept/youtube-shorts-auto/geoai_video.py:upload/post_top_comment",
+        "dept/naver-blog-auto/blogger_crosspost_personal.py"
+      ]
+    },
+    "instacards.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.instagram.cards_weekly"
+      ],
+      "pending_paths": []
+    },
+    "naverblog.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.naver_blog.naver_weekly"
+      ],
+      "pending_paths": [
+        "dept/naver-blog-auto/naver_crosspost_personal.py"
+      ]
+    },
+    "naverjobs.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.naver_blog.naver_jobs",
+        "legacy.launchd.dept.naver_blog.naverjobs.weekly"
+      ],
+      "pending_paths": [
+        [
+          "dept/naver-blog-auto/run_jobs.sh",
+          "dept/naver-blog-auto/jobs_work24.py",
+          "dept/insta-cardnews/jobs_insta.py",
+          "dept/naver-blog-auto/tistory_jobs.py"
+        ]
+      ]
+    },
+    "tiktok.queue": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.tiktok.tiktok_queue",
+        "legacy.launchd.dept.tiktok.tiktok.queue"
+      ],
+      "pending_paths": [
+        [
+          "dept/youtube-shorts-auto/run_tiktok_queue.sh",
+          "dept/youtube-shorts-auto/tiktok_queue.py:main"
+        ],
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    },
+    "tistory": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.personal.tistory.tistory",
+        "legacy.console.personal.tistory.tistory-post-cli"
+      ],
+      "pending_paths": [
+        [
+          "personal/naver-blog-auto/tistory_crosspost.py:main"
+        ],
+        "personal/naver-blog-auto/tistory_patch.py:tp.main",
+        "personal/naver-blog-auto/tistory_post.py:publish/edit_body"
+      ]
+    },
+    "xpromo.daily": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.x.x_promo"
+      ],
+      "pending_paths": []
+    },
+    "ytcareer.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.youtube.career_publish",
+        "legacy.console.dept.youtube.youtube-upload-cli"
+      ],
+      "pending_paths": [
+        [
+          "dept/youtube-shorts-auto/publish_career.py:_upload",
+          "dept/youtube-shorts-auto/publish_career.py:main"
+        ],
+        "dept/youtube-shorts-auto/make_captions.py",
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    },
+    "ytshorts.trigger": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.youtube.youtube-upload-cli"
+      ],
+      "pending_paths": [
+        [
+          "dept/youtube-shorts-auto/youtube_upload.py:upload",
+          "dept/youtube-shorts-auto/youtube_upload.py:post_top_comment",
+          "dept/youtube-shorts-auto/youtube_upload.py:add_to_playlist"
+        ],
+        "dept/youtube-shorts-auto/check_trigger.py:upload",
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    },
+    "ytshorts.weekly": {
+      "managed_eligible": false,
+      "inventory_complete": false,
+      "callers": [
+        "legacy.console.dept.youtube.shorts_weekly",
+        "legacy.console.dept.youtube.youtube-upload-cli"
+      ],
+      "pending_paths": [
+        [
+          "dept/youtube-shorts-auto/youtube_upload.py:upload",
+          "dept/youtube-shorts-auto/youtube_upload.py:post_top_comment",
+          "dept/youtube-shorts-auto/youtube_upload.py:add_to_playlist"
+        ],
+        [
+          "dept/youtube-shorts-auto/run_weekly.py"
+        ],
+        "dept/youtube-shorts-auto/make_captions.py",
+        "dept/youtube-shorts-auto/tiktok_queue.py:add/upload/main"
+      ]
+    }
+  }
+}

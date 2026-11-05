@@ -23,7 +23,7 @@ QURL='https://www.q-net.or.kr/crf005.do?gId=&amp;gSite=Q&amp;id=crf00503s02&amp;
 TIP='<blockquote><p><strong>답안 작성 요령</strong> — '   # 답안 작성 이론은 문어체(2026-10-28 사용자 지정)
 import sys
 REQ_LIVE='--req-live' in sys.argv   # building-questions 페이지가 배포된 뒤에만 켠다(작성기준)
-REQ_TOP='''<h2><a href="https://geoai-na.netlify.app/building-questions/" target="_blank" rel="noopener">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>
+REQ_TOP='''<h2><a href="https://geoai-na.web.app/building-questions/" target="_blank" rel="noopener">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 ''' if REQ_LIVE else ''
 REQ_P=('건축시공기술사 전용 페이지에서 과목을 골라 문제를 보내 주시면 되고, 답안이 올라가면 같은 페이지 목록에서 확인하실 수 있어요.' if REQ_LIVE

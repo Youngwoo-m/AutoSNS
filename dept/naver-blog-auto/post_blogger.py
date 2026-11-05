@@ -16,11 +16,19 @@ from datetime import datetime
 import re
 import urllib.parse
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-from common import BASE_DIR, load_config, log
+def load_config(*args, **kwargs):
+    from common import load_config as implementation
+    return implementation(*args, **kwargs)
+
+def log(*args, **kwargs):
+    from common import log as implementation
+    return implementation(*args, **kwargs)
+
+def build(*args, **kwargs):
+    from googleapiclient.discovery import build as implementation
+    return implementation(*args, **kwargs)
 
 SCOPES = ["https://www.googleapis.com/auth/blogger"]
 # 어느 구글 계정으로 올릴지는 config.blogger.token_file 이 정한다.
@@ -212,3 +220,26 @@ if __name__ == "__main__":
         raise SystemExit("posts/*.json 이 없습니다.")
     d = json.load(open(files[-1], encoding="utf-8"))
     print(json.dumps(publish(d, dry_run="--go" not in sys.argv), ensure_ascii=False))
+
+
+# 관리 leaf: legacy publish/dry·한도 기록·이미지 생성은 호출하지 않는다.
+def managed_prepare(snapshot, config_view):
+    from common.publishers.blog_payloads import build_blog_payload
+    from common.operations.runtime_models import PublicationContext
+    return build_blog_payload('blogger', snapshot, PublicationContext(**config_view['context']))
+
+
+def managed_inspect(target, services):
+    return services.inspect(target)
+
+
+def managed_submit(prepared, target, services):
+    return services.submit(prepared, target)
+
+
+def managed_lookup(target, attempt, services):
+    return services.lookup(target, attempt)
+
+
+def managed_verify(target, remote_id, services):
+    return services.verify(target, remote_id)
