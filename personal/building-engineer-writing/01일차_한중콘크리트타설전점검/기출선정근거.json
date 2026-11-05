@@ -1,0 +1,106 @@
+{
+  "selected": {
+    "id": "132-3-1",
+    "year": 2024,
+    "round": 132,
+    "period": 3,
+    "number": 1,
+    "kind": "논술형",
+    "question": "한중콘크리트 타설 전 현장 점검사항과 초기 동해 방지 대책에 대하여 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+  },
+  "keyword_match_questions": 8,
+  "rounds": [
+    126,
+    129,
+    132,
+    135,
+    136,
+    137,
+    138
+  ],
+  "matches": [
+    {
+      "id": "126-3-5",
+      "year": 2022,
+      "round": 126,
+      "period": 3,
+      "number": 5,
+      "kind": "논술형",
+      "question": "한중콘크리트의 타설시 주의사항 및 양생시 초기양생, 보온양생과 현장 품질관리에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "129-2-1",
+      "year": 2023,
+      "round": 129,
+      "period": 2,
+      "number": 1,
+      "kind": "논술형",
+      "question": "한중콘크리트 타설 시 주의사항과 양생방법에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "132-3-1",
+      "year": 2024,
+      "round": 132,
+      "period": 3,
+      "number": 1,
+      "kind": "논술형",
+      "question": "한중콘크리트 타설 전 현장 점검사항과 초기 동해 방지 대책에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "135-4-2",
+      "year": 2025,
+      "round": 135,
+      "period": 4,
+      "number": 2,
+      "kind": "논술형",
+      "question": "한중콘크리트의 적용범위, 양생 시 품질관리, 시공 시 유의사항에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "136-4-3",
+      "year": 2025,
+      "round": 136,
+      "period": 4,
+      "number": 3,
+      "kind": "논술형",
+      "question": "콘크리트공사 표준시방서 중 일반콘크리트와 한중콘크리트의 품질확보방안을 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "137-4-3",
+      "year": 2025,
+      "round": 137,
+      "period": 4,
+      "number": 3,
+      "kind": "논술형",
+      "question": "콘크리트 표준시방서 [KCS 14 20 40 : 2024]에 따른 한중콘크리트에서 타설과 현장 양생공시체에 대한 개정사항 및 시공 시 유의사항을 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "138-1-11",
+      "year": 2026,
+      "round": 138,
+      "period": 1,
+      "number": 11,
+      "kind": "단답형",
+      "question": "한중 콘크리트 생산 시 관리사항",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "138-2-1",
+      "year": 2026,
+      "round": 138,
+      "period": 2,
+      "number": 1,
+      "kind": "논술형",
+      "question": "한중콘크리트 시공 시 적산온도를 활용한 거푸집 해체 시기 판정과 절차에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+    }
+  ],
+  "limitation": "한중 문자열 일치 집계이며 동일 유형의 공식 출제 비중이 아님",
+  "difference_from_civil_day8": "건축구조체 타설 전 현장점검과 초기동해방지에 집중. 배합계산·적산온도·토목8일차표 반복 제외"
+}

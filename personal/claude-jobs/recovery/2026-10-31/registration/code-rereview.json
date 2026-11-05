@@ -1,0 +1,25 @@
+{
+  "verdict": "approve",
+  "scope": "앞선 R1 수정에 대한 범위 제한 재검토. 등록/원고/실제 API는 범위 밖.",
+  "resolved_findings": [
+    "R1: posts.list view=ADMIN 명시 확인"
+  ],
+  "source_diff": "이전 review-package 대비 helper의 view=ADMIN 키워드 추가 한 건만 확인",
+  "checks": [
+    "두 신규 runner/helper와 install.py AST 파싱 통과",
+    "fake service로 main() 실행: ADMIN 전달 및 LIVE/DRAFT/SCHEDULED 요청 확인",
+    "예약 중복 fixture: publish 미호출, duplicate/SCHEDULED 및 종료 코드 0 확인",
+    "status 누락 fixture: 기존 fail-closed ValueError 유지"
+  ],
+  "spec_compliance": "기존 code-review.json의 나머지 준수 평가 유지. 상한·제외 prefix·잠금·STOP 로직 변경 없음.",
+  "quality": "확인한 구체적 차단 결함이 해결되었으며 scoped 재검토에서 추가 finding 없음.",
+  "concrete_findings": [],
+  "actual_model_calls": 0,
+  "actual_publish_calls": 0,
+  "actual_auth_calls": 0,
+  "launchctl_mutations": 0,
+  "limitations": [
+    "실제 Blogger API 조회 없이 설치된 공식 discovery 계약과 fake fixture로 검증했다.",
+    "원본 code-review.json은 최초 finding 기록으로 보존한다."
+  ]
+}

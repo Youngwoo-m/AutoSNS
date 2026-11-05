@@ -1,0 +1,49 @@
+{
+  "at": "2026-10-31T11:13:21.130091+09:00",
+  "status": "published",
+  "title": "같은 거리인데 값이 다르면? 최소제곱법과 경중률 | 측량및지형공간정보기술사 · 오차론·망조정(학습용 분류) #Shorts",
+  "urls": {
+    "short": "https://www.youtube.com/shorts/WAIYgIWqXe8",
+    "related_blog": "https://na-geoai.tistory.com/42"
+  },
+  "topic": "최소제곱법·경중률",
+  "recovery_for": "과거 미사용 최소제곱 숏츠; 정기 일차카운터 변경 없음",
+  "video_id": "WAIYgIWqXe8",
+  "calc": {
+    "verdict": "ok",
+    "independent_examples": 2
+  },
+  "review": {
+    "verdict": "fix",
+    "fixed": 6,
+    "sources_opened": 6
+  },
+  "humanizer": "2회",
+  "public_check": {
+    "status": "ok",
+    "video_id": "WAIYgIWqXe8",
+    "channel_ok": true,
+    "title": "같은 거리인데 값이 다르면? 최소제곱법과 경중률 | 측량및지형공간정보기술사 · 오차론·망조정(학습용 분류) #Shorts",
+    "privacy": "public",
+    "publish_at": "",
+    "upload_status": "processed",
+    "duration": "PT17S",
+    "url": "https://www.youtube.com/shorts/WAIYgIWqXe8",
+    "owner_comments": []
+  },
+  "oembed": {
+    "http_status": 200,
+    "title": "같은 거리인데 값이 다르면? 최소제곱법과 경중률 | 측량및지형공간정보기술사 · 오차론·망조정(학습용 분류) #Shorts",
+    "author_name": "재난안전과 GeoAI",
+    "author_url": "https://www.youtube.com/@geoai-safety"
+  },
+  "comment": {
+    "status": "commented",
+    "video_id": "WAIYgIWqXe8",
+    "comment_id": "UgwdUk2c0KfnmQ3KPQp4AaABAg",
+    "comment_text": "관련 학습자료(창작 연습문제·따라쓰기 PDF): https://na-geoai.tistory.com/42",
+    "comment_verified": true,
+    "message": ""
+  },
+  "new_paid_api_or_image_credits": 0
+}

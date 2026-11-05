@@ -1,0 +1,69 @@
+{
+  "status": "source_fixes_applied_ready_for_parent_review",
+  "output_dir": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/01일차_한중콘크리트타설전점검",
+  "title": "[건축시공기술사] 한중콘크리트 타설 전 점검과 초기동해 방지 | 하루 한 문제 1일차",
+  "created_artifacts": [
+    "티스토리게시본문.html",
+    "Blogger게시본문.html",
+    "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf",
+    "banner.png",
+    "타설전_점검과양생_흐름도.png",
+    "미리보기.html",
+    "manifest.json",
+    "작성상태.json",
+    "출처메모.md"
+  ],
+  "model": "claude-sonnet-5-5",
+  "provider_mode": "Claude Max OAuth; clean env, tools empty, no MCP, no paid fallback",
+  "humanizer": {
+    "passes": 2,
+    "pass1_patches": 15,
+    "pass2_patches": 8,
+    "first_pass_pointer_correction": "one incorrect pointer resolved by unique exact old text match; content unchanged"
+  },
+  "pdf_clarification": "축약PDF조건을동일Claude본문의완전조건문으로교체(또는/타설완료후명시); 전3쪽재렌더시각확인",
+  "sources": {
+    "qnet_remote_hash_match": true,
+    "qnet_question_visually_checked": true,
+    "kcsc_full_official_blocks": 106,
+    "latest_revision": "2024-12-30",
+    "datalab": "keyword-trend.txt"
+  },
+  "local_qa": {
+    "pdf_pages": 4,
+    "pdf_texts_distinct": true,
+    "all_pages_visually_checked": true,
+    "pdf_gray": "#B8B8B8",
+    "template_grid_preserved": true,
+    "pdf_page_numbers": "1~4쪽",
+    "figure_font": "Pretendard Bold",
+    "banner_font": "Pretendard Bold",
+    "body_tables": 3,
+    "table_cells_center_aligned": true,
+    "ai_banner_disclosure": true,
+    "desktop_preview": true,
+    "mobile_viewport": 390,
+    "mobile_document_width": 390
+  },
+  "paid_api_calls": 0,
+  "gateway_credits": 0,
+  "new_image_generation": 0,
+  "publication_calls": 0,
+  "deployment_calls": 0,
+  "shared_code_changes": 0,
+  "launchd_changes": 0,
+  "pending": [
+    "부모에이전트의 수정사항 최종확인 및필요시재검토",
+    "검토통과자산3개만배포·공개https확인",
+    "axlock경유개인블로그발행과공개검증",
+    "발행확인후카운터·공개목록·실URL갱신"
+  ],
+  "cautions": [
+    "전체출력폴더를배포하지말고manifest.assets의3개파일만공개",
+    "따라쓰기PDF조건값을거푸집·동바리해체강도로혼동하지않음",
+    "정기일차카운터/공개목록/실URL갱신은발행확인후root가수행"
+  ],
+  "source_fix_resolution": "source-fix-resolution.json",
+  "final_pdf_sha256": "37b818b2d8ee8ce92c88d007dc0bdd2ea1eac96299a1c61f9dada7c18024b0b3",
+  "source_review_status": "fix4 적용 완료; source-review.json은 수정전독립검토 원본으로 보존"
+}

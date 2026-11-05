@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-02T08:22:48.462911+09:00",
+  "status": "registered",
+  "label": "com.smuds.friendnotify.hourly",
+  "schedule": "매일 23:00 Asia/Seoul",
+  "hourly_interval_removed": true,
+  "program_unchanged": [
+    "/usr/bin/python3",
+    "/Volumes/USB256/devAPP/AutoSNS/personal/engineer-question-worker/notify_new.py"
+  ],
+  "immediate_run_requested": false,
+  "launchctl": [
+    "state = not running",
+    "runs = 0",
+    "event triggers = {",
+    "stream = com.apple.launchd.calendarinterval",
+    "\"Minute\" => 0",
+    "\"Hour\" => 23",
+    "\"com.apple.launchd.calendarinterval\" = {"
+  ]
+}

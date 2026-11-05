@@ -1,0 +1,44 @@
+{
+  "url": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+  "http": 200,
+  "title": "재난안전과 GeoAI: [건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+  "expected_title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+  "title_match": true,
+  "missing_headings": [],
+  "expected_assets": [
+    "banner.png",
+    "위험성평가_흐름도.png",
+    "02일차_위험성평가_답안예시_따라쓰기.pdf"
+  ],
+  "assets": [
+    {
+      "name": "banner.png",
+      "http": 200,
+      "content_type": "image/png",
+      "bytes": 793287,
+      "sha256": "c11a4705a9e44c3c583b8c038e572c4cd6eb6f23b186c6d54fc01353d332eaec",
+      "matches_local_asset": true,
+      "pdf_magic": null
+    },
+    {
+      "name": "위험성평가_흐름도.png",
+      "http": 200,
+      "content_type": "image/png",
+      "bytes": 74824,
+      "sha256": "b4668860c0a0a5d9cf2900e358d534b3c35f6c2313a3fb81917af6bcef6f2976",
+      "matches_local_asset": true,
+      "pdf_magic": null
+    },
+    {
+      "name": "02일차_위험성평가_답안예시_따라쓰기.pdf",
+      "http": 200,
+      "content_type": "application/pdf",
+      "bytes": 147183,
+      "sha256": "f538bf21a1aef2cd1822b5ba244240ad8f49fc909db68b0e83c229c4110c5c2a",
+      "matches_local_asset": true,
+      "pdf_magic": true
+    }
+  ],
+  "all_assets_match": true,
+  "raw_attachment_markers": false
+}

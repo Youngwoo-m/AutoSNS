@@ -1,0 +1,27 @@
+{
+  "user_authorized": "건축, 안전 정기 자동 실행 등록",
+  "jobs": [
+    {
+      "job": "building-daily",
+      "label": "com.smuds.claude.building-daily",
+      "hours": [
+        9
+      ],
+      "run_at_load": false,
+      "staged_plist": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.building-daily.plist",
+      "target": "/Users/youngwoo/Library/LaunchAgents/com.smuds.claude.building-daily.plist"
+    },
+    {
+      "job": "safety-daily",
+      "label": "com.smuds.claude.safety-daily",
+      "hours": [
+        10
+      ],
+      "run_at_load": false,
+      "staged_plist": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.safety-daily.plist",
+      "target": "/Users/youngwoo/Library/LaunchAgents/com.smuds.claude.safety-daily.plist"
+    }
+  ],
+  "excluded": "friend jobs and all unrelated jobs unchanged",
+  "activation": "after focused launcher review; no kickstart"
+}

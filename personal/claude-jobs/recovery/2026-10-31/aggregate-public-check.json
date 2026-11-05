@@ -1,0 +1,213 @@
+{
+  "checked_at": "2026-10-31T16:21:34.081209+09:00",
+  "status": "all_eight_pass",
+  "public_checks": [
+    {
+      "file": "building-day1-tistory-public-check.json",
+      "url": "https://na-geoai.tistory.com/202",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "타설전_점검과양생_흐름도.png",
+        "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "building-day1-blogger-public-check.json",
+      "url": "https://geoaina.blogspot.com/2026/10/1_01623276063.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "타설전_점검과양생_흐름도.png",
+        "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "building-day2-tistory-public-check.json",
+      "url": "https://na-geoai.tistory.com/204",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "균열_분류와판단_흐름도.png",
+        "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "building-day2-blogger-public-check.json",
+      "url": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "균열_분류와판단_흐름도.png",
+        "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "safety-day1-tistory-public-check.json",
+      "url": "https://na-geoai.tistory.com/203",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "동바리_단계별확인.png",
+        "01일차_강관동바리_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "safety-day1-blogger-public-check.json",
+      "url": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "동바리_단계별확인.png",
+        "01일차_강관동바리_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "safety-day2-tistory-public-check.json",
+      "url": "https://na-geoai.tistory.com/205",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "위험성평가_흐름도.png",
+        "02일차_위험성평가_답안예시_따라쓰기.pdf"
+      ]
+    },
+    {
+      "file": "safety-day2-blogger-public-check.json",
+      "url": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "all_assets_match": true,
+      "raw_attachment_markers": false,
+      "matched_assets": [
+        "banner.png",
+        "위험성평가_흐름도.png",
+        "02일차_위험성평가_답안예시_따라쓰기.pdf"
+      ]
+    }
+  ],
+  "banner_monitor": {
+    "started_at": "2026-10-31T16:14:18.874809+09:00",
+    "minimum_interval_seconds": 60,
+    "maximum_duration_seconds": 600,
+    "attempts": [
+      {
+        "at": "2026-10-31T16:15:29.029547+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:16:29.612715+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:17:30.141463+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:18:30.724021+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:19:32.391728+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:20:33.279481+09:00",
+        "returncode": 1,
+        "all_assets_match": false,
+        "matched_assets": [
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      },
+      {
+        "at": "2026-10-31T16:21:34.081209+09:00",
+        "returncode": 0,
+        "all_assets_match": true,
+        "matched_assets": [
+          "banner.png",
+          "타설전_점검과양생_흐름도.png",
+          "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf"
+        ]
+      }
+    ],
+    "note": "건축 1일차 티스토리 배너 플랫폼 검사 임시 GIF가 남아 있음. 우회·교체·재발행 하지 않음.",
+    "cache_compare_once": {
+      "checked_at": "2026-10-31T16:20:15.699953+09:00",
+      "public_page_only": true,
+      "direct_attachment_url_fetched": false,
+      "results": [
+        {
+          "mode": "normal",
+          "http": 200,
+          "censored_img_count": 1,
+          "tistory_original_img_count": 1,
+          "platform_banner_pending": true
+        },
+        {
+          "mode": "no_cache_once",
+          "http": 200,
+          "censored_img_count": 1,
+          "tistory_original_img_count": 1,
+          "platform_banner_pending": true
+        }
+      ]
+    },
+    "status": "resolved",
+    "resolved_at": "2026-10-31T16:21:34.081209+09:00"
+  }
+}

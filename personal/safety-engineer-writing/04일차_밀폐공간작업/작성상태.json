@@ -1,0 +1,47 @@
+{
+  "day": 4,
+  "status": "published",
+  "title": "[건설안전기술사] 밀폐공간 질식 예방, 산소농도 영향과 작업 프로그램 안전절차 | 하루 한 문제 4일차",
+  "topic": "밀폐공간 작업: 산소농도 저하의 인체 영향, 작업 프로그램 안전절차, 안전점검사항",
+  "question_id": "134-3-3",
+  "field": "화재·폭발·전기·질식",
+  "selection": "밀폐공간 유형 7문항·7회차(127-1-5,128-1-12,129-4-1,130-4-4,134-3-3,137-1-4,139-1-4), 후보 화재감시자 5/5·굴착기 인양 4/4 비교, 상세 기출근거.json",
+  "source_date": "2026-11-02",
+  "model": "claude (Claude Max 구독, 이 세션에서 직접 집필·humanizer 2회 편집)",
+  "humanizer": 2,
+  "calc": {
+    "verdict": "ok",
+    "checked": 19,
+    "fixed": 0
+  },
+  "review": {
+    "verdict": "fix",
+    "rounds": 1,
+    "fixed": 3,
+    "sources_opened": 13
+  },
+  "pdf_pages": 3,
+  "keyword_trend_file": "데이터랩.txt",
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/216",
+    "naver": "https://blog.naver.com/safeworking/224461950169",
+    "blogger": "https://geoaina.blogspot.com/2026/11/4_02135658817.html"
+  },
+  "verification": {
+    "tistory": true,
+    "naver": true,
+    "blogger": true
+  },
+  "pending": [],
+  "pending_recoveries": [],
+  "queue_add_post": true,
+  "deploy_full": true,
+  "updated_at": "2026-11-04T12:53:41.094832+09:00",
+  "manual_blogger_recovery": {
+    "approval_id": "2026-11-04-building4-safety4-5",
+    "public_verified": true,
+    "duplicate_count": 1,
+    "asset_download_verified": false,
+    "verification_note": "공개 본문과 링크 확인. 첨부 서버 연결 시간 초과로 다운로드 해시 재확인 미완료"
+  }
+}

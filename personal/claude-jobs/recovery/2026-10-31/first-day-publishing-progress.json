@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-31T12:30:57.085832+09:00",
+  "authorized": [
+    "건축입문182보완·본문수정",
+    "건축정기1일차신규작성발행",
+    "안전정기1일차신규작성발행",
+    "건축09시·안전10시정기자동실행등록"
+  ],
+  "status": "superseded_by_first_second_day_actual_publication",
+  "owners": {
+    "root": [
+      "publish/deploy",
+      "selective launchd registration",
+      "personal/claude-jobs/run_engineer_daily.py",
+      "personal/claude-jobs/publish_engineer_blogger.py",
+      "personal/claude-jobs/install.py small two-job entry mapping"
+    ],
+    "building_day1_create": "building01 folder in production",
+    "safety_day1_create": "safety01 produced and ownership returned",
+    "building_intro_correct": "intro correction produced and ownership returned",
+    "building_intro_source_final": "intro source in progress; calc119ok",
+    "safety_day1_calc": "safety calc in progress"
+  },
+  "pending": [
+    "building01 final output",
+    "safety calc then independent source",
+    "intro independent source then banner actual HTTPS",
+    "new registration scripts focused independent review before loading",
+    "approved assets only copy/deploy_full+functions preserve/publicdownloadverify",
+    "intro dry/edit182/publicbodyverify",
+    "daily Tistory dry/go sequential/publicPDFchecks",
+    "Blogger guarded helper: existing current3 counted vs cap2, no cap/exclusion changes authorized",
+    "register only two plist, RunAtLoadfalse, next dates Nov1 09/10 if loaded today",
+    "daily/recovery state and public answerlists register+deploy"
+  ],
+  "non_actions": [
+    "friend job activation",
+    "global install.py --load all jobs",
+    "managed6A production activation",
+    "new paid API or image credits",
+    "cap raising or exclusions expansion"
+  ],
+  "registration": "both daily jobs active; first next scheduled Nov1 09/10 KST; no immediate runs",
+  "content": {
+    "intro": "calc119ok/sourcefixresolved/finalbannerHTTPSready; nativeedit auth blocked",
+    "building1": "calc40+scoped39ok/source-final pass/PDF4pages",
+    "safety1": "calc14ok/source-rereview pass/PDF2pages"
+  },
+  "assets": "6 assets deployed including functions; independent HTTP SHA verification report",
+  "login": "dedicated tool timed out after 10min without confirmed login; window closed and profile lock released",
+  "Blogger": "separate engineer-series budget question pending; existing rules unchanged; actual ADMIN dry blocked counted3/cap2",
+  "new_blog_posts_published": 0,
+  "intro_public_edit_saved": false,
+  "updated_at": "2026-10-31T16:25:30.619276+09:00",
+  "current_ledger": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/first-second-day-publishing-progress.json",
+  "note": "로그인 복구 완료, 건축·안전 1·2일차 실제공개. 최신채널·검증상태는 current_ledger 참조"
+}

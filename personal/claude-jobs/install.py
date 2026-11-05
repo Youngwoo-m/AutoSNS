@@ -27,8 +27,11 @@ def main():
     (HERE / 'logs').mkdir(exist_ok=True)
     for j in jobs:
         label = f"com.smuds.claude.{j['key']}"
+        entry = (['/usr/bin/python3', str(HERE / 'run_engineer_daily.py'), j['key']]
+                 if j['key'] in ('building-daily', 'safety-daily') else
+                 ['/bin/bash', str(HERE / 'run_claude_job.sh'), j['key']])
         pl = {'Label': label,
-              'ProgramArguments': ['/bin/bash', str(HERE / 'run_claude_job.sh'), j['key']],
+              'ProgramArguments': entry,
               'WorkingDirectory': str(ROOT),
               'StartCalendarInterval': [{'Hour': h, 'Minute': j.get('minute', 0)} for h in j['hours']],
               'StandardOutPath': str(HERE / 'logs' / f"{j['key']}.launchd.out.log"),

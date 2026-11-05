@@ -1,0 +1,181 @@
+{
+  "verdict": "fix",
+  "summary": "현행 시험 안내는 큐넷과 일치하고, 보관 공식 문제지 전사본에서 12개 기출 사례의 번호·요약을 대조해 불일치를 찾지 못했습니다. 배너 URL 치환과 집계 범위 표현 두 곳을 고친 뒤 발행할 수 있으나, 원격 첨부와 접수폼은 이번 도구에서 재열지 못했습니다.",
+  "issues": [
+    {
+      "severity": "fix",
+      "where": "첫 이미지 src={{BANNER_URL}}",
+      "problem": "검토 대상은 배너 URL 자리표시가 남은 중간 원고이므로 그대로 공개하면 이미지가 표시되지 않습니다.",
+      "fix": "root 예정대로 검증된 공개 HTTPS 이미지 주소로 치환하고 공개 본문에서 표시를 확인하세요. 자리표시 상태로는 배포하지 마세요."
+    },
+    {
+      "severity": "fix",
+      "where": "품질·안전 문제가 늘었어요",
+      "problem": "수치12·12·14·23·22는 품질·안전·환경·유지관리 네 범주를 함께 검색한 값입니다. 소제목이 품질·안전만 증가했다는 해석으로 범위를 좁힙니다.",
+      "fix": "소제목을 품질·안전·환경·유지관리 키워드가 늘었어요 등 실제 집계 범위가 드러나게 바꾸세요. 숫자는 유지하세요."
+    },
+    {
+      "severity": "fix",
+      "where": "시공관리·품질관리 요구16",
+      "problem": "실제 집계규칙은 시공관리|품질관리|중점관리인데 표와 집계 단서는 중점관리 포함을 밝히지 않습니다.",
+      "fix": "집계 단서 문단에 시공관리·품질관리에는 중점관리를 함께 셌다고 덧붙이세요. 숫자는 유지하세요."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0510&jmInfoDivCcd=B0",
+      "opened": true,
+      "supports": "yes",
+      "note": "현행 큐넷 안내에서 정식 시험과목, 매교시100분·총400분, 면접30분정도,60점이상,출제기준2023.1.1~2027.12.31 확인."
+    },
+    {
+      "url": "https://na-geoai.tistory.com/182",
+      "opened": false,
+      "supports": "unknown",
+      "note": "본 검토 web 내부오류·curl DNS실패. 404나삭제판정아님. root의2026-10-31 11:57 KST HTTP200·정확제목확인과12:04보관본문증거를참조해수정범위비교. 실시간본문전체재조회는본에이전트미확인."
+    },
+    {
+      "url": "https://geoai-na.netlify.app/building-questions/",
+      "opened": false,
+      "supports": "unknown",
+      "note": "web 내부오류. 접수폼실동작은이번검토미확인. 원고링크목적지는건축시공전용주소로일치."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q",
+      "opened": false,
+      "supports": "unknown",
+      "note": "web 내부오류. 깨진링크로단정하지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "partly",
+      "note": "제139회 공식문제지 게시물과첨부명확인; 게시일로시행연도를추정하지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "partly",
+      "note": "제138회 공식문제지 게시물과첨부명확인; 게시일로시행연도를추정하지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "partly",
+      "note": "제137회 공식문제지 게시물과첨부명확인; 게시일로시행연도를추정하지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2265625&fileName=%E2%98%85%EC%A0%9C140%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2265625&artlSeq=5274129&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제140회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2257268&fileName=%E2%98%85%EC%A0%9C139%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2257268&artlSeq=5263539&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제139회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2250221&fileName=%E2%98%85%EC%A0%9C138%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2250221&artlSeq=5253529&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제138회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2241424&fileName=%E2%98%85%EC%A0%9C137%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2241424&artlSeq=5242728&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제137회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2209737&fileName=%E2%98%85%EC%A0%9C133%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2209737&artlSeq=5213291&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제133회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2209067&fileName=%E2%98%85%EC%A0%9C132%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2209067&artlSeq=5212827&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제132회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2203707&fileName=%EC%A0%9C128%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2203707&artlSeq=5210580&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제128회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2201775&fileName=%EC%A0%9C126%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%282022%EB%85%84%29.pdf&fileSeq=2201775&artlSeq=5209479&href=0",
+      "opened": false,
+      "supports": "unknown",
+      "note": "제126회. web첨부application/octet-stream미지원또는내부오류, curl원격다운로드실패. 보관PDF SHA256은회차목록과일치; 보관PDF를직접재추출해해당교시·문항과원고요약대조일치. 원격PDF이번재열기성공으로세지않음."
+    }
+  ],
+  "sources_opened": 4,
+  "source_urls_attempted": 15,
+  "notes": [
+    "원고·발행·프로필·유료API·자동실행코드를변경하지않았고 source-review.json만작성했습니다.",
+    "기출12사례를공식보관PDF에서pdfplumber로직접재추출하고해당페이지문항번호·요약을대조해일치확인: 126-3-5,126-4-2,128-3-6,132-3-1,133-2-2,137-4-3,137-4-6,138-2-1,138-3-6,139-3-1,140-3-4,140-4-6. 시행연도는기존회차목록·검산기록에기반하고게시연도로추정하지않음.",
+    "보관15개PDF모두%PDF시그니처및회차목록SHA256일치. 시행연도는기존목록과검산기록을참조했고게시연도로새로추정하지않았습니다.",
+    "공개182보관본문대비a href다중집합동일, 추가숫자0. 삭제숫자는공정·원가·계약오류행값5,15,6,8,5,8,32,14에만해당.28/13대체주장은없습니다.",
+    "본문에공식공종별출제비중·순위가아님,중복허용,차회예측불가,학습우선순위는해석이라는한계가명시되어있습니다.",
+    "입문글이라단일문제풀이용PDF를요구하지않습니다. 5절창작공법A·B목차는답안설계교육용사례여서별도답안목차금지규칙위반으로단정하지않았습니다.",
+    "옛연재예고의별도목차·내부편집규칙은제거됐고,요청링크는맨아래입니다. 허위자격·경력·체험담,건강효과보장,로컬/만료서명링크는발견하지못했습니다.",
+    "시험정보확인에대한출처: [큐넷 건축시공기술사 종목 안내](https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0510&jmInfoDivCcd=B0).",
+    "이판정은원고내용검토이며 자동실행코드 안전성검토또는실행승인이아닙니다."
+  ],
+  "manuscript_sha256": "83158629b3aa53f65c5a64a924386ca8a632500c49e377139ad29cdcd2f10702",
+  "report_path": "GeoAI_NA/claude-jobs/recovery/2026-10-31/building-intro-correction/source-review.json",
+  "local_pdf_direct_extract": [
+    {
+      "id": "126-3-5",
+      "question": "한중콘크리트의 타설시 주의사항 및 양생시 초기양생, 보온양생과 현장 품질관리에 대하여 설명하시오."
+    },
+    {
+      "id": "126-4-2",
+      "question": "중대재해처벌법(중대재해 처벌 등에 관한 법률)에 대해 ‘안전보건관리체계의 구축 및 이행조치’ 사항을 포함하여 설명하시오."
+    },
+    {
+      "id": "128-3-6",
+      "question": "스마트 건설기술의 종류와 건설단계별 적용방안에 대하여 설명하시오."
+    },
+    {
+      "id": "132-3-1",
+      "question": "한중콘크리트 타설 전 현장 점검사항과 초기 동해 방지 대책에 대하여 설명하시오."
+    },
+    {
+      "id": "133-2-2",
+      "question": "스마트 안전장비 지원사업과 건설현장 스마트 안전관리 주요 요소기술 및 단계별 적용방안에 대하여 설명하시오."
+    },
+    {
+      "id": "137-4-3",
+      "question": "콘크리트 표준시방서 [KCS 14 20 40 : 2024]에 따른 한중콘크리트에서 타설과 현장 양생공시체에 대한 개정사항 및 시공 시 유의사항을 설명하시오."
+    },
+    {
+      "id": "137-4-6",
+      "question": "중대재해 처벌 등에 관한 법률에서 중대산업재해의 정의와 적용 범위에 대하여 설명하시오."
+    },
+    {
+      "id": "138-2-1",
+      "question": "한중콘크리트 시공 시 적산온도를 활용한 거푸집 해체 시기 판정과 절차에 대하여 설명하시오."
+    },
+    {
+      "id": "138-3-6",
+      "question": "건설 산업의 생산성 향상과 안전사고 예방을 위한 “AX(AI Transformation) 기반 스마트 건설기술”의 적용 방안에 대하여 설명하시오."
+    },
+    {
+      "id": "139-3-1",
+      "question": "건설현장에서 중대재해 예방을 위한 고위험 공정 안전관리 체계에 대하여 설명하시오."
+    },
+    {
+      "id": "140-3-4",
+      "question": "「중대재해 처벌 등에 관한 법률」상 ‘중대산업재해’와 ‘중대시민재해’에 대하여 설명하시오."
+    },
+    {
+      "id": "140-4-6",
+      "question": "모듈러(Modular) 공법의 장·단점과 종류별 특징에 대하여 설명하시오."
+    }
+  ]
+}

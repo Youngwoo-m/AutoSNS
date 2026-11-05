@@ -1,0 +1,50 @@
+[
+  {
+    "exam": "building",
+    "file": "banner.png",
+    "http": 200,
+    "bytes": 1001017,
+    "content_type": "image/png",
+    "sha256": "b649303f1f0ea8f55542e80594e5ac15e4d8968cdd2eb1e7bcd4a79a95d76472"
+  },
+  {
+    "exam": "building",
+    "file": "균열_분류와판단_흐름도.png",
+    "http": 200,
+    "bytes": 90849,
+    "content_type": "image/png",
+    "sha256": "7f27bc6f77a307108c9848059606d5460baedd2970d65a2aa1090609ed2fd000"
+  },
+  {
+    "exam": "building",
+    "file": "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf",
+    "http": 200,
+    "bytes": 187155,
+    "content_type": "application/pdf",
+    "sha256": "729db2204899834126f3bb8063f842d6754710a8067b6689b4b2abee924a104c"
+  },
+  {
+    "exam": "safety",
+    "file": "banner.png",
+    "http": 200,
+    "bytes": 793287,
+    "content_type": "image/png",
+    "sha256": "c11a4705a9e44c3c583b8c038e572c4cd6eb6f23b186c6d54fc01353d332eaec"
+  },
+  {
+    "exam": "safety",
+    "file": "위험성평가_흐름도.png",
+    "http": 200,
+    "bytes": 74824,
+    "content_type": "image/png",
+    "sha256": "b4668860c0a0a5d9cf2900e358d534b3c35f6c2313a3fb81917af6bcef6f2976"
+  },
+  {
+    "exam": "safety",
+    "file": "02일차_위험성평가_답안예시_따라쓰기.pdf",
+    "http": 200,
+    "bytes": 147183,
+    "content_type": "application/pdf",
+    "sha256": "f538bf21a1aef2cd1822b5ba244240ad8f49fc909db68b0e83c229c4110c5c2a"
+  }
+]

@@ -1,0 +1,93 @@
+{
+  "owner_thread": "01a18f71-f3d8-79e0-9a80-39621851d0e4",
+  "status": "partial_completed_remaining_blocked",
+  "authorization": "2026-10-31 사용자: 지난것까지 검토해서 오늘까지 밀린 발행본이 있으면 지금 게시",
+  "subscription_probe": "clean env claude sonnet tools0: result OK",
+  "friend_sync": {
+    "survey": 0,
+    "civil": 0,
+    "building": 0,
+    "safety": 0
+  },
+  "publish_calls": 0,
+  "new_paid_calls": 0,
+  "candidate_existing": [
+    "building-intro Blogger missing",
+    "safety-intro Blogger missing",
+    "least-squares premade short unused"
+  ],
+  "daily_candidate_not_yet_created": [
+    "building1",
+    "safety1"
+  ],
+  "Blogger": {
+    "status": "blocked_daily_cap_authenticated",
+    "published_new": 0,
+    "quota": {
+      "date": "2026-10-31",
+      "blog_id": "7628821136256904634",
+      "cap": 2,
+      "counted_before": 2,
+      "counted_titles": [
+        "Whitebox 실제 QGIS 실습 12 — 1 m LiDAR DTM 수문 분석: 30 m와 비교",
+        "도로망 분석과 골든타임 | 소방차는 몇 분에 닿나 | GeoAI 기초 37편"
+      ],
+      "excluded_titles": [
+        "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차"
+      ],
+      "candidate": "[건설안전기술사] 건설안전기술사 준비하기",
+      "post_states_checked": [
+        "draft",
+        "scheduled",
+        "live"
+      ]
+    },
+    "safety_manuscript": "safety-Blogger-final.html",
+    "review": "pass",
+    "calc_checked": 53,
+    "publication_insert_calls": 0
+  },
+  "building": {
+    "status": "blocked_review",
+    "reason": "공정·원가·계약 집계 VE 부분일치 오탐"
+  },
+  "short": {
+    "status": "published",
+    "source_premade": "2026-10-29-survey-am",
+    "paid_or_image_generation_calls": 0,
+    "authenticated_history": {
+      "channel": "UCbHDlxMFIackeJRwW2iTYew",
+      "authenticated_uploads_scanned": 103,
+      "has_more": false,
+      "keyword_matches": []
+    },
+    "sha256": "a35932409f21e1d95a7b016336830040172480cabe013658d45b2170818083a3",
+    "seconds": 16.512,
+    "size": "1080x1920",
+    "voice": "edge ko-KR-InJoonNeural +0%",
+    "upload_insert_calls": 1,
+    "reason": "public processed + oembed200 + operator comment verified",
+    "axlock_job": "engineer-least-squares-recovery",
+    "publication_process": "completed",
+    "url": "https://www.youtube.com/shorts/WAIYgIWqXe8",
+    "privacy": "public",
+    "comment_verified": true
+  },
+  "remaining": [
+    {
+      "item": "건설안전 입문 Blogger",
+      "reason": "오늘일일일반몫2/2",
+      "manuscript_review": "pass"
+    },
+    {
+      "item": "건축시공 입문 Blogger",
+      "reason": "집계오탐행삭제사본별도보존·배너/최종검토미완료,일일상한"
+    },
+    {
+      "item": "건축/안전 정기1일차",
+      "reason": "기존미완성원고없음;신규작성·출처·PDF·독립검토가필요"
+    }
+  ],
+  "at": "2026-10-31T11:14:29.961959+09:00",
+  "publication_completed_this_recovery": 1
+}

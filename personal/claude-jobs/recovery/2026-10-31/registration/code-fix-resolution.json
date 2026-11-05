@@ -1,0 +1,6 @@
+{
+  "finding": "Blogger Post.status admin view contract",
+  "fix": "posts.list view=ADMIN explicit; missing status still fail closed",
+  "scope": "one keyword; no quota/prefix changes",
+  "actual_model_or_publish_calls": 0
+}

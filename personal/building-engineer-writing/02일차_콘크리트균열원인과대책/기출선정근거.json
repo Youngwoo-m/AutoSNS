@@ -1,0 +1,355 @@
+{
+  "scope": "2022–2026 제126–140회 15회 465문항, 문자열 후보 집계이며 동일유형 빈도/공식비중 아님",
+  "candidates": [
+    {
+      "topic": "콘크리트 균열",
+      "question_count": 12,
+      "round_count": 10,
+      "questions": [
+        {
+          "id": "126-1-10",
+          "year": 2022,
+          "round": 126,
+          "period": 1,
+          "number": 10,
+          "kind": "단답형",
+          "question": "콘크리트 침하균열(Settlement Crack)",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "127-4-3",
+          "year": 2022,
+          "round": 127,
+          "period": 4,
+          "number": 3,
+          "kind": "논술형",
+          "question": "콘크리트 구조물에 발생하는 균열의 유형별 종류, 원인, 보수·보강 대책에 대하여 설명 하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "130-2-2",
+          "year": 2023,
+          "round": 130,
+          "period": 2,
+          "number": 2,
+          "kind": "논술형",
+          "question": "데크 플레이트 상부의 콘크리트 균열발생 원인과 대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "130-3-2",
+          "year": 2023,
+          "round": 130,
+          "period": 3,
+          "number": 2,
+          "kind": "논술형",
+          "question": "콘크리트 균열 보수공법의 적용 및 시공방법에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "131-4-3",
+          "year": 2023,
+          "round": 131,
+          "period": 4,
+          "number": 3,
+          "kind": "논술형",
+          "question": "콘크리트 공사 후 시간경과에 따라 나타나는 균열을 경화 전, 경화 후 및 내구성 균열로 구분하여 균열의 원인 및 대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "132-4-6",
+          "year": 2024,
+          "round": 132,
+          "period": 4,
+          "number": 6,
+          "kind": "논술형",
+          "question": "철근콘크리트 건축물의 균열 원인과 방지 대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "133-3-5",
+          "year": 2024,
+          "round": 133,
+          "period": 3,
+          "number": 5,
+          "kind": "논술형",
+          "question": "콘크리트의 균열 조사, 보수·보강 방법 및 방지대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "134-3-2",
+          "year": 2024,
+          "round": 134,
+          "period": 3,
+          "number": 2,
+          "kind": "논술형",
+          "question": "준공된 철근콘크리트 구조물의 균열 발생 원인, 보수·보강 공법, 보수·보강 후 품질 검사 방법을 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "136-2-4",
+          "year": 2025,
+          "round": 136,
+          "period": 2,
+          "number": 4,
+          "kind": "논술형",
+          "question": "철근콘크리트조 지하주차장에서 균열과 누수가 발생하는 원인과 방지대책 및 보수 방안에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "137-3-4",
+          "year": 2025,
+          "round": 137,
+          "period": 3,
+          "number": 4,
+          "kind": "논술형",
+          "question": "콘크리트 작업 시 다음에 대하여 설명하시오. (1) 콘크리트면의 균열 발생 시 건설기술진흥법 시행령상 “건설공사 등의 벌점관리기준”에 대하여 설명하시오. (2) (1)항의 대책을 설계, 재료, 시공, 양생 단계로 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "138-2-2",
+          "year": 2026,
+          "round": 138,
+          "period": 2,
+          "number": 2,
+          "kind": "논술형",
+          "question": "수직증축 리모델링 공사 중 콘크리트 구조물의 균열 보수·보강 방법에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "138-4-2",
+          "year": 2026,
+          "round": 138,
+          "period": 4,
+          "number": 2,
+          "kind": "논술형",
+          "question": "매스 콘크리트(Mass Concrete)의 타설전 준비사항, 발생 균열의 종류와 방지대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+        }
+      ],
+      "importance": "균열: 품질·내구성·하자 조사와 시공단계 예방의 공통 원리. 방수: 부위별 하자 예방의 핵심. 흙막이: 안전·주변영향 판단 핵심.",
+      "already_written": false
+    },
+    {
+      "topic": "방수",
+      "question_count": 12,
+      "round_count": 8,
+      "questions": [
+        {
+          "id": "127-2-5",
+          "year": 2022,
+          "round": 127,
+          "period": 2,
+          "number": 5,
+          "kind": "논술형",
+          "question": "밀폐공간에서 도막방수 시공 시, 작업 전(前) 과정의 안전관리 절차에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "128-1-4",
+          "year": 2022,
+          "round": 128,
+          "period": 1,
+          "number": 4,
+          "kind": "단답형",
+          "question": "어스앵커(Earth Anchor)의 홀(Hole) 방수",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "128-1-5",
+          "year": 2022,
+          "round": 128,
+          "period": 1,
+          "number": 5,
+          "kind": "단답형",
+          "question": "실링방수의 백업재 및 본드 브레이커",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "128-2-6",
+          "year": 2022,
+          "round": 128,
+          "period": 2,
+          "number": 6,
+          "kind": "논술형",
+          "question": "방수공사에서 부위별 하자 발생원인 및 대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "129-4-3",
+          "year": 2023,
+          "round": 129,
+          "period": 4,
+          "number": 3,
+          "kind": "논술형",
+          "question": "실링(Sealing)방수에서 실링재의 종류, 백업(Back Up)재, 본드 브레이커(Bond Breaker), 마스킹 테이프(Masking Tape)의 역할과 시공순서별 주의사항에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "131-4-2",
+          "year": 2023,
+          "round": 131,
+          "period": 4,
+          "number": 2,
+          "kind": "논술형",
+          "question": "도막 방수공법 시공 및 품질관리 방안에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "132-3-3",
+          "year": 2024,
+          "round": 132,
+          "period": 3,
+          "number": 3,
+          "kind": "논술형",
+          "question": "복합방수공법의 특성 및 시공 시 유의사항에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "132-4-4",
+          "year": 2024,
+          "round": 132,
+          "period": 4,
+          "number": 4,
+          "kind": "논술형",
+          "question": "지붕층 방수공사 시공 계획 시 고려사항에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "134-3-4",
+          "year": 2024,
+          "round": 134,
+          "period": 3,
+          "number": 4,
+          "kind": "논술형",
+          "question": "지붕층 방수공사 시 고려사항 및 시공하자 발생원인과 방지대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "136-1-10",
+          "year": 2025,
+          "round": 136,
+          "period": 1,
+          "number": 10,
+          "kind": "단답형",
+          "question": "옥상녹화 방수공사",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "138-1-8",
+          "year": 2026,
+          "round": 138,
+          "period": 1,
+          "number": 8,
+          "kind": "단답형",
+          "question": "규산질계 분말형 도포방수",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "138-4-1",
+          "year": 2026,
+          "round": 138,
+          "period": 4,
+          "number": 1,
+          "kind": "논술형",
+          "question": "지하연속벽에서의 어스앵커(Earth anchor) 시공시 다음에 대하여 설명하시오. (1) 누수 경로별 방수처리 (2) 인장시험의 종류 (3) 확인시험시 유의사항",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+        }
+      ],
+      "importance": "균열: 품질·내구성·하자 조사와 시공단계 예방의 공통 원리. 방수: 부위별 하자 예방의 핵심. 흙막이: 안전·주변영향 판단 핵심.",
+      "already_written": false
+    },
+    {
+      "topic": "흙막이",
+      "question_count": 8,
+      "round_count": 7,
+      "questions": [
+        {
+          "id": "126-4-3",
+          "year": 2022,
+          "round": 126,
+          "period": 4,
+          "number": 3,
+          "kind": "논술형",
+          "question": "흙막이벽의 붕괴원인과 어스앵커(Earth anchor) 시공시 유의사항을 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "130-3-5",
+          "year": 2023,
+          "round": 130,
+          "period": 3,
+          "number": 5,
+          "kind": "논술형",
+          "question": "흙막이 공사에서 H-Pile + 토류판 흙막이공법의 시공순서 및 시공 시 유의사항에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "131-2-4",
+          "year": 2023,
+          "round": 131,
+          "period": 2,
+          "number": 4,
+          "kind": "논술형",
+          "question": "흙막이 굴착 시 주변지반의 침하원인 및 방지대책에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "131-4-6",
+          "year": 2023,
+          "round": 131,
+          "period": 4,
+          "number": 6,
+          "kind": "논술형",
+          "question": "건축물의 지하 공사 중에 흙막이와 주변지반, 인접 건물 등에 대한 계측 관리에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "133-3-4",
+          "year": 2024,
+          "round": 133,
+          "period": 3,
+          "number": 4,
+          "kind": "논술형",
+          "question": "흙막이 배면의 차수 공법 중 주입 압력(저압, 고압)에 대한 약액 주입공법의 종류와 효과에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "135-2-2",
+          "year": 2025,
+          "round": 135,
+          "period": 2,
+          "number": 2,
+          "kind": "논술형",
+          "question": "도심지 흙막이공법이 적용되는 지하층 외벽구조체 공사에서 설계적인 측면과 시공적인 측면에서 검토할 사항에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "136-4-4",
+          "year": 2025,
+          "round": 136,
+          "period": 4,
+          "number": 4,
+          "kind": "논술형",
+          "question": "도심지 지하 흙막이 공사시 고려해야 하는 계측기의 종류 및 계측항목, 설치위치에 대하여 설명하시오.",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+        },
+        {
+          "id": "140-2-3",
+          "year": 2026,
+          "round": 140,
+          "period": 2,
+          "number": 3,
+          "kind": "논술형",
+          "question": "지하 6층 굴착현장이 기존 건축물과 지하철 구조물에 인접해 있으며, 굴착 중 지하수위가 빠르게 저하되고 흙막이벽 변위와 인접건물 침하가 설계예상값을 넘어 관리기준에 접근하고 있다. 다음 사항에 대하여 설명하시오. (1) 현장에서의 계측관리 기준 (2) 계측계획·자료분석·원인판단·공사중지 및 보강·재개 절차",
+          "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+        }
+      ],
+      "importance": "균열: 품질·내구성·하자 조사와 시공단계 예방의 공통 원리. 방수: 부위별 하자 예방의 핵심. 흙막이: 안전·주변영향 판단 핵심.",
+      "already_written": false
+    }
+  ],
+  "selected": "131-4-3",
+  "reason": "콘크리트 균열 관련 표현이 여러 회차에서 반복되며 경화시점·발생기구·예방대책 연결은 다른 균열문제의 기초. 1일차 동절기 초기동해와 별개의 전반적 균열분류 문제를 우선한다.",
+  "duplicate_check": "건축 기존 공개는 입문글, 준비1일차 한중콘크리트. 건축 일차 중 같은 문제 없음."
+}

@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 10572,
+  "stop_reason": "end_turn",
+  "session_id": "ea25273e-0b55-41f1-bed8-5627729cdbc8",
+  "total_cost_usd": 0.0670785,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 12993,
+    "cache_read_input_tokens": 2225,
+    "output_tokens": 1488,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 12993,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1488,
+        "cache_read_input_tokens": 2225,
+        "cache_creation_input_tokens": 12993,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 12993
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1488,
+      "cacheReadInputTokens": 2225,
+      "cacheCreationInputTokens": 12993,
+      "webSearchRequests": 0,
+      "costUSD": 0.0670785,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"pass\":1,\"unnecessary_translationese\":[],\"register_issues\":[\"2장 도입부 \\\"문항 번호 하나를 한 문제로 셌고, 수험생이 골라 쓰는 답안 수가 아니라 출제된 전체 문항을 대상으로 했어요.\\\"는 해요체라 문제없으나, 5장 \\\"기출문제를 읽을 때는 주제어와 요구 동사를 나누어 표시한다.\\\" 이하 도입 두 문단(\\\"…들어가야 한다.\\\", \\\"…잡을 수 있다.\\\", \\\"…핵심이다.\\\")이 문어체(~다)로 쓰였는데, 5장 도입은 독자에게 설명하는 친절한 해설 부분이라 해요체가 맞음. 답안이론/구분선 안([답안 목차 예시])과 4장 blockquote '답안 작성 요령'은 문어체 유지가 적절함.\",\"5장 구분선 뒤 두 문단(\\\"그림과 표는 용도를 정해 넣는다…\\\", \\\"실무 경험은 … 쓰지 않는다. … 밝힌다.\\\")도 구분선 밖 설명 문단이므로 해요체로 통일하는 것이 일관됨.\",\"2장 \\\"표의 구성비는 문항 수 기준이라 배점 비중과는 다르다는 점만 기억해 주세요.\\\"와 3장 \\\"눈여겨보실 것은\\\", \\\"하시길 권해요\\\" 등은 해요체 범위 내이며 문제 없음.\"],\"required_changes\":[\"5장 구분선 앞 첫 문단 \\\"기출문제를 읽을 때는 주제어와 요구 동사를 나누어 표시한다. ‘붕괴 원인과 방지대책’을 묻는 문제는 원인마다 대책이 짝을 이루어야 하고, ‘단계별 검토사항과 관계자별 역할’을 묻는 문제는 단계와 주체를 나눈 표가 들어가야 한다.\\\" → \\\"기출문제를 읽을 때는 주제어와 요구 동사를 나누어 표시해 보세요. ‘붕괴 원인과 방지대책’을 묻는 문제는 원인마다 대책이 짝을 이뤄야 하고, ‘단계별 검토사항과 관계자별 역할’을 묻는 문제는 단계와 주체를 나눈 표가 들어가야 해요.\\\"\",\"5장 구분선 앞 둘째 문단 \\\"…목차를 아래와 같이 잡을 수 있다. 모든 답안에 … 흐려진다. 질문이 요구하는 항목을 그대로 목차 제목으로 올리는 것이 핵심이다.\\\" → \\\"…목차를 아래와 같이 잡을 수 있어요. 모든 답안에 … 흐려져요. 질문이 요구하는 항목을 그대로 목차 제목으로 올리는 것이 핵심이에요.\\\"\",\"5장 구분선 뒤 \\\"그림과 표는 용도를 정해 넣는다. … 줄일 수 있다.\\\" → \\\"그림과 표는 용도를 정해서 넣어요. … 줄일 수 있어요.\\\"\",\"5장 구분선 뒤 \\\"실무 경험은 … 쓰되, … 쓰지 않는다. 법령의 수치는 조항을 확인한 뒤 적고, 현장 관행은 관행임을 밝힌다.\\\" → \\\"실무 경험은 … 쓰되, … 쓰지 마세요. 법령의 수치는 조항을 확인한 뒤 적고, 현장 관행은 관행이라고 밝혀 주세요.\\\"\",\"2장 \\\"분석 대상은 … 총 465문항이에요. 문항 번호 하나를 한 문제로 셌고, …\\\"와 7장의 \\\"…담을 예정이에요.\\\"가 앞 문장 \\\"…다룰 예정이에요.\\\"와 어미 반복(\\\"예정이에요\\\" 연속 2회)이므로, 7장 둘째 문장을 \\\"문제와 해설, 답안 예시, 그림과 표, 놓치기 쉬운 점, 참고자료와 따라쓰기 PDF도 함께 실을게요.\\\"로 바꿔 어미 반복을 줄이는 것을 권장(선택).\"]}",
+  "ttft_ms": 10921,
+  "type": "result",
+  "duration_ms": 10965,
+  "uuid": "8dd8dbe9-752b-4075-8074-2514807938f9",
+  "ttft_stream_ms": 2102,
+  "time_to_request_ms": 388,
+  "first_content_frame_ms": 2102,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

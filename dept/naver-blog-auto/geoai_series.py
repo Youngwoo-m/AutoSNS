@@ -657,7 +657,7 @@ def generate(idx, topic, cfg=None, recent=()):
     for attempt in range(1, 4):
         msg = client.messages.create(
             model=cfg.get("model", "claude-sonnet-4-6"),
-            max_tokens=8000, system=SYSTEM,
+            max_tokens=8000, system=SYSTEM + _humanize_rules(),
             messages=[{"role": "user", "content": user}],
         )
         S = _split(msg.content[0].text.strip())
@@ -817,6 +817,17 @@ def run(dry_run=False, cfg=None):
     r["kind"] = "series"
     return r
 
+
+
+def _humanize_rules():
+    """글쓰기 프롬프트에 덧붙일 문체 규칙. shared/humanize_rules.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.humanize_rules import HUMANIZE_KR
+    return HUMANIZE_KR
 
 
 def _llm_client(cfg):

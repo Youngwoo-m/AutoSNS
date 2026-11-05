@@ -1,0 +1,19 @@
+{
+  "url": "https://blog.naver.com/safeworking/224461827323",
+  "http": 200,
+  "category": "측량기술사",
+  "category_no": 6,
+  "title_match": true,
+  "public": true,
+  "image_count": 3,
+  "missing_headings": [],
+  "pdf": [
+    {
+      "http": 200,
+      "bytes": 210160,
+      "sha256": "aee2b175ea6c94ae9882a1a951cb662fe129d7868911a78ce6fea1fffdc845cc",
+      "match": true,
+      "pdf_magic": true
+    }
+  ]
+}

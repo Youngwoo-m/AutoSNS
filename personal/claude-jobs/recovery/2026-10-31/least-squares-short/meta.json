@@ -1,0 +1,34 @@
+{
+  "exam": "측량및지형공간정보기술사",
+  "field": "오차론·망조정(학습용 분류)",
+  "question": "128-1-10",
+  "topic": "최소제곱법·경중률",
+  "related_blog_url": "https://na-geoai.tistory.com/42",
+  "related_blog_relationship": "별도 창작연습문제와 가상계산을 다루는 관련학습자료, 같은기출풀이아님",
+  "reused_source": "GeoAI_NA/engineer-video-output/premade/2026-10-29-survey-am",
+  "image_selection": {
+    "scene1": "d1.png",
+    "scene2": "d1.png",
+    "scene3": "d3.png camera ROI x0..430,y690..1085",
+    "excluded": "d2.png AI줄자숫자표시로미사용"
+  },
+  "source_review": "/private/tmp/least-squares-source.json",
+  "calc_review": "/private/tmp/least-squares-calc.json",
+  "voice_backend": "edge",
+  "voice_seed": null,
+  "credits_used": 0,
+  "voice_label": "AI 합성 음성(TTS)",
+  "voice": "ko-KR-InJoonNeural",
+  "voicebox_attempt": {
+    "generation_id": "feeb69a7-a8d9-4863-8084-88daaad6a8b8",
+    "seed": 14031,
+    "result": "6분 이상 로딩/합성 지속·높은부하 관측, 이번요청만취소요청",
+    "fallback_authorized_by_parent": true
+  },
+  "voice_rate": "+0%",
+  "voice_seconds": 16.464,
+  "dioramas_unique": 2,
+  "scenes": 3,
+  "post_processing_speed_change": false,
+  "trim": false
+}

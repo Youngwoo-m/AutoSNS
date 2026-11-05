@@ -1,0 +1,129 @@
+{
+  "source": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/수정본_새문체.html",
+  "files": {
+    "Blogger-ready.html": {
+      "bytes": 25140,
+      "sha256": "83158629b3aa53f65c5a64a924386ca8a632500c49e377139ad29cdcd2f10702"
+    },
+    "edit-ready.html": {
+      "bytes": 25140,
+      "sha256": "83158629b3aa53f65c5a64a924386ca8a632500c49e377139ad29cdcd2f10702"
+    },
+    "preview-top.png": {
+      "bytes": 731092,
+      "sha256": "e4a159494a562a2d8ddfbb235205812b80cfcbbaa0e55452a5867b150d1cb2ff"
+    },
+    "preview.html": {
+      "bytes": 25780,
+      "sha256": "47a749fd26aea9980647633583d22616ba12b079a728b0b07f970fd1e7bf6d9b"
+    },
+    "before-public-fetch.json": {
+      "bytes": 232,
+      "sha256": "6b7c05a4dcdb26f317cd498b44a5e86d8d86bf9c8dd0ba3610f0a4bb4c0f75f6"
+    },
+    "태그.txt": {
+      "bytes": 91,
+      "sha256": "9e929912f52be86d40f9c545a6c57e29b96ced638e3af32142822b5a333f5060"
+    },
+    "public-edit-excerpts.json": {
+      "bytes": 3679,
+      "sha256": "b2f0c8c6bea82678f772ee104f9758d69c1875ebe6e40bfe2b3b9944ae6a594e"
+    },
+    "preview-render.json": {
+      "bytes": 207,
+      "sha256": "d7f96ee226bea276aea6856e5151849e419262c8f7faa0605f0172e3d858c7fa"
+    },
+    "report.json": {
+      "bytes": 3695,
+      "sha256": "533188072aaffbdf633d0feab2091bac10551c75559b55763e72000dc000178c"
+    },
+    "before-public-182.readable.txt": {
+      "bytes": 13708,
+      "sha256": "c6b796537dd16930ec6bf97cc1f26be4ddff02a33195778f4de1f566324449be"
+    },
+    "preview-statistics.png": {
+      "bytes": 163776,
+      "sha256": "6a9f9c210d5f95830a328db25a2345e6f53369af1ecdc1545b810431c51d66c5"
+    },
+    "제목.txt": {
+      "bytes": 59,
+      "sha256": "e73e15222c913d3cded85c49149822468a54abb3922fa88ff922e59c6b493991"
+    },
+    "banner.png": {
+      "bytes": 997814,
+      "sha256": "0f8f1f46eff14e6034ce0da139125cf4d6ba13fe181678a40235852f22d2a752"
+    },
+    "humanizer-pass2-cli.json": {
+      "bytes": 3770,
+      "sha256": "b92f05f0b0e545ba5d7455a3101ed6b5e0ef23139c3149e4a0f1a2f698c979be"
+    },
+    "removed-inaccurate-row.html": {
+      "bytes": 343,
+      "sha256": "b17fcdc3442a5110164c1b87612345c1b79d2047935ec5301e4cfb3a6b6716ba"
+    },
+    "public-comparison.json": {
+      "bytes": 396,
+      "sha256": "09d93ffd515d788f810e6c7edd6800b73b7305c0d3b621ac242c25216d4b0cef"
+    },
+    "diff-from-local-before.patch": {
+      "bytes": 12606,
+      "sha256": "419ee47071be1daad80927d593ea52850974a4f83c0612eeb0aedcca5253dab0"
+    },
+    "humanizer-pass2.json": {
+      "bytes": 1355,
+      "sha256": "d16b259b57a892fab5fc39ff68c48cdcd38f3c6ad8aa8cba680b3e1e55763dab"
+    },
+    "assemble.py": {
+      "bytes": 4315,
+      "sha256": "a433b1fd96e3bdc0211d989de751cf29fad5186bc2597fe24a0e016d06312f99"
+    },
+    "checks.json": {
+      "bytes": 503,
+      "sha256": "b18be6fcd07f537ed6571df64e745a8cb445c1df9bf6b48615617b7c4c1d4948"
+    },
+    "humanizer-pass1.json": {
+      "bytes": 1602,
+      "sha256": "c3320c80bcc4fc2384c914e534bc700eac95f6929795d1e71b28fc4257ccb002"
+    },
+    "egress-public-only-evidence.json": {
+      "bytes": 1832,
+      "sha256": "271f6dc922bd72aa4b36b87c3dd9330828f9480b4b0a01258786f0df46abc147"
+    },
+    "_banner.html": {
+      "bytes": 2336,
+      "sha256": "43b8fb696a7a57ec23ee23cc2f180b9cada7aaba32a2620dae2212ee1bebb0bb"
+    },
+    "preview-bottom.png": {
+      "bytes": 188046,
+      "sha256": "69ae2184aaca40107d18a57944d4dd0240e0f9c8c2512cac0c1c8c6c51e22642"
+    },
+    "preview-theory.png": {
+      "bytes": 173243,
+      "sha256": "cb568907c4646dce7517bf774008b1f05e1e378ac0437a73205a9aae43bc7abe"
+    },
+    "before-public-182.body.html": {
+      "bytes": 28398,
+      "sha256": "905ea6366f11e40dac2564e87de605e490c194ae38c5000b8c6c93117506a562"
+    },
+    "local-before-correction.html": {
+      "bytes": 25493,
+      "sha256": "6fc507d8fbfd3507724e5088bfe2e6847325eb9081f5cb256de4b7fec71643a0"
+    },
+    "before-public-182.full.html": {
+      "bytes": 91803,
+      "sha256": "1f7de597b1e9d25806d43f7460ad50761b24b62e3a66dc0f3b5b06f24fcbd86a"
+    },
+    "diff-from-public-readable.patch": {
+      "bytes": 25304,
+      "sha256": "b9663eb7cfc9db50920936145a53dc26940d594e9f7aff87f0459a6c55a183b0"
+    },
+    "edit_public_excerpts.py": {
+      "bytes": 3624,
+      "sha256": "5affc6c1c867d49f7088f2c574d716ba7c42b778f40d0283af4ea407579de1b3"
+    },
+    "humanizer-pass1-cli.json": {
+      "bytes": 3985,
+      "sha256": "b1ecd5d35c7454f38ea7e9262bb311623fdd12d717fec7079b0675714994a7b0"
+    }
+  }
+}

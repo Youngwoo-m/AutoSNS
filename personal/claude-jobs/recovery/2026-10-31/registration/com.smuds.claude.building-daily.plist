@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>TZ</key>
+		<string>Asia/Seoul</string>
+	</dict>
+	<key>Label</key>
+	<string>com.smuds.claude.building-daily</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/python3</string>
+		<string>/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/run_engineer_daily.py</string>
+		<string>building-daily</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/logs/building-daily.launchd.err.log</string>
+	<key>StandardOutPath</key>
+	<string>/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/logs/building-daily.launchd.out.log</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Volumes/USB256/devAPP/AutoSNS</string>
+</dict>
+</plist>

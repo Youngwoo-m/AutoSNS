@@ -1,0 +1,61 @@
+{
+  "verdict": "fix",
+  "summary": "기출과 현행 위험성평가 법령의 핵심 내용은 확인됐습니다. 답안 작성 요령의 문어체와 반복 단서만 정리하면 발행할 수 있습니다.",
+  "issues": [
+    {
+      "severity": "fix",
+      "where": "답안 작성 요령의 “방향이 좋아요/덧붙이면 돼요”",
+      "problem": "답안 작성 이론은 blockquote로 구분했지만 친절한 어투가 남아 공통 규칙의 문어체 기준과 어긋납니다.",
+      "fix": "“구분하여 보충한다”, “대책의 연결로 서술하고 적용 예시를 덧붙인다”처럼 문어체로 바꿉니다."
+    },
+    {
+      "severity": "fix",
+      "where": "출제의도·정의 문단의 반복 학습용 단서",
+      "problem": "“채점 경험이 아니라 … 학습용 해석”, “조문 순서를 풀어 쓴 학습용 정의” 등의 단서가 끝 단서와 반복됩니다.",
+      "fix": "채점 경험 관련 문장과 정의 직후 학습용 면책 문장은 끝 단서 한 문단으로 모읍니다. 법정3개와 학습5개의 구분 및 공유·기록의 법적 의무 설명은 핵심 사실이므로 본문에 유지합니다."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209476&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "yes",
+      "note": "직접 HTTP200. 공식게시제목에2022년 명시. 첨부 원격PDFSHA fba0d8f94326dcaaa97beadc90cc17073aa1f1f0542dcac5d04ecec8ed335c86 일치. 2쪽 제2교시5번/각25점 원문 직접 확인."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&joBrNo=00&joNo=0037&lsiSeq=288431&urlMode=lsScJoRltInfoR",
+      "opened": true,
+      "supports": "yes",
+      "note": "시행2026-08-01/고용노동부령477호. 제1항3개호 핵심절차와 제3항 고시위임 내용 직접 대조. 학습5단계와 법정3개를 구분한 원고는 일치."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&joBrNo=03&joNo=0037&lsiSeq=288431&urlMode=lsScJoRltInfoR",
+      "opened": true,
+      "supports": "yes",
+      "note": "HTTP200. 제37조의3에서 실시전 일정, 실시후 요인·수준결정·개선대책·이행결과 공유사항 확인. 원고 설명 일치."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&joBrNo=04&joNo=0037&lsiSeq=288431&urlMode=lsScJoRltInfoR",
+      "opened": true,
+      "supports": "yes",
+      "note": "HTTP200. 제37조의4 기록 포함사항과3년보존의무 확인. 원고는 구체기간을 새로 제시하지 않고 의무 존재를 정확히 설명."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/lsLinkCommonInfo.do?lsJoLnkSeq=1033355475",
+      "opened": true,
+      "supports": "yes",
+      "note": "HTTP200. 시행2026-10-27/법률22122호 제36조2항 근로자참여의무 직접 확인. 미래시행판을 현행으로 혼동하지 않음."
+    }
+  ],
+  "notes": [
+    "시행시점 명시, 법정핵심절차3개/학습운영단계5개 구분, 공유·기록의 별도조문근거가 정확함.",
+    "개구부 예시의 구체 설치기준을 확인할 때 설계기준뿐 아니라 산업안전보건기준에관한규칙도 함께 확인하도록 쓰면 더 명확함. 현재 원고는 구체 설치수치를 단정하지 않아 발행차단 사항은 아님.",
+    "AI배너 고지·답안구분선·가운데정렬·태그9개(기출/답안2개)·첨부3개 확인. Blogger 로컬경로·만료링크·학과태그 없음.",
+    "Netlify day02 공개자료는 발행담당이 배포 후 실제 응답/해시를 검증할 것."
+  ],
+  "inspected_sha256": {
+    "티스토리게시본문.html": "4932820e9610ba90a7bc7efb77ede3612fcb0509411892f24548207eb99b3fb0",
+    "Blogger게시본문.html": "b676b495ed82a468a137574d2455430159178c6748a41d7c7e8b270d5380f29f",
+    "02일차_위험성평가_답안예시_따라쓰기.pdf": "f538bf21a1aef2cd1822b5ba244240ad8f49fc909db68b0e83c229c4110c5c2a"
+  }
+}

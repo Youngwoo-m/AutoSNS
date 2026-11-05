@@ -1,0 +1,64 @@
+{
+  "status": "published",
+  "day": 1,
+  "title": "[건축시공기술사] 한중콘크리트 타설 전 점검과 초기동해 방지 | 하루 한 문제 1일차",
+  "assets": [
+    {
+      "filename": "banner.png",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/01일차_한중콘크리트타설전점검/banner.png",
+      "sha256": "785fa688cc32d5a63d44c43a7a6d0c5dd4f3e1dbd6099e984a22587435ba0068",
+      "bytes": 1078291,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day01/banner.png"
+    },
+    {
+      "filename": "타설전_점검과양생_흐름도.png",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/01일차_한중콘크리트타설전점검/타설전_점검과양생_흐름도.png",
+      "sha256": "729060e4f3461daed9c2adc3f566a5a0c7ca092f0d5a4e3186be10acfcabd9d9",
+      "bytes": 96871,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day01/%ED%83%80%EC%84%A4%EC%A0%84_%EC%A0%90%EA%B2%80%EA%B3%BC%EC%96%91%EC%83%9D_%ED%9D%90%EB%A6%84%EB%8F%84.png"
+    },
+    {
+      "filename": "01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/01일차_한중콘크리트타설전점검/01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf",
+      "sha256": "37b818b2d8ee8ce92c88d007dc0bdd2ea1eac96299a1c61f9dada7c18024b0b3",
+      "bytes": 230141,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day01/01%EC%9D%BC%EC%B0%A8_%ED%95%9C%EC%A4%91%EC%BD%98%ED%81%AC%EB%A6%AC%ED%8A%B8%ED%83%80%EC%84%A4%EC%A0%84%EC%A0%90%EA%B2%80_%EB%8B%B5%EC%95%88%EC%98%88%EC%8B%9C_%EB%94%B0%EB%9D%BC%EC%93%B0%EA%B8%B0.pdf"
+    }
+  ],
+  "files": [
+    {
+      "name": "티스토리게시본문.html",
+      "sha256": "08298c1ccda0a82ed74511300c4385e93e75d4352cece4d52c791d2bb28946a3"
+    },
+    {
+      "name": "Blogger게시본문.html",
+      "sha256": "8e5b8a24a355a049b755971f9e1f75adafa265f48a1fb42a258bf4243c9fbf28"
+    },
+    {
+      "name": "manuscript-final.json",
+      "sha256": "60dac3f31ab6356da34b836f80d5b4a00974e5b2ee787cc93d37ad8cc38f67fd"
+    },
+    {
+      "name": "제목.txt",
+      "sha256": "ff1f2695c6dc97300d887c059ee68d3fecf18f7c67197306c73d709321563d46"
+    },
+    {
+      "name": "태그.txt",
+      "sha256": "56fb0100bbf9ae5bee29a50776661363e2bd0d152308f582beb68932711cc6e0"
+    }
+  ],
+  "public_deployment_verified": false,
+  "copy_only_assets_to_site": true,
+  "do_not_publish_folder_contents": "raw source, scripts, Claude records, and internal reports are not public assets",
+  "public_channels": {
+    "tistory": "https://na-geoai.tistory.com/202",
+    "blogger": "https://geoaina.blogspot.com/2026/10/1_01623276063.html",
+    "naver": "https://blog.naver.com/safeworking/224460209077"
+  },
+  "public_verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "updated_at": "2026-10-31T16:25:30.619276+09:00"
+}

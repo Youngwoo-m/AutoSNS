@@ -1,0 +1,217 @@
+{
+  "tistory_rss": {
+    "http": 200,
+    "items": [
+      {
+        "title": "Whitebox 실제 QGIS 실습 13 — 1 m DTM 웅덩이 가려내기: 채우기와 뚫기",
+        "url": "https://na-geoai.tistory.com/201",
+        "date": "Sat, 31 Oct 2026 10:12:34 +0900"
+      },
+      {
+        "title": "Whitebox 실제 QGIS 실습 12 — 1 m LiDAR DTM 수문 분석: 30 m와 비교",
+        "url": "https://na-geoai.tistory.com/200",
+        "date": "Sat, 31 Oct 2026 09:59:44 +0900"
+      },
+      {
+        "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+        "url": "https://na-geoai.tistory.com/199",
+        "date": "Sat, 31 Oct 2026 08:13:05 +0900"
+      },
+      {
+        "title": "트래버스 간이조정법, 컴퍼스법칙과 트랜싯법칙 차이 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 22일차",
+        "url": "https://na-geoai.tistory.com/198",
+        "date": "Sat, 31 Oct 2026 06:06:06 +0900"
+      },
+      {
+        "title": "안전한국훈련 양구군 영상으로 보는 구조물이 위험해질 때 진입을 멈추는 기준",
+        "url": "https://na-geoai.tistory.com/196",
+        "date": "Thu, 29 Oct 2026 12:04:08 +0900"
+      },
+      {
+        "title": "Whitebox 실제 QGIS 실습 11 — LiDAR DTM 다듬기: 겹침 지면 점과 반 칸 보정",
+        "url": "https://na-geoai.tistory.com/195",
+        "date": "Thu, 29 Oct 2026 09:05:36 +0900"
+      },
+      {
+        "title": "[토목시공기술사] 아스팔트 포장 소성변형의 종류와 구분법 | 하루 한 문제 13일차",
+        "url": "https://na-geoai.tistory.com/194",
+        "date": "Thu, 29 Oct 2026 08:13:01 +0900"
+      },
+      {
+        "title": "정확도와 정밀도 차이, 표준편차와 RMSE로 가르기 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 21일차",
+        "url": "https://na-geoai.tistory.com/193",
+        "date": "Thu, 29 Oct 2026 06:20:04 +0900"
+      },
+      {
+        "title": "GNSS 안테나고 측정과 ARP·위상중심 보정 (2025년 제137회 기출) | 측량및지형공간정보기술사 친구 요청",
+        "url": "https://na-geoai.tistory.com/192",
+        "date": "Wed, 28 Oct 2026 23:20:15 +0900"
+      },
+      {
+        "title": "Whitebox 실제 QGIS 실습 10 — 하천으로부터의 높이(HAND): 흐름 경로와 직선거리의 차이",
+        "url": "https://na-geoai.tistory.com/191",
+        "date": "Wed, 28 Oct 2026 13:39:52 +0900"
+      }
+    ]
+  },
+  "blogger_feed": {
+    "http": 200,
+    "entries_returned": 143,
+    "has_next": false,
+    "engineer_posts": [
+      {
+        "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+        "url": "https://geoaina.blogspot.com/2026/10/14.html",
+        "published": "2026-10-31T08:13:43.836+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 아스팔트 포장 소성변형의 종류와 구분법 | 하루 한 문제 13일차",
+        "url": "https://geoaina.blogspot.com/2026/10/13.html",
+        "published": "2026-10-29T08:14:59.103+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 보강토옹벽 붕괴 원인과 대책(다짐·배면수압·상재토압) | 하루 한 문제 12일차",
+        "url": "https://geoaina.blogspot.com/2026/10/12.html",
+        "published": "2026-10-28T08:16:44.049+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 연약지반 성토 시 계측항목과 계측기 | 하루 한 문제 11일차",
+        "url": "https://geoaina.blogspot.com/2026/10/11.html",
+        "published": "2026-10-27T08:18:33.493+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 하천제방의 파괴원인과 방지대책 | 하루 한 문제 10일차",
+        "url": "https://geoaina.blogspot.com/2026/10/10.html",
+        "published": "2026-10-26T08:15:51.764+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 숏크리트 리바운드 발생원인과 저감대책 | 하루 한 문제 9일차",
+        "url": "https://geoaina.blogspot.com/2026/10/9.html",
+        "published": "2026-10-25T08:17:55.438+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 동절기 한중콘크리트 배합설계와 시공관리 | 하루 한 문제 8일차",
+        "url": "https://geoaina.blogspot.com/2026/10/8.html",
+        "published": "2026-10-24T08:15:45.075+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 콘크리트 거푸집 및 동바리 해체 시기 | 하루 한 문제 7일차",
+        "url": "https://geoaina.blogspot.com/2026/10/7_0201107216.html",
+        "published": "2026-10-23T08:11:56.794+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 해석 | 하루 한 문제 6일차",
+        "url": "https://geoaina.blogspot.com/2026/10/6.html",
+        "published": "2026-10-22T08:17:00.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 표준관입시험(SPT) N값 보정 | 하루 한 문제 5일차",
+        "url": "https://geoaina.blogspot.com/2026/10/spt-n-5.html",
+        "published": "2026-10-21T08:08:16.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 콘크리트 구조물의 온도균열 원인과 제어 | 하루 한 문제 4일차",
+        "url": "https://geoaina.blogspot.com/2026/10/4.html",
+        "published": "2026-10-20T20:42:55.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 흙막이 공사의 계측관리 | 하루 한 문제 3일차",
+        "url": "https://geoaina.blogspot.com/2026/10/3.html",
+        "published": "2026-10-19T08:04:04.769+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 서중콘크리트 품질관리와 초기균열 저감 | 하루 한 문제 2일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2.html",
+        "published": "2026-10-18T14:24:56.585+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 흙의 다짐·최적함수비·다짐도 | 하루 한 문제 1일차",
+        "url": "https://geoaina.blogspot.com/2026/10/1.html",
+        "published": "2026-10-17T13:33:24.000+09:00"
+      }
+    ],
+    "today": [
+      {
+        "title": "Whitebox 실제 QGIS 실습 13 — 1 m DTM 웅덩이 가려내기: 채우기와 뚫기",
+        "url": "https://geoaina.blogspot.com/2026/10/whitebox-qgis-13-1-m-dtm.html",
+        "published": "2026-10-31T10:11:53.956+09:00"
+      },
+      {
+        "title": "Whitebox 실제 QGIS 실습 12 — 1 m LiDAR DTM 수문 분석: 30 m와 비교",
+        "url": "https://geoaina.blogspot.com/2026/10/whitebox-qgis-12-1-m-lidar-dtm-30-m.html",
+        "published": "2026-10-31T09:57:52.427+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+        "url": "https://geoaina.blogspot.com/2026/10/14.html",
+        "published": "2026-10-31T08:13:43.836+09:00"
+      },
+      {
+        "title": "도로망 분석과 골든타임 | 소방차는 몇 분에 닿나 | GeoAI 기초 37편",
+        "url": "https://geoaina.blogspot.com/2026/10/geoai-37.html",
+        "published": "2026-10-31T07:43:55.104+09:00"
+      }
+    ]
+  },
+  "naver_rss": {
+    "http": 200,
+    "items": [
+      {
+        "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+        "url": "https://blog.naver.com/safeworking/224459825776?fromRss=true&trackingCode=rss",
+        "date": "Sat, 31 Oct 2026 08:15:20 +0900"
+      },
+      {
+        "title": "트래버스 간이조정법, 컴퍼스법칙과 트랜싯법칙 차이 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 22일차",
+        "url": "https://blog.naver.com/safeworking/224459771291?fromRss=true&trackingCode=rss",
+        "date": "Sat, 31 Oct 2026 06:08:27 +0900"
+      }
+    ]
+  },
+  "survey22": {
+    "http": 200,
+    "title": "트래버스 간이조정법, 컴퍼스법칙과 트랜싯법칙 차이 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 22일차",
+    "pdf_marker": true,
+    "request_link": null
+  },
+  "civil14": {
+    "http": 200,
+    "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+    "pdf_marker": true,
+    "request_link": null
+  },
+  "building_intro": {
+    "http": 200,
+    "title": "[건축시공기술사] 건축시공기술사 준비하기",
+    "pdf_marker": false,
+    "request_link": "building-questions"
+  },
+  "safety_intro": {
+    "http": 200,
+    "title": "[건설안전기술사] 건설안전기술사 준비하기",
+    "pdf_marker": false,
+    "request_link": "safety-questions"
+  },
+  "checked_at": "2026-10-31T11:57:05.939563+09:00",
+  "quota_review": {
+    "setting_posts_per_day": 2,
+    "actual_published_today": 4,
+    "counted_by_existing_rule": 3,
+    "counted_titles": [
+      "Whitebox 실제 QGIS 실습 13 — 1 m DTM 웅덩이 가려내기: 채우기와 뚫기",
+      "Whitebox 실제 QGIS 실습 12 — 1 m LiDAR DTM 수문 분석: 30 m와 비교",
+      "도로망 분석과 골든타임 | 소방차는 몇 분에 닿나 | GeoAI 기초 37편"
+    ],
+    "exclusion_prefixes": [
+      "NaGeoAI 실제 QGIS 실습",
+      "[토목시공기술사]"
+    ],
+    "interpretation": "Whitebox 실제 QGIS 제목이 기존 NaGeoAI 실제 QGIS 제외접두사와 불일치. 실제 의도된 연재정책과 코드 계산 분리 필요; 설정변경 안 함"
+  },
+  "scheduled_jobs_review": {
+    "survey-daily": "launchd registered; last exit0",
+    "civil-daily": "launchd registered; last exit0",
+    "building-daily": "no plist and not registered",
+    "safety-daily": "no plist and not registered"
+  }
+}

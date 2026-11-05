@@ -1,0 +1,140 @@
+{
+  "verdict": "fix",
+  "summary": "핵심 수치·적용 조건과 제132회 기출 문항은 공식 원문과 일치합니다. 초기양생 종료 뒤의 조건부 보온 규정과 문체·태그를 보완한 뒤 발행할 수 있습니다. 이 보고서는 수정 전 검토 결과입니다.",
+  "issues": [
+    {
+      "severity": "fix",
+      "where": "초기양생은 언제, 누구의 확인으로",
+      "problem": "소요강도 도달 후 2일간의 온도관리만 설명하고 KCS 3.4.1(8)의 초기양생 종료 후 조건부 보온 규정을 빠뜨렸습니다. 두 기산점을 구분할 필요가 있습니다.",
+      "fix": "얇은 단면·보통 노출 상태에서 초기양생 종료 후 특별한 보온양생을 계속하지 않는 경우, 노출면을 시트 등으로 덮고 초기양생 완료 후 2일 이상 0℃ 이상 보존한다는 조건을 본문·답안·PDF에 추가하세요."
+    },
+    {
+      "severity": "fix",
+      "where": "답안 방향은 현장에서 어느",
+      "problem": "답안 작성 방법을 설명하는 문단과 작성 요령이 친절체로 남아 공통규칙의 문어체·blockquote 구분 요구에 어긋납니다.",
+      "fix": "작성 방법을 설명하는 문장은 답안 작성 요령 blockquote로 묶고 구분하여 작성한다 등의 문어체로 바꾸세요."
+    },
+    {
+      "severity": "fix",
+      "where": "시방서의 직접 의무 조항이",
+      "problem": "학습용 정리·직접 의무 아님·공식 기준 아님이라는 단서가 해설, 표, 답안, 놓치기 쉬운 점, 끝 문단에 반복됩니다.",
+      "fix": "표의 근거·성격 표시는 유지하되 같은 설명을 줄이고 원고 전체의 성격과 한계는 끝 단서 한 문단에 모으세요."
+    },
+    {
+      "severity": "fix",
+      "where": "태그.txt 및 manuscript-final",
+      "problem": "현재 태그에는 검토 지침이 요구하는 기출·답안 조합 태그가 없습니다.",
+      "fix": "건축시공기술사기출과 건축시공기술사답안을 추가하세요. 총 9개이며 기출 조합 태그 최대 1개 조건도 충족합니다."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.kcsc.re.kr/standardCode/viewer/KCS%2014%2020%2040:2024-12-30",
+      "opened": true,
+      "supports": "unknown",
+      "note": "SPA 페이지가 열렸으나 웹 도구에 본문이 표시되지 않아 공식 API로 별도 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/api/standardCode/getCodeDetailInfo.do",
+      "opened": true,
+      "supports": "yes",
+      "note": "docCode=KCS 14 20 40, ymd=2024-12-30으로 읽기 전용 조회. 원격 106블록이 저장 JSON과 일치. 적용범위, 온도, 강도표, 공시체, 승인, 온도기록 예외 및 3.4.1(8)을 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/api/standardCode/code-info?docCode=KCS%2014%2020%2040",
+      "opened": true,
+      "supports": "yes",
+      "note": "원격 개정 이력의 last_yn=Y 개정일은 2024-12-30입니다."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/cgmExpcInfoP.do?cgmExpcDatSeq=2339185&mode=2&ofiClsCd=350102",
+      "opened": true,
+      "supports": "yes",
+      "note": "2026-02-11 국토부 안내. 적용조건, 동결 골재, 시멘트 직접 가열 금지, 빙설 제거, 지반 해동, 즉시 피복과 바람 차단을 확인했습니다."
+    },
+    {
+      "url": "https://law.go.kr/LSW/flDownload.do?flSeq=148098945",
+      "opened": true,
+      "supports": "yes",
+      "note": "2024-12-30 고시 제2024-879호. 기존 사업 경과조치와 일부 조항 2025-01-01 적용을 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/board/notdetail/6639",
+      "opened": true,
+      "supports": "unknown",
+      "note": "SPA 페이지가 열렸으나 게시물 본문을 독립적으로 읽지 못했습니다. 고시는 공식 법제처 PDF로 확인했습니다."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "yes",
+      "note": "공식 첨부 원격 PDF SHA256 1b7df08442d2edc793ab2554678c01892b3d22d2f970d46ab7259981fb36deb8로 로컬과 일치. 3교시1번, 각25점,100분을 시각 확인했습니다."
+    },
+    {
+      "url": "https://moel.go.kr/news/notice/noticeView.do?bbs_seq=20231101453",
+      "opened": true,
+      "supports": "yes",
+      "note": "고용노동부 공고 제2023-547호 공식 2024 시행계획."
+    },
+    {
+      "url": "https://moel.go.kr/common/downloadFile.do?bbs_id=9&bbs_seq=20231101453&file_ext=pdf&file_seq=20231102133",
+      "opened": true,
+      "supports": "yes",
+      "note": "웹 도구 octet-stream 오류 후 curl 확보. PDF8쪽 제132회 필기1월27일,16쪽 건축시공132회 시행 확인. 게시일에서 시행연도를 추정하지 않았습니다."
+    },
+    {
+      "url": "https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0510&jmInfoDivCcd=B0",
+      "opened": true,
+      "supports": "yes",
+      "note": "제140회2026 실기예정11월14~28일 및 종목·지역별 일정 차이 안내 확인."
+    }
+  ],
+  "notes": [
+    "검토한 PDF SHA256은 b7510015088bb264cf0808f2724510053fdb5446e196dc06433b867beb4b58f6. 요청의 a4749b6d…와 달랐으며 당시 manifest는 실제 값과 일치했습니다.",
+    "지정 가상환경으로 PDF 3쪽을 렌더링하여 직접 확인. 잘림·겹침 없음.",
+    "티스토리와 Blogger 본문은 PDF 첨부 표현을 제외하고 일치. 표 가운데 정렬·AI 배너 고지 확인.",
+    "표3.5-1 외기온 행은 일평균4℃이하만 표시하지만 원고는 적용범위1.1(2)의 추가조건을 포함한 기준을 따릅니다.",
+    "건축 원고는 공종별 타설전점검·초기동해·승인에 집중하여 토목8일차와 각도가 구분됩니다.",
+    "허위경력·체험·채점경험·가상계산 수치 발견 없음.",
+    "공개 자산 배포·HTTP 해시·질문페이지 준비 상태는 별도 발행 단계 검증 대상입니다.",
+    "원고 및 외부 상태 수정0. 보고서와 출처 검토 증빙만 저장했습니다."
+  ],
+  "evidence_files": [
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-kcs.json",
+      "sha256": "7f411489aae74d8e695e95cef8750dde96428ecb7f266b71144fb223f7d77f60"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-history.json",
+      "sha256": "27247b16cd7473fe63f065ed3600188929adbda3d6c2c38cd610bbf9666b9f81"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.pdf",
+      "sha256": "1b7df08442d2edc793ab2554678c01892b3d22d2f970d46ab7259981fb36deb8"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.png",
+      "sha256": "c822ecb97e586b52d148f54104a45fff49f0b83979838a896cc1dee603f3b9bd"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule-full.pdf",
+      "sha256": "ceaafc60a9856237cb6052dd439959bfb50390eef2a95adc2ff1ec3562549247"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule.pdf",
+      "sha256": "8abc93395d47660e332271d6b888483f92d7e84ea7f0dcb09b79f0646db34ede"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-1.png",
+      "sha256": "ce6e66f6e3975651cfe91a52e4b6c54693ba4b9dbd867c848af3fd2b830b52e6"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-2.png",
+      "sha256": "aed93bfdbe971b500eecb7b1f5e087c3d9ea0aa50205cd0990f62cfb5db42914"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-3.png",
+      "sha256": "31d35eb896674649d454caff8e135fd0b5acdd458fd763a32e7c1ee7d1c5a7a0"
+    }
+  ]
+}

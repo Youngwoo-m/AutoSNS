@@ -1,0 +1,11 @@
+{
+  "rendered": true,
+  "viewport": "1100x1150",
+  "images": [
+    "preview-top.png",
+    "preview-statistics.png",
+    "preview-theory.png",
+    "preview-bottom.png"
+  ],
+  "temporary_chrome_closed": true
+}

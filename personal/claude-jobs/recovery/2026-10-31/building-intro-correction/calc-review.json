@@ -1,0 +1,883 @@
+{
+  "verdict": "ok",
+  "summary": "독립 Python 검산 119개 비교에서 계산 오류 0건. 공정·원가·계약 오류 행은 삭제됐고 나머지 통계·구성비·인용 회차 표기가 재계산과 일치합니다.",
+  "checked_count": 119,
+  "error_count": 0,
+  "checked": [
+    {
+      "what": "분석 회차 범위",
+      "claimed": [
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140
+      ],
+      "recomputed": [
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140
+      ],
+      "match": true
+    },
+    {
+      "what": "공식 자료 목록 15회",
+      "claimed": 15,
+      "recomputed": 15,
+      "match": true
+    },
+    {
+      "what": "기출 JSON 고유 문항",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "전체 문항 수",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "단답형 문항 수",
+      "claimed": 195,
+      "recomputed": 195,
+      "match": true
+    },
+    {
+      "what": "논술형 문항 수",
+      "claimed": 270,
+      "recomputed": 270,
+      "match": true
+    },
+    {
+      "what": "문항 합계",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "126회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "127회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "128회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "129회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "130회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "131회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "132회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "133회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "134회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "135회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "136회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "137회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "138회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "139회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "140회 교시별 문항 수",
+      "claimed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "recomputed": [
+        13,
+        6,
+        6,
+        6
+      ],
+      "match": true
+    },
+    {
+      "what": "2022년 구성",
+      "claimed": [
+        39,
+        54,
+        93
+      ],
+      "recomputed": [
+        39,
+        54,
+        93
+      ],
+      "match": true
+    },
+    {
+      "what": "2023년 구성",
+      "claimed": [
+        39,
+        54,
+        93
+      ],
+      "recomputed": [
+        39,
+        54,
+        93
+      ],
+      "match": true
+    },
+    {
+      "what": "2024년 구성",
+      "claimed": [
+        39,
+        54,
+        93
+      ],
+      "recomputed": [
+        39,
+        54,
+        93
+      ],
+      "match": true
+    },
+    {
+      "what": "2025년 구성",
+      "claimed": [
+        39,
+        54,
+        93
+      ],
+      "recomputed": [
+        39,
+        54,
+        93
+      ],
+      "match": true
+    },
+    {
+      "what": "2026년 구성",
+      "claimed": [
+        39,
+        54,
+        93
+      ],
+      "recomputed": [
+        39,
+        54,
+        93
+      ],
+      "match": true
+    },
+    {
+      "what": "단답 비율",
+      "claimed": 41.9,
+      "recomputed": 41.9,
+      "match": true
+    },
+    {
+      "what": "논술 비율",
+      "claimed": 58.1,
+      "recomputed": 58.1,
+      "match": true
+    },
+    {
+      "what": "매년 문항 합계",
+      "claimed": 93,
+      "recomputed": 93,
+      "match": true
+    },
+    {
+      "what": "15회 문항 합계",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "제1교시 선택 문항 배점",
+      "claimed": 100,
+      "recomputed": 100,
+      "match": true
+    },
+    {
+      "what": "논술 각 교시 배점",
+      "claimed": 100,
+      "recomputed": 100,
+      "match": true
+    },
+    {
+      "what": "필기 총시간",
+      "claimed": 400,
+      "recomputed": 400,
+      "match": true
+    },
+    {
+      "what": "가설·토공·지정 연도별/합계/회차",
+      "claimed": [
+        "7",
+        "13",
+        "11",
+        "8",
+        "11",
+        "50",
+        "15"
+      ],
+      "recomputed": [
+        "7",
+        "13",
+        "11",
+        "8",
+        "11",
+        "50",
+        "15"
+      ],
+      "match": true
+    },
+    {
+      "what": "기초·지하공사 연도별/합계/회차",
+      "claimed": [
+        "8",
+        "6",
+        "6",
+        "7",
+        "4",
+        "31",
+        "14"
+      ],
+      "recomputed": [
+        "8",
+        "6",
+        "6",
+        "7",
+        "4",
+        "31",
+        "14"
+      ],
+      "match": true
+    },
+    {
+      "what": "철근콘크리트 연도별/합계/회차",
+      "claimed": [
+        "24",
+        "27",
+        "27",
+        "29",
+        "28",
+        "135",
+        "15"
+      ],
+      "recomputed": [
+        "24",
+        "27",
+        "27",
+        "29",
+        "28",
+        "135",
+        "15"
+      ],
+      "match": true
+    },
+    {
+      "what": "철골·접합 연도별/합계/회차",
+      "claimed": [
+        "19",
+        "17",
+        "9",
+        "17",
+        "15",
+        "77",
+        "15"
+      ],
+      "recomputed": [
+        "19",
+        "17",
+        "9",
+        "17",
+        "15",
+        "77",
+        "15"
+      ],
+      "match": true
+    },
+    {
+      "what": "조적·미장·마감 연도별/합계/회차",
+      "claimed": [
+        "10",
+        "9",
+        "10",
+        "8",
+        "6",
+        "43",
+        "15"
+      ],
+      "recomputed": [
+        "10",
+        "9",
+        "10",
+        "8",
+        "6",
+        "43",
+        "15"
+      ],
+      "match": true
+    },
+    {
+      "what": "커튼월·유리·외장 연도별/합계/회차",
+      "claimed": [
+        "1",
+        "3",
+        "5",
+        "4",
+        "3",
+        "16",
+        "10"
+      ],
+      "recomputed": [
+        "1",
+        "3",
+        "5",
+        "4",
+        "3",
+        "16",
+        "10"
+      ],
+      "match": true
+    },
+    {
+      "what": "품질·안전·환경·유지관리 연도별/합계/회차",
+      "claimed": [
+        "12",
+        "12",
+        "14",
+        "23",
+        "22",
+        "83",
+        "15"
+      ],
+      "recomputed": [
+        "12",
+        "12",
+        "14",
+        "23",
+        "22",
+        "83",
+        "15"
+      ],
+      "match": true
+    },
+    {
+      "what": "스마트·디지털 연도별/합계/회차",
+      "claimed": [
+        "2",
+        "2",
+        "4",
+        "2",
+        "6",
+        "16",
+        "10"
+      ],
+      "recomputed": [
+        "2",
+        "2",
+        "4",
+        "2",
+        "6",
+        "16",
+        "10"
+      ],
+      "match": true
+    },
+    {
+      "what": "원인·대책 요구 문항 수",
+      "claimed": 81,
+      "recomputed": 81,
+      "match": true
+    },
+    {
+      "what": "원인·대책 요구 비율",
+      "claimed": 30.0,
+      "recomputed": 30.0,
+      "match": true
+    },
+    {
+      "what": "유의·주의·고려·검토 요구 문항 수",
+      "claimed": 79,
+      "recomputed": 79,
+      "match": true
+    },
+    {
+      "what": "유의·주의·고려·검토 요구 비율",
+      "claimed": 29.3,
+      "recomputed": 29.3,
+      "match": true
+    },
+    {
+      "what": "비교·장단점 요구 문항 수",
+      "claimed": 10,
+      "recomputed": 10,
+      "match": true
+    },
+    {
+      "what": "비교·장단점 요구 비율",
+      "claimed": 3.7,
+      "recomputed": 3.7,
+      "match": true
+    },
+    {
+      "what": "시공관리·품질관리 요구 문항 수",
+      "claimed": 16,
+      "recomputed": 16,
+      "match": true
+    },
+    {
+      "what": "시공관리·품질관리 요구 비율",
+      "claimed": 5.9,
+      "recomputed": 5.9,
+      "match": true
+    },
+    {
+      "what": "기준·법령 요구 문항 수",
+      "claimed": 34,
+      "recomputed": 34,
+      "match": true
+    },
+    {
+      "what": "기준·법령 요구 비율",
+      "claimed": 12.6,
+      "recomputed": 12.6,
+      "match": true
+    },
+    {
+      "what": "삭제한 공정·원가·계약 행 수",
+      "claimed": 0,
+      "recomputed": 0,
+      "match": true
+    },
+    {
+      "what": "한중 문항 수",
+      "claimed": 8,
+      "recomputed": 8,
+      "match": true
+    },
+    {
+      "what": "한중 회차 수",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "중대재해 문항 수",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "중대재해 회차 수",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "40분 학습 배분 합계",
+      "claimed": 40,
+      "recomputed": 40,
+      "match": true
+    },
+    {
+      "what": "인용 문항 126-3-5 연도",
+      "claimed": 2022,
+      "recomputed": 2022,
+      "match": true
+    },
+    {
+      "what": "인용 문항 132-3-1 연도",
+      "claimed": 2024,
+      "recomputed": 2024,
+      "match": true
+    },
+    {
+      "what": "인용 문항 137-4-3 연도",
+      "claimed": 2025,
+      "recomputed": 2025,
+      "match": true
+    },
+    {
+      "what": "인용 문항 138-2-1 연도",
+      "claimed": 2026,
+      "recomputed": 2026,
+      "match": true
+    },
+    {
+      "what": "인용 문항 126-4-2 연도",
+      "claimed": 2022,
+      "recomputed": 2022,
+      "match": true
+    },
+    {
+      "what": "인용 문항 137-4-6 연도",
+      "claimed": 2025,
+      "recomputed": 2025,
+      "match": true
+    },
+    {
+      "what": "인용 문항 139-3-1 연도",
+      "claimed": 2026,
+      "recomputed": 2026,
+      "match": true
+    },
+    {
+      "what": "인용 문항 140-3-4 연도",
+      "claimed": 2026,
+      "recomputed": 2026,
+      "match": true
+    },
+    {
+      "what": "인용 문항 128-3-6 연도",
+      "claimed": 2022,
+      "recomputed": 2022,
+      "match": true
+    },
+    {
+      "what": "인용 문항 133-2-2 연도",
+      "claimed": 2024,
+      "recomputed": 2024,
+      "match": true
+    },
+    {
+      "what": "인용 문항 138-3-6 연도",
+      "claimed": 2026,
+      "recomputed": 2026,
+      "match": true
+    },
+    {
+      "what": "인용 문항 140-4-6 연도",
+      "claimed": 2026,
+      "recomputed": 2026,
+      "match": true
+    },
+    {
+      "what": "남은 영문약어 경계 적용시 집계 변화",
+      "claimed": [],
+      "recomputed": [],
+      "match": true
+    }
+  ],
+  "errors": [],
+  "assumptions": [],
+  "unchecked": [
+    "입력 전체465문항 JSON을 PDF에서 다시 전사하지는 않았습니다. 공식 원문의 전사 정확성과 출제기준 현행성은 source-reviewer 확인 대상입니다.",
+    "시험시간·합격 기준·선택 문항 수가 현행 시험 규정인지 여부는 source-reviewer 확인 대상이며 여기서는 원고 수치 간 산술 일관성만 확인했습니다."
+  ],
+  "method": "원본 analyze.py를 실행/수정하지 않고 공개된 문자검색 규칙을 입력으로 삼아 전체 문항 JSON에서 독립 집계. 표는 HTMLParser로 새로 추출하여 대조.",
+  "computed_themes": {
+    "가설·토공·지정": {
+      "by_year": {
+        "2022": 7,
+        "2023": 13,
+        "2024": 11,
+        "2025": 8,
+        "2026": 11
+      },
+      "count": 50,
+      "round_count": 15
+    },
+    "기초·지하공사": {
+      "by_year": {
+        "2022": 8,
+        "2023": 6,
+        "2024": 6,
+        "2025": 7,
+        "2026": 4
+      },
+      "count": 31,
+      "round_count": 14
+    },
+    "철근콘크리트": {
+      "by_year": {
+        "2022": 24,
+        "2023": 27,
+        "2024": 27,
+        "2025": 29,
+        "2026": 28
+      },
+      "count": 135,
+      "round_count": 15
+    },
+    "철골·접합": {
+      "by_year": {
+        "2022": 19,
+        "2023": 17,
+        "2024": 9,
+        "2025": 17,
+        "2026": 15
+      },
+      "count": 77,
+      "round_count": 15
+    },
+    "조적·미장·마감": {
+      "by_year": {
+        "2022": 10,
+        "2023": 9,
+        "2024": 10,
+        "2025": 8,
+        "2026": 6
+      },
+      "count": 43,
+      "round_count": 15
+    },
+    "커튼월·유리·외장": {
+      "by_year": {
+        "2022": 1,
+        "2023": 3,
+        "2024": 5,
+        "2025": 4,
+        "2026": 3
+      },
+      "count": 16,
+      "round_count": 10
+    },
+    "품질·안전·환경·유지관리": {
+      "by_year": {
+        "2022": 12,
+        "2023": 12,
+        "2024": 14,
+        "2025": 23,
+        "2026": 22
+      },
+      "count": 83,
+      "round_count": 15
+    },
+    "스마트·디지털": {
+      "by_year": {
+        "2022": 2,
+        "2023": 2,
+        "2024": 4,
+        "2025": 2,
+        "2026": 6
+      },
+      "count": 16,
+      "round_count": 10
+    }
+  },
+  "manuscript_sha256": "83158629b3aa53f65c5a64a924386ca8a632500c49e377139ad29cdcd2f10702",
+  "script": "~/.cache/autosns-llm/calc/building_intro_20261031_verify.py"
+}

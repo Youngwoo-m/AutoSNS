@@ -1,0 +1,77 @@
+{
+  "verdict": "fix",
+  "summary": "2022년 제128회 1교시 10번 최소제곱법 기출 표기는 공식 문제지와 일치합니다. 동일 정밀도 조건과 관련 글의 창작 문제 구분을 보완하고 설명 첫 줄에 관련 글 링크를 넣어야 합니다.",
+  "issues": [
+    {
+      "severity": "fix",
+      "where": "장면2: 잔차 제곱의 합이 최소인 값",
+      "problem": "비가중 최소제곱을 설명하는 문장에 관측 정밀도가 같다는 조건이 생략돼 있습니다. 장면3에서 가중 최소제곱을 추가하지만 두 경우의 구분이 불명확합니다.",
+      "fix": "동일 정밀도 관측에서는 잔차 제곱합, 정밀도가 다른 독립 관측에서는 경중률을 반영한 잔차 제곱합을 최소화한다는 순서로 조건을 명시합니다. 음성·자막을 함께 고치고 새 렌더 파일을 확인합니다."
+    },
+    {
+      "severity": "fix",
+      "where": "description.txt 첫 줄 / meta.related_blog_url",
+      "problem": "설명 첫 줄에 관련 개별 블로그 링크가 없고 메타 관련 글 URL도 비어 있습니다.",
+      "fix": "첫 줄에 https://na-geoai.tistory.com/42 를 넣고 meta.related_blog_url에도 기록합니다. 링크 소개는 최소제곱조정·관측 가중치 관련 학습자료로 한정합니다."
+    },
+    {
+      "severity": "fix",
+      "where": "설명/운영자 댓글의 관련 글 안내",
+      "problem": "영상은 Q-net 제128회 1교시10번을 바탕으로 하지만 연결할 5일차 글은 창작 연습문제입니다. 같은 기출의 전체 해설로 소개하면 오해가 생깁니다.",
+      "fix": "설명에 영상은 제128회 기출의 기본 개념을 다루며 연결 글은 같은 주제의 창작 연습문제·가상 계산예라는 구분을 적습니다. 댓글도 관련 학습자료라고 안내합니다."
+    },
+    {
+      "severity": "fix",
+      "where": "description.txt 공식 참고자료",
+      "problem": "Q-net은 문제 원문만 확인해 주며 최소제곱·정밀도와 경중률 관계의 답안 근거는 별도 링크가 없습니다.",
+      "fix": "NIST Weighted Least Squares Regression https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd143.htm 과 확인일 2026-10-31을 추가합니다. 독립 관측에서 역분산에 비례하는 상대 경중률이라는 적용 조건을 간단히 덧붙입니다."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210607&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "yes",
+      "note": "Q-net 제목이 제128회 측량및지형공간정보기술사(2022년), 첨부 공식PDF 확인."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2203735&fileName=%EC%A0%9C128%ED%9A%8C+%EC%B8%A1%EB%9F%89%EB%B0%8F%EC%A7%80%ED%98%95%EA%B3%B5%EA%B0%84%EC%A0%95%EB%B3%B4%EA%B8%B0%EC%88%A0%EC%82%AC+%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2203735&artlSeq=5210607&href=0",
+      "opened": true,
+      "supports": "yes",
+      "note": "213313바이트 PDF. SHA256 99792179a71a493318ea4b0090222397bfdc04ae3456e844e4a1839d595be059가 로컬128.pdf와 일치. 로컬 첫 쪽에서 1교시10번 최소제곱법 직접 확인."
+    },
+    {
+      "url": "https://na-geoai.tistory.com/42",
+      "opened": true,
+      "supports": "partly",
+      "note": "HTTP200. 5일차 최소제곱조정과 관측 가중치. 창작 연습문제와 가상 가중평균 계산, PDF 안내가 있어 관련 학습자료로 적합. 영상과 같은 기출문제인 것은 아님."
+    },
+    {
+      "url": "https://www.itl.nist.gov/div898/handbook/pmd/section4/pmd432.htm",
+      "opened": true,
+      "supports": "yes",
+      "note": "가중 잔차 제곱합 목적함수와 비가중 최소제곱 구분 확인."
+    },
+    {
+      "url": "https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd143.htm",
+      "opened": true,
+      "supports": "yes",
+      "note": "정밀도가 다른 관측과 가중 최소제곱, 분산 역수 비례 가중치와 상대 가중치 설명 확인."
+    },
+    {
+      "url": "https://www.ngs.noaa.gov/PC_PROD/ADJUST/",
+      "opened": true,
+      "supports": "yes",
+      "note": "측량의 수평·연직각 및 GPS 관측 최소제곱조정 소프트웨어 설명 확인. 페이지 최신 안내는2025-06-09."
+    }
+  ],
+  "sources_opened": 6,
+  "notes": [
+    "원본 파일은 수정하지 않았습니다. 새 영상 제작/발행/프로필/유료모델 호출을 하지 않았습니다.",
+    "제목96자로100자 이내이며 시험 정식 이름·학습용 분야 표기가 있습니다.",
+    "props의 장면 자막3개와 대본.txt 문자열은 정확히 일치합니다.",
+    "기존 렌더 프레임3개를 직접 열어 시험명·기출·학습용 분류·AI 그림/합성음성 고지를 확인했습니다.",
+    "ffprobe 실제 short.mp4 15.019초·1080×1920·음성스트림 존재. voice.wav는15.040초입니다. 실제 음성 청취/독립 받아쓰기는 수행하지 않아 음성·자막의 실제 일치 완료를 주장하지 않습니다.",
+    "부모에게 새 영상이 완성된 뒤 수정 범위 검토를 받을 수 있음을 전달했습니다."
+  ]
+}

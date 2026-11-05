@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 24240,
+  "stop_reason": "end_turn",
+  "session_id": "9387d874-237b-45c8-9248-0a88e67bd354",
+  "total_cost_usd": 0.06749250000000001,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 6734,
+    "cache_read_input_tokens": 2225,
+    "output_tokens": 4033,
+    "output_tokens_details": {
+      "thinking_tokens": 2237
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 6734,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 4033,
+        "cache_read_input_tokens": 2225,
+        "cache_creation_input_tokens": 6734,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 6734
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4033,
+      "cacheReadInputTokens": 2225,
+      "cacheCreationInputTokens": 6734,
+      "webSearchRequests": 0,
+      "costUSD": 0.06749250000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 2237,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "```json\n{\"pass\":1,\"changes\":[{\"path\":\"/intro/0\",\"old\":\"안녕하세요, 하루 한 문제 2일차의 첫 주제어는 ‘콘크리트 균열’이에요. 균열 모양만 보고 보수 방법을 고르면 원인을 놓치기 쉬워서, 발생 시점과 원인을 구별하는 일이 중요해요.\",\"new\":\"안녕하세요, 하루 한 문제 2일차의 첫 주제어는 ‘콘크리트 균열’이에요. 균열 모양만 보고 보수 방법을 고르면 원인을 놓치기 쉬워요. 그래서 발생 시점과 원인을 먼저 구별해야 해요.\",\"reason\":\"명사화 표현('구별하는 일이 중요해요')을 서술형으로 바꾸고 긴 문장을 둘로 나눔\"},{\"path\":\"/explanation/1/paragraphs/0\",\"old\":\"소성침하균열은 굳기 전 콘크리트가 가라앉는 과정에서 철근이나 거푸집 등에 걸려 생기는 균열이에요. KCS 3.3.4는 벽이나 기둥과 연속된 슬래브와 보를 타설할 때, 벽·기둥의 침하가 거의 끝난 다음에 타설하도록 하고 있어요. 굳기 전에 침하균열이 생겼다면 즉시 다짐이나 재진동을 하도록 하고 있는데, 이미 굳은 균열을 재진동으로 없애라는 뜻은 아니에요.\",\"new\":\"소성침하균열은 굳기 전 콘크리트가 가라앉는 과정에서 철근이나 거푸집 등에 걸려 생기는 균열이에요. KCS 3.3.4는 벽이나 기둥과 연속된 슬래브와 보를 타설할 때, 벽·기둥의 침하가 거의 끝난 다음에 타설하라고 해요. 굳기 전에 침하균열이 생겼다면 즉시 다짐이나 재진동을 하라고 하는데, 이미 굳은 균열을 재진동으로 없애라는 뜻은 아니에요.\",\"reason\":\"'~하도록 하고 있어요'의 번역투 반복을 자연스러운 서술로 교체(재진동 조건은 유지)\"},{\"path\":\"/explanation/1/paragraphs/1\",\"old\":\"소성수축균열은 표면의 수분 증발이 블리딩으로 올라오는 물보다 빠를 때 표면이 먼저 마르면서 생기는 균열이에요. 그래서 방풍과 차양으로 증발 조건을 줄이고, 마감 직후 표면을 보호하며, 적절히 양생하는 방향으로 대책을 잡아요. KCS 3.4.2(1)도 직사광선이나 바람에 의한 수분 증발을 막도록 하고 있어요.\",\"new\":\"소성수축균열은 표면의 수분 증발이 블리딩으로 올라오는 물보다 빠를 때 표면이 먼저 마르면서 생기는 균열이에요. 그래서 방풍과 차양으로 증발 조건을 줄이고, 마감 직후 표면을 보호하며, 적절히 양생하는 방향으로 대책을 잡아요. KCS 3.4.2(1)도 직사광선이나 바람에 의한 수분 증발을 막으라고 해요.\",\"reason\":\"'막도록 하고 있어요' 번역투 정리\"},{\"path\":\"/explanation/3/paragraphs/1\",\"old\":\"KCS 1.9.1(8)은 시공 단계에서 정해진 피복 두께를 확보하고 다지기와 양생에 주의하도록 하고 있어요. 아래 표는 이를 바탕으로 한 학습용 정리이며, 기구별 대책을 KCS 문장 그대로의 일괄 의무로 읽지는 않아야 해요.\",\"new\":\"KCS 1.9.1(8)은 시공 단계에서 정해진 피복 두께를 확보하고 다지기와 양생에 주의하라고 해요. 아래 표는 이를 바탕으로 한 학습용 정리이며, 기구별 대책을 KCS 문장 그대로의 일괄 의무로 읽으면 안 돼요.\",\"reason\":\"번역투 '~하도록 하고 있어요'와 어색한 이중부정('읽지는 않아야 해요')을 정리\"}],\"notes\":[\"숫자·날짜·조항번호·출처·고유명사와 경화 전/후·내구성의 중첩 조건, 굳기 전 침하균열에만 해당하는 다짐·재진동 조건, 자기수축 살수 단정 금지 표현은 그대로 두었습니다.\",\"답안(answer), pdf_answer_pages, 답안작성요령(intent/1)은 이미 문어체 개조식·명사형으로 일관되어 1차에서는 변경하지 않았습니다.\",\"반복 어미('~해요' 연속), 'KCS ~ 하고 있어요' 잔여 표현, disclosure의 '정리' 중복은 2차 검토 대상으로 남깁니다.\"]}\n```",
+  "ttft_ms": 15166,
+  "type": "result",
+  "duration_ms": 24307,
+  "uuid": "62b62989-f9c0-4217-badf-040db8f2ea1d",
+  "ttft_stream_ms": 1377,
+  "time_to_request_ms": 66,
+  "first_content_frame_ms": 1378,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 10718,
+  "stop_reason": "end_turn",
+  "session_id": "aa47d265-171e-4154-9adc-cc82412695bf",
+  "total_cost_usd": 0.0220525,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 1724,
+    "cache_read_input_tokens": 2225,
+    "output_tokens": 1493,
+    "output_tokens_details": {
+      "thinking_tokens": 809
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 1724,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1493,
+        "cache_read_input_tokens": 2225,
+        "cache_creation_input_tokens": 1724,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1724
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1493,
+      "cacheReadInputTokens": 2225,
+      "cacheCreationInputTokens": 1724,
+      "webSearchRequests": 0,
+      "costUSD": 0.0220525,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 809,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"pass\":1,\"future_paragraph\":\"앞으로 철근콘크리트·철골·마감·외장을 비롯한 주요 공종과 공정·원가·안전관리 주제를 차례로 다룰 예정이에요. 글마다 문제와 해설, 답안 예시, 그림과 표, 놓치기 쉬운 점을 담고, 참고자료와 따라쓰기 PDF도 함께 안내해 드릴게요. 첫 답안 연습은 5년간 7개 회차에서 다뤄진 ‘한중콘크리트의 시공과 양생관리’로 시작해요.\",\"request_sentence\":\"문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올려요.\",\"audit_notes\":[\"연재예고문: 글 구성을 '문제와 해설, 답안 예시, 그림과 표, 놓치기 쉬운 점, 참고자료와 따라쓰기 PDF' 순서로 바꿈\",\"연재예고문: 독립된 '답안 목차' 예고와 '복습 항목' 표현 삭제\",\"연재예고문: 구분선·문어체·개조식 등 내부 문체규칙 설명 문장 삭제\",\"연재예고문: '공식 참고자료'는 '참고자료'로 표기함(요청 구성 문구에 맞춤)\",\"연재예고문: 5년, 7개 회차, '한중콘크리트의 시공과 양생관리' 그대로 유지\",\"요청안내: '정답예시'를 '답안 예시'로 변경\",\"요청안내: 문장 끝 '올립니다'를 '올려요'로 바꿔 해요체로 통일\",\"요청안내: 접수 순서, 매일 밤 11시 확인 시각은 그대로 보존\",\"새 사실·숫자·법령·경력·예시는 추가하지 않음\"],\"facts_preserved\":true}",
+  "ttft_ms": 7008,
+  "type": "result",
+  "duration_ms": 10779,
+  "uuid": "22518895-fd44-4c4c-82ee-8b13b0cd501f",
+  "ttft_stream_ms": 3071,
+  "time_to_request_ms": 60,
+  "first_content_frame_ms": 3072,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

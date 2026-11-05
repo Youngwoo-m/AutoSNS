@@ -1,0 +1,152 @@
+{
+  "requested_at": "2026-10-31T16:01:51.760239+09:00",
+  "scope": [
+    "building:1",
+    "building:2",
+    "safety:1",
+    "safety:2"
+  ],
+  "blogger_exception": {
+    "authorized": true,
+    "user_reply": "이번 4편만 상한 예외로 발행",
+    "date": "2026-10-31",
+    "general_cap_unchanged": true
+  },
+  "tistory": "four_posts_public",
+  "day1": "reviewed_ready",
+  "day2": "reviewed_corrected_published",
+  "published": [
+    {
+      "exam": "building",
+      "day": 1,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/202",
+        "blogger": "https://geoaina.blogspot.com/2026/10/1_01623276063.html",
+        "naver": "https://blog.naver.com/safeworking/224460209077"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "building",
+      "day": 2,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/204",
+        "blogger": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+        "naver": "https://blog.naver.com/safeworking/224460206285"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "safety",
+      "day": 1,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/203",
+        "blogger": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+        "naver": "https://blog.naver.com/safeworking/224460202351"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "safety",
+      "day": 2,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/205",
+        "blogger": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+        "naver": "https://blog.naver.com/safeworking/224460204210"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    }
+  ],
+  "updated_at": "2026-10-31T16:25:30.619276+09:00",
+  "naver": "4/4 verified",
+  "posts": [
+    {
+      "exam": "building",
+      "day": 1,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/202",
+        "blogger": "https://geoaina.blogspot.com/2026/10/1_01623276063.html",
+        "naver": "https://blog.naver.com/safeworking/224460209077"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "building",
+      "day": 2,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/204",
+        "blogger": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+        "naver": "https://blog.naver.com/safeworking/224460206285"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "safety",
+      "day": 1,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/203",
+        "blogger": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+        "naver": "https://blog.naver.com/safeworking/224460202351"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    },
+    {
+      "exam": "safety",
+      "day": 2,
+      "urls": {
+        "tistory": "https://na-geoai.tistory.com/205",
+        "blogger": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+        "naver": "https://blog.naver.com/safeworking/224460204210"
+      },
+      "verification": {
+        "tistory": true,
+        "blogger": true,
+        "naver": true
+      },
+      "status": "published"
+    }
+  ],
+  "status": "published_and_verified",
+  "blogger": "four_posts_public_exception_consumed",
+  "lists": "both public lists verified day1/day2 PDF=true",
+  "building_intro": {
+    "status": "saved_public_verified",
+    "url": "https://na-geoai.tistory.com/182"
+  },
+  "finished_at": "2026-10-31T16:25:30.713413+09:00"
+}

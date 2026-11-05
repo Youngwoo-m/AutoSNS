@@ -416,7 +416,13 @@
       "재난안전학과",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/YBYJSbh5B00",
+      "instagram": "published",
+      "threads": "no_box",
+      "x": "error",
+      "at": "2026-10-31T20:02:44"
+    },
     "season_note": "난방 시작",
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
   },

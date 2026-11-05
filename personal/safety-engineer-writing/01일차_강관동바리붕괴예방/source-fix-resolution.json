@@ -1,0 +1,17 @@
+{
+  "source_review": "source-review.json fix4",
+  "resolved": [
+    "강관틀나목/다목전체조건",
+    "글머리주제우선+Qnet공개일2026-08-24링크",
+    "반복단서끝한문단정리",
+    "태그9개중기출1·답안1",
+    "AI생성배너고지"
+  ],
+  "pdf_answer_changed": false,
+  "pdf_bytes_preserved": true,
+  "public_model_calls_this_fix": 0,
+  "publication_calls": 0,
+  "deployment_calls": 0,
+  "visual_qa": "수정된intro/table스크린샷및PDF전2쪽다시직접열람·잘림/겹침없음",
+  "all_manifest_hashes_verified": true
+}

@@ -1,0 +1,38 @@
+{
+  "url": "https://na-geoai.tistory.com/213",
+  "http": 200,
+  "title_match": true,
+  "missing_headings": [],
+  "assets": [
+    {
+      "name": "banner.png",
+      "http": 200,
+      "bytes": 960337,
+      "sha256": "a4c56ffc2bf45abfa7b70cff8f14c57636593edaa6746bac93f7fc50fbb19d68",
+      "pdf_magic": null
+    },
+    {
+      "name": "지상라이다_수식.png",
+      "http": 200,
+      "bytes": 94338,
+      "sha256": "2fa91ac9c2a21179cd84fa5ffe9abcb62e5870d6e8521b1ec82adf4cae1dae3f",
+      "pdf_magic": null
+    },
+    {
+      "name": "지상라이다_도식.gif",
+      "http": 200,
+      "bytes": 223560,
+      "sha256": "50699f37e3fb26fd2d64bbcfb542ea4546163ca113c715f6fd2d9b960dd258b3",
+      "pdf_magic": null
+    },
+    {
+      "name": "24일차_지상라이다_모범답안_따라쓰기.pdf",
+      "http": 200,
+      "bytes": 210160,
+      "sha256": "aee2b175ea6c94ae9882a1a951cb662fe129d7868911a78ce6fea1fffdc845cc",
+      "pdf_magic": true
+    }
+  ],
+  "all_assets_match": true,
+  "raw_tokens": false
+}

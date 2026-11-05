@@ -1,0 +1,44 @@
+{
+  "verdict": "pass",
+  "summary": "이전 필수 수정 4건이 모두 반영됐습니다. 원본과 대조했으며 새 숫자·시험정보·법령 주장은 추가되지 않았습니다.",
+  "file": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/safety-Blogger-final.html",
+  "sha256": "2f1591355de86d8732c8b0f19eeeb343764ac3f65954aad86ce0c1eff70f60d6",
+  "issues": [],
+  "resolved": [
+    {
+      "item": "요청 안내 하단 이동",
+      "verified": true,
+      "evidence": "첫 요청 h2와 안내 문단이 원래 위치에서 삭제되고 해시태그 뒤 맨 아래에 동일 링크로 배치됨"
+    },
+    {
+      "item": "독립 목차 예고 및 내부 편집 규칙 삭제",
+      "verified": true,
+      "evidence": "7절 예고가 문제와 해설·답안 예시·그림과 표·놓치기 쉬운 점·참고자료·PDF로 변경. 5장 답안 작성 이론의 문어체 유지 타당"
+    },
+    {
+      "item": "포괄 현행 법령 확인 완료 주장 삭제",
+      "verified": true,
+      "evidence": "모두 2026년 10월28일 기준 현행법령으로 확인했다는 문장만 삭제. 숫자 multiset 추가0, 삭제는 해당문장의2026·10·28 각1회뿐"
+    },
+    {
+      "item": "개인 브랜드 배너 HTTPS 추가",
+      "verified": true,
+      "evidence": "맨 위에 CDN img 추가, alt 건설안전기술사 준비하기—재난안전과GeoAI. banner-upload.json URL일치. 로컬 safety-intro-banner.png 직접 열어 제목·개인브랜드·날짜·글자깨짐없음 확인"
+    }
+  ],
+  "checks": {
+    "original_and_final_tables": 5,
+    "all_table_html_identical": true,
+    "original_href_removed": 0,
+    "new_external_link": "배너 CDN src 1개뿐",
+    "new_numeric_factual_claims": 0,
+    "source_requeries": 0,
+    "publication_calls": 0,
+    "original_modified": false
+  },
+  "sources": [],
+  "notes": [
+    "이번 검토는 이전 fix4 반영에 한정했습니다. 이미 검증한 Q-net·공개입문·접수폼 출처를 재조회하지 않았습니다.",
+    "추가된 배너 URL의 외부 HTTP응답 재검증은 수행하지 않았습니다. 발행 전/후 공개 이미지 응답은 발행 담당자가 확인해야 합니다."
+  ]
+}

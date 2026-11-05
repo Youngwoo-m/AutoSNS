@@ -1,0 +1,233 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-11-06",
+  "type": "화재",
+  "angle": "11월 불조심 강조의 달 — 주택 화재 대피·소화기",
+  "ep_no": 1,
+  "visual_mode": "video",
+  "title": "집에 불이 나면 몇 초 안에 해야 할 행동입니다 | 재난 대응 #1 화재",
+  "intro": null,
+  "outro": null,
+  "loop": true,
+  "loop_bridge": "이 세 가지는 꼭 기억해야 합니다. → 주택 화재는 자는 사이에도 연기가 먼저 번집니다.",
+  "hook_text": "집에 불났다면?",
+  "next_episode_text": "다음 주 화요일: 화재 2편",
+  "body_target_seconds": 43,
+  "clip_seconds": 8,
+  "format": "long50",
+  "max_seconds": 52,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, realistic materials and textures, natural-looking Korean people of mixed ages moving at real-time speed. Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. Cinematic look: anamorphic lens feel with gentle shallow depth of field, warm highlights and cool shadows, subtle film grain. Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "camera_text": {
+    "aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; the people and their actions fill a large part of the frame."
+  },
+  "camera_text_image": {
+    "aerial": " Camera: wide establishing shot from a high drone, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens; the people and their actions fill a large part of the frame."
+  },
+  "prompt_order": "scene_first",
+  "hashtags": {
+    "youtube": [
+      "화재",
+      "소화기사용법",
+      "주택화재대피",
+      "불조심강조의달"
+    ],
+    "instagram": [
+      "화재예방",
+      "소화기사용법",
+      "주택화재대피",
+      "아파트화재",
+      "11월불조심"
+    ],
+    "threads": "화재대피",
+    "naver": [
+      "화재대피요령",
+      "소화기사용법",
+      "주택화재대피",
+      "아파트화재대피",
+      "완강기사용법",
+      "불조심강조의달",
+      "119신고요령",
+      "화재예방수칙",
+      "경량칸막이",
+      "화재초기진화"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "주택 화재는 자는 사이에도 연기가 먼저 번집니다. 작은 불씨가 집 전체로 번질 수 있습니다.",
+      "tts_text": "주택 화재는 자는 사이에도 연기가 먼저 번집니다. 작은 불씨가 집 전체로 번질 수 있습니다.",
+      "subtitle": [
+        "주택 화재",
+        "연기가 먼저 번짐"
+      ],
+      "labels_3d": [
+        "화재",
+        "연기"
+      ],
+      "source_quote": [
+        "자고 있을 때 화재경보가 울리면 불이 났는지 확인하려고 하기보다는 소리를 질러 주변 사람에게 알립니다."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "Smoke drifts under a bedroom door and curls along the ceiling of a Korean apartment at night, lit only by a faint orange glow from outside the door, no people visible."
+      }
+    },
+    {
+      "id": 2,
+      "role": "피해 특징·위험한 이유",
+      "narration": "문손잡이가 뜨거우면 반대쪽에 불이 난 것입니다. 그 문을 열면 불길이 들어옵니다.",
+      "tts_text": "문손잡이가 뜨거우면 반대쪽에 불이 난 것입니다. 그 문을 열면 불길이 들어옵니다.",
+      "subtitle": [
+        "뜨거운 손잡이",
+        "열면 위험"
+      ],
+      "labels_3d": [
+        "손잡이"
+      ],
+      "source_quote": [
+        "손등으로 출입문 손잡이를 만져보아 손잡이가 따뜻하거나 뜨거우면 문 반대쪽에 불이 난 것이므로 문을 열지 않습니다."
+      ],
+      "media": "diorama",
+      "camera": "eye",
+      "cutaway": true,
+      "diorama_prompt": "A miniature cutaway diorama of a Korean apartment hallway and room showing a door with the far side room filled with tiny orange flame effects, a small model hand reaches toward the door handle but stops just before touching it.",
+      "gauge": "",
+      "video_prompt": {
+        "3d_real": "A miniature cutaway diorama of a Korean apartment hallway and room showing a door with the far side room filled with tiny orange flame effects, a small model hand reaches toward the door handle but stops just before touching it."
+      }
+    },
+    {
+      "id": 3,
+      "role": "미리 지킬 일·예방",
+      "narration": "집 안에 소화기를 미리 두어야 합니다. 작은 불은 소화기로 끌 수 있습니다.",
+      "tts_text": "집 안에 소화기를 미리 두어야 합니다. 작은 불은 소화기로 끌 수 있습니다.",
+      "subtitle": [
+        "소화기 미리 두기",
+        "작은 불 초기 진화"
+      ],
+      "labels_3d": [
+        "소화기"
+      ],
+      "source_quote": [
+        "불길이 천장까지 닿지 않은 작은 불이라면 소화기나 물양동이 등을 활용하여 신속히 끄도록 합니다."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean woman in casual home clothes kneels in a bright kitchen and places a red fire extinguisher beside the cabinet, during a calm daytime moment with natural light through the window."
+      }
+    },
+    {
+      "id": 4,
+      "role": "일이 났을 때 행동",
+      "narration": "불을 보면 큰 소리로 알려야 합니다. 안전핀을 뽑고 문을 등진 채 불쪽으로 분말을 쏩니다.",
+      "tts_text": "불을 보면 큰 소리로 알려야 합니다. 안전핀을 뽑고 문을 등진 채 불쪽으로 분말을 쏩니다.",
+      "subtitle": [
+        "큰 소리로 알리기",
+        "문 등지고 소화기 사용"
+      ],
+      "labels_3d": [
+        "소화기 사용"
+      ],
+      "source_quote": [
+        "불이 난 것을 발견하면 “불이야!”라고 소리치거나 비상벨을 눌러 주변에 알리도록 합니다.",
+        "실내에서 사용할 때는 밖으로 대피할 때를 대비하여 문을 등지고 소화기를 가져와서 몸통을 단단히 잡고 안전핀을 뽑는다."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean man in home clothes stands with his back to an open door inside a living room, pulls the safety pin from a fire extinguisher and aims the nozzle toward small flames near a cabinet, daytime indoor lighting."
+      }
+    },
+    {
+      "id": 5,
+      "role": "대피",
+      "narration": "불이 커지면 젖은 수건으로 입을 막고 낮은 자세로 계단을 이용해 대피합니다. 엘리베이터는 타지 않습니다.",
+      "tts_text": "불이 커지면 젖은 수건으로 입을 막고 낮은 자세로 계단을 이용해 대피합니다. 엘리베이터는 타지 않습니다.",
+      "subtitle": [
+        "낮은 자세로 계단 대피",
+        "엘리베이터 금지"
+      ],
+      "labels_3d": [
+        "계단 대피"
+      ],
+      "source_quote": [
+        "대피할 때는 엘리베이터를 절대 이용하지 않고 계단을 통하여 지상으로 안전하게 대피합니다.",
+        "불길이 커져서 대피해야 할 경우 젖은 수건 또는 담요를 활용하여 계단을 통해 밖으로 대피합니다."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "shots": [
+        {
+          "seconds": 4,
+          "camera": "eye",
+          "prompt": "A Korean family covers their noses with wet towels and moves in a low crouching posture away from a smoky apartment doorway toward the camera in a dim hallway."
+        },
+        {
+          "seconds": 4,
+          "camera": "eye",
+          "prompt": "The same family hurries down an apartment stairwell toward the ground floor exit, daylight visible through a door at the bottom of the stairs."
+        }
+      ],
+      "video_prompt": {
+        "3d_real": "(정리 카드)"
+      }
+    },
+    {
+      "id": 6,
+      "media": "card",
+      "narration": "정리합니다. 뜨거운 손잡이는 열지 않고, 소화기는 문을 등지고 쏘고, 계단으로 낮게 대피합니다. 이 세 가지는 꼭 기억해야 합니다.",
+      "tts_text": "정리합니다. 뜨거운 손잡이는 열지 않고, 소화기는 문을 등지고 쏘고, 계단으로 낮게 대피합니다. 이 세 가지는 꼭 기억해야 합니다.",
+      "subtitle": [],
+      "labels_3d": [],
+      "source_quote": [],
+      "video_prompt": {
+        "3d_real": "(정리 카드)"
+      },
+      "card": {
+        "title": "오늘의 핵심",
+        "items": [
+          "뜨거운 문 열지 않기",
+          "문 등지고 소화기 사용",
+          "낮은 자세로 계단 대피"
+        ]
+      },
+      "cutaway": false,
+      "camera": "eye"
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 화재 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(화재) / 배경 영상은 AI로 생성한 3D 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "화재대피",
+      "소화기사용법",
+      "주택화재",
+      "불조심강조의달",
+      "화재예방",
+      "아파트화재",
+      "119신고",
+      "재난안전학과",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "status": "published",
+  "day": 1,
+  "title": "[건설안전기술사] 거푸집·강관 동바리, 타설 전 무엇을 확인할까 | 하루 한 문제 1일차",
+  "expected_public_prefix": "https://geoai-na.netlify.app/safety-questions/materials/day01/",
+  "public_assets": [
+    {
+      "name": "banner.png",
+      "bytes": 1001062,
+      "sha256": "790173503719ef6edc870aa29bfd58c649c3fbc3d0a41461c5d01dbf88fa8dec"
+    },
+    {
+      "name": "동바리_단계별확인.png",
+      "bytes": 75741,
+      "sha256": "cdac0a63dc112cd7832830e3307959d13501a943cf6be6c08c3578fbb2bb428f"
+    },
+    {
+      "name": "01일차_강관동바리_답안예시_따라쓰기.pdf",
+      "bytes": 164239,
+      "sha256": "292ad6f538948624c16c224c8a14dfd5f5e078b72c0fe378e3c759906f26df96"
+    }
+  ],
+  "manuscripts": {
+    "티스토리게시본문.html": "b280e908995b665953bfd9098be5357663e5e23d1a2c4399df02525fd46f6966",
+    "Blogger게시본문.html": "0e8d80d19f38fc4e2336e36e82eb0c3c6710a1f1d05a373f58ba0f4144457435"
+  },
+  "source_fix_round1": {
+    "issues_resolved": 4,
+    "ai_banner_disclosure_added": true,
+    "qnet_publication_date": "2026-08-24",
+    "qnet_exam_date_note": "시행일과게시일을구분;본문은게시일만표기",
+    "pdf_answer_unchanged": true
+  },
+  "public_channels": {
+    "tistory": "https://na-geoai.tistory.com/203",
+    "blogger": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+    "naver": "https://blog.naver.com/safeworking/224460202351"
+  },
+  "public_verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "updated_at": "2026-10-31T16:25:30.619276+09:00"
+}

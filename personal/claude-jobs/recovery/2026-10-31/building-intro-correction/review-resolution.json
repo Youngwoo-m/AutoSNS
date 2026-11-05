@@ -1,0 +1,14 @@
+{
+  "source_verdict": "fix",
+  "resolved": 3,
+  "items": [
+    "공개배너http200치환",
+    "환경·유지관리포함한소제목정정",
+    "중점관리포함방법명시"
+  ],
+  "numeric_changes_after_calc": 0,
+  "final_html_sha256": "3660896a84155ec9fba4400e7e74e9e0c4f426a382ed33cff2063b39bae6ad05",
+  "authorized_edit": "사용자 건축입문글보완명시",
+  "original_post": "https://na-geoai.tistory.com/182",
+  "additional_disclosure": "AI배너캡션"
+}

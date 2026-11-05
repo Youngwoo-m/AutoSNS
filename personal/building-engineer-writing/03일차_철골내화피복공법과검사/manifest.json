@@ -1,0 +1,38 @@
+{
+  "day": 3,
+  "title": "[건축시공기술사] 철골 내화피복, 내화뿜칠 공법과 두께 검사·보수 | 하루 한 문제 3일차",
+  "status": "published",
+  "assets": [
+    {
+      "filename": "banner.png",
+      "sha256": "235d4868e7be9c2a4a721aab0f3441eaca877f070474d2f7d2a88bfe627bb497",
+      "bytes": 1136929,
+      "public_url": "https://geoai-na.netlify.app/building-questions/materials/day03/banner.png"
+    },
+    {
+      "filename": "내화피복_공법과검사_도식.png",
+      "sha256": "2c49dfc4c137d2705dfa5c02ae016b1dde55438df02e1b1da43af280014e77f0",
+      "bytes": 123725,
+      "public_url": "https://geoai-na.netlify.app/building-questions/materials/day03/내화피복_공법과검사_도식.png"
+    },
+    {
+      "filename": "03일차_철골내화피복공법과검사_답안예시_따라쓰기.pdf",
+      "sha256": "4b01e0d63c7a847b98c92f26e8f2d359c14504ff00a3511af22a98a4c02b3c68",
+      "bytes": 203140,
+      "public_url": "https://geoai-na.netlify.app/building-questions/materials/day03/03일차_철골내화피복공법과검사_답안예시_따라쓰기.pdf"
+    }
+  ],
+  "pdf_pages": 3,
+  "pdf_text_rgb": [
+    184,
+    184,
+    184
+  ],
+  "public_channels": {
+    "tistory": "https://na-geoai.tistory.com/209",
+    "naver": "https://blog.naver.com/safeworking/224460843314",
+    "blogger": "https://geoaina.blogspot.com/2026/11/3.html"
+  },
+  "updated_at": "2026-11-01T09:12:34.494789+09:00",
+  "blogger_verified": true
+}

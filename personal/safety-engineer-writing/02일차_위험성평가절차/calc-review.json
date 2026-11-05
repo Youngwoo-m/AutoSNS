@@ -1,0 +1,288 @@
+{
+  "verdict": "ok",
+  "summary": "safety 2일차 독립 검사 36건, 불일치 0건. 실계산 예시가 없는 개념형 원고로 기출 빈도·절차 개수·문서 간 수치 일관성 및 PDF를 검사함.",
+  "checked": [
+    {
+      "what": "분석 전체 문항 수",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "분석 회차 수",
+      "claimed": 15,
+      "recomputed": 15,
+      "match": true
+    },
+    {
+      "what": "회차당 문항 수 13+6×3",
+      "claimed": 31,
+      "recomputed": 31,
+      "match": true
+    },
+    {
+      "what": "15회 전체 문항 수",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "위험성평가 후보 문항 수",
+      "claimed": 11,
+      "recomputed": 11,
+      "match": true
+    },
+    {
+      "what": "위험성평가 후보 출제 회차 수",
+      "claimed": 10,
+      "recomputed": 10,
+      "match": true
+    },
+    {
+      "what": "위험성평가 중복 ID 없음",
+      "claimed": 11,
+      "recomputed": 11,
+      "match": true
+    },
+    {
+      "what": "위험성평가 문자열 포함 재집계",
+      "claimed": [
+        "126-2-5",
+        "127-4-5",
+        "128-1-8",
+        "130-2-4",
+        "131-2-2",
+        "132-1-3",
+        "133-4-1",
+        "135-1-2",
+        "135-2-1",
+        "139-2-1",
+        "140-4-4"
+      ],
+      "recomputed": [
+        "126-2-5",
+        "127-4-5",
+        "128-1-8",
+        "130-2-4",
+        "131-2-2",
+        "132-1-3",
+        "133-4-1",
+        "135-1-2",
+        "135-2-1",
+        "139-2-1",
+        "140-4-4"
+      ],
+      "match": true
+    },
+    {
+      "what": "흙막이 후보 문항 수",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "흙막이 후보 출제 회차 수",
+      "claimed": 6,
+      "recomputed": 6,
+      "match": true
+    },
+    {
+      "what": "흙막이 중복 ID 없음",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "흙막이 문자열 포함 재집계",
+      "claimed": [
+        "126-1-1",
+        "128-2-5",
+        "130-3-3",
+        "132-1-10",
+        "136-1-1",
+        "140-2-2",
+        "140-4-3"
+      ],
+      "recomputed": [
+        "126-1-1",
+        "128-2-5",
+        "130-3-3",
+        "132-1-10",
+        "136-1-1",
+        "140-2-2",
+        "140-4-3"
+      ],
+      "match": true
+    },
+    {
+      "what": "추락 후보 문항 수",
+      "claimed": 5,
+      "recomputed": 5,
+      "match": true
+    },
+    {
+      "what": "추락 후보 출제 회차 수",
+      "claimed": 5,
+      "recomputed": 5,
+      "match": true
+    },
+    {
+      "what": "추락 중복 ID 없음",
+      "claimed": 5,
+      "recomputed": 5,
+      "match": true
+    },
+    {
+      "what": "추락 문자열 포함 재집계",
+      "claimed": [
+        "126-2-3",
+        "132-2-3",
+        "135-1-12",
+        "136-2-1",
+        "137-2-5"
+      ],
+      "recomputed": [
+        "126-2-3",
+        "132-2-3",
+        "135-1-12",
+        "136-2-1",
+        "137-2-5"
+      ],
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 25점",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 권장작성시간25분",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 2022년제126회",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 제2교시5번",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "태그 개수",
+      "claimed": 9,
+      "recomputed": 9,
+      "match": true
+    },
+    {
+      "what": "기출 태그 개수",
+      "claimed": 1,
+      "recomputed": 1,
+      "match": true
+    },
+    {
+      "what": "답안 태그 개수",
+      "claimed": 1,
+      "recomputed": 1,
+      "match": true
+    },
+    {
+      "what": "네이티브 첨부 수",
+      "claimed": 3,
+      "recomputed": 3,
+      "match": true
+    },
+    {
+      "what": "PDF 쪽수",
+      "claimed": 2,
+      "recomputed": 2,
+      "match": true
+    },
+    {
+      "what": "PDF 기출 교시·번호",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF1쪽 회색184/255",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF1쪽 번호칸",
+      "claimed": "5",
+      "recomputed": "5",
+      "match": true
+    },
+    {
+      "what": "PDF2쪽 회색184/255",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF2쪽 번호칸",
+      "claimed": "5",
+      "recomputed": "5",
+      "match": true
+    },
+    {
+      "what": "학습 운영단계 수",
+      "claimed": 5,
+      "recomputed": 5,
+      "match": true
+    },
+    {
+      "what": "제1항 핵심 절차 수",
+      "claimed": 3,
+      "recomputed": 3,
+      "match": true
+    },
+    {
+      "what": "추가 운영단계 수",
+      "claimed": 2,
+      "recomputed": 2,
+      "match": true
+    },
+    {
+      "what": "추가 운영단계 중 공유·기록 별도 법조문 근거",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "답안 줄배치 쪽수",
+      "claimed": 2,
+      "recomputed": 2,
+      "match": true
+    },
+    {
+      "what": "PDF 한쪽당 원본19줄 이내",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    }
+  ],
+  "errors": [],
+  "assumptions": [],
+  "unchecked": [
+    "기출 원문과 법령·KCS 적용판의 현행성은 source-reviewer 검토 범위임. 이 검산은 문서 내부 수치·개수·문항 ID와 로컬 분석 목록의 일관성을 확인함.",
+    "계산식·단위환산·균열폭/위험점수의 수치 예시는 원고에 없음."
+  ],
+  "file_sha256": {
+    "티스토리게시본문.html": "4932820e9610ba90a7bc7efb77ede3612fcb0509411892f24548207eb99b3fb0",
+    "Blogger게시본문.html": "b676b495ed82a468a137574d2455430159178c6748a41d7c7e8b270d5380f29f",
+    "final-content.json": "1275351189b9ccc91eee4f869cd137e5ba6e1cd60276b8103b2c4b46840afe18",
+    "02일차_위험성평가_답안예시_따라쓰기.pdf": "f538bf21a1aef2cd1822b5ba244240ad8f49fc909db68b0e83c229c4110c5c2a"
+  },
+  "pdf_visual_check": "전 쪽 렌더를 직접 확인함. 본문 잘림·겹침 없음. 옅은 회색 글씨와 원본 답안선 보존.",
+  "script": "/Users/youngwoo/.cache/autosns-llm/calc/day2_independent.py"
+}

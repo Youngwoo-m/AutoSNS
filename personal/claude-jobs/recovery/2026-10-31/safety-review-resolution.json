@@ -1,0 +1,18 @@
+{
+  "source_review": "/private/tmp/engineer-intro-review.json safety=fix4",
+  "resolved": [
+    "요청링크맨아래이동",
+    "예고중독립목차및내부편집규칙삭제",
+    "포괄법령현행확인주장삭제",
+    "개인브랜드배너공개https추가"
+  ],
+  "humanizer_passes": 2,
+  "rejected_suggestion": "5장은 답안 작성 이론 전체이므로 문어체유지(공통규칙이우선)",
+  "selected_editorial_changes": [
+    "내→본인",
+    "독자분들이→독자분이",
+    "연속예정어미완화",
+    "이중공백제거"
+  ],
+  "original_modified": false
+}

@@ -1,0 +1,69 @@
+{
+  "status": "rendered",
+  "video": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/short.mp4",
+  "seconds": 16.512,
+  "size": "1080x1920",
+  "streams": [
+    {
+      "codec_name": "h264",
+      "codec_type": "video",
+      "width": 1080,
+      "height": 1920,
+      "side_data_list": [
+        {}
+      ]
+    },
+    {
+      "codec_name": "aac",
+      "codec_type": "audio",
+      "sample_rate": "48000",
+      "channels": 2
+    }
+  ],
+  "frames_checked": [
+    "short-frame1.jpg",
+    "short-frame2.jpg",
+    "short-frame3.jpg",
+    "short-opening.jpg",
+    "short-ending.jpg"
+  ],
+  "visual_qa": {
+    "caption_clipping_or_overlap": false,
+    "disclosure_present": true,
+    "font": "Pretendard Bold",
+    "distinct_dioramas": 2,
+    "scene_count": 3,
+    "d2_excluded_because": "AI줄자숫자",
+    "d3_reframed_in_composition_only": "x0..430 y690..1085; 접시/추/천칭팔 모두안보임; 비트맵원본변경0",
+    "camera_roi": {
+      "left": 0,
+      "top": -1572.558,
+      "width": 1750.326,
+      "height": 3062.419
+    }
+  },
+  "caption_generation_input_exact_match": true,
+  "audio": {
+    "backend": "edge",
+    "voice": "ko-KR-InJoonNeural",
+    "rate": "+0%",
+    "wave_seconds": 16.464,
+    "speed_postprocessing": false,
+    "trim": false,
+    "asr_language": "ko",
+    "asr_initial_prompt_supported": false,
+    "asr_heard": "같은 거리를 잤는데 갑시다, 다르면? 정밀도가 같으면 잔차 제거팝을 최소로 합니다. 다르면 경중률을 고판 제거팝을 최소로 합니다. 정밀도가 높을수록 경중률은 큽니다.",
+    "asr_limitations": [
+      "쟀는데 값이→잤는데 갑시다",
+      "제곱합→제거팝",
+      "곱한→고판"
+    ],
+    "asr_finding": "세문장순서·조건·경중률설명전체가있고정밀도는정확인식. 잔차제곱합·곱한의철자오인식이남음. 발화누락의증거는없으나직접청취완료로주장하지않음. 최종게시판정은root."
+  },
+  "credits_used": 0,
+  "paid_api_calls": 0,
+  "new_image_generation": 0,
+  "publication_calls": 0,
+  "shared_code_changes": 0,
+  "original_files_modified": 0
+}

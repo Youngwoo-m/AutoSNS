@@ -1,0 +1,83 @@
+{
+  "at": "2026-11-01T19:21:55.115223+09:00",
+  "status": "completed",
+  "posts": [
+    {
+      "exam": "building",
+      "day": 3,
+      "url": "https://geoaina.blogspot.com/2026/11/3.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "assets": [
+        {
+          "name": "banner.png",
+          "http": 200,
+          "sha256": "235d4868e7be9c2a4a721aab0f3441eaca877f070474d2f7d2a88bfe627bb497",
+          "bytes": 1136929,
+          "pdf_magic": null
+        },
+        {
+          "name": "내화피복_공법과검사_도식.png",
+          "http": 200,
+          "sha256": "2c49dfc4c137d2705dfa5c02ae016b1dde55438df02e1b1da43af280014e77f0",
+          "bytes": 123725,
+          "pdf_magic": null
+        },
+        {
+          "name": "03일차_철골내화피복공법과검사_답안예시_따라쓰기.pdf",
+          "http": 200,
+          "sha256": "4b01e0d63c7a847b98c92f26e8f2d359c14504ff00a3511af22a98a4c02b3c68",
+          "bytes": 203140,
+          "pdf_magic": true
+        },
+        {
+          "name": null,
+          "http": 200,
+          "sha256": "659d46e819a6ceaa8456abb2911fcbdaa60daa14a50d550d0ac3faa08e257e88",
+          "bytes": 738584,
+          "pdf_magic": null
+        }
+      ],
+      "pass": true,
+      "public_title_copies": 1
+    },
+    {
+      "exam": "safety",
+      "day": 3,
+      "url": "https://geoaina.blogspot.com/2026/11/3_0957208328.html",
+      "http": 200,
+      "title_match": true,
+      "missing_headings": [],
+      "assets": [
+        {
+          "name": "banner.png",
+          "http": 200,
+          "sha256": "659d46e819a6ceaa8456abb2911fcbdaa60daa14a50d550d0ac3faa08e257e88",
+          "bytes": 738584,
+          "pdf_magic": null
+        },
+        {
+          "name": "굴착면기울기_단면도.png",
+          "http": 200,
+          "sha256": "4744971afaa0ca53edc6847f33c96cc2563135286acd86eda5020d0b8fb34339",
+          "bytes": 65426,
+          "pdf_magic": null
+        },
+        {
+          "name": "03일차_굴착면기울기_답안예시_따라쓰기.pdf",
+          "http": 200,
+          "sha256": "bc42776bb928b2ff14fad2c78dbd7f5bee00f51d95c24bba843afc0451ad27f6",
+          "bytes": 165570,
+          "pdf_magic": true
+        }
+      ],
+      "pass": true,
+      "public_title_copies": 1
+    }
+  ],
+  "duplicate_inserts": 0,
+  "archived_completed_threads": 15,
+  "general_cap_unchanged": true,
+  "exception_scope": "건축·안전3일차두편만"
+}

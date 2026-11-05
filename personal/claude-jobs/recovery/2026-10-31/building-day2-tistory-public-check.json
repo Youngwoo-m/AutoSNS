@@ -1,0 +1,44 @@
+{
+  "url": "https://na-geoai.tistory.com/204",
+  "http": 200,
+  "title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+  "expected_title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+  "title_match": true,
+  "missing_headings": [],
+  "expected_assets": [
+    "균열_분류와판단_흐름도.png",
+    "banner.png",
+    "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf"
+  ],
+  "assets": [
+    {
+      "name": "banner.png",
+      "http": 200,
+      "content_type": "image/png",
+      "bytes": 1001017,
+      "sha256": "b649303f1f0ea8f55542e80594e5ac15e4d8968cdd2eb1e7bcd4a79a95d76472",
+      "matches_local_asset": true,
+      "pdf_magic": null
+    },
+    {
+      "name": "균열_분류와판단_흐름도.png",
+      "http": 200,
+      "content_type": "image/png",
+      "bytes": 90849,
+      "sha256": "7f27bc6f77a307108c9848059606d5460baedd2970d65a2aa1090609ed2fd000",
+      "matches_local_asset": true,
+      "pdf_magic": null
+    },
+    {
+      "name": "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf",
+      "http": 200,
+      "content_type": "application/octet-stream",
+      "bytes": 187155,
+      "sha256": "729db2204899834126f3bb8063f842d6754710a8067b6689b4b2abee924a104c",
+      "matches_local_asset": true,
+      "pdf_magic": true
+    }
+  ],
+  "all_assets_match": true,
+  "raw_attachment_markers": false
+}

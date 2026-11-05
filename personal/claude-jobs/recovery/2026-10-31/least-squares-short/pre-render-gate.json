@@ -1,0 +1,15 @@
+{
+  "title_chars": 67,
+  "source_fixes_resolved": 4,
+  "metadata_fixes_resolved": 2,
+  "captions_equal_script": true,
+  "humanizer_passes": 2,
+  "calc_rereview": "ok",
+  "pending": [
+    "voice synthesis",
+    "render",
+    "final frames/audio QA",
+    "uploader dry",
+    "public upload and check"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "status": "ready_for_independent_review",
+  "at": "2026-10-31T12:04:39.300558+09:00",
+  "scope": "건축 입문글 182 보완 원고만; worker 발행/원본수정 없음",
+  "files": {
+    "edit_html": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/edit-ready.html",
+    "blogger_html": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/Blogger-ready.html",
+    "banner": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/banner.png",
+    "preview": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/preview.html",
+    "public_backup": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.full.html",
+    "public_readable": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.readable.txt",
+    "local_diff": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-local-before.patch",
+    "public_diff": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-public-readable.patch"
+  },
+  "changes": [
+    "공정·원가·계약 오탐 통계행 삭제(대체 집계값 추가 없음)",
+    "공통규칙에 맞춰 답안지 요청 안내를 맨 아래로 이동",
+    "연재예고의 독립 답안목차·내부 편집규칙 설명 제거",
+    "정답예시 표현을 답안 예시로 조정",
+    "개인 브랜드 기존 배경 배너 추가"
+  ],
+  "model": "claude-sonnet-5-5 via /usr/local/bin/claude Max OAuth tools0",
+  "humanizer": {
+    "passes": 2,
+    "scope": "공개182에서 추출한 문장 5개를 근거로 연재예고·요청문장만 최소편집. 나머지 로컬 본문은 외부전송하지 않았음",
+    "facts_preserved": true
+  },
+  "egress_review": {
+    "initial_request": "전체 로컬원고 전송 거절",
+    "reason": "민감원고의 특정 목적지 egress에 명시승인 없다는 자동검토 판단",
+    "resolution": "HTTP200 공개182의 필요한 문장만 전송하는 안전대안이 자동검토 승인됨",
+    "public_only_evidence": "egress-public-only-evidence.json",
+    "unpublished_local_manuscript_sent": false
+  },
+  "verification": {
+    "public_http": 200,
+    "original_file_unchanged": true,
+    "public_numeric_change": "삭제된 오류 행 외 추가/삭제0",
+    "public_source_links_unchanged": true,
+    "remaining_table_count": 5,
+    "remaining_tables_identical_to_local_source": true,
+    "preview_images_directly_checked": [
+      "banner.png",
+      "preview-statistics.png",
+      "preview-theory.png",
+      "preview-bottom.png"
+    ],
+    "caption_clipping_or_overlap": false,
+    "temporary_chrome_closed": true
+  },
+  "pending_root_steps": [
+    "독립 calc-verifier 검산",
+    "독립 source-reviewer 검토",
+    "banner.png 기존공개호스팅업로드 후 {{BANNER_URL}}을 검증된HTTPS로 치환",
+    "티스토리 --edit-post 182 --dry/--go 및 공개본문확인",
+    "Blogger 대상·중복·상한 확인 후 별도교차발행"
+  ],
+  "publish_instructions": {
+    "title": "[건축시공기술사] 건축시공기술사 준비하기",
+    "post_id": 182,
+    "native_attachment_placeholders": 0,
+    "banner_url_placeholder": "{{BANNER_URL}}",
+    "intro_pdf_required": false
+  },
+  "publication_calls": 0,
+  "paid_api_calls": 0,
+  "new_image_generation": 0,
+  "school_credits_used": 0,
+  "original_files_modified": false,
+  "shared_code_changes": 0
+}

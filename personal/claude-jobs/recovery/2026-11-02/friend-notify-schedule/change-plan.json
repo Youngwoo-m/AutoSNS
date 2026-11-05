@@ -1,0 +1,22 @@
+{
+  "at": "2026-11-02T08:22:21.703424+09:00",
+  "target": "/Users/youngwoo/Library/LaunchAgents/com.smuds.friendnotify.hourly.plist",
+  "before_sha256": "74b3cca6e0217f73388a76178ab4920f6a9e918226278b771ba16982f1b23789",
+  "before": {
+    "StartInterval": 3600
+  },
+  "after": {
+    "StartCalendarInterval": {
+      "Hour": 23,
+      "Minute": 0
+    }
+  },
+  "unchanged_fields": [
+    "Label",
+    "ProgramArguments",
+    "StandardOutPath",
+    "StandardErrorPath"
+  ],
+  "timezone_file": "/private/var/db/timezone/tz/2026e.1.0/zoneinfo/Asia/Seoul",
+  "no_immediate_run": true
+}

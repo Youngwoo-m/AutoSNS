@@ -1,0 +1,254 @@
+{
+ "scope": "2022–2026 제126–140회 15회 465문항(전체465문항.json) 문자열 검색 후 같은 유형 문항만 골라 셈(2026-11-05). 공식 출제 비중·출제 확률 아님. 후보끼리 문항이 겹칠 수 있음(136-3-1 커튼월 결로, 135-4-4 단열·결로).",
+ "candidates": [
+  {
+   "topic": "결로(벽체·공동주택·지하주차장·커튼월)",
+   "question_count": 7,
+   "round_count": 7,
+   "questions": [
+    {
+     "id": "127-1-12",
+     "year": 2022,
+     "round": 127,
+     "period": 1,
+     "number": 12,
+     "kind": "단답형",
+     "question": "공동주택의 비난방 부위 결로방지 방안",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "130-2-4",
+     "year": 2023,
+     "round": 130,
+     "period": 2,
+     "number": 4,
+     "kind": "논술형",
+     "question": "건축물 벽체에 발생하는 결로의 종류, 발생원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "131-1-4",
+     "year": 2023,
+     "round": 131,
+     "period": 1,
+     "number": 4,
+     "kind": "단답형",
+     "question": "지하층 마감공사에서 결로수 처리를 위한 지하 이중벽 구조",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "134-4-5",
+     "year": 2024,
+     "round": 134,
+     "period": 4,
+     "number": 5,
+     "kind": "논술형",
+     "question": "공동주택 결로 발생의 원인, 방지대책 및 시공상 유의사항에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "135-4-4",
+     "year": 2025,
+     "round": 135,
+     "period": 4,
+     "number": 4,
+     "kind": "논술형",
+     "question": "공동주택 단열공사 시 단열이음공법의 종류와 시공방법 및 결로 취약 부위별 시공 시 중점관리사항에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "136-3-1",
+     "year": 2025,
+     "round": 136,
+     "period": 3,
+     "number": 1,
+     "kind": "논술형",
+     "question": "커튼월의 결로발생 원인과 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "137-2-5",
+     "year": 2025,
+     "round": 137,
+     "period": 2,
+     "number": 5,
+     "kind": "논술형",
+     "question": "지하주차장 결로발생 메커니즘(Mechanism)과 시공단계별 결로예방법을 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "마감·주거 하자의 대표 유형, 단열·방습·열교 원리가 결로·단열·커튼월 문항의 공통 토대. 2026-09-28 국감 자료 기사에서 하자 판정 최다 유형(636건).",
+   "already_written": "미작성(published_history 결로 0건)"
+  },
+  {
+   "topic": "기성 콘크리트 말뚝 파손·지지력 감소",
+   "question_count": 4,
+   "round_count": 4,
+   "questions": [
+    {
+     "id": "127-2-2",
+     "year": 2022,
+     "round": 127,
+     "period": 2,
+     "number": 2,
+     "kind": "논술형",
+     "question": "연약지반을 관통하는 말뚝 항타 시 지지력감소 원인과 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "128-3-1",
+     "year": 2022,
+     "round": 128,
+     "period": 3,
+     "number": 1,
+     "kind": "논술형",
+     "question": "건축물의 말뚝기초공사에서 발생하는 말뚝 파손원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "134-3-1",
+     "year": 2024,
+     "round": 134,
+     "period": 3,
+     "number": 1,
+     "kind": "논술형",
+     "question": "기성콘크리트 말뚝 시공 시 말뚝파손의 원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "139-2-1",
+     "year": 2026,
+     "round": 139,
+     "period": 2,
+     "number": 1,
+     "kind": "논술형",
+     "question": "연약지반에서 기성재 콘크리트 말뚝 항타 시 지지력 감소 원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5263539&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "기초 품질 핵심이나 토목 6일차 말뚝 재하시험 글과 일부 겹침",
+   "already_written": "건축 미작성, 토목 6일차 재하시험 1건"
+  },
+  {
+   "topic": "지붕층 방수 하자·시공계획",
+   "question_count": 3,
+   "round_count": 3,
+   "questions": [
+    {
+     "id": "128-2-6",
+     "year": 2022,
+     "round": 128,
+     "period": 2,
+     "number": 6,
+     "kind": "논술형",
+     "question": "방수공사에서 부위별 하자 발생원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "132-4-4",
+     "year": 2024,
+     "round": 132,
+     "period": 4,
+     "number": 4,
+     "kind": "논술형",
+     "question": "지붕층 방수공사 시공 계획 시 고려사항에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "134-3-4",
+     "year": 2024,
+     "round": 134,
+     "period": 3,
+     "number": 4,
+     "kind": "논술형",
+     "question": "지붕층 방수공사 시 고려사항 및 시공하자 발생원인과 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "방수 하자 핵심, 같은 유형 문항 수 적음(방수 전체 12문항은 공법별로 갈림)",
+   "already_written": "미작성"
+  },
+  {
+   "topic": "타일 오픈타임·하자",
+   "question_count": 6,
+   "round_count": 6,
+   "questions": [
+    {
+     "id": "126-1-6",
+     "year": 2022,
+     "round": 126,
+     "period": 1,
+     "number": 6,
+     "kind": "단답형",
+     "question": "타일공사의 오픈 타임(Open Time) 관리방법",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "130-3-6",
+     "year": 2023,
+     "round": 130,
+     "period": 3,
+     "number": 6,
+     "kind": "논술형",
+     "question": "공동주택 욕실 벽체에 시공한 도기질 타일의 하자발생 원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "132-2-5",
+     "year": 2024,
+     "round": 132,
+     "period": 2,
+     "number": 5,
+     "kind": "논술형",
+     "question": "타일공사의 오픈타임(Open Time) 및 하자 원인과 방지 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "133-1-5",
+     "year": 2024,
+     "round": 133,
+     "period": 1,
+     "number": 5,
+     "kind": "단답형",
+     "question": "타일공사에서 오픈타임(Open Time)과 가사시간",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "135-1-11",
+     "year": 2025,
+     "round": 135,
+     "period": 1,
+     "number": 11,
+     "kind": "단답형",
+     "question": "타일의 접착력 검사방법",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "136-4-1",
+     "year": 2025,
+     "round": 136,
+     "period": 4,
+     "number": 1,
+     "kind": "논술형",
+     "question": "타일공법의 종류별 특징과 타일공사의 하자발생 원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "마감 하자 빈출",
+   "already_written": "미작성"
+  }
+ ],
+ "selected": "130-2-4",
+ "reason": "미작성 후보 중 문항 수·출제 회차 수가 가장 많은 결로(7문항·7회차, 4일차에서 다음 순서로 미룸). 부위별로 각도가 갈리므로 표면결로·내부결로·열교·방습층 원리를 모두 담는 기초 문항 130-2-4(벽체 결로의 종류·원인·대책)를 먼저 다뤄 공동주택·지하주차장·커튼월 결로 문항의 토대로 삼음. KCS 41 42 01과 공동주택 결로 방지 설계기준으로 근거 확인 가능.",
+ "duplicate_check": "published_history.py --query 결로/방수 0건, 말뚝 1건(토목 6일차) (2026-11-05 09:00)",
+ "keyword_trend": {
+  "date": "2026-11-05",
+  "note": "네이버 데이터랩 최근 12개월, 같은 조회 안에서만 비교. 0건 낱말(표면결로·내부결로)이 섞이면 HTTP 400 이라 나눠 조회",
+  "결로": 49.1,
+  "결로방지": 19.3,
+  "단열": 18.3,
+  "열교": 0.7,
+  "건축시공기술사": 31.5,
+  "내부결로(결로와 비교)": 0.0
+ }
+}

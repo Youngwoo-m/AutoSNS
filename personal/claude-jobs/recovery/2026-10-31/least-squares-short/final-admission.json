@@ -1,0 +1,10 @@
+{
+  "sha256": "a35932409f21e1d95a7b016336830040172480cabe013658d45b2170818083a3",
+  "source_review": "fix; 4 original and 2 metadata issues resolved",
+  "calc_rereview": "ok",
+  "visual_review": "5 frames checked by maker; root checked final reframed scene",
+  "audio": "exact TTS generation input equals captions; ASR all clauses present; phonetic spelling errors retained in report",
+  "rate": "+0%",
+  "new_paid_api_or_image_credits": 0,
+  "decision": "publish"
+}

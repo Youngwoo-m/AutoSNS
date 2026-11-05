@@ -1,0 +1,339 @@
+{
+  "blogger": {
+    "total": {
+      "$t": "150"
+    },
+    "next": [],
+    "posts": [
+      {
+        "title": "[토목시공기술사] 싱크홀·지표침하, 저토피 터널 원인과 저감대책 | 하루 한 문제 15일차",
+        "url": "https://geoaina.blogspot.com/2026/11/15.html",
+        "date": "2026-11-01T08:15:58.078+09:00"
+      },
+      {
+        "title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+        "date": "2026-10-31T16:12:46.377+09:00"
+      },
+      {
+        "title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+        "date": "2026-10-31T16:12:03.150+09:00"
+      },
+      {
+        "title": "[건설안전기술사] 거푸집·강관 동바리, 타설 전 무엇을 확인할까 | 하루 한 문제 1일차",
+        "url": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+        "date": "2026-10-31T16:03:59.173+09:00"
+      },
+      {
+        "title": "[건축시공기술사] 한중콘크리트 타설 전 점검과 초기동해 방지 | 하루 한 문제 1일차",
+        "url": "https://geoaina.blogspot.com/2026/10/1_01623276063.html",
+        "date": "2026-10-31T16:03:09.152+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+        "url": "https://geoaina.blogspot.com/2026/10/14.html",
+        "date": "2026-10-31T08:13:43.836+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 아스팔트 포장 소성변형의 종류와 구분법 | 하루 한 문제 13일차",
+        "url": "https://geoaina.blogspot.com/2026/10/13.html",
+        "date": "2026-10-29T08:14:59.103+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 보강토옹벽 붕괴 원인과 대책(다짐·배면수압·상재토압) | 하루 한 문제 12일차",
+        "url": "https://geoaina.blogspot.com/2026/10/12.html",
+        "date": "2026-10-28T08:16:44.049+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 연약지반 성토 시 계측항목과 계측기 | 하루 한 문제 11일차",
+        "url": "https://geoaina.blogspot.com/2026/10/11.html",
+        "date": "2026-10-27T08:18:33.493+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 하천제방의 파괴원인과 방지대책 | 하루 한 문제 10일차",
+        "url": "https://geoaina.blogspot.com/2026/10/10.html",
+        "date": "2026-10-26T08:15:51.764+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 숏크리트 리바운드 발생원인과 저감대책 | 하루 한 문제 9일차",
+        "url": "https://geoaina.blogspot.com/2026/10/9.html",
+        "date": "2026-10-25T08:17:55.438+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 동절기 한중콘크리트 배합설계와 시공관리 | 하루 한 문제 8일차",
+        "url": "https://geoaina.blogspot.com/2026/10/8.html",
+        "date": "2026-10-24T08:15:45.075+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 콘크리트 거푸집 및 동바리 해체 시기 | 하루 한 문제 7일차",
+        "url": "https://geoaina.blogspot.com/2026/10/7_0201107216.html",
+        "date": "2026-10-23T08:11:56.794+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 해석 | 하루 한 문제 6일차",
+        "url": "https://geoaina.blogspot.com/2026/10/6.html",
+        "date": "2026-10-22T08:17:00.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 표준관입시험(SPT) N값 보정 | 하루 한 문제 5일차",
+        "url": "https://geoaina.blogspot.com/2026/10/spt-n-5.html",
+        "date": "2026-10-21T08:08:16.000+09:00"
+      },
+      {
+        "title": "우연오차의 전파 (2026년 제140회 기출) | 측량및지형공간정보기술사 하루 한 문제 13일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2026-140-13.html",
+        "date": "2026-10-21T06:06:33.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 콘크리트 구조물의 온도균열 원인과 제어 | 하루 한 문제 4일차",
+        "url": "https://geoaina.blogspot.com/2026/10/4.html",
+        "date": "2026-10-20T20:42:55.000+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 흙막이 공사의 계측관리 | 하루 한 문제 3일차",
+        "url": "https://geoaina.blogspot.com/2026/10/3.html",
+        "date": "2026-10-19T08:04:04.769+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 서중콘크리트 품질관리와 초기균열 저감 | 하루 한 문제 2일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2.html",
+        "date": "2026-10-18T14:24:56.585+09:00"
+      },
+      {
+        "title": "최근 5년 기출 유형과 출제 경향 분석: 310문항으로 정한 학습 우선순위 | 측량및지형공간정보기술사",
+        "url": "https://geoaina.blogspot.com/2026/10/5-310.html",
+        "date": "2026-10-17T13:36:32.754+09:00"
+      },
+      {
+        "title": "[토목시공기술사] 흙의 다짐·최적함수비·다짐도 | 하루 한 문제 1일차",
+        "url": "https://geoaina.blogspot.com/2026/10/1.html",
+        "date": "2026-10-17T13:33:24.000+09:00"
+      },
+      {
+        "title": "[측량및지형공간정보기술사 하루 한 문제] 5일차 | 최소제곱조정과 관측 가중치",
+        "url": "https://geoaina.blogspot.com/2026/10/5_0758735285.html",
+        "date": "2026-10-12T06:59:41.000+09:00"
+      },
+      {
+        "title": "[측량및지형공간정보기술사 하루 한 문제] 4일차 | 코드 의사거리·반송파 위상과 이중차분",
+        "url": "https://geoaina.blogspot.com/2026/10/4_038387174.html",
+        "date": "2026-10-11T07:07:48.000+09:00"
+      },
+      {
+        "title": "좌표참조계와 좌표 변환 | 측량및지형공간정보기술사 하루 한 문제 3일차",
+        "url": "https://geoaina.blogspot.com/2026/10/3_0278566753.html",
+        "date": "2026-10-10T11:05:40.000+09:00"
+      },
+      {
+        "title": "필기 답안작성요령: 단답형·논술형 구성과 연습 순서 | 측량및지형공간정보기술사",
+        "url": "https://geoaina.blogspot.com/2026/10/blog-post_09.html",
+        "date": "2026-10-09T10:56:51.000+09:00"
+      },
+      {
+        "title": "GNSS 위치보정정보 OSR·SSR 비교 (2024년 제134회 기출) | 측량및지형공간정보기술사 친구 요청",
+        "url": "https://geoaina.blogspot.com/2026/10/gnss-osrssr-2024-134.html",
+        "date": "2026-10-09T10:51:59.000+09:00"
+      },
+      {
+        "title": "온톨로지 기반 공간정보 구축·활용 (2026년 제140회 기출) | 측량및지형공간정보기술사 하루 한 문제 2일차",
+        "url": "https://geoaina.blogspot.com/2026/10/2026-140-2.html",
+        "date": "2026-10-09T07:30:05.000+09:00"
+      },
+      {
+        "title": "타원체고·정표고·지오이드고와 GNSS 높이측량 | 측량및지형공간정보기술사 하루 한 문제 1일차",
+        "url": "https://geoaina.blogspot.com/2026/10/gnss-1.html",
+        "date": "2026-10-08T15:40:17.000+09:00"
+      }
+    ]
+  },
+  "tistory": [
+    {
+      "title": "[건설안전기술사] 굴착면 기울기 기준과 굴착 전 사전조사, 붕괴 예방까지 | 하루 한 문제 3일차",
+      "url": "https://na-geoai.tistory.com/210",
+      "date": "Sun, 1 Nov 2026 10:16:01 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 철골 내화피복, 내화뿜칠 공법과 두께 검사&middot;보수 | 하루 한 문제 3일차",
+      "url": "https://na-geoai.tistory.com/209",
+      "date": "Sun, 1 Nov 2026 09:10:05 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 싱크홀&middot;지표침하, 저토피 터널 원인과 저감대책 | 하루 한 문제 15일차",
+      "url": "https://na-geoai.tistory.com/208",
+      "date": "Sun, 1 Nov 2026 08:15:34 +0900"
+    },
+    {
+      "title": "항공사진 특수3점, 주점&middot;연직점&middot;등각점이 갈라지는 이유 (2026년 제138회 기출) | 측량및지형공간정보기술사 하루 한 문제 23일차",
+      "url": "https://na-geoai.tistory.com/207",
+      "date": "Sun, 1 Nov 2026 06:12:47 +0900"
+    },
+    {
+      "title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+      "url": "https://na-geoai.tistory.com/205",
+      "date": "Sat, 31 Oct 2026 16:13:09 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 콘크리트 균열, 경화 전&middot;후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+      "url": "https://na-geoai.tistory.com/204",
+      "date": "Sat, 31 Oct 2026 16:12:07 +0900"
+    },
+    {
+      "title": "[건설안전기술사] 거푸집&middot;강관 동바리, 타설 전 무엇을 확인할까 | 하루 한 문제 1일차",
+      "url": "https://na-geoai.tistory.com/203",
+      "date": "Sat, 31 Oct 2026 16:10:30 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 한중콘크리트 타설 전 점검과 초기동해 방지 | 하루 한 문제 1일차",
+      "url": "https://na-geoai.tistory.com/202",
+      "date": "Sat, 31 Oct 2026 16:08:38 +0900"
+    }
+  ],
+  "naver": [
+    {
+      "title": "[건설안전기술사] 굴착면 기울기 기준과 굴착 전 사전조사, 붕괴 예방까지 | 하루 한 문제 3일차",
+      "url": "https://blog.naver.com/safeworking/224460887546?fromRss=true&trackingCode=rss",
+      "date": "Sun, 01 Nov 2026 10:17:41 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 철골 내화피복, 내화뿜칠 공법과 두께 검사·보수 | 하루 한 문제 3일차",
+      "url": "https://blog.naver.com/safeworking/224460843314?fromRss=true&trackingCode=rss",
+      "date": "Sun, 01 Nov 2026 09:11:38 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 싱크홀·지표침하, 저토피 터널 원인과 저감대책 | 하루 한 문제 15일차",
+      "url": "https://blog.naver.com/safeworking/224460814479?fromRss=true&trackingCode=rss",
+      "date": "Sun, 01 Nov 2026 08:17:31 +0900"
+    },
+    {
+      "title": "항공사진 특수3점, 주점·연직점·등각점이 갈라지는 이유 (2026년 제138회 기출) | 측량및지형공간정보기술사 하루 한 문제 23일차",
+      "url": "https://blog.naver.com/safeworking/224460770267?fromRss=true&trackingCode=rss",
+      "date": "Sun, 01 Nov 2026 06:14:41 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 한중콘크리트 타설 전 점검과 초기동해 방지 | 하루 한 문제 1일차",
+      "url": "https://blog.naver.com/safeworking/224460209077?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 16:24:04 +0900"
+    },
+    {
+      "title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+      "url": "https://blog.naver.com/safeworking/224460206285?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 16:20:32 +0900"
+    },
+    {
+      "title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+      "url": "https://blog.naver.com/safeworking/224460204210?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 16:17:56 +0900"
+    },
+    {
+      "title": "[건설안전기술사] 거푸집·강관 동바리, 타설 전 무엇을 확인할까 | 하루 한 문제 1일차",
+      "url": "https://blog.naver.com/safeworking/224460202351?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 16:15:42 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 비탈면·산사태 붕괴 원인과 방지대책 | 하루 한 문제 14일차",
+      "url": "https://blog.naver.com/safeworking/224459825776?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 08:15:20 +0900"
+    },
+    {
+      "title": "트래버스 간이조정법, 컴퍼스법칙과 트랜싯법칙 차이 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 22일차",
+      "url": "https://blog.naver.com/safeworking/224459771291?fromRss=true&trackingCode=rss",
+      "date": "Sat, 31 Oct 2026 06:08:27 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 아스팔트 포장 소성변형의 종류와 구분법 | 하루 한 문제 13일차",
+      "url": "https://blog.naver.com/safeworking/224457403376?fromRss=true&trackingCode=rss",
+      "date": "Thu, 29 Oct 2026 08:16:11 +0900"
+    },
+    {
+      "title": "정확도와 정밀도 차이, 표준편차와 RMSE로 가르기 (2025년 제135회 기출) | 측량및지형공간정보기술사 하루 한 문제 21일차",
+      "url": "https://blog.naver.com/safeworking/224457348464?fromRss=true&trackingCode=rss",
+      "date": "Thu, 29 Oct 2026 06:23:32 +0900"
+    },
+    {
+      "title": "GNSS 안테나고 측정과 ARP·위상중심 보정 (2025년 제137회 기출) | 측량및지형공간정보기술사 친구 요청",
+      "url": "https://blog.naver.com/safeworking/224457172190?fromRss=true&trackingCode=rss",
+      "date": "Wed, 28 Oct 2026 23:21:48 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 보강토옹벽 붕괴 원인과 대책(다짐·배면수압·상재토압) | 하루 한 문제 12일차",
+      "url": "https://blog.naver.com/safeworking/224456997528?fromRss=true&trackingCode=rss",
+      "date": "Wed, 28 Oct 2026 20:01:36 +0900"
+    },
+    {
+      "title": "DOP 정밀도저하율 GDOP·PDOP·HDOP (2022년 제128회 기출) | 측량및지형공간정보기술사 하루 한 문제 20일차",
+      "url": "https://blog.naver.com/safeworking/224456995887?fromRss=true&trackingCode=rss",
+      "date": "Wed, 28 Oct 2026 19:59:36 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 연약지반 성토 시 계측항목과 계측기 | 하루 한 문제 11일차",
+      "url": "https://blog.naver.com/safeworking/224454982198?fromRss=true&trackingCode=rss",
+      "date": "Tue, 27 Oct 2026 08:20:21 +0900"
+    },
+    {
+      "title": "자오선수차 진북·도북 계산 (2025년 제137회 기출) | 측량및지형공간정보기술사 하루 한 문제 19일차",
+      "url": "https://blog.naver.com/safeworking/224454917647?fromRss=true&trackingCode=rss",
+      "date": "Tue, 27 Oct 2026 06:13:46 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 하천제방의 파괴원인과 방지대책 | 하루 한 문제 10일차",
+      "url": "https://blog.naver.com/safeworking/224453743511?fromRss=true&trackingCode=rss",
+      "date": "Mon, 26 Oct 2026 08:17:44 +0900"
+    },
+    {
+      "title": "재해정보지도·침수흔적도·침수예상도 제작 절차와 활용 (2025년 제137회 기출) | 측량및지형공간정보기술사 하루 한 문제 18일차",
+      "url": "https://blog.naver.com/safeworking/224453684808?fromRss=true&trackingCode=rss",
+      "date": "Mon, 26 Oct 2026 06:23:20 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 숏크리트 리바운드 발생원인과 저감대책 | 하루 한 문제 9일차",
+      "url": "https://blog.naver.com/safeworking/224452819918?fromRss=true&trackingCode=rss",
+      "date": "Sun, 25 Oct 2026 08:19:58 +0900"
+    },
+    {
+      "title": "SLAM 동시 위치추정·지도작성 (2025년 제137회 기출) | 측량및지형공간정보기술사 하루 한 문제 17일차",
+      "url": "https://blog.naver.com/safeworking/224452780250?fromRss=true&trackingCode=rss",
+      "date": "Sun, 25 Oct 2026 06:30:23 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 동절기 한중콘크리트 배합설계와 시공관리 | 하루 한 문제 8일차",
+      "url": "https://blog.naver.com/safeworking/224451969973?fromRss=true&trackingCode=rss",
+      "date": "Sat, 24 Oct 2026 08:17:38 +0900"
+    },
+    {
+      "title": "위성영상 공간·분광·방사·주기해상도 (2023년 제131회 기출) | 측량및지형공간정보기술사 하루 한 문제 16일차",
+      "url": "https://blog.naver.com/safeworking/224451921880?fromRss=true&trackingCode=rss",
+      "date": "Sat, 24 Oct 2026 06:16:43 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 콘크리트 거푸집 및 동바리 해체 시기 | 하루 한 문제 7일차",
+      "url": "https://blog.naver.com/safeworking/224450903130?fromRss=true&trackingCode=rss",
+      "date": "Fri, 23 Oct 2026 08:14:09 +0900"
+    },
+    {
+      "title": "기복변위(Relief Displacement) (2026년 제140회 기출) | 측량및지형공간정보기술사 하루 한 문제 15일차",
+      "url": "https://blog.naver.com/safeworking/224450842025?fromRss=true&trackingCode=rss",
+      "date": "Fri, 23 Oct 2026 06:11:24 +0900"
+    },
+    {
+      "title": "Sterneck법 남북 별 쌍 천정거리 위도결정 | 측량및지형공간정보기술사 친구 요청",
+      "url": "https://blog.naver.com/safeworking/224450654640?fromRss=true&trackingCode=rss",
+      "date": "Thu, 22 Oct 2026 23:08:57 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 해석 | 하루 한 문제 6일차",
+      "url": "https://blog.naver.com/safeworking/224449751164?fromRss=true&trackingCode=rss",
+      "date": "Thu, 22 Oct 2026 08:20:18 +0900"
+    },
+    {
+      "title": "매설 관로 탐사 방법과 불탐 구간 처리 (2025년 제137회 기출) | 측량및지형공간정보기술사 하루 한 문제 14일차",
+      "url": "https://blog.naver.com/safeworking/224449690737?fromRss=true&trackingCode=rss",
+      "date": "Thu, 22 Oct 2026 06:16:55 +0900"
+    },
+    {
+      "title": "[토목시공기술사] 표준관입시험(SPT) N값 보정 | 하루 한 문제 5일차",
+      "url": "https://blog.naver.com/safeworking/224448564638?fromRss=true&trackingCode=rss",
+      "date": "Wed, 21 Oct 2026 08:09:55 +0900"
+    }
+  ]
+}

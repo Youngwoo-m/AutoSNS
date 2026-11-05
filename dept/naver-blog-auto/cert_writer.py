@@ -149,7 +149,7 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
     client = _llm_client(cfg)
     msg = client.messages.create(
         model=cfg.get("model", "claude-sonnet-4-6"),
-        max_tokens=4000, system=sys_prompt,
+        max_tokens=4000, system=sys_prompt + _humanize_rules(),
         messages=[{"role": "user", "content": user_tmpl.format(
             n=n, total=total, title=title, angle=angle)}],
     )
@@ -166,6 +166,17 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
         raise RuntimeError(f"형식 미달(요약 {len(summary)}줄, 문단 {len(paras)}개)")
     log(f"{kind} 본문 생성: {sum(len(p) for p in paras)}자 / 문단 {len(paras)} / FAQ {len(faq)}")
     return {"summary": summary, "paras": paras, "faq": faq[:3], "lead": lead}
+
+
+def _humanize_rules():
+    """글쓰기 프롬프트에 덧붙일 문체 규칙. shared/humanize_rules.py 참고."""
+    import os
+    import sys
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from shared.humanize_rules import HUMANIZE_KR
+    return HUMANIZE_KR
 
 
 def _llm_client(cfg):

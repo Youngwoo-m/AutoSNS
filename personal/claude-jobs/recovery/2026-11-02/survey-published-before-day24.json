@@ -1,0 +1,301 @@
+{
+  "items": [
+    {
+      "title": "항공사진의 특수3점 (2026년 제138회 기출)",
+      "url": "https://na-geoai.tistory.com/207",
+      "kind": "daily",
+      "date": "2026-11-01",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 23
+    },
+    {
+      "title": "트래버스 간이조정법, 컴퍼스법칙과 트랜싯법칙 차이 (2025년 제135회 기출)",
+      "url": "https://na-geoai.tistory.com/198",
+      "kind": "daily",
+      "date": "2026-10-31",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 22
+    },
+    {
+      "title": "정확도와 정밀도 (2025년 제135회 기출)",
+      "url": "https://na-geoai.tistory.com/193",
+      "kind": "daily",
+      "date": "2026-10-29",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 21
+    },
+    {
+      "title": "GNSS 안테나고 측정과 ARP·위상중심 보정 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/192",
+      "kind": "request",
+      "date": "2026-10-28",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "GNSS 측량에서 위성의 기하학적 배치에 따른 정밀도저하율(DOP) (2022년 제128회 기출)",
+      "url": "https://na-geoai.tistory.com/184",
+      "kind": "daily",
+      "date": "2026-10-28",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 20
+    },
+    {
+      "title": "자오선수차 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/174",
+      "kind": "daily",
+      "date": "2026-10-27",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 19
+    },
+    {
+      "title": "재해정보지도·침수흔적도·침수예상도 제작 절차와 활용 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/166",
+      "kind": "daily",
+      "date": "2026-10-26",
+      "tags": [
+        "관련 제도·실무"
+      ],
+      "tracingPdf": true,
+      "day": 18
+    },
+    {
+      "title": "SLAM(Simultaneous Localization and Mapping) (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/157",
+      "kind": "daily",
+      "date": "2026-10-25",
+      "tags": [
+        "GIS·공간정보"
+      ],
+      "tracingPdf": true,
+      "day": 17
+    },
+    {
+      "title": "위성영상 공간·분광·방사·주기해상도 (2023년 제131회 기출)",
+      "url": "https://na-geoai.tistory.com/147",
+      "kind": "daily",
+      "date": "2026-10-24",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 16
+    },
+    {
+      "title": "기복변위(Relief Displacement) (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/140",
+      "kind": "daily",
+      "date": "2026-10-23",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 15
+    },
+    {
+      "title": "Sterneck법 남북 별 쌍 천정거리 위도결정",
+      "url": "https://na-geoai.tistory.com/139",
+      "kind": "request",
+      "date": "2026-10-22",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "매설 관로 탐사 방법과 불탐 구간 처리 (2025년 제137회 기출)",
+      "url": "https://na-geoai.tistory.com/129",
+      "kind": "daily",
+      "date": "2026-10-22",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 14
+    },
+    {
+      "title": "우연오차의 전파 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/121",
+      "kind": "daily",
+      "date": "2026-10-21",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 13
+    },
+    {
+      "title": "천문측량 시각 용어 LST·GST·LHA·GHA·LMT·GMT",
+      "url": "https://na-geoai.tistory.com/120",
+      "kind": "request",
+      "date": "2026-10-20",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "Network-RTK VRS·FKP 비교와 현장 측량 과정 (2023년 제129회 기출)",
+      "url": "https://na-geoai.tistory.com/114",
+      "kind": "daily",
+      "date": "2026-10-20",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 12
+    },
+    {
+      "title": "통합기준점 (2023년 제131회 기출)",
+      "url": "https://na-geoai.tistory.com/108",
+      "kind": "daily",
+      "date": "2026-10-19",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 11
+    },
+    {
+      "title": "공공측량 성과 품질검수와 성과심사",
+      "url": "https://na-geoai.tistory.com/106",
+      "kind": "daily",
+      "date": "2026-10-18",
+      "tags": [
+        "관련 제도·실무",
+        "공공측량",
+        "성과심사"
+      ],
+      "tracingPdf": true,
+      "day": 10
+    },
+    {
+      "title": "GIS 위상관계와 위상 오류 검증",
+      "url": "https://na-geoai.tistory.com/85",
+      "kind": "daily",
+      "date": "2026-10-16",
+      "tags": [
+        "GIS·공간정보"
+      ],
+      "tracingPdf": true,
+      "day": 9
+    },
+    {
+      "title": "LiDAR 점군의 지면 분류와 DTM·DSM 생성",
+      "url": "https://na-geoai.tistory.com/73",
+      "kind": "daily",
+      "date": "2026-10-15",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 8
+    },
+    {
+      "title": "UAV 사진측량의 GSD와 위치정확도",
+      "url": "https://na-geoai.tistory.com/61",
+      "kind": "daily",
+      "date": "2026-10-14",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 7
+    },
+    {
+      "title": "폐합트래버스의 폐합차와 Bowditch 조정",
+      "url": "https://na-geoai.tistory.com/58",
+      "kind": "daily",
+      "date": "2026-10-13",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 6
+    },
+    {
+      "title": "최소제곱조정과 관측 가중치",
+      "url": "https://na-geoai.tistory.com/42",
+      "kind": "daily",
+      "date": "2026-10-12",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 5
+    },
+    {
+      "title": "코드 의사거리·반송파 위상과 이중차분",
+      "url": "https://na-geoai.tistory.com/34",
+      "kind": "daily",
+      "date": "2026-10-11",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 4
+    },
+    {
+      "title": "좌표참조계와 좌표 변환",
+      "url": "https://na-geoai.tistory.com/28",
+      "kind": "daily",
+      "date": "2026-10-10",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 3
+    },
+    {
+      "title": "GNSS 위치보정정보 OSR·SSR 비교 (2024년 제134회 기출)",
+      "url": "https://na-geoai.tistory.com/20",
+      "kind": "request",
+      "date": "2026-10-09",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true
+    },
+    {
+      "title": "온톨로지 기반 공간정보 구축·활용 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/19",
+      "kind": "daily",
+      "date": "2026-10-09",
+      "tags": [
+        "GIS·공간정보",
+        "온톨로지"
+      ],
+      "tracingPdf": true,
+      "day": 2
+    },
+    {
+      "title": "타원체고·정표고·지오이드고와 GNSS 높이측량",
+      "url": "https://na-geoai.tistory.com/7",
+      "date": "2026-10-08",
+      "kind": "daily",
+      "day": 1,
+      "tags": [
+        "GNSS",
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true
+    }
+  ]
+}

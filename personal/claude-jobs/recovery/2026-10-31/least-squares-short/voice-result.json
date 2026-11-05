@@ -1,0 +1,23 @@
+{
+  "status": "ok",
+  "backend": "edge",
+  "voice": "ko-KR-InJoonNeural",
+  "voice_label": "AI 합성 음성(TTS)",
+  "rate": "+0%",
+  "seconds": 16.464,
+  "file": "voice-natural.wav",
+  "post_processing_speed_change": false,
+  "trim": false,
+  "script": "같은 거리를 쟀는데 값이 다르면?\n정밀도가 같으면 잔차 제곱합을 최소로 합니다.\n다르면 경중률을 곱한 제곱합을 최소로 합니다. 정밀도가 높을수록 경중률은 큽니다.",
+  "check_file": "음성받아적기.json",
+  "scene_boundaries_seconds": [
+    0,
+    3.733333,
+    8.266667,
+    16.5
+  ],
+  "earlier_voice_attempts": [
+    "Voicebox요청loading/generating6분이상후이번요청만취소",
+    "edge기존도구기본+10%14.976초를생성했으나최종에는미사용"
+  ]
+}

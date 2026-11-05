@@ -16,6 +16,7 @@ from anthropic import Anthropic
 from common import POSTS_DIR, load_config, load_history, save_history, log
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from shared.humanize_rules import HUMANIZE_KR  # noqa: E402
 from shared.keyword_terms import GEO_TERMS, TAG_DISASTER_TERMS, TAG_REGION_TERMS  # noqa: E402
 from fetch_news import fetch_news
 
@@ -247,7 +248,7 @@ def generate():
                  .replace("__SUBEX__", sub_ex)
                  .replace("__BRIEF_LABEL__", brief_label))
 
-    system = _fill(SYSTEM)
+    system = _fill(SYSTEM) + HUMANIZE_KR
     news = fetch_news()
     # 뉴스가 거의 없으면 글이 1,000자 남짓으로 끝나 분량 기준에 3번 떨어진다(9/3·9/10·9/22).
     # 모델을 부르기 전에 알려 실행부가 다른 판(지역 재난안전)으로 바꿔 쓰게 한다.

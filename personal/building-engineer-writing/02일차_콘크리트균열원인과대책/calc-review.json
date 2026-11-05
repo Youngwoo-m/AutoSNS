@@ -1,0 +1,244 @@
+{
+  "verdict": "ok",
+  "summary": "building 2일차 독립 검사 36건, 불일치 0건. 실계산 예시가 없는 개념형 원고로 기출 빈도·절차 개수·문서 간 수치 일관성 및 PDF를 검사함.",
+  "checked": [
+    {
+      "what": "분석 전체 문항 수",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "분석 회차 수",
+      "claimed": 15,
+      "recomputed": 15,
+      "match": true
+    },
+    {
+      "what": "회차당 문항 수 13+6×3",
+      "claimed": 31,
+      "recomputed": 31,
+      "match": true
+    },
+    {
+      "what": "15회 전체 문항 수",
+      "claimed": 465,
+      "recomputed": 465,
+      "match": true
+    },
+    {
+      "what": "콘크리트 균열 후보 문항 수",
+      "claimed": 12,
+      "recomputed": 12,
+      "match": true
+    },
+    {
+      "what": "콘크리트 균열 후보 출제 회차 수",
+      "claimed": 10,
+      "recomputed": 10,
+      "match": true
+    },
+    {
+      "what": "콘크리트 균열 중복 ID 없음",
+      "claimed": 12,
+      "recomputed": 12,
+      "match": true
+    },
+    {
+      "what": "콘크리트 균열 후보 원문 메타 일치",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "방수 후보 문항 수",
+      "claimed": 12,
+      "recomputed": 12,
+      "match": true
+    },
+    {
+      "what": "방수 후보 출제 회차 수",
+      "claimed": 8,
+      "recomputed": 8,
+      "match": true
+    },
+    {
+      "what": "방수 중복 ID 없음",
+      "claimed": 12,
+      "recomputed": 12,
+      "match": true
+    },
+    {
+      "what": "방수 후보 원문 메타 일치",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "흙막이 후보 문항 수",
+      "claimed": 8,
+      "recomputed": 8,
+      "match": true
+    },
+    {
+      "what": "흙막이 후보 출제 회차 수",
+      "claimed": 7,
+      "recomputed": 7,
+      "match": true
+    },
+    {
+      "what": "흙막이 중복 ID 없음",
+      "claimed": 8,
+      "recomputed": 8,
+      "match": true
+    },
+    {
+      "what": "흙막이 후보 원문 메타 일치",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 25점",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 권장작성시간25분",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 2023년제131회",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "Tistory·Blogger 메타 제4교시3번",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "태그 개수",
+      "claimed": 9,
+      "recomputed": 9,
+      "match": true
+    },
+    {
+      "what": "기출 태그 개수",
+      "claimed": 1,
+      "recomputed": 1,
+      "match": true
+    },
+    {
+      "what": "답안 태그 개수",
+      "claimed": 1,
+      "recomputed": 1,
+      "match": true
+    },
+    {
+      "what": "네이티브 첨부 수",
+      "claimed": 3,
+      "recomputed": 3,
+      "match": true
+    },
+    {
+      "what": "PDF 쪽수",
+      "claimed": 3,
+      "recomputed": 3,
+      "match": true
+    },
+    {
+      "what": "PDF 기출 교시·번호",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF1쪽 회색184/255",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF1쪽 번호칸",
+      "claimed": "3",
+      "recomputed": "3",
+      "match": true
+    },
+    {
+      "what": "PDF2쪽 회색184/255",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF2쪽 번호칸",
+      "claimed": "3",
+      "recomputed": "3",
+      "match": true
+    },
+    {
+      "what": "PDF3쪽 회색184/255",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    },
+    {
+      "what": "PDF3쪽 번호칸",
+      "claimed": "3",
+      "recomputed": "3",
+      "match": true
+    },
+    {
+      "what": "답안 예시 장 수",
+      "claimed": 6,
+      "recomputed": 6,
+      "match": true
+    },
+    {
+      "what": "비교표 원인별 행 수",
+      "claimed": 6,
+      "recomputed": 6,
+      "match": true
+    },
+    {
+      "what": "PDF 답안 페이지 배열",
+      "claimed": 3,
+      "recomputed": 3,
+      "match": true
+    },
+    {
+      "what": "PDF 배열 한쪽17줄 이내",
+      "claimed": true,
+      "recomputed": true,
+      "match": true
+    }
+  ],
+  "errors": [],
+  "assumptions": [],
+  "unchecked": [
+    "기출 원문과 법령·KCS 적용판의 현행성은 source-reviewer 검토 범위임. 이 검산은 문서 내부 수치·개수·문항 ID와 로컬 분석 목록의 일관성을 확인함.",
+    "계산식·단위환산·균열폭/위험점수의 수치 예시는 원고에 없음."
+  ],
+  "file_sha256": {
+    "티스토리게시본문.html": "0211823fd1a9f235cba000db6ac8f3fa27be5fd644e2224a095c2b3ac111a0b7",
+    "Blogger게시본문.html": "77b74bd03ba510ac93e8d94f53b16476ae232746846fca9b75e168673df7eda3",
+    "manuscript-final.json": "17f9e652b9fcacc2951e6430baa696721b7f2a1d48cb8bc46cfff11f57c6e087",
+    "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf": "729db2204899834126f3bb8063f842d6754710a8067b6689b4b2abee924a104c"
+  },
+  "pdf_visual_check": "전 쪽 렌더를 직접 확인함. 본문 잘림·겹침 없음. 옅은 회색 글씨와 원본 답안선 보존.",
+  "script": "/Users/youngwoo/.cache/autosns-llm/calc/day2_independent.py",
+  "resolved_errors": [
+    {
+      "where": "PDF 좌측 번호칸",
+      "claimed": "1",
+      "correct": "3",
+      "why": "실제 기출은 제131회 제4교시3번인데 번호칸이1로 적혔음. 작성자가3으로 수정·재생성했고 독립 재검산에서 모든쪽3 확인."
+    }
+  ]
+}

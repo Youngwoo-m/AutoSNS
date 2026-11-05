@@ -1,0 +1,26 @@
+{
+  "building": [
+    {
+      "day": 2,
+      "url": "https://na-geoai.tistory.com/204",
+      "pdf": true
+    },
+    {
+      "day": 1,
+      "url": "https://na-geoai.tistory.com/202",
+      "pdf": true
+    }
+  ],
+  "safety": [
+    {
+      "day": 2,
+      "url": "https://na-geoai.tistory.com/205",
+      "pdf": true
+    },
+    {
+      "day": 1,
+      "url": "https://na-geoai.tistory.com/203",
+      "pdf": true
+    }
+  ]
+}

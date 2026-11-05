@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-02T07:52:06.010957+09:00",
+  "day": 24,
+  "artifacts": {
+    "티스토리게시본문.html": "2641dc283ce9f72ea9b416c393704ea74d75970edc5f2fbc4e20a0c8b0cb2821",
+    "24일차_지상라이다_모범답안_따라쓰기.pdf": "aee2b175ea6c94ae9882a1a951cb662fe129d7868911a78ce6fea1fffdc845cc",
+    "short.mp4": "d9e5eb0443492e83d69fdaec0a59ed0f0562ed5f92de0e4ed5f80157b8eaafcc"
+  },
+  "login_reopen_verified": "2026-11-02T07:45:55+09:00",
+  "resume_only": true,
+  "checks": {
+    "r_c_dt_2": 19.9961569486,
+    "r20_coordinates": [
+      17.057,
+      9.848,
+      3.473
+    ],
+    "spacing_20m_mm": 12.56637061435917,
+    "spacing_50m_mm": 31.415926535897935
+  }
+}

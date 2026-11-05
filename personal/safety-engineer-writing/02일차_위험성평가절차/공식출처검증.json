@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-31",
+  "qnet": {
+    "round": 126,
+    "year": 2022,
+    "period": 2,
+    "number": 5,
+    "article": "5209476",
+    "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209476&brdId=Q006&gSite=Q",
+    "filename": "제126회 건설안전기술사(2022년).pdf",
+    "remote_sha256": "fba0d8f94326dcaaa97beadc90cc17073aa1f1f0542dcac5d04ecec8ed335c86",
+    "local_sha256": "fba0d8f94326dcaaa97beadc90cc17073aa1f1f0542dcac5d04ecec8ed335c86",
+    "match": true,
+    "page_index": 1,
+    "visual_verified": true
+  },
+  "law": {
+    "rule37": "https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&joBrNo=00&joNo=0037&lsiSeq=288431&urlMode=lsScJoRltInfoR",
+    "version": "시행2026-08-01 고용노동부령477호",
+    "statutory_core_steps": 3,
+    "operational_diagram_steps": 5,
+    "distinction": "법정3개핵심절차+사전준비/후속관리의학습용5단계이며법정5단계아님",
+    "shared_result": "rule37-3.txt",
+    "record_result": "rule37-4.txt",
+    "future_law_warning": "날짜없는 법령별칭이 미래2027-04-28로연결됨. 현재기준은직접확인한2026-10-27법36조2항과시행2026-08-01시행규칙고정lsiSeq288431사용."
+  }
+}

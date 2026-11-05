@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-31T16:04:48.547736+09:00",
+  "reviewer": "root",
+  "verdict": "pass",
+  "checked": [
+    "ordinary quota unchanged",
+    "explicit opt-in",
+    "date fixed",
+    "personal blog id fixed",
+    "four exact slots and body digest",
+    "ADMIN all-status duplicate checks",
+    "quota lock and STOP retained",
+    "reservation before network insertion",
+    "unknown result not silently retried"
+  ],
+  "validation": "19 offline checks, live dry successful; general config untouched"
+}

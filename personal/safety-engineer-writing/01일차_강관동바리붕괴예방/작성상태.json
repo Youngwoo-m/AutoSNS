@@ -1,0 +1,40 @@
+{
+  "day": 1,
+  "status": "published",
+  "title": "[건설안전기술사] 거푸집·강관 동바리, 타설 전 무엇을 확인할까 | 하루 한 문제 1일차",
+  "topic": "거푸집·강관 동바리 사전검토와 처짐·붕괴 예방",
+  "question_id": "140-2-5",
+  "field": "가설구조물·추락·낙하",
+  "selection": "동바리 문자열8문항8회차, 동일유형반복출제빈도아님",
+  "source_date": "2026-10-31",
+  "model": "Claude Max subscription sonnet, actual model in response modelUsage",
+  "humanizer": 2,
+  "calc": {
+    "verdict": "ok"
+  },
+  "review": "pending",
+  "pdf_pages": 2,
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/203",
+    "blogger": "https://geoaina.blogspot.com/2026/10/1_01377721027.html",
+    "naver": "https://blog.naver.com/safeworking/224460202351"
+  },
+  "keyword_trend_file": "데이터랩.txt",
+  "source_fix_round1": {
+    "issues_resolved": 4,
+    "ai_banner_disclosure_added": true,
+    "qnet_publication_date": "2026-08-24",
+    "qnet_exam_date_note": "시행일과게시일을구분;본문은게시일만표기",
+    "pdf_answer_unchanged": true
+  },
+  "updated_at": "2026-10-31T16:25:30.619276+09:00",
+  "verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "source_review": {
+    "verdict": "pass"
+  },
+  "note": "모든 채널 실제 공개·본문·첨부검증 완료"
+}

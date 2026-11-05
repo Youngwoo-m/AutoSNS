@@ -1,0 +1,98 @@
+{
+  "selected": {
+    "id": "140-2-5",
+    "year": 2026,
+    "round": 140,
+    "period": 2,
+    "number": 5,
+    "kind": "논술형",
+    "question": "콘크리트 거푸집 및 동바리(강관동바리 기준) 시공 시 사전검토 내용 및 처짐과 붕괴사고를 예방하기 위한 조립·해체 시 유의사항을 설명하시오.",
+    "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274126&brdId=Q006&gSite=Q"
+  },
+  "keyword": "동바리",
+  "matched_questions": [
+    {
+      "id": "126-3-3",
+      "year": 2022,
+      "round": 126,
+      "period": 3,
+      "number": 3,
+      "kind": "논술형",
+      "question": "시스템동바리의 구조적 특징과 붕괴발생원인 및 방지대책을 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209476&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "127-4-3",
+      "year": 2022,
+      "round": 127,
+      "period": 4,
+      "number": 3,
+      "kind": "논술형",
+      "question": "시스템동바리 조립 시 가새의 역할 및 설치기준, 시공 시 검토해야 할 사항에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210038&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "130-4-6",
+      "year": 2023,
+      "round": 130,
+      "period": 4,
+      "number": 6,
+      "kind": "논술형",
+      "question": "철근콘크리트공사에서 거푸집 동바리 설계 시 고려하중과 설치기준에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211868&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "133-4-4",
+      "year": 2024,
+      "round": 133,
+      "period": 4,
+      "number": 4,
+      "kind": "논술형",
+      "question": "동바리의 유형별 조립 시 안전조치사항과 조립·해체시 준수사항에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213288&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "134-3-6",
+      "year": 2024,
+      "round": 134,
+      "period": 3,
+      "number": 6,
+      "kind": "논술형",
+      "question": "건설현장에서 거푸집 및 동바리 붕괴사고 예방을 위한 거푸집의 존치 기간, 거푸집 및 동바리 해체 단계별 검토사항, 공사관계자별 주요 역할(책임)에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213555&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "136-1-3",
+      "year": 2025,
+      "round": 136,
+      "period": 1,
+      "number": 3,
+      "kind": "단답형",
+      "question": "시스템 동바리 및 보 형식의 동바리 조립 시 안전조치",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234924&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "138-3-3",
+      "year": 2026,
+      "round": 138,
+      "period": 3,
+      "number": 3,
+      "kind": "논술형",
+      "question": "철근콘크리트공사에서 거푸집 동바리 설계시의 구조검토 사항 및 고려하중과 거푸집 동바리 설치 시 안전사항에 대하여 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253526&brdId=Q006&gSite=Q"
+    },
+    {
+      "id": "140-2-5",
+      "year": 2026,
+      "round": 140,
+      "period": 2,
+      "number": 5,
+      "kind": "논술형",
+      "question": "콘크리트 거푸집 및 동바리(강관동바리 기준) 시공 시 사전검토 내용 및 처짐과 붕괴사고를 예방하기 위한 조립·해체 시 유의사항을 설명하시오.",
+      "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274126&brdId=Q006&gSite=Q"
+    }
+  ],
+  "count": 8,
+  "round_count": 8,
+  "note": "문항 텍스트의 동바리 문자열 빈도, 동일 유형의 반복출제 빈도·공식출제비중 아님"
+}

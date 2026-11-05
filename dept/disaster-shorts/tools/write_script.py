@@ -11,6 +11,7 @@ CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
 CATS = json.load(open(os.path.join(HERE, "safekorea_categories.json"), encoding="utf-8"))
 AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); sys.path.insert(0, os.path.dirname(AUTOSNS))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(HERE))))  # 저장소 루트(shared/) — 폴더 개편 뒤 channels/ 위는 루트가 아니다
 ROOT = CFG["root"]
 
 STYLE_PREFIX = ("Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, "

@@ -1,0 +1,74 @@
+{
+  "day": 2,
+  "title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+  "public_assets": [
+    {
+      "name": "banner.png",
+      "bytes": 793287,
+      "sha256": "c11a4705a9e44c3c583b8c038e572c4cd6eb6f23b186c6d54fc01353d332eaec",
+      "intended_public_url": "https://geoai-na.netlify.app/safety-questions/materials/day02/banner.png"
+    },
+    {
+      "name": "위험성평가_흐름도.png",
+      "bytes": 74824,
+      "sha256": "b4668860c0a0a5d9cf2900e358d534b3c35f6c2313a3fb81917af6bcef6f2976",
+      "intended_public_url": "https://geoai-na.netlify.app/safety-questions/materials/day02/위험성평가_흐름도.png"
+    },
+    {
+      "name": "02일차_위험성평가_답안예시_따라쓰기.pdf",
+      "bytes": 147183,
+      "sha256": "f538bf21a1aef2cd1822b5ba244240ad8f49fc909db68b0e83c229c4110c5c2a",
+      "intended_public_url": "https://geoai-na.netlify.app/safety-questions/materials/day02/02일차_위험성평가_답안예시_따라쓰기.pdf"
+    }
+  ],
+  "manuscripts": {
+    "티스토리게시본문.html": {
+      "name": "티스토리게시본문.html",
+      "bytes": 13051,
+      "sha256": "3c39c0ee3d9f3c75daa6647a0e400c8d2fbb433db935baaf870ba501b04ff86d"
+    },
+    "Blogger게시본문.html": {
+      "name": "Blogger게시본문.html",
+      "bytes": 13519,
+      "sha256": "50d8f5bc85fc663af7ca0fce818571f1c81f96ef85d957645f3e5c0584101993"
+    },
+    "final-content.json": {
+      "name": "final-content.json",
+      "bytes": 10659,
+      "sha256": "421a7dea654d026ffd0e1e8e9c3e96baa190f9e95964b6627b99d97240ab7473"
+    },
+    "제목.txt": {
+      "name": "제목.txt",
+      "bytes": 116,
+      "sha256": "512401841e158fea8c62a235b43381b454b5b11293e5aa27c26f42314ea95c27"
+    },
+    "태그.txt": {
+      "name": "태그.txt",
+      "bytes": 149,
+      "sha256": "213385476a2f275f03187d08258e7163050ad683c801078d225cdad4036a92b3"
+    }
+  },
+  "review": {
+    "calc": "ok",
+    "source": "fix_resolved",
+    "source_review": "source-review.json",
+    "source_resolution": "source-fix-resolution.json"
+  },
+  "model": "Claude Max subscription, actual model claude-sonnet-5-5",
+  "humanizer_passes": 2,
+  "new_paid_api": false,
+  "new_image_generation": false,
+  "image_note": "기존 AI배경 재사용 및 Pillow 직접 도식",
+  "status": "published",
+  "public_channels": {
+    "tistory": "https://na-geoai.tistory.com/205",
+    "blogger": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+    "naver": "https://blog.naver.com/safeworking/224460204210"
+  },
+  "public_verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "updated_at": "2026-10-31T16:25:30.619276+09:00"
+}

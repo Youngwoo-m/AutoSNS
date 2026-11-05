@@ -1,0 +1,10 @@
+제목: 지상 라이다 측량원리와 점군 정합·해석방법, 활용분야 (2026년 제140회 기출) | 측량및지형공간정보기술사 하루 한 문제 24일차 | 원문 구성 {'table': 4, 'quotation': 1, 'horizontalLine': 2, 'image': 3, 'file': 1} | 태그 ['측량및지형공간정보기술사', '측량기술사', '라이다', 'LiDAR', '지상라이다', '3D스캐너', '점군', 'BIM', '측량기사', '140회기출']
+[2026-11-02 07:56:24] 원고 보관: naver_20261102_075624_dry.json
+[2026-11-02 07:56:50] 붙여넣기 뒤 구성요소: {'documentTitle': 1, 'horizontalLine': 2, 'link': 28, 'quotation': 1, 'table': 4, 'text': 8}
+[2026-11-02 07:57:14] 그림·첨부 뒤 구성요소: {'documentTitle': 1, 'file': 1, 'horizontalLine': 2, 'image': 3, 'link': 28, 'quotation': 1, 'table': 4, 'text': 11}
+[2026-11-02 07:57:14] 스크린샷 저장: /Volumes/USB256/devAPP/AutoSNS/dept/naver-blog-auto/logs/20261102_075714_after_typing.png
+[2026-11-02 07:57:15] 스크린샷 저장: /Volumes/USB256/devAPP/AutoSNS/dept/naver-blog-auto/logs/20261102_075715_top_preview.png
+[2026-11-02 07:57:21] 카테고리 '측량기술사' 선택됨.
+[2026-11-02 07:57:26] 스크린샷 저장: /Volumes/USB256/devAPP/AutoSNS/dept/naver-blog-auto/logs/20261102_075726_publish_layer.png
+[2026-11-02 07:57:26] DRY_RUN: 발행 직전 멈춤. logs/ 의 after_typing / publish_layer 스크린샷에서 본문·카테고리·태그를 확인하세요. 문제 없으면 config 의 dry_run 을 false 로.
+{"status": "dry", "url": "", "message": "발행 직전까지 채우고 멈췄습니다(logs/ 에 스크린샷)"}

@@ -1,0 +1,18 @@
+{
+  "checked_at": "2026-10-31",
+  "law_url": "https://www.law.go.kr/LSW/lsLinkCommonInfo.do?lsJoLnkSeq=1028543971",
+  "law_version": "시행2026-03-02 고용노동부령450호2025-09-01일부개정",
+  "qnet": {
+    "round": 140,
+    "title": "제140회 건설안전기술사 문제지",
+    "article": "5274126",
+    "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274126&brdId=Q006&gSite=Q",
+    "pdf_url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2265622&fileName=%E2%98%85%EC%A0%9C140%ED%9A%8C+%EA%B1%B4%EC%84%A4%EC%95%88%EC%A0%84%EA%B8%B0%EC%88%A0%EC%82%AC+%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2265622&artlSeq=5274126&href=0",
+    "filename": "★제140회 건설안전기술사 문제지.pdf",
+    "sha256": "4de27dde8669f49e43d655e0aad7d20084dcd290d47b936ca988aac41893ecfb",
+    "year": 2026
+  },
+  "remote_pdf_sha256": "4de27dde8669f49e43d655e0aad7d20084dcd290d47b936ca988aac41893ecfb",
+  "local_pdf_match": true,
+  "source_document_page_index": 1
+}

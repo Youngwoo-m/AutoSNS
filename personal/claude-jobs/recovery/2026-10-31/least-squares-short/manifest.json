@@ -1,0 +1,88 @@
+{
+  "status": "ready_for_root_final_review",
+  "outputs": [
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/short.mp4",
+      "sha256": "a35932409f21e1d95a7b016336830040172480cabe013658d45b2170818083a3",
+      "bytes": 6312419
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/voice-natural.wav",
+      "sha256": "1667e7077117b3c881e282ff2fe1f1329e1fb5ce46fcfd1a626dce0a199b3ff6",
+      "bytes": 1452204
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/props.json",
+      "sha256": "cc729ca07c246d4aaa30186f937d12d6fee71e38a0cf25236f356858919cd7bc",
+      "bytes": 1636
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/대본.txt",
+      "sha256": "0216f7ca261368dc344b787d79e76d2d8c33ed8ab10b705c228063f12bb090ef",
+      "bytes": 223
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/제목.txt",
+      "sha256": "84160c552c179de7802b41f84931d1bfaeb539871e7ffcda4afbfc0dc78d2570",
+      "bytes": 156
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/설명.txt",
+      "sha256": "67c3898cb0547a01443647ae31956e5fca0c05e00be58283f892054ebedb89d3",
+      "bytes": 1211
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/태그.txt",
+      "sha256": "440d6d7279f0b4b794877cd11f41944a28c5a0098f0bf55c51b169a1f6ae3f82",
+      "bytes": 103
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/meta.json",
+      "sha256": "5d6ac2c3ff34e0e3c434e4be17708a4fdf4afb35400afe560c0b2aae7c5e12c4",
+      "bytes": 1294
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/voice-result.json",
+      "sha256": "b19c245aa9ba89d6bd0eb1bd569bafc8c7867c24723fde6e535ba81d5b3b5d3d",
+      "bytes": 797
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/음성받아적기.json",
+      "sha256": "358e1a4163c5be28d98cab66bae9b02421b6c0880252d3ee41bce2b780cfbd09",
+      "bytes": 936
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/asr-interface.json",
+      "sha256": "2f9bc8c7daedf2557b52d9871a0012fd8f38a834d733c4ddf4ab38378c11f458",
+      "bytes": 118
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/검증보고.json",
+      "sha256": "8ed2d44dba477c0492fefd97e38e235be5ad79d7b8685732c5797eadd1320fa4",
+      "bytes": 2181
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/d1.png",
+      "sha256": "7884efae22872f00c136c363d620a4a207363642fa6cd2b7d736f182af4ed513",
+      "bytes": 1625857
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/d3.png",
+      "sha256": "92c35fa9a14a363eb817012ed28a71fb2515402d85d5cc772159b8f91d955a43",
+      "bytes": 1489725
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/render_reframed.py",
+      "sha256": "1ca375208c4a454d147714c66a1536e506701dc4fb0d5bc5bd813929a4ba297f",
+      "bytes": 5702
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/remotion-project/src/survey-short/SurveyShort.tsx",
+      "sha256": "8e9df63d78501e90988aa383077646fdcd817f2aa51e9b58b2d6f5a9b29353b1",
+      "bytes": 5936
+    }
+  ],
+  "credits_used": 0,
+  "voice": "edge +0%",
+  "qa_report": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/검증보고.json"
+}

@@ -1,0 +1,123 @@
+[
+  {
+    "job": "building-daily",
+    "day": 4,
+    "url": "https://geoaina.blogspot.com/2026/11/4.html",
+    "http": 200,
+    "title_match": true,
+    "headings_verified": 17,
+    "assets": [
+      {
+        "name": "banner.png",
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day04/banner.png",
+        "link_present": true,
+        "local_sha256": "128e26ae1284d0d88bc90a80a365864d72d628b9493782ecd1ec4a0ffc1da0ba",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "용접결함_검사와보수_도식.png",
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day04/용접결함_검사와보수_도식.png",
+        "link_present": true,
+        "local_sha256": "98f2579716dc13f6d51dace2ca6d8119d49d82bbf7c86560afe4f90695ad6213",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "04일차_철골용접결함원인과대책_답안예시_따라쓰기.pdf",
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day04/04일차_철골용접결함원인과대책_답안예시_따라쓰기.pdf",
+        "link_present": true,
+        "local_sha256": "926cd2df0f82cc3dfc3729d8d4a8bb7a55e9f8c02a6ba4caeee34111b3d7c504",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      }
+    ],
+    "public_title_copies": 1
+  },
+  {
+    "job": "safety-daily",
+    "day": 4,
+    "url": "https://geoaina.blogspot.com/2026/11/4_02135658817.html",
+    "http": 200,
+    "title_match": true,
+    "headings_verified": 19,
+    "assets": [
+      {
+        "name": "banner.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day04/banner.png",
+        "link_present": true,
+        "local_sha256": "c703b170a4368e37a23dee7abe750423708701ed8322eb1ed0f112afa22872cf",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "적정공기_기준.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day04/적정공기_기준.png",
+        "link_present": true,
+        "local_sha256": "a1d7919a443a7a7e048c9c3176c84f8cf39d135d4d02f989150a30e2dcece101",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "밀폐공간_작업절차.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day04/밀폐공간_작업절차.png",
+        "link_present": true,
+        "local_sha256": "1f7bbde1334d7d07da01e6ed4a33c36bde11615b91786b0a6b1d6a9b389c223a",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "04일차_밀폐공간작업_답안예시_따라쓰기.pdf",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day04/04일차_밀폐공간작업_답안예시_따라쓰기.pdf",
+        "link_present": true,
+        "local_sha256": "8f8bf3b247cb655725ffc76dbf2fd659c42a3fe0c306a5cd966ec98c707a5f11",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      }
+    ],
+    "public_title_copies": 1
+  },
+  {
+    "job": "safety-daily",
+    "day": 5,
+    "url": "https://geoaina.blogspot.com/2026/11/5.html",
+    "http": 200,
+    "title_match": true,
+    "headings_verified": 19,
+    "assets": [
+      {
+        "name": "banner.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day05/banner.png",
+        "link_present": true,
+        "local_sha256": "2c698558b1e72f8fa413969df70145e6b16f7d1a7372e462ab741dd9ef713cd4",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "강관비계_구조기준.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day05/강관비계_구조기준.png",
+        "link_present": true,
+        "local_sha256": "23a1e4f86a9839e1d03d96b57d20c7a52fcc1d8c9cda92ba99c97a149e20c902",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "별표5_화면.png",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day05/별표5_화면.png",
+        "link_present": true,
+        "local_sha256": "fbcf0d9f55c91724d66791a3e773c3544d050447375318a4e9d6666e7e7983ce",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      },
+      {
+        "name": "05일차_비계조립해체_답안예시_따라쓰기.pdf",
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day05/05일차_비계조립해체_답안예시_따라쓰기.pdf",
+        "link_present": true,
+        "local_sha256": "3914387860171c8d7d427a0ba12d3ebd42a17cc6b221ad7d066343f39cc9aff4",
+        "download_verified": false,
+        "note": "첨부 서버 연결 시간 초과: IPv4·기본 연결 모두 실패. 공개 다운로드 재확인 필요"
+      }
+    ],
+    "public_title_copies": 1
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "checks": [
+    "KST boundary + existing civil exclusion + Whitebox counted + scheduled excluded from current usage",
+    "naive timestamp fail closed",
+    "missing status fail closed",
+    "no logged-in Max: model not invoked",
+    "provider env removed; Max failure returned with no fallback"
+  ],
+  "actual_model_calls": 0,
+  "actual_publish_calls": 0
+}

@@ -1,0 +1,4 @@
+1. establishing·tiltshift: 기존 d1 동일 거리 반복관측 전경
+2. insert·tiltshift: 기존 d2 반복 관측값 중 조정된 대표값 개념
+3. frame·tiltshift: 기존 d3 추·정밀장비의 상대 경중률 개념
+기존 원본 그림3장을 그대로 복사, 새 그림/API/크레딧 사용0. 실제 물리적 추의 무게를 경중률 계산값으로 읽지 않음.

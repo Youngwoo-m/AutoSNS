@@ -1,0 +1,190 @@
+{
+  "checked_at": "2026-10-31 Asia/Seoul",
+  "verdict": "block",
+  "summary": "건축 입문 집계 1행에 영문 약어 부분일치 오탐을 발견해 수정 전 게시 불가. 건설안전은 출처·기출·집계에서 핵심 오류를 찾지 못했으며 배치·문체를 고치면 복구 가능.",
+  "sources_opened": 13,
+  "manuscripts": {
+    "building": {
+      "verdict": "block",
+      "recommended_source_filepath": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/수정본_새문체.html",
+      "publishable_source_filepath": null,
+      "summary": "핵심 집계 오탐 수정 필요",
+      "issues": [
+        {
+          "severity": "block",
+          "where": "공정·원가·계약 8·8·6·5·5=32,14/15회",
+          "problem": "분석기 re.I의 VE가 영어 일반단어 Governance/Emissive/effective/Delivery 내부와 일치한다. 128-1-3 ESG·129-1-8 저방사유리·131-1-13 유효높이·139-1-11 IPD가 VE로 잡혔다. 수치가 자동 키워드 집계라고 밝힌 것만으로 이 오탐을 타당한 공정·원가 통계로 볼 수 없다.",
+          "fix": "해당 행을 삭제하거나 영문 약어 경계를 적용하고 재집계한다. 현재 명시 키워드에 경계를 적용한 값은 2022~2026 각7·6·6·5·4,합계28,13/15회. IPD를 의미상 포함하려면 별도 명시 키워드/수동 분류 규칙을 공개하고 다시 계산한다. 기존 분석 원본을 무단 덮어쓰지 말고 발행용 별도 근거로 남긴다."
+        },
+        {
+          "severity": "fix",
+          "where": "맨 위 답안지 요청 h2 및 안내",
+          "problem": "2026-10-28 공통규칙은 요청 안내를 맨 아래에 두도록 우선 적용한다. 현재 두 원고는 맨 위에 있다.",
+          "fix": "요청 h2와 설명을 글 끝으로 옮긴다. 입문글에는 풀이용 PDF를 새로 붙일 필요가 없다."
+        },
+        {
+          "severity": "fix",
+          "where": "글마다 문제, 답안 목차, 답안 예시",
+          "problem": "연재 예고가 폐지된 독립 답안 목차 틀을 계속 약속하고 내부 문체 규칙도 설명한다.",
+          "fix": "예고를 문제·해설·답안 예시·그림/표·놓치기 쉬운 점·참고자료·PDF로 고치고 내부 편집 규칙 설명은 뺀다. 5장의 교육용 목차 설계 예시는 유지 가능하다."
+        },
+        {
+          "severity": "fix",
+          "where": "글 맨 위 배너 그림 없음",
+          "problem": "공통규칙의 티스토리·Blogger 상단 배너 규칙을 충족하지 못한다. 현재 두 파일은 img가 0개다.",
+          "fix": "기존 make_banner.py로 만들고 눈으로 검토한 배너를 Blogger에는 검증된 공개 https 이미지로 맨 위에 넣는다. 새 유료 이미지 생성은 필요 없다."
+        }
+      ],
+      "sources_opened": 5,
+      "sources": [
+        {
+          "url": "https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0510&jmInfoDivCcd=B0",
+          "opened": true,
+          "supports": "yes",
+          "note": "시험과목·필기100분씩400분·면접30분정도·60점 합격·출제기준2023.1.1~2027.12.31 및2026일정 확인. 원고는 특정 접수일을 단정하지 않음."
+        },
+        {
+          "url": "https://na-geoai.tistory.com/182",
+          "opened": true,
+          "supports": "partly",
+          "note": "HTTP200·정확한 입문제목·본문465문항·요청링크 공개 확인. 건축 공개본은 더 이른 버전이어서 최신 수정본과 일부 문장 다름."
+        },
+        {
+          "url": "https://geoai-na.netlify.app/building-questions/",
+          "opened": true,
+          "supports": "yes",
+          "note": "HTTP200, POST form name building-engineer-questions 확인. 요청 제출/서버등록 시험은 하지 않음."
+        },
+        {
+          "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q",
+          "opened": true,
+          "supports": "yes",
+          "note": "제138회 해당 종목 문제지 게시물 확인. 웹도구 실패는 urllib읽기로 보완."
+        },
+        {
+          "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2250221&fileName=%E2%98%85%EC%A0%9C138%ED%9A%8C%20%EA%B1%B4%EC%B6%95%EC%8B%9C%EA%B3%B5%EA%B8%B0%EC%88%A0%EC%82%AC%20%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2250221&artlSeq=5253529&href=0",
+          "opened": true,
+          "supports": "yes",
+          "note": "공식 PDF 직접 읽기와 SHA256 대조 성공. 건축138-2-1 적산온도·138-3-6 AX, 안전138-3-3 동바리·138-3-5 VR/AR 원문 직접 확인."
+        }
+      ],
+      "local_verification": {
+        "rounds": 15,
+        "questions": 465,
+        "short": 195,
+        "essay": 270,
+        "cited_questions": 12,
+        "cited_round_pdf_hashes_match_manifest": true,
+        "keyword_counts": "건축 공정·원가·계약 영문약어 오탐 외 원본집계와 일치",
+        "hot_topic": "한중8문항7회"
+      },
+      "notes": [
+        "입문 안내글이므로 정기 풀이글의 문제→답안 전체 구성을 강제하거나 따라쓰기 PDF를 새로 요구하지 않음.",
+        "허위 경력·저자 현장체험 단정·로컬경로·만료서명링크를 발견하지 못함. 표 td/th는 가운데 정렬.",
+        "15회 모든 공식 PDF를 원격 재다운로드하지는 않음. 인용 회차 로컬PDF 해시와 출처 manifest를 대조하고 138회만 원격 해시 재검증.",
+        "Q-net139/140회 연도는 로컬manifest 및공식 문제지 기반. 모든 인용문항은 로컬전체문항과 대조. 공식문제의 요지표현이며 따옴표 원문 인용은 아님."
+      ]
+    },
+    "safety": {
+      "verdict": "fix",
+      "recommended_source_filepath": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/safety-engineer-writing/첫글_준비하기/게시본문.html",
+      "publishable_source_filepath": null,
+      "summary": "배치·예고·배너 및 포괄 법령 확인 문구 수정 후 발행 가능",
+      "issues": [
+        {
+          "severity": "fix",
+          "where": "맨 위 답안지 요청 h2 및 안내",
+          "problem": "2026-10-28 공통규칙은 요청 안내를 맨 아래에 두도록 우선 적용한다. 현재 두 원고는 맨 위에 있다.",
+          "fix": "요청 h2와 설명을 글 끝으로 옮긴다. 입문글에는 풀이용 PDF를 새로 붙일 필요가 없다."
+        },
+        {
+          "severity": "fix",
+          "where": "글마다 문제, 답안 목차, 답안 예시",
+          "problem": "연재 예고가 폐지된 독립 답안 목차 틀을 계속 약속하고 내부 문체 규칙도 설명한다.",
+          "fix": "예고를 문제·해설·답안 예시·그림/표·놓치기 쉬운 점·참고자료·PDF로 고치고 내부 편집 규칙 설명은 뺀다. 5장의 교육용 목차 설계 예시는 유지 가능하다."
+        },
+        {
+          "severity": "fix",
+          "where": "글 맨 위 배너 그림 없음",
+          "problem": "공통규칙의 티스토리·Blogger 상단 배너 규칙을 충족하지 못한다. 현재 두 파일은 img가 0개다.",
+          "fix": "기존 make_banner.py로 만들고 눈으로 검토한 배너를 Blogger에는 검증된 공개 https 이미지로 맨 위에 넣는다. 새 유료 이미지 생성은 필요 없다."
+        },
+        {
+          "severity": "fix",
+          "where": "모두 2026년 10월 28일 기준 현행 법령으로 확인했어요",
+          "problem": "연결은 국가법령정보센터 홈페이지뿐이고 개별 법령·시행일을 모두 확인했다는 원고의 포괄 주장을 이번 검토에서 재현할 수 없다. 본문에 구체적 법정 수치나 의무를 잘못 단정한 흔적은 없었다.",
+          "fix": "개별 법령 현행본과 시행일을 연결하거나, 포괄 확인 완료 문장을 삭제하고 현행 법령의 시행일을 확인해 활용하라는 학습 안내만 남긴다."
+        }
+      ],
+      "sources_opened": 5,
+      "sources": [
+        {
+          "url": "https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0740&jmInfoDivCcd=B0",
+          "opened": true,
+          "supports": "yes",
+          "note": "시험과목·필기100분씩400분·면접30분정도·60점 합격·출제기준2023.1.1~2027.12.31 및2026일정 확인. 원고는 특정 접수일을 단정하지 않음."
+        },
+        {
+          "url": "https://na-geoai.tistory.com/183",
+          "opened": true,
+          "supports": "partly",
+          "note": "HTTP200·정확한 입문제목·본문465문항·요청링크 공개 확인. 건축 공개본은 더 이른 버전이어서 최신 수정본과 일부 문장 다름."
+        },
+        {
+          "url": "https://geoai-na.netlify.app/safety-questions/",
+          "opened": true,
+          "supports": "yes",
+          "note": "HTTP200, POST form name safety-engineer-questions 확인. 요청 제출/서버등록 시험은 하지 않음."
+        },
+        {
+          "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253526&brdId=Q006&gSite=Q",
+          "opened": true,
+          "supports": "yes",
+          "note": "제138회 해당 종목 문제지 게시물 확인. 웹도구 실패는 urllib읽기로 보완."
+        },
+        {
+          "url": "https://www.q-net.or.kr/cst006.do?id=cst00602s01&gSite=Q&gId=&fileCode=R001&filePath=bbs%2FQ006%2FQ006_2250217&fileName=%E2%98%85%EC%A0%9C138%ED%9A%8C+%EA%B1%B4%EC%84%A4%EC%95%88%EC%A0%84%EA%B8%B0%EC%88%A0%EC%82%AC+%EB%AC%B8%EC%A0%9C%EC%A7%80.pdf&fileSeq=2250217&artlSeq=5253526&href=0",
+          "opened": true,
+          "supports": "yes",
+          "note": "공식 PDF 직접 읽기와 SHA256 대조 성공. 건축138-2-1 적산온도·138-3-6 AX, 안전138-3-3 동바리·138-3-5 VR/AR 원문 직접 확인."
+        }
+      ],
+      "local_verification": {
+        "rounds": 15,
+        "questions": 465,
+        "short": 195,
+        "essay": 270,
+        "cited_questions": 11,
+        "cited_round_pdf_hashes_match_manifest": true,
+        "keyword_counts": "모든 그룹 정규식 재계산이 원본집계와 일치",
+        "hot_topic": "동바리8문항8회·중대재해11문항11회·위험성평가14문항13회"
+      },
+      "notes": [
+        "입문 안내글이므로 정기 풀이글의 문제→답안 전체 구성을 강제하거나 따라쓰기 PDF를 새로 요구하지 않음.",
+        "허위 경력·저자 현장체험 단정·로컬경로·만료서명링크를 발견하지 못함. 표 td/th는 가운데 정렬.",
+        "15회 모든 공식 PDF를 원격 재다운로드하지는 않음. 인용 회차 로컬PDF 해시와 출처 manifest를 대조하고 138회만 원격 해시 재검증.",
+        "Q-net139/140회 연도는 로컬manifest 및공식 문제지 기반. 모든 인용문항은 로컬전체문항과 대조. 공식문제의 요지표현이며 따옴표 원문 인용은 아님."
+      ]
+    }
+  },
+  "additional_sources": [
+    {
+      "url": "https://www.kosha.or.kr/",
+      "opened": true,
+      "supports": "partly",
+      "note": "홈페이지 접근됨. KOSHA GUIDE 법적 성격을 뒷받침할 상세문서는 이번 링크예산 내 미확인."
+    },
+    {
+      "url": "https://www.law.go.kr/",
+      "opened": true,
+      "supports": "partly",
+      "note": "홈페이지 접근됨. 개별법령 시행일을 전부 확인했다는 포괄주장은 재현 안 됨."
+    },
+    {
+      "url": "https://www.kcsc.re.kr/",
+      "opened": true,
+      "supports": "partly",
+      "note": "홈페이지 접근됨. 입문글은 구체적 KCS 수치를 인용하지 않음."
+    }
+  ]
+}

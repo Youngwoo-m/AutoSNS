@@ -1,0 +1,116 @@
+{
+  "verdict": "fix",
+  "summary": "기존 fix4 중 조건부 보온 규정·단서 정리·태그 보완은 해소됐습니다. 답안 작성 요령 문어체 보완은 일부 남았습니다.",
+  "issues": [
+    {
+      "severity": "fix",
+      "where": "놓치기 쉬운 점 1~3항",
+      "problem": "기존 fix2에서 지적한 작성요령 친절체가 구분해서 써 주세요, 대상을 나눠서 적고, 쓰지 않도록 구분해 주세요로 남아 있습니다.",
+      "fix": "이 부분은 실수에 대한 친절한 개념설명으로 종결하세요. 예: 해체 강도와는 별도 기준이에요 / 온도의 대상과 기산점이 서로 달라요. 작성방법 지시를 유지한다면 답안 작성 요령 blockquote 문어체로 분리하세요."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://www.kcsc.re.kr/standardCode/viewer/KCS%2014%2020%2040:2024-12-30",
+      "opened": true,
+      "supports": "unknown",
+      "note": "SPA 페이지가 열렸으나 웹 도구에 본문이 표시되지 않아 공식 API로 별도 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/api/standardCode/getCodeDetailInfo.do",
+      "opened": true,
+      "supports": "yes",
+      "note": "docCode=KCS 14 20 40, ymd=2024-12-30으로 읽기 전용 조회. 원격 106블록이 저장 JSON과 일치. 적용범위, 온도, 강도표, 공시체, 승인, 온도기록 예외 및 3.4.1(8)을 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/api/standardCode/code-info?docCode=KCS%2014%2020%2040",
+      "opened": true,
+      "supports": "yes",
+      "note": "원격 개정 이력의 last_yn=Y 개정일은 2024-12-30입니다."
+    },
+    {
+      "url": "https://www.law.go.kr/LSW/cgmExpcInfoP.do?cgmExpcDatSeq=2339185&mode=2&ofiClsCd=350102",
+      "opened": true,
+      "supports": "yes",
+      "note": "2026-02-11 국토부 안내. 적용조건, 동결 골재, 시멘트 직접 가열 금지, 빙설 제거, 지반 해동, 즉시 피복과 바람 차단을 확인했습니다."
+    },
+    {
+      "url": "https://law.go.kr/LSW/flDownload.do?flSeq=148098945",
+      "opened": true,
+      "supports": "yes",
+      "note": "2024-12-30 고시 제2024-879호. 기존 사업 경과조치와 일부 조항 2025-01-01 적용을 확인했습니다."
+    },
+    {
+      "url": "https://kcsc.re.kr/board/notdetail/6639",
+      "opened": true,
+      "supports": "unknown",
+      "note": "SPA 페이지가 열렸으나 게시물 본문을 독립적으로 읽지 못했습니다. 고시는 공식 법제처 PDF로 확인했습니다."
+    },
+    {
+      "url": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q",
+      "opened": true,
+      "supports": "yes",
+      "note": "공식 첨부 원격 PDF SHA256 1b7df08442d2edc793ab2554678c01892b3d22d2f970d46ab7259981fb36deb8로 로컬과 일치. 3교시1번, 각25점,100분을 시각 확인했습니다."
+    },
+    {
+      "url": "https://moel.go.kr/news/notice/noticeView.do?bbs_seq=20231101453",
+      "opened": true,
+      "supports": "yes",
+      "note": "고용노동부 공고 제2023-547호 공식 2024 시행계획."
+    },
+    {
+      "url": "https://moel.go.kr/common/downloadFile.do?bbs_id=9&bbs_seq=20231101453&file_ext=pdf&file_seq=20231102133",
+      "opened": true,
+      "supports": "yes",
+      "note": "웹 도구 octet-stream 오류 후 curl 확보. PDF8쪽 제132회 필기1월27일,16쪽 건축시공132회 시행 확인. 게시일에서 시행연도를 추정하지 않았습니다."
+    },
+    {
+      "url": "https://www.q-net.or.kr/crf005.do?gId=&gSite=Q&id=crf00503s02&jmCd=0510&jmInfoDivCcd=B0",
+      "opened": true,
+      "supports": "yes",
+      "note": "제140회2026 실기예정11월14~28일 및 종목·지역별 일정 차이 안내 확인."
+    }
+  ],
+  "notes": [
+    "기존에 확보·검증한 공식 원문을 재사용했습니다. 새 출처 조회0.",
+    "3.4.1(8)의 얇은 단면·보통 노출·특별한 보온양생을 계속하지 않는 조건과 노출면 피복, 초기양생 완료 후2일이상0℃이상 보존을 HTML·JSON·PDF에서 확인했습니다. (4)의 소요강도 도달 후2일과 기산점이 구분됩니다.",
+    "최종PDF37b818b2d8ee8ce92c88d007dc0bdd2ea1eac96299a1c61f9dada7c18024b0b3의4쪽을 직접 렌더링·시각 확인했습니다. 잘림·겹침 없음.",
+    "태그9개와 기출조합1개 확인. 반복단서 축소 및 AI배너 고지 유지 확인.",
+    "공개자산배포·HTTP해시·접수페이지 준비상태는 별도 발행단계 범위입니다.",
+    "원고편집·발행0. 재검토보고서와 렌더링증빙만 저장했습니다."
+  ],
+  "reviewed_files": [
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/티스토리게시본문.html",
+      "sha256": "68f9b2c2eace5c6fa63403d879c136e47db4d3af344702cd3146d89a281a0755"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/Blogger게시본문.html",
+      "sha256": "9e69ebb8907befa57bb03f3d701b6fbb22a10553c3d37874e542cd6ecf4bf81a"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manuscript-final.json",
+      "sha256": "01a4e0c905629611a549a49ba03e9525615e91b49f6b1dbeb0cf779bb2ac9a5f"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/태그.txt",
+      "sha256": "56fb0100bbf9ae5bee29a50776661363e2bd0d152308f582beb68932711cc6e0"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manifest.json",
+      "sha256": "12fa00f03c4d1463dc31b57ec303c3f89dc668580724a88d4477e885e62dd40c"
+    },
+    {
+      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf",
+      "sha256": "37b818b2d8ee8ce92c88d007dc0bdd2ea1eac96299a1c61f9dada7c18024b0b3"
+    }
+  ],
+  "resolved_issue_ids": [
+    1,
+    3,
+    4
+  ],
+  "partly_resolved_issue_ids": [
+    2
+  ]
+}

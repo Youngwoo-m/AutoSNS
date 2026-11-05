@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-31T12:17:38.677392+09:00",
+  "status": "registered",
+  "jobs": [
+    {
+      "job": "building-daily",
+      "label": "com.smuds.claude.building-daily",
+      "registered": true,
+      "schedule": [
+        {
+          "Hour": 9,
+          "Minute": 0
+        }
+      ],
+      "run_at_load": false,
+      "execution": [
+        "state = not running",
+        "runs = 0",
+        "last exit code = (never exited)"
+      ],
+      "plist_sha256": "da7dd671e4713c1b05fc59eae534179b78996d517e2d0f74e5888e4c479a9d2d",
+      "next_scheduled_kst": "2026-11-01T09:00:00+09:00"
+    },
+    {
+      "job": "safety-daily",
+      "label": "com.smuds.claude.safety-daily",
+      "registered": true,
+      "schedule": [
+        {
+          "Hour": 10,
+          "Minute": 0
+        }
+      ],
+      "run_at_load": false,
+      "execution": [
+        "state = not running",
+        "runs = 0",
+        "last exit code = (never exited)"
+      ],
+      "plist_sha256": "aa2144053b42211ed24a4782bb76883c0110bbf2fdc33cf8ba04871a401852ea",
+      "next_scheduled_kst": "2026-11-01T10:00:00+09:00"
+    }
+  ],
+  "other_jobs_changed": false,
+  "kickstart_calls": 0,
+  "actual_model_calls": 0
+}

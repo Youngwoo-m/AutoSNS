@@ -1,0 +1,300 @@
+Research Paper
+교통량과 콘크리트 라이닝 균열 상관관계
+분석
+이규필*
+정회원, 한국건설기술연구원 지반연구본부 수석연구원
+Correlation analysis of traffic and crack in
+concrete lining
+Gyu-Phil Lee*
+Senior Researcher, Geotechnical Engineering Research Department, KICT
+*Corresponding Author:Gyu-Phil Lee, freely@kict.re.kr
+Abstract
+An analysis of covariance and Pearson correlation coefficient were performed to
+identify the relationship between both variables: traffic volume and crack. For this, it
+was carried out to analyse 216 tunnel inspection/diagnosis results with respect to the
+traffic. As a result, it has been proven that traffic volume and cracks in concrete linings
+are highly correlated. Therefore, it is recommended to consider traffic volume in plan-
+ning of preemptive maintenance such as crack repair, etc.
+Keywords: Traffic, Crack, Lining, Covariance, Pearson correlation coefficient
+초 록
+OPEN ACCESS
+본 연구에서는 교통량과 균열 두 변수에 대한 관계성을 분석하기 위하여 공분산 분석 및
+Journal of Korean Tunnelling and
+Underground Space Association 피어슨 상관관계 분석을 수행하였다. 이를 위하여 국도터널 216개소에 대한 정밀안전
+25(5)345-355(2023)
+https://doi.org/10.9711/KTAJ.2023.25.5.345 점검, 정밀안전진단 시행결과 및 교통량을 조사/분석하였다. 분석결과 교통량과 콘크리
+eISSN: 2287-4747 트 라이닝에 발생하는 균열은 높은 상관성을 보이는 것으로 나타났다. 따라서 균열 보수
+pISSN: 2233-8292
+등 선제적 유지관리는 교통량을 고려한 계획수립을 수행하는 것이 바람직하다.
+Received July 17, 2023 주요어:교통량, 균열, 라이닝, 공분산, 피어슨 상관계수
+Revised August 7, 2023
+Accepted August 18, 2023
+This is an Open Access article
+distributed under the terms of the
+Creative Commons Attribution 1. 서 론
+Non-Commercial License (http://creativecommons.org/
+licenses/by-nc/4.0/) which permits unrestricted non-
+commercial use, distribution, and reproduction in any
+공용중인 터널의 콘크리트 라이닝에는 균열, 누수, 파손 등 손상 및 박리/박락,
+medium, provided the original work is properly cited.
+Copyrightⓒ2023, Korean Tunnelling and Underground 백태, 재료분리 등과 같은 결함이 발생한다.
+Space Association
+Journal of Korean Tunnelling and Underground Space Association 345
+Gyu-Phil Lee
+터널분야 전문가 대상 AHP 설문 결과 콘크리트 라이닝에 발생하는 결함 가운데 균열 및 누수가 터널구조물의
+상태안전성 평가지표중 가장 중요한 지표인 것으로 나타났으며(An and Kim, 2016), 국내외 44개소 터널에 대하
+여 결함을 조사 분석한 결과 콘크리트 라이닝에 발생하는 결함 중 균열이 가장 높은 비율을 차지하는 것으로 나타
+났다(Bae et al., 2001).
+콘크리트 라이닝에 발생하는 균열은 재료적, 시공적, 환경적 요인에 의하여 발생되며 한 가지 원인으로 발생되
+는 것보다는 여러 가지 원인이 복합적으로 작용하여 발생한다. 또한 일반적으로 라이닝에 발생하는 균열은 작용
+하중으로 인한 인장응력의 증가로 발생되는 균열보다는 콘크리트의 건조수축 등 2차적인 효과에 의해 발생하는
+경우가 많으며, 이외 다음과 같은 다양한 원인으로 균열이 발생한다(Korea Expressway Corporation, 2012).
+- 부적절한 거푸집 제거시기로 양생기간 부족
+- 콘크리트의 양생기간중 온도강하에 따른 수축
+- 주변 대기 온도 변화에 따른 수축과 팽창의 반복
+- 슬럼프가 큰 콘크리트의 타설
+- 콘크리트 라이닝의 두께부족이나 타설방법의 불량
+- 국부적인 지반 팽창에 따른 추가하중의 증가
+- 라이닝과 원지반 상이의 공극에 의한 휨모멘트 혹은 편압의 발생
+- 좌, 우측의 측벽 하부기초의 침하
+- 지하수압의 작용
+상기 원인에 의해 발생한 균열은 일반적으로 시간이 경과함에 따라 균열 폭과 길이 등이 증가하며, 이러한 균열의
+발달과 관련하여 Chen et al. (2022)은 터널 내 차량주행에 따른 압력파 변화가 균열을 진전시킨다고 제안하였다.
+따라서 본 연구에서는 터널 내 압력파 변화 원인인 교통량과 균열의 상관관계 분석을 위하여, 216개소 국도터
+널의 정밀안전점검과 정밀안전진단 결과 가운데 각 터널별 균열길이와 교통량 통계연보 기준 교통량을 조사 ‧ 분
+석하였으며, 교통량과 균열길이에 대한 공분산 분석 및 피어슨 상관분석(상관계수)을 수행하였다.
+2. 자료수집 및 분석방법
+2.1 균열길이 및 교통량
+2.1.1 균열길이
+｢시설물의 안전 및 유지관리에 관한 특별법｣에 따른 정밀안전점검 및 정밀안전진단은 콘크리트 라이닝에 발
+생한 균열, 누수, 파손 등 손상은 물론 재질 열화(박리/박락, 백태, 재료분리 등) 등과 같은 결함을 조사하고 있으
+며, 조사결과는 콘크리트 라이닝, 공동구, 노면, 옹벽, 갱구 등 부재별로 손상유형, 손상물량 등으로 정리된다.
+346 Journal of Korean Tunnelling and Underground Space Association
+Correlation analysis of traffic and crack in concrete lining
+본 연구에서는 최근 3년간 정밀안전점검 및 정밀안전진단을 시행한 216개소 터널에 대한 보고서를 수집하고,
+각 터널별로 콘크리트 라이닝에 발생한 균열길이를 다음 Table 1과 같이 정리하였다.
+Table 1. Example of data
+Tunnel (1) Crack (2) Crack length per (3)
+length (m) length (m) unit length of tunnel (m)
+○○ tunnel 630 793.2 1.259
+□□ tunnel 1,500 827 0.551
+
+※ 
+표본자료 수집 대상 국도터널 216개소는 모두 2차선이나 터널연장은 최소 100 m 최대 4,580 m이다. 따라서
+본 연구에서는 터널 단위길이(연장)당 균열길이를 산정하였다(Table 1 참조).
+국도터널 216개소 가운데 ｢시설물의 안전 및 유지관리 실시 세부지침｣에 따른 제1종시설물(연장 1,000 m 이
+상)은 65개소 제2종시설물은 151개소이며, 공용연수 20년 이상인 터널은 17개소 20년 미만인 터널은 199개소이
+고 정밀안전점검 및 정밀안전진단 종합평가결과 A등급 23개소 B등급 193개소이다(Fig. 1 참조).
+(a) Tunnel length (b) Inspection or diagnosis result
+(c) Usage period
+Fig. 1. Status of sampled tunnel
+Journal of Korean Tunnelling and Underground Space Association 347
+Gyu-Phil Lee
+2.1.2 교통량
+국토교통부에서는 고속국도, 일반국도, 국가지원지방도, 지방도의 교통량을 조사하여 도로의 계획과 건설, 유
+지관리 및 도로행정 등에 필요한 기본 자료와 각종 연구에 필요한 기초자료를 제공하고 있다(Traffic Monitoring
+System, 2023).
+이를 위하여 일반국도 상 442개소에 자동 차종분류 조사 장비를 설치하여 1년 365일 24시간 연속으로 통과 차
+량의 차종별, 방향별, 시간대별로 상시조사를 시행하고 있으며, 기본 교통량 자료가 필요하다고 판단되는 약 1,600
+개소에 대해 수시조사를 시행하고 있다.
+본 연구에서는 교통량과 균열의 상관관계 분석을 위하여, 표본자료 수집 대상 국도터널 216개소에 대하여 각
+터널별 동일 노선상 최인접 조사지점의 교통량 자료를 조사/분석하였다.
+상시조사 및 수시조사에 따른 교통량은 다음과 같이 1~12종의 차종으로 구분되며, 대표적인 차량 형태 및 차량
+축수에 따른 종별 구분 상세 및 교통량 정보는 다음과 같다(Tables 2, 3 참조).
+- 1종 : 승용차(16인승 미만 여객수송차량), 미니트럭
+- 2종 : 버스(16인승 이상 여객수송차량)
+- 3종 : 소형화물차 A (2축, 2.5톤 미만)
+- 4종 : 소형화물차 B (2축, 2.5톤 이상)
+- 5종 : 중형화물차 A (3축)
+- 6종 : 중형화물차 B (4축)
+- 7종 : 중형화물차 C (5축)
+- 8종 : 대형화물차 A (4축, 화물 수송용 세미 트레일러 형식)
+- 9종 : 대형화물차 B (4축, 화물 수송용 풀 트레일러 형식)
+- 10종 : 대형화물차 C (5축, 화물 수송용 세미 트레일러 형식)
+- 11종 : 대형화물차 D (5축, 화물 수송용 풀 트레일러 형식)
+- 12종 : 대형화물차 E (6축 이상, 화물 수송용 세미 트레일러 형식)
+Table 2. 12 vehicle classification
+Classifi- Classifi-
+Representative sample Axle arrangement Representative sample Axle arrangement
+cation cation
+1 7
+2 8
+348 Journal of Korean Tunnelling and Underground Space Association
+Correlation analysis of traffic and crack in concrete lining
+Table 2. 12 vehicle classification (continued)
+Classifi- Classifi-
+Representative sample Axle arrangement Representative sample Axle arrangement
+cation cation
+3 9
+4 10
+5 11
+6 12
+Table 3. Example of traffic data (unit: vehicles/day)
+Vehicle classification
+1 2 3 4 5 6 7 8 9 10 11 12
+○○ tunnel 1,813 602 868 740 808 179 159 109 92 265 32 0
+□□ tunnel 31,080 410 7,010 1,544 833 1,217 133 26 0 64 0 10
+국도터널 216개소의 교통량은 최소 1,000대에서 최대 81,827인 것으로 조사되었으며 교통량 분포현황은 Fig.
+2와 같다.
+Fig. 2. Traffic distribution
+Journal of Korean Tunnelling and Underground Space Association 349
+Gyu-Phil Lee
+2.2 교통량과 균열길이 회귀분석
+회귀분석은 한 변수의 변화에 따른 다른 변수의 변화 정도와 방향을 예측하는 분석기법으로, 등간척도 이상의
+두 변수 중에서 한 변수의 변화가 다른 변수의 변화에 따라 어떤 변화가 일어나는지를 보여주는 지표가 상관계수
+이다.
+Fig. 3에서 보이는 바와 같이 회귀분석은 독립변수 교통량(X)와 종속변수 균열길이(Y)의 관계를 의미한다.
+상관계수의 값이 높을수록 두 변수간의 관계가 높다고 할 수 있으며 콘크리트 라이닝의 균열발생 원인은 교통
+량에 국한되지 않으므로 두 변수(교통량, 균열길이)간 상관계수는 0.447로 높은 상관관계를 보이지 않는 것으로
+나타났다.
+그러나 계수의 값이 작다고 해서 그 가치가 중요하지 않다고 할 수 없으며, 따라서 본 연구에서는 교통량과 균
+열 두 변수에 대한 관계성 분석을 위한 공분산 분석 및 피어슨 상관관계 분석을 수행하였다.
+Fig. 3. Regression analysis of traffic and crack
+2.3 공분산 분석 및 피어슨 상관계수 분석
+본 연구에서 교통량과 균열 두 변수에 대한 관계성을 분석하기 위하여 수행한 공분산 분석 및 피어슨 상관관계
+분석 관련 내용을 정리하면 다음과 같다.
+2.3.1 공분산 분석
+공분산(covariance)은 변수 하나에 대한 분산을 변수 둘 사이의 분산으로 확장한 것으로, 임의의 두 확률변수
+X, Y 사이의 선형관계에 대한 정보를 알려주는 공분산은 양의 값인 경우 두 확률변수는 서로 양의 선형 관계가 있
+음을 의미하고, 공분산이 음의 값인 경우 두 확률변수는 서로 음의 선형 관계가 있음을 의미한다.
+또한 두 확률변수 X, Y가 독립이면 X, Y의 공분산은 0이며, 이는 두 변수간 아무런 선형 상관관계가 없다는 것
+을 의미하며(Fig. 4 참조) 공분산은 다음과 같이 계산된다.
+350 Journal of Korean Tunnelling and Underground Space Association
+Correlation analysis of traffic and crack in concrete lining
+    
+공분산  
+
+
+
+
+
+ (1)
+(a) Positive relationship (b) Negative relationship (c) No relationship
+Fig. 4. Covariance
+단 공분산은 두 변수의 스케일(scale)에 따라 값이 크게 달라지므로, 단순히 공분산이 더 크다고 해서 선형관계
+가 높은 것은 아니다.
+2.3.2 피어슨 상관계수
+피어슨 상관계수(Pearson Correlation Coefficient, PCC)란 두 변수 X와 Y 간의 선형 상관관계를 계량화한 수
+치이다. 피어슨 상관계수는 +1과 -1 사이의 값을 가지며, +1은 완벽한 양의 선형 상관관계 0은 선형 상관관계 없
+음 -1은 완벽한 음의 선형 상관관계를 의미한다.
+피어슨 상관계수는 등간척도(간격척도)나 비례척도(비율척도)의 데이터에서 두 변수의 공분산을 각각의 표준
+편차의 곱으로 나눈 값으로 다음과 같이 계산된다.
+공분산
+피어슨 상관계수  (2)
+표준편차⋅표준편차
+즉
+
+    
+ 
+
+
+
+    (3)
+  
+  
+ 
+  
+ 
+ 
+ 
+ 
+Journal of Korean Tunnelling and Underground Space Association 351
+Gyu-Phil Lee
+따라서
+
+    
+ 
+    
+
+
+ 
+ 
+  
+(4)
+ 
+ 
+3. 공분산 분석 및 피어슨 상관계수 분석결과
+3.1 분석자료 및 결과 예시
+본 연구에서는 교통량은 1~12종 전체 교통량(평균일교통량)과 균열길이, 중형화물차이상(5~12종) 차량의 교
+통량 및 대형화물차이상(8~12종) 차량의 교통량과 균열길이에 대하여 각각 공분산 분석을 수행하였으며, 이를
+위한 217개소 터널 균열 및 교통량 분석자료 정리현황 및 식 (1) 및 식 (4)에 의한 공분산 분석, 피어슨 상관계수 분
+석결과 예시는 Fig. 5와 같다.
+Fig. 5. Example of crack/traffic data and analysis results
+3.2 공분산 분석
+평균일교통량과 균열길이의 공분산은 4,178.9, 5~12종 차량의 교통량과 균열길이의 공분산은 284, 8~12종 차
+량의 교통량과 균열길이의 공분산은 81.8로 교통량과 콘크리트 라이닝에 발생하는 균열은 양의 선형관계를 갖는
+것으로 나타났다(Table 4 참조).
+352 Journal of Korean Tunnelling and Underground Space Association
+Correlation analysis of traffic and crack in concrete lining
+Table 4. Covariance of crack length and traffic
+Traffic classification
+1~12 5~12 8~12
+Covariance 4,178.9 284 81.8
+3.3 피어슨 상관계수
+3.3.1 차종 구분별 교통량
+평균일교통량(1~12종)과 균열길이, 중형화물차이상(5~12종) 차량의 교통량 및 대형화물차이상(8~12종) 차
+량의 교통량과 균열길이에 대하여 각각의 피어슨 상관계수는 Table 5에서 보이는 바와 같이 각각 0.681, 0.718,
+0.699로 교통량과 콘크리트 라이닝에 발생하는 균열은 높은 관계성을 갖는 것으로 나타났다.
+따라서 교통량은 콘크리트 라이닝 균열발생에 영향을 주는 것으로 판단되며 특히 중형화물차이상(5~12종) 차
+량은 콘크리트 라이닝 균열발생에 더 큰 영향을 미치는 것으로 판단된다.
+Table 5. Pearson correlation coefficient of crack length and traffic
+Traffic classification
+1~12 5~12 8~12
+Pearson correlation coefficient 0.681 0.718 0.699
+3.3.2 터널 연장
+표본자료 수집 대상 국도터널 216개소 중 연장 1,000 m 이상 터널은 65개소, 연장 1,000 m 미만 터널은 151개
+소이다.
+연장 1,000 m 이상 터널에 대하여 평균일교통량 기준 교통량과 균열길이에 대하여 피어슨 상관계수는 0.519
+로 두 변수간 큰 관계성은 보이지 않으나, 연장 1,000 m 미만 터널의 경우 평균일교통량 기준 교통량과 균열에 대
+하여 피어슨 상관계수는 0.711로 높은 관계성을 갖는 것으로 나타났다.
+따라서 연장 1,000 m 미만 터널에서 교통량은 균열발생에 더 큰 영향을 미치는 것으로 판단된다.
+3.3.3 공용연수
+표본자료 수집 대상 국도터널 216개소 중 20년 이상 공용중인 터널은 17개소이고 정밀안전점검 및 정밀안전
+진단 종합평가결과는 모두 B등급이며, 공용연수 20년 미만인 터널 199개소 중 정밀안전점검 및 정밀안전진단 종
+합평가결과 A등급 23개소, B등급 176개소이다.
+공용연수 20년 미만 터널에 대하여 평균일교통량 기준 교통량과 균열길이에 대하여 피어슨 상관계수는 0.669,
+20년 이상 공용중인 터널에 대하여 평균일교통량 기준 교통량과 균열길이에 대하여 피어슨 상관계수는 0.827인
+Journal of Korean Tunnelling and Underground Space Association 353
+Gyu-Phil Lee
+것으로 나타났다.
+따라서 연장 공용연수가 증가함에 따라 콘크리트 라이닝 재료열화 등이 발생하고 이에 따라 교통량이 균열의
+발생 및 진행 등에 영향을 미치는 것으로 판단된다.
+4. 결 론
+본 연구에서는 교통량과 균열 두 변수에 대한 관계성을 파악하기 위하여 공분산 분석 및 피어슨 상관관계 분석
+을 수행하였다. 이를 위하여 국도터널 216개소의 정밀안전점검, 정밀안전진단 시행결과 및 교통량을 조사/분석
+하였으며 관련 내용을 정리하면 다음과 같다.
+1. 평균일교통량(1~12종), 중형화물차 이상(5~12종) 차량의 교통량 및 대형화물차 이상(8~12종) 차량의 교통량
+각각에 대한 공분산은 모두 양의 값을 갖는다. 따라서 교통량과 콘크리트 라이닝에 발생하는 균열은 양의 선형
+관계를 갖는 것으로 나타났다.
+2. 평균일교통량(1~12종) 중형화물차이상(5~12종) 차량의 교통량 및 대형화물차이상(8~12종) 차량의 교통량과
+균열길이에 대하여 각각의 피어슨 상관계수는 각각 0.681, 0.718, 0.699로 교통량과 콘크리트 라이닝에 발생
+하는 균열은 높은 관계성을 갖는 것으로 나타났다. 특히 중형화물차이상(5~12종) 차량의 교통량은 콘크리트
+라이닝 균열발생에 더 큰 영향을 미치는 것으로 나타났다.
+3. 평균일교통량(1~12종) 기준 연장 1,000 m 이상 터널의 균열길이에 대한 피어슨 상관계수는 0.519로 두 변수
+간 큰 관계성은 보이지 않으나, 연장 1,000 m 미만 터널의 균열길이에 대한 피어슨 상관계수는 0.711로 높은
+관계성을 갖는 것으로 나타났다. 따라서 교통량은 연장 1,000 m 미만 터널 콘크리트 라이닝의 균열발생에 큰
+영향을 미치는 것으로 판단된다.
+4. 평균일교통량(1~12종) 기준 공용연수 20년 미만 터널의 균열길이에 대하여 피어슨 상관계수는 0.669, 20년
+이상 공용중인 터널의 피어슨 상관계수는 0.827인 것으로 나타났으며, 따라서 연장 공용연수가 증가함에 따
+라 콘크리트 라이닝 재료열화 등이 발생하고 이에 따라 교통량이 균열발생에 영향을 미치는 것으로 판단된다.
+5. 교통량은 콘크리트 라이닝 균열의 발생 및 진행 등에 영향을 미치는 것으로 나타났으며, 터널의 연장 및 공용
+연수 또한 균열의 발생 및 진전과 높은 상관관계를 보이는 것으로 나타났다. 따라서 균열 보수 등 터널 구조물
+의 선제적 유지관리시 교통량, 터널연장 및 공용연수 등을 고려한 계획을 수립하는 것이 바람직하다.
+감사의 글
+본 연구는 국토교통부 “2023년 터널관리시스템 운영”의 일환으로 작성되었습니다.
+354 Journal of Korean Tunnelling and Underground Space Association
+Correlation analysis of traffic and crack in concrete lining
+저자 기여도
+이규필은 연구 개념 및 설계, 데이터 수집 및 분석, 원고 작성 및 검토를 하였다.
+References
+1. An, J.W., Kim, H.K. (2016), “Developments of performance-based assessment technique for existing
+tunnels”, Journal of Korean Tunnelling and Underground Space Association, Vol. 18, No. 6, pp. 525-533.
+2. Bae, G.J., Lee, S.W., Cho, M.S., Lee, K.H. (2001), “Study on investigation and analysis about damage of
+tunnels”, Journal of Korean Tunnelling and Underground Space Association, Vol. 3, No. 3, pp. 31-43.
+3. Chen, Y., Gao, Y., Shi, S., Xu, F., Zhao, W. (2022), “Characteristics of transient pressure in lining cracks
+induced by high-speed trains”, Journal of Wind Engineering and Industrial Aerodynamics, Vol. 228, pp.
+1-11.
+4. Korea Expressway Corporation (2012), A study on the minimization of longitudinal cracks of tunnel lining
+concrete in the roof, pp. 1-5.
+5. Traffic Monitoring System Home page, https://www.road.re.kr (July 20, 2023).
+Journal of Korean Tunnelling and Underground Space Association 355

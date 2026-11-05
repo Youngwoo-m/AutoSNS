@@ -1,0 +1,7 @@
+{
+  "status": "upload_not_confirmed",
+  "result": {
+    "status": "error",
+    "message": "40분 기다려도 profile:youtube-personal 잠금이 비지 않았습니다"
+  }
+}

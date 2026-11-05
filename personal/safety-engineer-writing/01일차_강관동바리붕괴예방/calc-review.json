@@ -1,0 +1,101 @@
+{
+  "verdict": "ok",
+  "summary": "독립 검산·일관성 대조 14항목 중 불일치 0건입니다. 본문에 하중·강도·간격을 대입한 설계 계산은 없으며, 법정 수치의 표현·유형 구분과 HTML/PDF 일치 여부를 점검했습니다.",
+  "checked": [
+    {
+      "what": "티스토리/Blogger 본문 수치·문장 일치",
+      "claimed": "양 채널 같은 학습 본문",
+      "recomputed": "Blogger의 PDF 링크 안내 문구 1개만 제외하면 본문 동일(티스토리는 네이티브 첨부 자리표시)",
+      "match": true
+    },
+    {
+      "what": "동바리 문자열 포함 문항수",
+      "claimed": "8",
+      "recomputed": "8",
+      "match": true
+    },
+    {
+      "what": "동바리 등장 회차수",
+      "claimed": "8",
+      "recomputed": "8",
+      "match": true
+    },
+    {
+      "what": "선정 기출 번호·조건",
+      "claimed": "140회 2교시 5번",
+      "recomputed": "[(140, 2, 5)]",
+      "match": true
+    },
+    {
+      "what": "따라쓰기 PDF 쪽수",
+      "claimed": "2쪽",
+      "recomputed": "2쪽",
+      "match": true
+    },
+    {
+      "what": "PDF 줄배치 원문 전수 일치",
+      "claimed": "35개 줄",
+      "recomputed": "모든 줄이 해당 PDF 쪽에서 확인됨",
+      "match": true
+    },
+    {
+      "what": "HTML 답안예시와 PDF 모든 항목 일치",
+      "claimed": "26개 답안 항목",
+      "recomputed": "모든 답안 항목이 HTML·PDF에 동일하게 존재",
+      "match": true
+    },
+    {
+      "what": "파이프서포트 연결 개수 조건",
+      "claimed": "3개 이상 연결 금지; 연결 시 4개 이상 볼트 또는 전용철물",
+      "recomputed": "저장 발췌의 3개 이상/4개 이상과 동일; 허용 연결 개수는 3 미만",
+      "match": true
+    },
+    {
+      "what": "파이프서포트 높이·간격 단위와 경계",
+      "claimed": "3.5m 초과; 2m 이내; 2방향",
+      "recomputed": "3.5m=3500mm, 2m=2000mm. 높이 3.5m 자체는 초과 조건이 아님(일반 구조검토 면제 아님).",
+      "match": true
+    },
+    {
+      "what": "조립강주 높이 조건 분리",
+      "claimed": "4m 초과; 4m 이내; 2방향",
+      "recomputed": "4m=4000mm. 파이프서포트의 3500/2000mm 조건과 구분됨",
+      "match": true
+    },
+    {
+      "what": "시스템 동바리 연결부 겹침 비율",
+      "claimed": "받침철물 전체길이의 3분의1 이상",
+      "recomputed": "최소비율 1/3, 전체길이 대비 약 33.333…%. 시스템 동바리 행에 한정.",
+      "match": true
+    },
+    {
+      "what": "깔판·받침목 단수 조건",
+      "claimed": "원칙상 2단 이상 금지; 부득이한 경우 예외",
+      "recomputed": "2단 이상 금지의 부등식은 단수<2. 본문에는 예외 명시, PDF는 원칙상으로 한정.",
+      "match": true
+    },
+    {
+      "what": "강관틀 단수 조건",
+      "claimed": "최상단 및 5단 이내마다",
+      "recomputed": "저장 발췌에 수평연결재·띠장틀 각각 최상단 및 5단 이내마다 존재",
+      "match": true
+    },
+    {
+      "what": "PDF 작성 글씨 RGB",
+      "claimed": "회색 #B8B8B8",
+      "recomputed": "184/255=0.7215686274509803921568627451; PDF 각 쪽에 반올림 RGB .721569/.721569/.721569 존재",
+      "match": true
+    }
+  ],
+  "errors": [],
+  "assumptions": [],
+  "unchecked": [
+    "법령의 현행성·정확한 법적 적용 범위와 조항 해석은 source-reviewer 확인 대상입니다. 저장된 발췌와의 수치 일치만 확인했습니다.",
+    "강관틀 행은 5단 이내 외에 방향별 5개/5개틀 조건을 축약하고 조문 확인을 안내합니다. 수치 모순은 없으나, 이 축약의 충분성은 source-reviewer가 검토해야 합니다.",
+    "데이터랩 평균은 전체 시계열 원자료가 없어 재계산하지 않았습니다. 현재 본문에는 해당 평균값을 싣지 않았습니다.",
+    "PDF 기출 원문 입력 자체를 새로 전사하지 않았습니다. 원고가 인용한 번호·문장은 로컬 전체문항 JSON 및 제공 근거와 대조했습니다."
+  ],
+  "checked_count": 14,
+  "script": "/Users/youngwoo/.cache/autosns-llm/calc/safety_day1_20261031.py",
+  "calculation_packages": "Python 표준 라이브러리만 사용; PDF 판독은 기존 pypdf로 별도 추출; 네트워크0/설치0/원고편집0"
+}

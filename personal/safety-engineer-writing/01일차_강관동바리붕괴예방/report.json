@@ -1,0 +1,54 @@
+{
+  "status": "source_fixes_applied_pending_parent_rereview",
+  "ownership": "/Volumes/USB256/devAPP/AutoSNS/personal/safety-engineer-writing/01일차_강관동바리붕괴예방",
+  "model": "claude-sonnet-5-5 via Claude Max subscription tool0 clean env",
+  "humanizer_passes": 2,
+  "targeted_editorial_pass": 1,
+  "qnet_question": "2026 제140회 제2교시5번, 공식원격PDFsha=로컬원본·작성면이미지직접확인",
+  "source_version": "산업안전보건기준에 관한 규칙 시행2026-03-02 고용노동부령450호",
+  "selection_evidence": "동바리 문자열8문항8개회차, 동일유형출제빈도아님",
+  "keyword_trend": "거푸집76.6/동바리55.9/건설안전기술사51.2/파이프서포트7.1/강관동바리3.6(동일조회평균)",
+  "pdf": {
+    "pages": 2,
+    "rendered_all_pages": true,
+    "visual_qa": "전2쪽개별열람·본문/번호/원본인쇄선/줄정렬·글씨잘림없음",
+    "template_page_index": 4,
+    "text_color": "#B8B8B8",
+    "font": "AppleGothic, 기존따라쓰기PDF방식사용"
+  },
+  "images": {
+    "banner": "기존safety배경+개인브랜드재난안전과GeoAI, Pretendard Bold",
+    "diagram": "로컬직접순서도, Pretendard Bold",
+    "new_image_calls": 0
+  },
+  "html_qa": "top/table/answer3화면직접열람, 표센터·hr2개·요청하단·원문기출보존·모바일표가로스크롤650px",
+  "public_assets": [
+    "banner.png",
+    "동바리_단계별확인.png",
+    "01일차_강관동바리_답안예시_따라쓰기.pdf"
+  ],
+  "independent_calc": "pending root dispatch",
+  "independent_source": "pending root dispatch",
+  "publication_calls": 0,
+  "deployment_calls": 0,
+  "launchd_changes": 0,
+  "paid_api_calls": 0,
+  "shared_code_changes": 0,
+  "notes": [
+    "사전검토하중전달·부재강성·하부지지는제330~332구조검토/침하방지의학습해석으로구분",
+    "강관동바리를파이프서포트만으로동일시하지않고유형구분표제시",
+    "파이프서포트3.5m이하무보강허용으로해석하지않음",
+    "BloggerHTML자산URL은예상주소이며아직배포/HTTP검증하지않음",
+    "계산수식은없고법정수치·키워드집계가있어root독립calc필요",
+    "강관틀제332조의2제2호나목/다목방향·개수·양단·변위방지조건전부보존"
+  ],
+  "source_fix_round1": {
+    "issues_resolved": 4,
+    "ai_banner_disclosure_added": true,
+    "qnet_publication_date": "2026-08-24",
+    "qnet_exam_date_note": "시행일과게시일을구분;본문은게시일만표기",
+    "pdf_answer_unchanged": true,
+    "visual_qa": "수정된intro/table스크린샷및PDF전2쪽다시직접열람·잘림/겹침없음",
+    "all_manifest_hashes_verified": true
+  }
+}

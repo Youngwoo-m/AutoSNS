@@ -1,0 +1,50 @@
+{
+  "verdict": "needs_fixes",
+  "scope": "건축·안전 정기 등록 전 focused code review. 원본 코드 수정·실제 인증·LLM·게시·launchctl 호출 없음.",
+  "review_package_matches_actual_sources": true,
+  "spec_compliance": {
+    "schedule_and_channels": "jobs.json과 staged plist는 건축 09:00, 안전 10:00 및 개인 Tistory/Blogger를 유지한다.",
+    "registration_immediate_execution": "두 staged plist 모두 RunAtLoad=false. 등록 계획에 kickstart 없음. 설치 프로그램을 전체 실행하지 않고 대상 두 plist만 등록해야 다른 작업 비변경 범위를 유지할 수 있다.",
+    "max_subscription": "runner는 Claude 공식 CLI wrapper를 직접 사용한다. Max/claude.ai 인증 조건 실패 시 모델 호출 전 종료하며 모델 실패 시 추가 제공자 fallback이 없다. ANTHROPIC_, CLAUDE_CODE_USE_, AWS_, GOOGLE_, AZURE_ 환경을 제거한다.",
+    "paid_tools_policy": "Bash/Agent는 범용 도구로 남고, 추가 유료 모델·학교 게이트웨이·SDK/router 호출 금지는 프롬프트 규칙이다. 이는 전체 호스트 네트워크 격리가 아니다. 해당 의도와 일치한다.",
+    "locks_and_stop": "runner는 기존 shared/axlock.py를 사용한다. Tistory 프로필 잠금은 기존 발행기 책임이다. Blogger helper는 동일 quota:blogger-personal 잠금 안에서 목록·중복·상한·STOP 검사와 발행을 수행한다.",
+    "blogger_account_and_tags": "개인 blogId 고정 검증 및 학교 local_tags/입력 labels 제거가 있다.",
+    "cap_and_exclusions": "기존 geoai.posts_per_day=2와 QGIS/토목시공 제외 prefix를 그대로 사용한다. 건축·안전 prefix 추가 제외 없음. 날짜는 KST로 변환한다.",
+    "duplicate_and_publish": "공개/예약/비공개 정확 제목 비교 설계는 있으나 ADMIN view 누락으로 실제 목록의 status를 보장하지 못한다. 수정 필요."
+  },
+  "quality": {
+    "summary": "대상 분기와 두 신규 모듈은 작고 fallback 없는 실패 경로가 명확하다. 다만 실제 Blogger API 응답 계약을 모사하지 않은 fixture로 핵심 실패가 누락되었다.",
+    "blocking_findings": 1,
+    "nonblocking_findings": 0
+  },
+  "concrete_findings": [
+    {
+      "id": "R1",
+      "priority": "P1",
+      "file": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/publish_engineer_blogger.py",
+      "line": 80,
+      "title": "Blogger 목록 조회에 ADMIN view를 명시해야 status 기반 중복·상한 검사가 동작함",
+      "problem": "posts().list 요청에서 view를 생략한다. 설치된 공식 Blogger v3 discovery schema는 Post.status를 Only set for admin-level requests.로 정의한다. 기본 reader 응답은 status가 없을 수 있고, quota_snapshot은 모든 항목의 status가 LIVE/DRAFT/SCHEDULED인지 검사하므로 정상 기존 글만 있어도 ValueError로 종료한다. 이 경우 건축·안전 Blogger 발행이 매번 실패하며 예약·비공개 제목 조회 요구도 신뢰할 수 없다.",
+      "evidence": [
+        "dept/naver-blog-auto/.venv/lib/python3.12/site-packages/googleapiclient/discovery_cache/documents/blogger.v3.json: schemas.Post.properties.status.description",
+        "기존 dept/naver-blog-auto/geoai_blogger.py 권한 진단과 geoai_auth_setup.py는 view=ADMIN을 명시한다.",
+        "status 없는 reader-view fixture는 ValueError, 동일 항목에 status=LIVE를 넣은 admin-view fixture는 counted=1로 정상 통과함."
+      ],
+      "requested_fix": "해당 목록 요청에 view=ADMIN을 추가하고 fake service fixture에서 view와 status 필드를 검증한다. 기존 fail-closed status 검사 및 전체 pagination은 유지한다."
+    }
+  ],
+  "verification": {
+    "fixture_results": [
+      "reader-view: ValueError(글 공개 상태를 확인하지 못했습니다)",
+      "admin-view: cap=2,counted=1"
+    ],
+    "actual_model_calls": 0,
+    "actual_publish_calls": 0,
+    "auth_calls": 0,
+    "launchctl_mutations": 0
+  },
+  "limitations": [
+    "실제 Google 인증/네트워크 호출을 하지 않았다. API 계약 근거는 설치된 공식 discovery schema이다.",
+    "등록 전 코드 검토이며 신규 회차 원고·실제 발행 결과는 검토 범위 밖이다."
+  ]
+}

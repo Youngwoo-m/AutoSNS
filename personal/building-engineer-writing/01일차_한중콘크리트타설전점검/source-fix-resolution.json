@@ -1,0 +1,57 @@
+{
+  "status": "four_requested_fixes_applied_ready_for_parent_review",
+  "source_review_sha256": "40bae09af4ede53e5f1b9880fd8c543ae3267027916f7735be7af2bf897a144f",
+  "method": "보존된 공식 공개 KCS 원문과 검토 지시 기반 로컬 기계수정; 추가 CLI/외부모델 호출 없음",
+  "fixes": [
+    {
+      "id": 1,
+      "result": "3.4.1(8)의 얇은 단면·보통 노출·특별한 보온양생 미계속 조건 및 시트 등 피복·완료 후2일 이상0℃이상을 본문/답안/PDF에 추가. (4)의 소요강도 도달 후2일과 구분 및 전경우확대금지 명시."
+    },
+    {
+      "id": 2,
+      "result": "답안작성요령 문단 문어체 및 blockquote로 분리. 개념설명 친절체 유지."
+    },
+    {
+      "id": 3,
+      "result": "중복 단서 축소, 전체 성격·한계는 마지막 한 문단에 통합. 표 근거·성격/법적성격/현장적용조건 보존."
+    },
+    {
+      "id": 4,
+      "result": "기출·답안 조합 태그 추가. 총9개/기출조합1개."
+    }
+  ],
+  "qa": {
+    "pdf_pages": 4,
+    "all_pdf_pages_rendered_and_directly_viewed": true,
+    "no_clipping_or_overlap": true,
+    "original_grid_preserved": true,
+    "pdf_texts_distinct": true,
+    "html": {
+      "티스토리게시본문.html": {
+        "sha256": "68f9b2c2eace5c6fa63403d879c136e47db4d3af344702cd3146d89a281a0755",
+        "tables": 3,
+        "formal_answer_guidance_blockquote": true,
+        "disclosure_one_final_paragraph": true,
+        "clause_3_4_1_8": true,
+        "banner_disclosure_preserved": true
+      },
+      "Blogger게시본문.html": {
+        "sha256": "9e69ebb8907befa57bb03f3d701b6fbb22a10553c3d37874e542cd6ecf4bf81a",
+        "tables": 3,
+        "formal_answer_guidance_blockquote": true,
+        "disclosure_one_final_paragraph": true,
+        "clause_3_4_1_8": true,
+        "banner_disclosure_preserved": true
+      }
+    },
+    "mobile": {
+      "document": 390,
+      "viewport": 390
+    },
+    "pdf_sha256": "37b818b2d8ee8ce92c88d007dc0bdd2ea1eac96299a1c61f9dada7c18024b0b3"
+  },
+  "publication_calls": 0,
+  "deployment_calls": 0,
+  "shared_code_changes": 0,
+  "ownership_returned": true
+}

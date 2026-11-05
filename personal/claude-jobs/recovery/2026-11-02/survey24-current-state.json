@@ -1,0 +1,65 @@
+{
+  "at": "2026-11-02T07:58:59.743378+09:00",
+  "status": "published",
+  "title": "지상 라이다 측량원리와 점군 정합·해석방법, 활용분야 (2026년 제140회 기출) | 측량및지형공간정보기술사 하루 한 문제 24일차",
+  "urls": {
+    "blog": "https://na-geoai.tistory.com/213",
+    "short": "https://www.youtube.com/shorts/RU6ozUlG_VM",
+    "naver": "https://blog.naver.com/safeworking/224461827323"
+  },
+  "topic": "지상라이다 측량원리·해석방법·활용분야",
+  "day": 24,
+  "field": "LiDAR·원격탐사",
+  "cycle": 3,
+  "evidence_question_ids": [
+    "140-4-2",
+    "138-3-6",
+    "137-3-2",
+    "129-4-5",
+    "126-2-2"
+  ],
+  "candidates": "지상라이다(126-2-2·129-4-5·137-3-2·138-3-6·140-4-2, 5회차, 미작성) 선정 / 항공 LiDAR(128-3-3·129-2-2·138-3-2·140-2-2, 8일차와 일부 겹침) / 다중반사·반사강도(137-3-3, 1회, premade 11-01) / GIS 위상(131-2-4, premade 11-02, 9일차와 중복) / 초분광(126-3-3·128-1-9·128-3-4·134-3-4)",
+  "calc": {
+    "verdict": "fix",
+    "checked": 16,
+    "fixed": 1,
+    "note": "Δt=133.4 ns→r=19.996 m인데 좌표는 r=20 m 기준 → 'r = 20 m로 두면'으로 명시. 권고대로 Δα rad·빔 수직면 기준·φ 고저각(천정각 z면 90°−z) 추가"
+  },
+  "review": {
+    "verdict": "fix",
+    "fixed": 5,
+    "sources_opened": 12,
+    "note": "채점 단정 완화, 정합 분류를 글쓴이 정리로·형상→기하 원형(복셀은 DVW 별도 절차로), 뉴스 '하나의 공간정보 체계로 연결'로, 숏츠 제목과 PDF에서 학습 분야를 과목처럼 읽히지 않게, 본문 '가상' 단서 정리"
+  },
+  "humanizer": "2회",
+  "keyword": "데이터랩: 라이다 72.8, 3D스캐너 28.0, LiDAR 14.2, 레이저스캐너 0.2, 지상라이다 0 → 제목 앞 '지상 라이다'",
+  "pdf": "24일차_지상라이다_모범답안_따라쓰기.pdf 3쪽, 원본 답안지 pages[4], 회색 #B8B8B8, 모든 쪽 렌더 확인",
+  "video_id": "RU6ozUlG_VM",
+  "short_file": "/Volumes/USB256/기술사/24일차_지상라이다/숏츠/short.mp4 (16.62초, 디오라마 3장, 게이트웨이 117크레딧)",
+  "short_source": "shorts-maker 신규(premade 11-01·11-02 폴더는 주제 불일치로 미사용)",
+  "comment_verified": true,
+  "note": "24일차 미발행복구 완료. 티스토리213 공개제목/소제목/PNG2/GIF/PDF원본SHA확인. 네이버 전용카테고리6·그림3·PDF원본SHA 확인. 숏츠RU6ozUlG_VM public/processed/oEmbed200·운영자댓글검증. 목록등록·카카오톡 result_code0. 기존원고/영상재생성없음.",
+  "manual_recovery": true,
+  "model": "claude draft/review; Codex publishing recovery",
+  "comment_id": "UgzNAguE8ZJbqkALKj54AaABAg",
+  "comment_text": "자세한 답안과 따라쓰기 PDF: https://na-geoai.tistory.com/213",
+  "pending": [],
+  "web_list": "24일차 공개등록 및 tracingPdf true 확인",
+  "kakao": {
+    "result_code": 0,
+    "sent_once": true
+  },
+  "short_verified": {
+    "privacy": "public",
+    "upload_status": "processed",
+    "oembed_http": 200
+  },
+  "verification": {
+    "blog": true,
+    "naver": true,
+    "short": true,
+    "pdf_original_sha_match": true,
+    "list": true,
+    "kakao": true
+  }
+}

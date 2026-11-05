@@ -1,0 +1,36 @@
+{
+  "verdict": "pass",
+  "summary": "기존 지적 4건과 AI 배너 고지가 티스토리·Blogger 양쪽에 반영됐습니다. 이번 수정 범위에서 추가 수정사항은 없습니다.",
+  "issues": [],
+  "sources": [],
+  "sources_opened": 0,
+  "scope": "기존 source-review.json의 지적 반영 여부만 재검토; 원격 출처 재조회 없음",
+  "resolved": [
+    {
+      "item": "강관틀 조건",
+      "result": "가·나·다목을 구분하고 방향별5개·양단·5개틀·변위방지 조건을 두 원고에서 확인함"
+    },
+    {
+      "item": "글머리",
+      "result": "인사 뒤 주제어·문제 요구사항으로 시작하며 Q-net 공개일2026-08-24와 공식 링크를 확인함. 시행일과 혼동하지 않음"
+    },
+    {
+      "item": "단서 정리",
+      "result": "반복 학습상 해설 안내를 줄이고 끝 단서 한 문단에서 법령 열거와 학습 해석을 구분함"
+    },
+    {
+      "item": "태그",
+      "result": "9개이며 기출 조합1개·답안 조합1개 확인함"
+    },
+    {
+      "item": "AI 고지",
+      "result": "양쪽 원고 배너 바로 아래 AI 생성 디오라마 고지 확인함"
+    }
+  ],
+  "notes": [
+    "현재 manifest의 두 HTML·그림2개·PDF 해시와 파일크기를 독립 재계산하여 모두 일치함. PDF SHA256은 이전 검토와 같고 양쪽 HTML 답안26개 항목도 동일함. 기존 계산검토14항목 및 PDF 이미지QA 재사용 가능.",
+    "root 제공 prerequisite-verification.json에서 safety 공개폼HTTP200·backend_form_registered=true 확인. 이번 재검토에서는 접수 전송이나 backend API를 실행하지 않음.",
+    "Blogger 자산은 아직 예상 공개주소이므로 배포 후 자산HTTP·내용 검증은 root의 발행 전 단계로 유지됨. 이 pass는 배포·발행 완료 판정이 아님.",
+    "원고 수정·발행·유료API·모델 호출·하위 에이전트 호출 없음."
+  ]
+}

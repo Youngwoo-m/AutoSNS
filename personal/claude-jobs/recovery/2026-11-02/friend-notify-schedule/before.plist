@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.smuds.friendnotify.hourly</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/python3</string>
+		<string>/Volumes/USB256/devAPP/AutoSNS/personal/engineer-question-worker/notify_new.py</string>
+	</array>
+	<key>StandardOutPath</key>
+	<string>/Volumes/USB256/devAPP/AutoSNS/ax-console/data/logs/friendnotify.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Volumes/USB256/devAPP/AutoSNS/ax-console/data/logs/friendnotify.log</string>
+	<key>StartInterval</key>
+	<integer>3600</integer>
+</dict>
+</plist>

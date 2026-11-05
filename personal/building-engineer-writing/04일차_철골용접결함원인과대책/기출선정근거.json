@@ -1,0 +1,280 @@
+{
+ "scope": "2022–2026 제126–140회 15회 465문항(전체465문항.json) 문자열 검색 후 같은 유형 문항만 수작업으로 골라 셈. 공식 출제 비중·출제 확률 아님. 후보끼리 문항이 겹칠 수 있음(136-3-1 커튼월 결로는 결로·커튼월 양쪽).",
+ "candidates": [
+  {
+   "topic": "철골 용접결함 원인·대책·검사·보수",
+   "question_count": 7,
+   "round_count": 7,
+   "questions": [
+    {
+     "id": "126-1-11",
+     "year": 2022,
+     "round": 126,
+     "period": 1,
+     "number": 11,
+     "kind": "단답형",
+     "question": "용접 결함의 종류 및 결함원인, 검사방법",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "128-4-3",
+     "year": 2022,
+     "round": 128,
+     "period": 4,
+     "number": 3,
+     "kind": "논술형",
+     "question": "철골공사 현장용접시 고려사항과 검사방법(용접 전, 중, 후)에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210580&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "129-4-2",
+     "year": 2023,
+     "round": 129,
+     "period": 4,
+     "number": 2,
+     "kind": "논술형",
+     "question": "용접결함의 원인과 대책, 비파괴 검사 방법, 용접결함 부위 보완방법에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "131-4-1",
+     "year": 2023,
+     "round": 131,
+     "period": 4,
+     "number": 1,
+     "kind": "논술형",
+     "question": "철골공사 접합부에 대하여 다음을 설명하시오. (1) 용접결함 및 보수방법 (2) 고력볼트의 조임검사",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "132-1-6",
+     "year": 2024,
+     "round": 132,
+     "period": 1,
+     "number": 6,
+     "kind": "단답형",
+     "question": "용접부 비파괴 검사 중 침투탐상 검사 시 유의사항",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "136-2-2",
+     "year": 2025,
+     "round": 136,
+     "period": 2,
+     "number": 2,
+     "kind": "논술형",
+     "question": "철골공사에서 용접결함 원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "138-3-2",
+     "year": 2026,
+     "round": 138,
+     "period": 3,
+     "number": 2,
+     "kind": "논술형",
+     "question": "철골공사 용접부 검사방법과 용접결함의 종류, 라멜라 티어링(Lamellar Tearing) 현상의 원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5253529&brdId=Q006&gSite=Q"
+    }
+   ],
+   "excluded_related": [
+    "126-4-4 용접철망",
+    "127-1-7 서브머지드 아크 용접",
+    "136-1-13 철골용접 전 예열",
+    "140-1-13 모살용접"
+   ],
+   "importance": "강구조 접합부 품질·안전의 핵심, 결함 분류·비파괴검사·보수는 예열·현장용접·라멜라 티어링 문항의 공통 토대",
+   "already_written": "미작성(published_history 용접·비파괴 조회 0건)"
+  },
+  {
+   "topic": "결로(벽체·공동주택·지하주차장·커튼월)",
+   "question_count": 7,
+   "round_count": 7,
+   "questions": [
+    {
+     "id": "127-1-12",
+     "year": 2022,
+     "round": 127,
+     "period": 1,
+     "number": 12,
+     "kind": "단답형",
+     "question": "공동주택의 비난방 부위 결로방지 방안",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5210041&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "130-2-4",
+     "year": 2023,
+     "round": 130,
+     "period": 2,
+     "number": 4,
+     "kind": "논술형",
+     "question": "건축물 벽체에 발생하는 결로의 종류, 발생원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "131-1-4",
+     "year": 2023,
+     "round": 131,
+     "period": 1,
+     "number": 4,
+     "kind": "단답형",
+     "question": "지하층 마감공사에서 결로수 처리를 위한 지하 이중벽 구조",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212271&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "134-4-5",
+     "year": 2024,
+     "round": 134,
+     "period": 4,
+     "number": 5,
+     "kind": "논술형",
+     "question": "공동주택 결로 발생의 원인, 방지대책 및 시공상 유의사항에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213558&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "135-4-4",
+     "year": 2025,
+     "round": 135,
+     "period": 4,
+     "number": 4,
+     "kind": "논술형",
+     "question": "공동주택 단열공사 시 단열이음공법의 종류와 시공방법 및 결로 취약 부위별 시공 시 중점관리사항에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "136-3-1",
+     "year": 2025,
+     "round": 136,
+     "period": 3,
+     "number": 1,
+     "kind": "논술형",
+     "question": "커튼월의 결로발생 원인과 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "137-2-5",
+     "year": 2025,
+     "round": 137,
+     "period": 2,
+     "number": 5,
+     "kind": "논술형",
+     "question": "지하주차장 결로발생 메커니즘(Mechanism)과 시공단계별 결로예방법을 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5242728&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "마감 하자 핵심이나 부위별로 묻는 각도가 달라 한 유형으로 묶기 어려움",
+   "already_written": "미작성"
+  },
+  {
+   "topic": "커튼월 누수·하자",
+   "question_count": 3,
+   "round_count": 3,
+   "questions": [
+    {
+     "id": "129-4-6",
+     "year": 2023,
+     "round": 129,
+     "period": 4,
+     "number": 6,
+     "kind": "논술형",
+     "question": "커튼월 조인트의 유형과 누수원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211599&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "135-2-5",
+     "year": 2025,
+     "round": 135,
+     "period": 2,
+     "number": 5,
+     "kind": "논술형",
+     "question": "커튼월 설치에 따른 요구성능과 누수원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "140-3-2",
+     "year": 2026,
+     "round": 140,
+     "period": 3,
+     "number": 2,
+     "kind": "논술형",
+     "question": "커튼월 공사의 재료별, 공법별 특성 및 하자원인과 방지대책을 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5274129&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "외장 품질 핵심, 같은 유형 문항 수 적음(커튼월 전체 11문항은 유형이 갈림)",
+   "already_written": "미작성"
+  },
+  {
+   "topic": "타일 오픈타임·하자",
+   "question_count": 6,
+   "round_count": 6,
+   "questions": [
+    {
+     "id": "126-1-6",
+     "year": 2022,
+     "round": 126,
+     "period": 1,
+     "number": 6,
+     "kind": "단답형",
+     "question": "타일공사의 오픈 타임(Open Time) 관리방법",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209479&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "130-3-6",
+     "year": 2023,
+     "round": 130,
+     "period": 3,
+     "number": 6,
+     "kind": "논술형",
+     "question": "공동주택 욕실 벽체에 시공한 도기질 타일의 하자발생 원인 및 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5211871&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "132-2-5",
+     "year": 2024,
+     "round": 132,
+     "period": 2,
+     "number": 5,
+     "kind": "논술형",
+     "question": "타일공사의 오픈타임(Open Time) 및 하자 원인과 방지 대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5212827&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "133-1-5",
+     "year": 2024,
+     "round": 133,
+     "period": 1,
+     "number": 5,
+     "kind": "단답형",
+     "question": "타일공사에서 오픈타임(Open Time)과 가사시간",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5213291&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "135-1-11",
+     "year": 2025,
+     "round": 135,
+     "period": 1,
+     "number": 11,
+     "kind": "단답형",
+     "question": "타일의 접착력 검사방법",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5226331&brdId=Q006&gSite=Q"
+    },
+    {
+     "id": "136-4-1",
+     "year": 2025,
+     "round": 136,
+     "period": 4,
+     "number": 1,
+     "kind": "논술형",
+     "question": "타일공법의 종류별 특징과 타일공사의 하자발생 원인 및 방지대책에 대하여 설명하시오.",
+     "source": "https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5234927&brdId=Q006&gSite=Q"
+    }
+   ],
+   "importance": "마감 하자 빈출",
+   "already_written": "미작성"
+  }
+ ],
+ "selected": "129-4-2",
+ "reason": "미작성 후보 중 같은 유형 7문항·7회차(내화피복과 같은 수준)이며 원인·대책·검사·보수 네 요구를 모두 담은 129-4-2 가 대표 문항. KCS 41 31 20 의 3.4·3.8·3.15·3.16 조항과 요구가 직접 맞아 근거를 확인한 답안 작성 가능. 결로는 문항 수가 같으나 부위별 각도가 갈려 다음으로 미룸.",
+ "duplicate_check": "published_history.py --query 용접/결로/커튼월/비파괴 (2026-11-02 09:0x) 모두 0건, 내화피복은 3일차 1건 확인."
+}

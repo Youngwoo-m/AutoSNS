@@ -1,0 +1,110 @@
+{
+  "approval_id": "2026-11-04-building4-safety4-5",
+  "attempts": {
+    "building-daily:4": {
+      "approval_id": "2026-11-04-building4-safety4-5",
+      "slot": "building-daily:4",
+      "title": "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+      "html_sha256": "523a2c712f7ecf93519791f2fecf40394bbf1250e03ab711a8bcb61dfdaf20d6",
+      "date": "2026-11-04",
+      "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8",
+      "status": "published",
+      "at": "2026-11-04T12:50:37.340576+09:00",
+      "result": {
+        "status": "published",
+        "url": "https://geoaina.blogspot.com/2026/11/4.html",
+        "quota_before": {
+          "cap": 2,
+          "counted": 2,
+          "counted_titles": [
+            "미세먼지·유해가스 확산을 지도로 보는 법 | GeoAI 기초 40편",
+            "Whitebox 실제 QGIS 실습 17 — 깎기에 비용 상한 걸기: 얕은 턱은 깎고 깊은 웅덩이는 채우기"
+          ],
+          "excluded_prefixes": [
+            "NaGeoAI 실제 QGIS 실습",
+            "[토목시공기술사]"
+          ]
+        },
+        "recovery_exception": {
+          "approval_id": "2026-11-04-building4-safety4-5",
+          "slot": "building-daily:4",
+          "title": "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+          "html_sha256": "523a2c712f7ecf93519791f2fecf40394bbf1250e03ab711a8bcb61dfdaf20d6",
+          "date": "2026-11-04",
+          "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8"
+        }
+      }
+    },
+    "safety-daily:4": {
+      "approval_id": "2026-11-04-building4-safety4-5",
+      "slot": "safety-daily:4",
+      "title": "[건설안전기술사] 밀폐공간 질식 예방, 산소농도 영향과 작업 프로그램 안전절차 | 하루 한 문제 4일차",
+      "html_sha256": "3025a75244737ae2d1e01c545026d6506f27cf1153591294a77ce9b9be253750",
+      "date": "2026-11-04",
+      "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8",
+      "status": "published",
+      "at": "2026-11-04T12:50:46.132996+09:00",
+      "result": {
+        "status": "published",
+        "url": "https://geoaina.blogspot.com/2026/11/4_02135658817.html",
+        "quota_before": {
+          "cap": 2,
+          "counted": 3,
+          "counted_titles": [
+            "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+            "미세먼지·유해가스 확산을 지도로 보는 법 | GeoAI 기초 40편",
+            "Whitebox 실제 QGIS 실습 17 — 깎기에 비용 상한 걸기: 얕은 턱은 깎고 깊은 웅덩이는 채우기"
+          ],
+          "excluded_prefixes": [
+            "NaGeoAI 실제 QGIS 실습",
+            "[토목시공기술사]"
+          ]
+        },
+        "recovery_exception": {
+          "approval_id": "2026-11-04-building4-safety4-5",
+          "slot": "safety-daily:4",
+          "title": "[건설안전기술사] 밀폐공간 질식 예방, 산소농도 영향과 작업 프로그램 안전절차 | 하루 한 문제 4일차",
+          "html_sha256": "3025a75244737ae2d1e01c545026d6506f27cf1153591294a77ce9b9be253750",
+          "date": "2026-11-04",
+          "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8"
+        }
+      }
+    },
+    "safety-daily:5": {
+      "approval_id": "2026-11-04-building4-safety4-5",
+      "slot": "safety-daily:5",
+      "title": "[건설안전기술사] 비계 조립·해체 안전, 강관비계와 시스템비계 준수사항 | 하루 한 문제 5일차",
+      "html_sha256": "495ed68bba4bbde3b7726c7c75e1fd28c8766946258c51a72d2381a4a385ea69",
+      "date": "2026-11-04",
+      "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8",
+      "status": "published",
+      "at": "2026-11-04T12:50:55.825288+09:00",
+      "result": {
+        "status": "published",
+        "url": "https://geoaina.blogspot.com/2026/11/5.html",
+        "quota_before": {
+          "cap": 2,
+          "counted": 4,
+          "counted_titles": [
+            "[건설안전기술사] 밀폐공간 질식 예방, 산소농도 영향과 작업 프로그램 안전절차 | 하루 한 문제 4일차",
+            "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+            "미세먼지·유해가스 확산을 지도로 보는 법 | GeoAI 기초 40편",
+            "Whitebox 실제 QGIS 실습 17 — 깎기에 비용 상한 걸기: 얕은 턱은 깎고 깊은 웅덩이는 채우기"
+          ],
+          "excluded_prefixes": [
+            "NaGeoAI 실제 QGIS 실습",
+            "[토목시공기술사]"
+          ]
+        },
+        "recovery_exception": {
+          "approval_id": "2026-11-04-building4-safety4-5",
+          "slot": "safety-daily:5",
+          "title": "[건설안전기술사] 비계 조립·해체 안전, 강관비계와 시스템비계 준수사항 | 하루 한 문제 5일차",
+          "html_sha256": "495ed68bba4bbde3b7726c7c75e1fd28c8766946258c51a72d2381a4a385ea69",
+          "date": "2026-11-04",
+          "approval_sha256": "e4f312e60a1110c0a0bda8584657817ab66d135d115e8bf442fca43c2e9f6bb8"
+        }
+      }
+    }
+  }
+}

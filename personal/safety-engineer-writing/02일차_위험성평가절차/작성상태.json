@@ -1,0 +1,33 @@
+{
+  "day": 2,
+  "status": "published",
+  "title": "[건설안전기술사] 위험성평가 절차, 위험 발견에서 개선 이행까지 | 하루 한 문제 2일차",
+  "topic": "위험성평가의 정의와 단계별 절차",
+  "question_id": "126-2-5",
+  "field": "안전관리 체계·위험성평가",
+  "selection": "위험성평가 문자열11문항10회차, 동일세부유형반복빈도아님",
+  "source_date": "2026-10-31",
+  "model": "Claude Max subscription sonnet, actual model in response modelUsage",
+  "humanizer": 2,
+  "calc": {
+    "verdict": "ok"
+  },
+  "review": "pending",
+  "pdf_pages": 2,
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/205",
+    "blogger": "https://geoaina.blogspot.com/2026/10/2_0586778453.html",
+    "naver": "https://blog.naver.com/safeworking/224460204210"
+  },
+  "keyword_trend_file": "데이터랩.txt",
+  "updated_at": "2026-10-31T16:25:30.619276+09:00",
+  "verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "source_review": {
+    "verdict": "fix_resolved"
+  },
+  "note": "모든 채널 실제 공개·본문·첨부검증 완료"
+}

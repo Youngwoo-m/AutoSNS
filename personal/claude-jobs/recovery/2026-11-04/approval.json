@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-04",
+  "approval_id": "2026-11-04-building4-safety4-5",
+  "user_reply": "블로거에 올려봐 주세요",
+  "authorization_context": "Blogger 누락 3편 및 하루 상한 대기 현황을 안내한 직후 사용자가 게시 지시",
+  "blog_id": "7628821136256904634",
+  "targets": [
+    {
+      "job": "building-daily",
+      "day": 4,
+      "folder": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/04일차_철골용접결함원인과대책",
+      "title": "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+      "html_sha256": "523a2c712f7ecf93519791f2fecf40394bbf1250e03ab711a8bcb61dfdaf20d6"
+    },
+    {
+      "job": "safety-daily",
+      "day": 4,
+      "folder": "/Volumes/USB256/devAPP/AutoSNS/personal/safety-engineer-writing/04일차_밀폐공간작업",
+      "title": "[건설안전기술사] 밀폐공간 질식 예방, 산소농도 영향과 작업 프로그램 안전절차 | 하루 한 문제 4일차",
+      "html_sha256": "3025a75244737ae2d1e01c545026d6506f27cf1153591294a77ce9b9be253750"
+    },
+    {
+      "job": "safety-daily",
+      "day": 5,
+      "folder": "/Volumes/USB256/devAPP/AutoSNS/personal/safety-engineer-writing/05일차_비계조립해체",
+      "title": "[건설안전기술사] 비계 조립·해체 안전, 강관비계와 시스템비계 준수사항 | 하루 한 문제 5일차",
+      "html_sha256": "495ed68bba4bbde3b7726c7c75e1fd28c8766946258c51a72d2381a4a385ea69"
+    }
+  ]
+}

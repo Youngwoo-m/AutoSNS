@@ -1,0 +1,69 @@
+{
+  "day": 2,
+  "title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+  "status": "published",
+  "assets": [
+    {
+      "filename": "banner.png",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/02일차_콘크리트균열원인과대책/banner.png",
+      "sha256": "b649303f1f0ea8f55542e80594e5ac15e4d8968cdd2eb1e7bcd4a79a95d76472",
+      "bytes": 1001017,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day02/banner.png"
+    },
+    {
+      "filename": "균열_분류와판단_흐름도.png",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/02일차_콘크리트균열원인과대책/균열_분류와판단_흐름도.png",
+      "sha256": "7f27bc6f77a307108c9848059606d5460baedd2970d65a2aa1090609ed2fd000",
+      "bytes": 90849,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day02/%EA%B7%A0%EC%97%B4_%EB%B6%84%EB%A5%98%EC%99%80%ED%8C%90%EB%8B%A8_%ED%9D%90%EB%A6%84%EB%8F%84.png"
+    },
+    {
+      "filename": "02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf",
+      "path": "/Volumes/USB256/devAPP/AutoSNS/personal/building-engineer-writing/02일차_콘크리트균열원인과대책/02일차_콘크리트균열원인과대책_답안예시_따라쓰기.pdf",
+      "sha256": "729db2204899834126f3bb8063f842d6754710a8067b6689b4b2abee924a104c",
+      "bytes": 187155,
+      "intended_public_url": "https://geoai-na.netlify.app/building-questions/materials/day02/02%EC%9D%BC%EC%B0%A8_%EC%BD%98%ED%81%AC%EB%A6%AC%ED%8A%B8%EA%B7%A0%EC%97%B4%EC%9B%90%EC%9D%B8%EA%B3%BC%EB%8C%80%EC%B1%85_%EB%8B%B5%EC%95%88%EC%98%88%EC%8B%9C_%EB%94%B0%EB%9D%BC%EC%93%B0%EA%B8%B0.pdf"
+    }
+  ],
+  "files": [
+    {
+      "filename": "티스토리게시본문.html",
+      "sha256": "6297ea961383842b9c82b61984ecd1ed80e09a557181ae16be68c28d4adb8156"
+    },
+    {
+      "filename": "Blogger게시본문.html",
+      "sha256": "19e5336c292e73fbcf5f6e7779949011c77b331e673e4092b42846ed2c561ddd"
+    },
+    {
+      "filename": "manuscript-final.json",
+      "sha256": "bf531c9df7f6202b0241f6d27e401d4738cfdc9010779820cfe48bba1cae7f6d"
+    },
+    {
+      "filename": "제목.txt",
+      "sha256": "8c7d12f90dc82fd788f4607ad10230ed48d4255ab937bd4e8b49838a4f255615"
+    },
+    {
+      "filename": "태그.txt",
+      "sha256": "b7fa56b4769ebdd6cf0ecdcaa02b05d80592817ff5ddf5b7a5492a48d3ccd9a1"
+    }
+  ],
+  "pdf_pages": 3,
+  "pdf_text_rgb": [
+    184,
+    184,
+    184
+  ],
+  "public_channels": {
+    "tistory": "https://na-geoai.tistory.com/204",
+    "blogger": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+    "naver": "https://blog.naver.com/safeworking/224460206285"
+  },
+  "generated_with": "Claude Max CLI / claude-sonnet-5-5",
+  "humanizer_passes": 2,
+  "public_verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  },
+  "updated_at": "2026-10-31T16:25:30.619276+09:00"
+}

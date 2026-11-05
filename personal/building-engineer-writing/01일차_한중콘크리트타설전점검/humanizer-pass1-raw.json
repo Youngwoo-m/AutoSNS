@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 27585,
+  "stop_reason": "end_turn",
+  "session_id": "f0afb993-8280-415c-9ccc-2a46359321aa",
+  "total_cost_usd": 0.08314250000000001,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 8669,
+    "cache_read_input_tokens": 2225,
+    "output_tokens": 4824,
+    "output_tokens_details": {
+      "thinking_tokens": 1691
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 8669,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 4824,
+        "cache_read_input_tokens": 2225,
+        "cache_creation_input_tokens": 8669,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 8669
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 4824,
+      "cacheReadInputTokens": 2225,
+      "cacheCreationInputTokens": 8669,
+      "webSearchRequests": 0,
+      "costUSD": 0.08314250000000001,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1691,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "```json\n{\n  \"pass\": 1,\n  \"changes\": [\n    {\n      \"path\": \"/answer/4/bullets/3\",\n      \"old\": \"해당 조건의 표 값으로만 종료 판단\",\n      \"new\": \"조건별 소요강도 도달, 온도관리 확인, 책임기술자 승인으로 종료 판단\",\n      \"reason\": \"강도표 하나만 종료 요건으로 읽히는 문제 수정\"\n    },\n    {\n      \"path\": \"/pdf_answer_pages/2/8\",\n      \"old\": \"- 해당 조건 표 값으로만 종료 판단\",\n      \"new\": \"- 조건별 소요강도·온도관리 확인, 책임기술자 승인으로 판단\",\n      \"reason\": \"강도표 하나만 종료 요건으로 읽히는 문제 수정\"\n    },\n    {\n      \"path\": \"/pdf_answer_pages/1/8\",\n      \"old\": \"- 가혹 기상·300mm 이하: 최저 10℃\",\n      \"new\": \"- 가혹 기상 또는 단면 300mm 이하: 최저 10℃\",\n      \"reason\": \"두 조건이 택일(또는)임을 명시\"\n    },\n    {\n      \"path\": \"/pdf_answer_pages/2/6\",\n      \"old\": \"(300 이하/300 초과 800 이하/800 초과)\",\n      \"new\": \"(단면 300mm 이하/300mm 초과 800mm 이하/800mm 초과)\",\n      \"reason\": \"경계 줄에 단면 및 단위(mm) 명시\"\n    },\n    {\n      \"path\": \"/pdf_answer_pages/2/13\",\n      \"old\": \"- 표 3.4-1 값을 해체강도로 혼용\",\n      \"new\": \"- 표 3.4-1 값을 해체강도로 혼용 금지\",\n      \"reason\": \"지시 뜻이 반대로 읽히지 않도록 수정\"\n    },\n    {\n      \"path\": \"/pdf_answer_pages/1/2\",\n      \"old\": \"- 자기온도기록계: 콘크리트·공간·기온 기록\",\n      \"new\": \"- 자기온도기록계: 콘크리트·공간·기온 기록(원칙; 동결 위험 작으면 기온만 가능)\",\n      \"reason\": \"기록 항목 예외 반영\"\n    },\n    {\n      \"path\": \"/answer/2/bullets/7\",\n      \"old\": \"자기온도기록계로 콘크리트·보온공간·기온 기록 계획수립\",\n      \"new\": \"자기온도기록계로 콘크리트·보온공간·기온 기록 계획수립(원칙; 동결 위험이 작은 경우 주위 기온만 기록 가능)\",\n      \"reason\": \"기록 항목 예외 반영\"\n    },\n    {\n      \"path\": \"/explanation/2/table/rows/7/1\",\n      \"old\": \"콘크리트 온도·보온 공간 온도·기온을 자기온도기록계로 기록할 준비\",\n      \"new\": \"콘크리트 온도·보온 공간 온도·기온을 자기온도기록계로 기록할 준비(원칙이며, 동결 위험이 작은 경우 주위 기온만 기록할 수 있어요)\",\n      \"reason\": \"기록 항목 예외 반영\"\n    },\n    {\n      \"path\": \"/explanation/4/table/headers/0\",\n      \"old\": \"구조물의 노출 (MPa)\",\n      \"new\": \"구조물의 노출 상태\",\n      \"reason\": \"첫 헤더는 구분 항목이므로 MPa 표기 제거\"\n    },\n    {\n      \"path\": \"/explanation/4/table/headers/1\",\n      \"old\": \"단면 300mm 이하\",\n      \"new\": \"단면 300mm 이하 (MPa)\",\n      \"reason\": \"값이 MPa임을 명시\"\n    },\n    {\n      \"path\": \"/explanation/4/table/headers/2\",\n      \"old\": \"300mm 초과 800mm 이하\",\n      \"new\": \"단면 300mm 초과 800mm 이하 (MPa)\",\n      \"reason\": \"값이 MPa임을 명시\"\n    },\n    {\n      \"path\": \"/explanation/4/table/headers/3\",\n      \"old\": \"800mm 초과\",\n      \"new\": \"단면 800mm 초과 (MPa)\",\n      \"reason\": \"값이 MPa임을 명시\"\n    },\n    {\n      \"path\": \"/explanation/1/table/rows/4/1\",\n      \"old\": \"외기온은 일평균기온 4℃ 이하 여부로 판정하고, 보온 공간 온도는 계획된 범위 내\",\n      \"new\": \"한중 적용 판정은 일평균기온 4℃ 이하뿐 아니라 타설 완료 후 24시간 일최저기온 0℃ 이하 예상 등도 함께 보고, 보온 공간 온도는 계획된 범위 내\",\n      \"reason\": \"한중 적용 판정 조건이 4℃ 이하 하나만이 아님을 명시\"\n    },\n    {\n      \"path\": \"/pitfalls/1\",\n      \"old\": \"타설 시 콘크리트 온도(5~20℃, 가혹한 기상 또는 300mm 이하는 최저 10℃)와 양생 중 구조체 온도(5℃ 이상, 도달 후 2일간 0℃ 이상), 외기·보온 공간 온도를 한 문장에 섞어 쓰기 쉬워요. 대상을 나눠서 적고, 5MPa 하나로 모든 양생이 끝났다는 식의 표현이나 고정 양생 일수 단정은 피해 주세요.\",\n      \"new\": \"타설 시 콘크리트 온도(5~20℃, 가혹한 기상 또는 단면 300mm 이하는 최저 10℃)와 양생 중 구조체 온도(5℃ 이상, 도달 후 2일간 0℃ 이상), 외기·보온 공간 온도를 한 문장에 섞어 쓰기 쉬워요. 대상을 나눠서 적고, 5MPa 하나로 모든 양생이 끝났다는 식의 표현이나 고정 양생 일수 단정은 피해 주세요.\",\n      \"reason\": \"300mm 조건을 단면 기준으로 명시\"\n    },\n    {\n      \"path\": \"/disclosure\",\n      \"old\": \"이 글은 학습용 답안 예시이고 공식 채점기준이 아니에요. 문제 원문은 큐넷에 공개된 제132회 문제지의 문구를 확인해 그대로 옮겼어요. 표와 점검 정리는 저자가 학습용으로 정리한 것이며 축척이 없는 개념 정리예요. 설비 관통부 등 일부 점검 항목은 시방서의 직접 의무 조항이 아니고, 국토교통부 안내도 부처의 안내일 뿐 그 자체로 새로운 법적 기준은 아니에요. KCS 14 20 40은 2024-12-30 개정본을 기준으로 살펴봤고, 구성재료 2.1과 배합 2.2.2 개정은 2025-01-01 적용이며 그 밖의 경과조치는 계약도서에서 확인해야 해요. 자료 확인일은 2026-10-31이고, 실제 프로젝트에 적용되는 판과 계약조건은 별도로 확인해 주세요.\",\n      \"new\": \"이 글은 학습용 답안 예시이고 공식 채점기준이 아니에요. 문제 원문은 큐넷에 공개된 제132회 문제지의 문구를 확인해 그대로 옮겼어요. 표와 점검 정리는 저자가 학습용으로 정리한 것이며 축척이 없는 개념 정리예요. 설비 관통부 등 일부 점검 항목은 시방서의 직접 의무 조항이 아니고, 국토교통부 안내도 부처의 안내일 뿐 그 자체로 새로운 법적 기준은 아니에요. KCS 14 20 40은 2024-12-30 개정본을 기준으로 살펴봤고, 사업별 적용판과 계약상 경과조치는 계약도서에서 확인해야 해요. 자료 확인일은 2026-10-31이고, 실제 프로젝트에 적용되는 판과 계약조건은 별도로 확인해 주세요.\",\n      \"reason\": \"문제 범위와 무관한 2.1/2.2.2 개정 시행일 상세 삭제, 적용판·경과조치 확인만 유지\"\n    }\n  ],\n  \"notes\": [\n    \"answer/6 '유의사항' 첫 항목('표 3.4-1 값을 해체강도로 혼용하지 않도록 주의')은 이미 금지 취지로 읽혀 수정하지 않았습니다.\",\n    \"자기온도기록계 예외와 외기온 행의 추가 조건은 원문 수치 그대로 반영했고 새 사실은 더하지 않았습니다. 예외 표현은 요청하신 '원칙; 동결위험 작은 경우 주위기온만 기록 가능'을 따랐으니, 조문(KCS 14 20 40 3.5, 표 3.5-1)의 실제 문구와 대조해 주세요.\"\n  ]\n}\n```",
+  "ttft_ms": 12730,
+  "type": "result",
+  "duration_ms": 27643,
+  "uuid": "c253883c-fe57-49ea-ab8b-e454fb447b26",
+  "ttft_stream_ms": 1780,
+  "time_to_request_ms": 57,
+  "first_content_frame_ms": 1780,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

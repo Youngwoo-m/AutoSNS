@@ -1,0 +1,14 @@
+{
+  "numeric_tokens_removed": {
+    "5": 2,
+    "15": 1,
+    "6": 1,
+    "8": 2,
+    "14": 1,
+    "32": 1
+  },
+  "numeric_tokens_added": {},
+  "removed_numeric_tokens_exactly_match_inaccurate_row": true,
+  "source_href_multiset_unchanged": true,
+  "note": "HTML 태그를 공백으로 바꿔 셀 숫자 결합을 피한 뒤 비교함. 삭제 수치는 오류 통계 행의 값에만 해당함."
+}

@@ -1,0 +1,69 @@
+[
+  {
+    "job": "building-daily",
+    "assets": [
+      {
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day03/banner.png",
+        "http": 200,
+        "sha256": "235d4868e7be9c2a4a721aab0f3441eaca877f070474d2f7d2a88bfe627bb497",
+        "name": "banner.png",
+        "bytes": 1136929
+      },
+      {
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day03/%EB%82%B4%ED%99%94%ED%94%BC%EB%B3%B5_%EA%B3%B5%EB%B2%95%EA%B3%BC%EA%B2%80%EC%82%AC_%EB%8F%84%EC%8B%9D.png",
+        "http": 200,
+        "sha256": "2c49dfc4c137d2705dfa5c02ae016b1dde55438df02e1b1da43af280014e77f0",
+        "name": "내화피복_공법과검사_도식.png",
+        "bytes": 123725
+      },
+      {
+        "url": "https://geoai-na.netlify.app/building-questions/materials/day03/03%EC%9D%BC%EC%B0%A8_%EC%B2%A0%EA%B3%A8%EB%82%B4%ED%99%94%ED%94%BC%EB%B3%B5%EA%B3%B5%EB%B2%95%EA%B3%BC%EA%B2%80%EC%82%AC_%EB%8B%B5%EC%95%88%EC%98%88%EC%8B%9C_%EB%94%B0%EB%9D%BC%EC%93%B0%EA%B8%B0.pdf",
+        "http": 200,
+        "sha256": "4b01e0d63c7a847b98c92f26e8f2d359c14504ff00a3511af22a98a4c02b3c68",
+        "name": "03일차_철골내화피복공법과검사_답안예시_따라쓰기.pdf",
+        "bytes": 203140
+      }
+    ],
+    "all_match": true,
+    "review_evidence": {
+      "verdict": "fix",
+      "fixed": 8,
+      "sources_opened": 7
+    }
+  },
+  {
+    "job": "safety-daily",
+    "assets": [
+      {
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day03/banner.png",
+        "http": 200,
+        "sha256": "659d46e819a6ceaa8456abb2911fcbdaa60daa14a50d550d0ac3faa08e257e88",
+        "name": "banner.png",
+        "bytes": 738584
+      },
+      {
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day03/%EA%B5%B4%EC%B0%A9%EB%A9%B4%EA%B8%B0%EC%9A%B8%EA%B8%B0_%EB%8B%A8%EB%A9%B4%EB%8F%84.png",
+        "http": 200,
+        "sha256": "4744971afaa0ca53edc6847f33c96cc2563135286acd86eda5020d0b8fb34339",
+        "name": "굴착면기울기_단면도.png",
+        "bytes": 65426
+      },
+      {
+        "url": "https://geoai-na.netlify.app/safety-questions/materials/day03/03%EC%9D%BC%EC%B0%A8_%EA%B5%B4%EC%B0%A9%EB%A9%B4%EA%B8%B0%EC%9A%B8%EA%B8%B0_%EB%8B%B5%EC%95%88%EC%98%88%EC%8B%9C_%EB%94%B0%EB%9D%BC%EC%93%B0%EA%B8%B0.pdf",
+        "http": 200,
+        "sha256": "bc42776bb928b2ff14fad2c78dbd7f5bee00f51d95c24bba843afc0451ad27f6",
+        "name": "03일차_굴착면기울기_답안예시_따라쓰기.pdf",
+        "bytes": 165570
+      }
+    ],
+    "all_match": true,
+    "review_evidence": {
+      "verdict": "fix",
+      "rounds": 2,
+      "first": "block(Blogger 자산 미배포)+fix7",
+      "second": "fix1",
+      "fixed": 9,
+      "sources_opened": 12
+    }
+  }
+]

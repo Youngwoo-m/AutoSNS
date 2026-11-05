@@ -1,0 +1,46 @@
+{
+  "day": 3,
+  "status": "published",
+  "title": "[건설안전기술사] 굴착면 기울기 기준과 굴착 전 사전조사, 붕괴 예방까지 | 하루 한 문제 3일차",
+  "topic": "지반 종류별 굴착면 기울기, 굴착 전 사전조사, 붕괴재해 예방대책",
+  "question_id": "139-3-5",
+  "field": "토공·굴착·흙막이·붕괴",
+  "selection": "굴착면 기울기 유형 4문항·4회차(126-1-7,131-2-4,134-4-1,139-3-5), 후보 밀폐공간 7/7·화재감시자 5/5·굴착기 인양 4/4 비교, 상세 기출근거.json",
+  "source_date": "2026-11-01",
+  "model": "claude (Claude Max 구독, 이 세션에서 직접 집필·humanizer 2회 편집)",
+  "humanizer": 2,
+  "calc": {
+    "verdict": "ok",
+    "checked": 10,
+    "fixed": 0
+  },
+  "review": {
+    "verdict": "fix",
+    "rounds": 2,
+    "first": "block(Blogger 자산 미배포)+fix7",
+    "second": "fix1",
+    "fixed": 9,
+    "sources_opened": 12
+  },
+  "pdf_pages": 2,
+  "keyword_trend_file": "데이터랩.txt",
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/210",
+    "naver": "https://blog.naver.com/safeworking/224460887546",
+    "blogger": "https://geoaina.blogspot.com/2026/11/3_0957208328.html"
+  },
+  "verification": {
+    "tistory": true,
+    "naver": true,
+    "blogger": true
+  },
+  "pending": [],
+  "queue_add_post": true,
+  "updated_at": "2026-11-01T19:21:55.115223+09:00",
+  "pending_recoveries": [],
+  "manual_blogger_recovery": {
+    "approval_id": "2026-11-01-building-safety-day3",
+    "public_verified": true,
+    "duplicate_count": 1
+  }
+}

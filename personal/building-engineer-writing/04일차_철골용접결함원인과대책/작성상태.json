@@ -1,0 +1,47 @@
+{
+  "at": "2026-11-02T09:14:16.945198+09:00",
+  "status": "published",
+  "day": 4,
+  "title": "[건축시공기술사] 용접결함 원인과 대책, 비파괴검사·보수 방법 | 하루 한 문제 4일차",
+  "topic": "철골 용접결함 원인·대책·비파괴검사·보수",
+  "question_id": "129-4-2",
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/215",
+    "naver": "https://blog.naver.com/safeworking/224461882992",
+    "blogger": "https://geoaina.blogspot.com/2026/11/4.html"
+  },
+  "verification": {
+    "tistory": true,
+    "naver": true,
+    "blogger": true
+  },
+  "pending_recoveries": [],
+  "calc": {
+    "verdict": "n/a",
+    "note": "수식·계산 없음. 수치는 KCS 인용만(source-reviewer 가 원문 대조)"
+  },
+  "source_review": {
+    "verdict": "fix",
+    "fixed": 5,
+    "sources_opened": 5
+  },
+  "keyword_trend": {
+    "비파괴검사": 67.7,
+    "언더컷": 24.7,
+    "용접결함": 1.6,
+    "초음파탐상": 0.1,
+    "건축시공기술사": 76.2
+  },
+  "queue_add_post": true,
+  "deploy_full": true,
+  "generated_with": "claude (Claude Max, claude -p 세션 직접 작성·편집, humanizer 2회 직접)",
+  "pending": [],
+  "updated_at": "2026-11-04T12:53:41.094832+09:00",
+  "manual_blogger_recovery": {
+    "approval_id": "2026-11-04-building4-safety4-5",
+    "public_verified": true,
+    "duplicate_count": 1,
+    "asset_download_verified": false,
+    "verification_note": "공개 본문과 링크 확인. 첨부 서버 연결 시간 초과로 다운로드 해시 재확인 미완료"
+  }
+}

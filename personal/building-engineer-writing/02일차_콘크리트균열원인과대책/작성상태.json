@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-31T16:05:32.024633+09:00",
+  "status": "published",
+  "day": 2,
+  "title": "[건축시공기술사] 콘크리트 균열, 경화 전·후와 내구성 원인별 대책 | 하루 한 문제 2일차",
+  "topic": "콘크리트 균열",
+  "question_id": "131-4-3",
+  "urls": {
+    "tistory": "https://na-geoai.tistory.com/204",
+    "blogger": "https://geoaina.blogspot.com/2026/10/2_060510618.html",
+    "naver": "https://blog.naver.com/safeworking/224460206285"
+  },
+  "calc": {
+    "verdict": "ok"
+  },
+  "source_review": {
+    "verdict": "fix_resolved"
+  },
+  "note": "모든 채널 실제 공개·본문·첨부검증 완료",
+  "updated_at": "2026-10-31T16:25:30.619276+09:00",
+  "verification": {
+    "tistory": true,
+    "blogger": true,
+    "naver": true
+  }
+}

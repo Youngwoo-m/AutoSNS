@@ -1,0 +1,99 @@
+{
+  "duration_api_ms": 16491,
+  "stop_reason": "end_turn",
+  "session_id": "904753e7-b966-473d-87ef-295a1a3c7cc9",
+  "total_cost_usd": 0.0706985,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 12993,
+    "cache_read_input_tokens": 2225,
+    "output_tokens": 1850,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 12993,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1850,
+        "cache_read_input_tokens": 2225,
+        "cache_creation_input_tokens": 12993,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 12993
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1850,
+      "cacheReadInputTokens": 2225,
+      "cacheCreationInputTokens": 12993,
+      "webSearchRequests": 0,
+      "costUSD": 0.0706985,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+    "spawned": 0,
+    "requested": {
+      "background": 0,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 0,
+    "max_depth": 0,
+    "spawned_by_subagents": 0,
+    "completed": 0,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"pass\":2,\"unnecessary_translationese\":[\"2절 '분석 대상은 … 총 465문항이에요' 뒤 '문항 번호 하나를 한 문제로 셌고, 수험생이 골라 쓰는 답안 수가 아니라 출제된 전체 문항을 대상으로 했어요'는 같은 뜻이 겹쳐요. '문항 번호 하나를 한 문제로 세었고, 선택 여부와 관계없이 출제된 전체 문항을 대상으로 했어요' 정도로 줄일 수 있어요.\",\"3절 '주제별로는 … 키워드가 87문항, … 79문항, … 62문항에서 나왔어요' 문장은 '~ 관련 키워드'가 세 번 반복돼요. '가설구조물·추락·낙하가 87문항, … 구조물 공종이 79문항, … 토공·굴착·흙막이·붕괴가 62문항에서 키워드로 나왔어요'처럼 묶으면 간결해요.\",\"4절 '법령과 안전관리체계' 소절의 '두 그룹 모두 2026년에 가장 많았어요'와 앞 문장 수치 나열은 중복 성격이 있어요. 수치를 이미 굵게 보여 주므로 이 문장은 삭제해도 정보 손실이 없어요.\",\"6절 '개인 학습용 배분 예시예요'는 앞 문장 '시작해 보세요'와 이어 '…로 시작해 보세요. 개인 학습용 예시일 뿐이에요' 정도로 정리하면 어색한 단절이 줄어요.\",\"7절 '…다룰 예정이에요. … 담을 예정이에요.'로 '예정'이 연속돼요. 뒤 문장은 '문제와 해설, 답안 예시, … 따라쓰기 PDF를 함께 실어요'로 바꾸면 반복이 사라져요.\",\"'독자분들이 요청해 주신 문제'의 '독자분들이'는 복수 접미가 겹쳐요. '독자분이 요청해 주신 문제' 또는 '요청해 주신 문제'로 충분해요.\",\"1절 '먼저 출제기준으로 범위를 훑어보시고' 이후 '기출문제에 나온 주제를 내 경력과 맞춰 보세요'에서 '내'가 갑자기 1인칭이 돼 높임 흐름과 어긋나요. '본인 경력과'로 통일하는 편이 자연스러워요.\"],\"register_issues\":[\"도입부 '권해요'와 '정리해 드릴게요'가 연달아 나오는데 문제는 아니나, 2절 이하와 달리 1절 첫 문단 말미 '보이거든요'는 구어 색채가 강해요. '빠진 곳이 보여요'로 맞추면 다른 설명문과 결이 같아져요.\",\"1절 법령 문단 '봐요.  공종별' 사이에 공백이 두 칸 들어 있어요. 표기상 한 칸으로 줄여 주세요(HTML 구조 변경은 아님).\",\"설명 문단은 해요체인데 3절 소절 '답안 작성 요령' 블록쿼트가 문어체(~한다)예요. 이는 답안이론 영역이므로 허용 범위지만, 4절 3개 블록쿼트 모두 '정리한다/확인한다/연결해 정리한다'로 일관돼 있어 문제없어요.\",\"5절 첫 두 문단('나누어 표시한다', '잡을 수 있다', '흐려진다', '핵심이다')은 문어체이고, 이어지는 '그림과 표는 용도를 정해 넣는다', '실무 경험은 … 쓰지 않는다'도 문어체예요. 5절 전체가 답안이론으로 일관되므로 의도된 구분으로 보이지만, 6절과 바로 맞닿는 지점에서 어조 전환이 급해요. 5절 소개 문단 한 줄을 해요체로 두어 전환을 완충하면 좋아요(선택).\",\"첫 주 체크리스트는 '~해요'로 끝나는 명령형 나열이에요. 문제는 아니지만 '확인해요/표시해요/훑어 둬요/분석해요/정해요'가 모두 해요체 평서형이라 목록 안에서는 일관돼요.\"],\"required_changes\":[\"2절 '문항 번호 하나를 한 문제로 셌고, 수험생이 골라 쓰는 답안 수가 아니라 …' 문장을 간결하게 줄이세요(숫자·사실은 그대로).\",\"7절 '예정이에요'가 두 문장 연속이므로 두 번째 문장 어미를 바꿔 반복을 없애세요.\",\"'독자분들이' → '독자분이' (또는 '요청해 주신 문제는'으로 주어 생략).\",\"1절 '내 경력과' → '본인 경력과'.\",\"1절 법령 문단의 이중 공백('봐요.  공종별')을 한 칸으로 정리하세요.\",\"4절 법령·제도 소절의 '두 그룹 모두 2026년에 가장 많았어요'는 바로 앞 수치와 겹치므로 삭제를 권해요(사실 오류는 아님; 12가 두 그룹 모두 최대인 점은 맞아요).\"]}",
+  "ttft_ms": 17043,
+  "type": "result",
+  "duration_ms": 17070,
+  "uuid": "f7792c89-518a-43f2-8d9d-d3aec1d1d536",
+  "ttft_stream_ms": 2388,
+  "time_to_request_ms": 569,
+  "first_content_frame_ms": 2389,
+  "queued_turn_count": 0,
+  "result_index": 0
+}

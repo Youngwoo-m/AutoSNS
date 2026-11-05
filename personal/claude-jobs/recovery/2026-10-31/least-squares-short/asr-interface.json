@@ -1,0 +1,9 @@
+{
+  "fields": [
+    "file",
+    "language",
+    "model"
+  ],
+  "initial_prompt_supported": false,
+  "language": "ko"
+}
