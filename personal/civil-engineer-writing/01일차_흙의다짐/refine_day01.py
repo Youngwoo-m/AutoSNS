@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parent
 TITLE='[토목시공기술사] 흙의 다짐·최적함수비·다짐도 | 하루 한 문제 1일차'
 PDF='01일차_흙의다짐_답안예시_따라쓰기.pdf'
 
-body='''<h2><a href="https://geoai-na.netlify.app/civil-questions/" target="_blank" rel="noopener">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+body='''<h2><a href="https://geoai-na.web.app/civil-questions/" target="_blank" rel="noopener">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <p>흙의 다짐은 토공 품질관리의 기본이다. 답안을 작성할 때에는 다짐의 정의와 함께 최적함수비, 최대건조밀도, 다짐도의 관계를 연결해야 한다. 특히 현장 건조밀도를 어떤 실내시험 결과와 비교하는지까지 설명할 수 있어야 한다.</p>
 <p>하루 한 문제 1일차에서는 이 관계를 계산 예와 현장 관리 절차로 정리한다. 시험 답안으로 압축한 2쪽 따라쓰기 자료와, 답안의 의미를 짚는 해설을 함께 준비했다.</p>

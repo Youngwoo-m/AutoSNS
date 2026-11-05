@@ -41,7 +41,7 @@
     "로컬자료링크": true,
     "PDF": "2쪽 전체 렌더 검토 완료"
   },
-  "친구요청": "https://geoai-na.netlify.app/civil-questions/ — 배포 및 실제 접수·별도 대기열 검증 완료",
+  "친구요청": "https://geoai-na.web.app/civil-questions/ — 배포 및 실제 접수·별도 대기열 검증 완료",
   "정기작성": "매일 오전 8시 Asia/Seoul / 예약 ID 8 / 원고 작성",
   "링크반영": "블로그 상단 안내 추가",
   "공개URL": "https://na-geoai.tistory.com/99",
@@ -58,7 +58,7 @@
     "태그": 7
   },
   "목록검증": {
-    "url": "https://geoai-na.netlify.app/civil-questions/",
+    "url": "https://geoai-na.web.app/civil-questions/",
     "실제글링크": "https://na-geoai.tistory.com/99",
     "deploy_id": "6ad2dc2070022d723e7d559b",
     "state": "ready"

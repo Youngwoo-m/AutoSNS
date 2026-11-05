@@ -75,7 +75,7 @@
   "티스토리": "https://na-geoai.tistory.com/167",
   "Blogger": "https://geoaina.blogspot.com/2026/10/10.html",
   "네이버": "https://blog.naver.com/safeworking/224453743511",
-  "목록": "https://geoai-na.netlify.app/civil-questions/ (published.json 10일차 등록·배포)",
+  "목록": "https://geoai-na.web.app/civil-questions/ (published.json 10일차 등록·배포)",
   "발행시각": "2026-10-26T08:15:00+09:00",
   "비고": "PDF 3쪽 단면 그림이 결론과 겹쳐 위로 옮김. 티스토리 첫 발행에서 배너가 맨 위가 아니어서 --edit-post 167 --move-top 으로 옮기고 다시 열어 확인."
 }

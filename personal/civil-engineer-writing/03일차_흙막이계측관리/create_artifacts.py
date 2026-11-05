@@ -69,7 +69,7 @@ table2='''<table border="1" style="border-collapse:collapse;width:100%"><thead><
 <tr><td>지하수위 급저하 + 배면 침하</td><td>벽체 틈·바닥 부근 토사 유출</td><td>차수 상태·탁수 유출·굴착면 용수</td></tr>
 </tbody></table>'''
 body=f'''<p>흙막이 계측관리 답안은 계측기 이름을 늘어놓는 것보다 <strong>무엇을, 어디에, 언제 재고, 어떤 기준으로 판단해 조치하는지</strong>를 한 흐름으로 써야 한다. 계측은 설계 가정과 실제 거동을 비교하여 다음 굴착 단계를 결정하는 정보화시공의 근거이다.</p>
-<h2><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2>오늘의 문제</h2>
 <p><strong>시험 종목:</strong> 토목시공기술사 / <strong>과목(학습 분류):</strong> 기초·흙막이 / <strong>유형:</strong> 단답형 / <strong>관련 기출:</strong> 2025년 제137회 1교시 6번</p>
@@ -111,7 +111,7 @@ import re
 tis=re.sub(r'<figure>.*?</figure>','<p style="font-size:14px;color:#52616a">직접 작성한 개념도. 계측기 번호는 표의 항목과 대응한다. 축척과 실제 배치 간격을 나타내지 않는다.</p>',tis,flags=re.S)
 tis=re.sub(r'<p><a href="\{\{PDF_URL\}\}">[^<]*</a></p>','',tis)
 (OUT/'티스토리게시본문.html').write_text(tis)
-pub='https://geoai-na.netlify.app/civil-questions/materials/day03/'
+pub='https://geoai-na.web.app/civil-questions/materials/day03/'
 blog=body.replace('{{FIGURE_URL}}',pub+'support-monitoring.jpg').replace('{{PDF_URL}}',pub+'answer-tracing.pdf')
 blog=re.sub(r'<!--(FIGURE|PDF):[^>]*-->','',blog)
 (OUT/'Blogger게시본문.html').write_text(blog)

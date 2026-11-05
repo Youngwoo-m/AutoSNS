@@ -23,7 +23,7 @@ full15=[n for n,t in th.items() if t['round_count']==15]
 DB,DBr=kw('동바리'); JD,JDr=kw('중대재해'); RA,RAr=kw('위험성평가')
 QURL='https://www.q-net.or.kr/crf005.do?gId=&amp;gSite=Q&amp;id=crf00503s02&amp;jmCd=0740&amp;jmInfoDivCcd=B0'
 REQ_LIVE='--req-live' in sys.argv   # safety-questions 페이지가 배포된 뒤에만 켠다(작성기준)
-REQ_TOP='''<h2><a href="https://geoai-na.netlify.app/safety-questions/" target="_blank" rel="noopener">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>
+REQ_TOP='''<h2><a href="https://geoai-na.web.app/safety-questions/" target="_blank" rel="noopener">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 매일 밤 11시에 접수 순서대로 확인해서, 답안 예시와 따라쓰기 PDF를 블로그에 올려 드려요.</p>
 ''' if REQ_LIVE else ''
 REQ_P=('건설안전기술사 전용 페이지에서 과목을 골라 문제를 보내 주시면 되고, 답안이 올라가면 같은 페이지 목록에서 확인하실 수 있어요.' if REQ_LIVE

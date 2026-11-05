@@ -80,7 +80,7 @@ table3='''<table border="1" style="border-collapse:collapse;width:100%"><thead><
 <tr><td>해석·계측</td><td>수화열 해석, 온도계 매설, 온도차·온도균열지수 실시간 관리</td><td>계획 검증·양생 조정</td></tr>
 </tbody></table>'''
 body=f'''<p>온도균열 답안을 '수화열이 크다'에서 끝내면 원인 설명이 얕아진다. <strong>언제(상승기·강하기), 무엇이 붙잡아서(내부구속·외부구속), 어떤 지표로 판단하고(온도균열지수), 설계·재료·시공·양생 어느 단계에서 줄이는지</strong>를 한 흐름으로 써야 한다.</p>
-<h2><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>
 <h2>오늘의 문제</h2>
 <p><strong>시험 종목:</strong> 토목시공기술사 / <strong>과목(학습 분류):</strong> 콘크리트공 / <strong>유형:</strong> 논술형 / <strong>관련 기출:</strong> 2023년 제130회 2교시 4번</p>
@@ -124,7 +124,7 @@ tis=body.replace(f'<!--FIGURE:{FIG}-->',f'<p data-ax-attach="{FIG}"></p>').repla
 tis=re.sub(r'<figure>.*?</figure>','<p style="font-size:14px;color:#52616a">직접 작성한 개념도. 축척과 실제 온도값을 나타내지 않는다.</p>',tis,flags=re.S)
 tis=re.sub(r'<p><a href="\{\{PDF_URL\}\}">[^<]*</a></p>','',tis)
 (OUT/'티스토리게시본문.html').write_text(tis)
-pub='https://geoai-na.netlify.app/civil-questions/materials/day04/'
+pub='https://geoai-na.web.app/civil-questions/materials/day04/'
 blog=body.replace('{{FIGURE_URL}}',pub+'thermal-restraint.jpg').replace('{{PDF_URL}}',pub+'answer-tracing.pdf')
 blog=re.sub(r'<!--(FIGURE|PDF):[^>]*-->','',blog)
 (OUT/'Blogger게시본문.html').write_text(blog)

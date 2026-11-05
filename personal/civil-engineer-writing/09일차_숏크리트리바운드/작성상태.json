@@ -120,7 +120,7 @@
   "티스토리": "https://na-geoai.tistory.com/159",
   "Blogger": "https://geoaina.blogspot.com/2026/10/9.html",
   "네이버": "https://blog.naver.com/safeworking/224452819918",
-  "목록": "https://geoai-na.netlify.app/civil-questions/ (published.json 9일차 등록·배포)",
+  "목록": "https://geoai-na.web.app/civil-questions/ (published.json 9일차 등록·배포)",
   "발행시각": "2026-10-25T08:20:00+09:00",
   "비고": "tistory_post.py 첨부 배치 수정: 끌어다 놓기를 새 빈 문단에 하도록 고쳐 맨 위 배너와 다음 첨부가 한 문단에 붙어 밀리던 문제 해결, --edit-post --move-top 추가. 첫 발행에서 배너가 2절에 놓여 --move-top 으로 맨 위로 옮김. 첫 --go 는 임시저장 알림으로 실패(글 미발행) 후 재시도 성공."
 }

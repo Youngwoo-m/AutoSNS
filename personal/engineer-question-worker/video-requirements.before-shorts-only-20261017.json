@@ -41,7 +41,7 @@
   ],
   "blog_top_link": {
     "label": "함께 푸는 측량및지형공간정보기술사 답안지 요청",
-    "url": "https://geoai-na.netlify.app/questions/",
+    "url": "https://geoai-na.web.app/questions/",
     "display_url": false,
     "style": "heading2_or_bold_24px_minimum",
     "description": "요청한 문제는 매일 밤 11시부터 접수 순서대로 검토해 정답 예시를 블로그에 게시합니다."

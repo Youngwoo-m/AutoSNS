@@ -41,7 +41,7 @@
   ],
   "blog_top_link": {
     "label": "측량및지형공간정보기술사 친구 요청 문제 제출",
-    "url": "https://geoai-na.netlify.app/questions/",
+    "url": "https://geoai-na.web.app/questions/",
     "display_url": true,
     "style": "heading2_or_bold_24px_minimum"
   },
