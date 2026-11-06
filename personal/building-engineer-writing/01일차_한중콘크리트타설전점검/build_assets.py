@@ -12,7 +12,7 @@ OUT=Path(__file__).resolve().parent
 ROOT=OUT.parents[2]
 PDF_NAME='01일차_한중콘크리트타설전점검_답안예시_따라쓰기.pdf'
 FIG_NAME='타설전_점검과양생_흐름도.png'
-CDN='https://geoai-na.netlify.app/building-questions/materials/day01/'
+CDN='https://geoai-na.web.app/building-questions/materials/day01/'
 
 def figure():
  im=Image.new('RGB',(1500,960),'#f4f7fb');d=ImageDraw.Draw(im)
@@ -86,7 +86,7 @@ def body(m,remote=False):
    b+=['<p><img src="'+CDN+FIG_NAME+'" alt="한중콘크리트 타설 전 점검에서 초기양생 종료까지의 흐름도" style="max-width:100%;height:auto"></p>' if remote else '<p data-ax-attach="'+FIG_NAME+'"></p>','<p>타설 전 점검부터 초기양생 종료까지의 흐름을 정리한 절차도예요.</p>']
  b+=['<h2>답안 예시</h2>','<hr>']
  for s in m['answer']:b+=['<h3>'+esc(s['heading'])+'</h3>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in s['bullets'])+'</ul>']
- b+=['<hr>','<h2>놓치기 쉬운 점</h2>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in m['pitfalls'])+'</ul>','<h2>참고자료와 확인일</h2>','<ul>'+''.join('<li><a href="'+esc(x['url'])+'">'+esc(x['title'])+'</a></li>' for x in m['sources'])+'</ul>','<p>자료 확인일: 2026년 10월 31일.</p>','<h2>따라쓰기 PDF</h2>','<p><a href="'+CDN+PDF_NAME+'">'+PDF_NAME+'</a></p>' if remote else '<p data-ax-attach="'+PDF_NAME+'"></p>','<p>Q-net 답안지 양식 위에 답안 예시를 옅은 회색 글씨로 얹은 4쪽 PDF예요.</p>','<h2><a href="https://geoai-na.netlify.app/building-questions/">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>','<p>'+esc(m['disclosure'])+'</p>']
+ b+=['<hr>','<h2>놓치기 쉬운 점</h2>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in m['pitfalls'])+'</ul>','<h2>참고자료와 확인일</h2>','<ul>'+''.join('<li><a href="'+esc(x['url'])+'">'+esc(x['title'])+'</a></li>' for x in m['sources'])+'</ul>','<p>자료 확인일: 2026년 10월 31일.</p>','<h2>따라쓰기 PDF</h2>','<p><a href="'+CDN+PDF_NAME+'">'+PDF_NAME+'</a></p>' if remote else '<p data-ax-attach="'+PDF_NAME+'"></p>','<p>Q-net 답안지 양식 위에 답안 예시를 옅은 회색 글씨로 얹은 4쪽 PDF예요.</p>','<h2><a href="https://geoai-na.web.app/building-questions/">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>','<p>'+esc(m['disclosure'])+'</p>']
  return '\n'.join(x for x in b if x)
 
 def main():

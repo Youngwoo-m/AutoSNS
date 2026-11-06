@@ -7,7 +7,7 @@ TITLE = '[토목시공기술사] 터널 라이닝 균열 종류와 원인, 균�
 PDF_NAME = '19일차_라이닝균열_답안예시_따라쓰기.pdf'
 FIG_NAME = '라이닝_균열형태_개념도.jpg'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day19/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day19/'
 QNET = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq={}&brdId=Q006&gSite=Q'
 TAGS = '토목시공기술사,라이닝,터널라이닝,라이닝균열,콘크리트라이닝,터널균열,콘크리트균열,NATM,토목시공기술사기출'
 
@@ -112,7 +112,7 @@ def body(banner_html, img_html, pdf_html):
 <h2 data-ke-size="size26">따라쓰기 PDF</h2>
 {pdf_html}
 <p>Q-net 답안지 양식 위에 위 답안 예시를 옅은 회색 글씨로 얹은 3쪽짜리 PDF예요. 출력해서 그대로 따라 써 보세요.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>'''
 
 

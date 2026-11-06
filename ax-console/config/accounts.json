@@ -150,7 +150,7 @@
       "netlify": {
         "id": "ds2eye@gmail.com",
         "login": "netlify CLI (기본 계정)",
-        "note": "개인 구글 계정으로 가입. geoai-na.netlify.app, 기술사 질문 접수 양식"
+        "note": "개인 구글 계정으로 가입. geoai-na.web.app, 기술사 질문 접수 양식"
       },
       "tistory": {
         "id": "na-geoai.tistory.com",

@@ -6,7 +6,7 @@ TITLE = '[토목시공기술사] 노후 수도관 갱생공법, 세척·갱생·
 PDF_NAME = '17일차_상수도관갱생_답안예시_따라쓰기.pdf'
 FIG_NAME = '상수도관갱생_단면_개념도.jpg'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day17/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day17/'
 QNET = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq={}&brdId=Q006&gSite=Q'
 TAGS = '토목시공기술사,수도관,상수도관,갱생공법,노후상수관,반전삽입공법,에폭시라이닝,상수도,토목시공,토목시공기술사기출'
 
@@ -99,7 +99,7 @@ def body(banner_html, img_html, pdf_html):
 <h2 data-ke-size="size26">따라쓰기 PDF</h2>
 {pdf_html}
 <p>Q-net 답안지 양식 위에 위 답안 예시를 옅은 회색 글씨로 얹은 2쪽짜리 PDF예요. 출력해서 그대로 따라 써 보세요.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>'''
 
 

@@ -12,7 +12,7 @@ OUT=Path(__file__).resolve().parent
 ROOT=OUT.parents[2]
 PDF_NAME='03일차_철골내화피복공법과검사_답안예시_따라쓰기.pdf'
 FIG_NAME='내화피복_공법과검사_도식.png'
-CDN='https://geoai-na.netlify.app/building-questions/materials/day03/'
+CDN='https://geoai-na.web.app/building-questions/materials/day03/'
 
 def figure():
  im=Image.new('RGB',(1500,1000),'#f4f7fb');d=ImageDraw.Draw(im)
@@ -93,7 +93,7 @@ def body(m,remote=False):
    b+=['<p><img src="'+CDN+FIG_NAME+'" alt="'+esc(fg['alt'])+'" style="max-width:100%;height:auto"></p>' if remote else '<p data-ax-attach="'+FIG_NAME+'"></p>','<p><small>'+esc(fg['caption'])+'</small></p>']
  b+=['<h2>답안 예시</h2>','<hr>']
  for s in m['answer']:b+=['<h3>'+esc(s['heading'])+'</h3>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in s['bullets'])+'</ul>']
- b+=['<hr>','<h2>놓치기 쉬운 점</h2>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in m['pitfalls'])+'</ul>','<h2>참고자료와 확인일</h2>','<ul>'+''.join('<li><a href="'+esc(x['url'])+'">'+esc(x['title'])+'</a></li>' for x in m['sources'])+'</ul>','<p>자료 확인일: '+esc(m['checked_date'])+'.</p>','<p>'+esc(m['disclosure'])+'</p>','<h2>따라쓰기 PDF</h2>','<p><a href="'+CDN+PDF_NAME+'">'+PDF_NAME+'</a></p>' if remote else '<p data-ax-attach="'+PDF_NAME+'"></p>','<p>Q-net 답안지 양식 위에 답안 예시를 옅은 회색 글씨로 얹은 3쪽 PDF예요. 위에 겹쳐 따라 쓰며 분량과 줄 배치를 익혀 보세요.</p>','<h2><a href="https://geoai-na.netlify.app/building-questions/">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
+ b+=['<hr>','<h2>놓치기 쉬운 점</h2>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in m['pitfalls'])+'</ul>','<h2>참고자료와 확인일</h2>','<ul>'+''.join('<li><a href="'+esc(x['url'])+'">'+esc(x['title'])+'</a></li>' for x in m['sources'])+'</ul>','<p>자료 확인일: '+esc(m['checked_date'])+'.</p>','<p>'+esc(m['disclosure'])+'</p>','<h2>따라쓰기 PDF</h2>','<p><a href="'+CDN+PDF_NAME+'">'+PDF_NAME+'</a></p>' if remote else '<p data-ax-attach="'+PDF_NAME+'"></p>','<p>Q-net 답안지 양식 위에 답안 예시를 옅은 회색 글씨로 얹은 3쪽 PDF예요. 위에 겹쳐 따라 쓰며 분량과 줄 배치를 익혀 보세요.</p>','<h2><a href="https://geoai-na.web.app/building-questions/">함께 푸는 [건축시공기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
  return '\n'.join(x for x in b if x)
 
 def main():

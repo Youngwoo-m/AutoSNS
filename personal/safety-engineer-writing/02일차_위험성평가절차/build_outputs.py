@@ -10,7 +10,7 @@ import pypdfium2 as pdfium
 OUT=Path(__file__).resolve().parent
 D=json.loads((OUT/'final-content.json').read_text())
 D['problem']=json.loads((OUT/'기출근거.json').read_text())['selected']['question']
-TITLE=D['title'];PDF='02일차_위험성평가_답안예시_따라쓰기.pdf';CDN='https://geoai-na.netlify.app/safety-questions/materials/day02/'
+TITLE=D['title'];PDF='02일차_위험성평가_답안예시_따라쓰기.pdf';CDN='https://geoai-na.web.app/safety-questions/materials/day02/'
 QNET='https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq=5209476&brdId=Q006&gSite=Q'
 LAW='https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&joBrNo=00&joNo=0037&lsiSeq=288431&urlMode=lsScJoRltInfoR'
 esc=lambda s:html.escape(str(s))
@@ -75,7 +75,7 @@ def body(blogger=False):
  pieces+=['<hr>','<h2>놓치기 쉬운 점</h2>','<ul>'+''.join('<li>'+esc(x)+'</li>' for x in D['pitfalls'])+'</ul>','<h2>참고자료와 확인일</h2>','<ul><li><a href="'+QNET+'">Q-net — 제126회 건설안전기술사 공식 문제지</a></li><li><a href="https://www.law.go.kr/LSW/lsLinkCommonInfo.do?lsJoLnkSeq=1033355475">국가법령정보센터 — 산업안전보건법 제36조제2항(근로자 참여)</a></li><li><a href="https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=03&amp;joNo=0037&amp;lsiSeq=288431&amp;urlMode=lsScJoRltInfoR">시행규칙 제37조의3(근로자 공유)</a></li><li><a href="https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=04&amp;joNo=0037&amp;lsiSeq=288431&amp;urlMode=lsScJoRltInfoR">시행규칙 제37조의4(기록·보존)</a></li><li><a href="'+LAW+'">국가법령정보센터 — 산업안전보건법 시행규칙 제37조(위험성평가의 방법, 절차 및 시기)</a></li></ul>','<p>자료 확인일: 2026년 10월 31일. '+esc(D['note'])+'</p>','<h2>따라쓰기 PDF</h2>']
  if blogger:pieces+=['<p><a href="'+CDN+PDF+'">2일차 위험성평가 답안 예시·따라쓰기 PDF 내려받기</a></p>']
  else:pieces+=['<p data-ax-attach="'+PDF+'"></p>']
- pieces+=['<p>Q-net 원본 답안지 작성면에 옅은 회색(#B8B8B8)으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.netlify.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
+ pieces+=['<p>Q-net 원본 답안지 작성면에 옅은 회색(#B8B8B8)으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.web.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 답안 예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
  return '\n'.join(pieces)
 for name,blogger in [('티스토리게시본문.html',False),('Blogger게시본문.html',True)]: (OUT/name).write_text(body(blogger))
 (OUT/'미리보기.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(TITLE)+'</title><style>body{font-family:Arial,"AppleGothic",sans-serif;max-width:850px;margin:36px auto;padding:0 20px;line-height:1.9;color:#1d2c3a}h1{font-size:28px}h2{margin-top:38px}th,td{padding:10px}img{max-width:100%}blockquote{border-left:4px solid #4782ab;padding-left:15px}</style><h1>'+esc(TITLE)+'</h1>'+body(True).replace(CDN,'./')+'</html>')

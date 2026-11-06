@@ -10,7 +10,7 @@ import pypdfium2 as pdfium
 OUT=Path(__file__).resolve().parent
 D=json.loads((OUT/'final-content.json').read_text())
 Q=json.loads((OUT/'기출근거.json').read_text())['selected'];D['problem']=Q['question']
-TITLE=D['title'];PDF='05일차_비계조립해체_답안예시_따라쓰기.pdf';CDN='https://geoai-na.netlify.app/safety-questions/materials/day05/'
+TITLE=D['title'];PDF='05일차_비계조립해체_답안예시_따라쓰기.pdf';CDN='https://geoai-na.web.app/safety-questions/materials/day05/'
 QNET=Q['source']
 JO=lambda n:'https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=00&amp;joNo=%04d&amp;lsiSeq=273603&amp;urlMode=lsScJoRltInfoR'%n
 BYL5='https://www.law.go.kr/LSW/lsBylInfoPLinkR.do?lsiSeq=273603&amp;lsNm=%EC%82%B0%EC%97%85%EC%95%88%EC%A0%84%EB%B3%B4%EA%B1%B4%EA%B8%B0%EC%A4%80%EC%97%90%EA%B4%80%ED%95%9C%EA%B7%9C%EC%B9%99&amp;bylNo=0005&amp;bylBrNo=00&amp;bylCls=BE&amp;bylEfYd=&amp;bylEfYdYn=Y'
@@ -82,7 +82,7 @@ def body(bl=False):
  '<li><a href="'+NEWS+'">국제신문(2026. 10. 22.) — 부산시 감사위원회 중소규모 공공 건설현장 감사 결과</a></li></ul>',
  '<p>법령 기준: 산업안전보건기준에 관한 규칙(국가법령정보센터 현행 표시: 시행 2026. 3. 2., 고용노동부령 제450호). 비계 관련 조문은 제59조·제60조·제13조 2023. 11. 14. 개정, 제55조 2024. 6. 28. 전문개정이 반영된 현행 조문으로 확인했어요. 자료 확인일: 2026년 11월 3일. '+esc(D['note'])+'</p>','<h2>따라쓰기 PDF</h2>']
  P+=['<p><a href="'+CDN+PDF+'">5일차 비계 조립·해체 답안 예시·따라쓰기 PDF 내려받기</a></p>'] if bl else ['<p data-ax-attach="'+PDF+'"></p>']
- P+=['<p>Q-net 원본 답안지 작성면에 옅은 회색으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.netlify.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
+ P+=['<p>Q-net 원본 답안지 작성면에 옅은 회색으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.web.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
  return '\n'.join(P)
 for n,bl in [('티스토리게시본문.html',False),('Blogger게시본문.html',True)]:(OUT/n).write_text(body(bl))
 (OUT/'미리보기.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><title>'+esc(TITLE)+'</title><style>body{font-family:AppleGothic,sans-serif;max-width:850px;margin:36px auto;padding:0 20px;line-height:1.9}th,td{padding:8px}img{max-width:100%}blockquote{border-left:4px solid #4782ab;padding-left:15px}</style><h1>'+esc(TITLE)+'</h1>'+body(True).replace(CDN,'./')+'</html>')

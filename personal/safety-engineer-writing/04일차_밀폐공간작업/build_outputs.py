@@ -10,7 +10,7 @@ import pypdfium2 as pdfium
 OUT=Path(__file__).resolve().parent
 D=json.loads((OUT/'final-content.json').read_text())
 Q=json.loads((OUT/'기출근거.json').read_text())['selected'];D['problem']=Q['question']
-TITLE=D['title'];PDF='04일차_밀폐공간작업_답안예시_따라쓰기.pdf';CDN='https://geoai-na.netlify.app/safety-questions/materials/day04/'
+TITLE=D['title'];PDF='04일차_밀폐공간작업_답안예시_따라쓰기.pdf';CDN='https://geoai-na.web.app/safety-questions/materials/day04/'
 QNET=Q['source']
 JO=lambda n:'https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=00&amp;joNo=%04d&amp;lsiSeq=273603&amp;urlMode=lsScJoRltInfoR'%n
 JO2=lambda n:'https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=02&amp;joNo=%04d&amp;lsiSeq=273603&amp;urlMode=lsScJoRltInfoR'%n
@@ -87,7 +87,7 @@ def body(bl=False):
  '<li><a href="'+NEWS+'">조선비즈(2026. 11. 2.) — 한국건설기술연구원 지하 환경위험관리시스템 개발</a></li></ul>',
  '<p>법령 기준: 산업안전보건기준에 관한 규칙(시행 2026. 3. 2., 고용노동부령 제450호). 밀폐공간 조문은 2025. 12. 1. 개정·시행(고용노동부령 제454호)이 반영된 현행 조문으로 확인했어요. 자료 확인일: 2026년 11월 2일. '+esc(D['note'])+'</p>','<h2>따라쓰기 PDF</h2>']
  P+=['<p><a href="'+CDN+PDF+'">4일차 밀폐공간 작업 답안 예시·따라쓰기 PDF 내려받기</a></p>'] if bl else ['<p data-ax-attach="'+PDF+'"></p>']
- P+=['<p>Q-net 원본 답안지 작성면에 옅은 회색으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.netlify.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
+ P+=['<p>Q-net 원본 답안지 작성면에 옅은 회색으로 작성한 '+str(len(doc))+'쪽 자료입니다.</p>','<h2><a href="https://geoai-na.web.app/safety-questions/">함께 푸는 [건설안전기술사] 답안지 요청</a></h2>','<p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>']
  return '\n'.join(P)
 for n,bl in [('티스토리게시본문.html',False),('Blogger게시본문.html',True)]:(OUT/n).write_text(body(bl))
 (OUT/'미리보기.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8"><title>'+esc(TITLE)+'</title><style>body{font-family:AppleGothic,sans-serif;max-width:850px;margin:36px auto;padding:0 20px;line-height:1.9}th,td{padding:8px}img{max-width:100%}blockquote{border-left:4px solid #4782ab;padding-left:15px}</style><h1>'+esc(TITLE)+'</h1>'+body(True).replace(CDN,'./')+'</html>')

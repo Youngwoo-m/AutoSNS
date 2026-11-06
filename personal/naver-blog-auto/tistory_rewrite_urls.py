@@ -24,7 +24,7 @@ import tistory_crosspost as tc  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 OLD = os.environ.get("REWRITE_OLD", "SMUDS-m/geoai-assets")
-NEW = os.environ.get("REWRITE_NEW", "Youngwoo-m/geoai-assets")  # 예: REWRITE_OLD=geoai-na.netlify.app REWRITE_NEW=geoai-na.web.app
+NEW = os.environ.get("REWRITE_NEW", "Youngwoo-m/geoai-assets")  # 예: REWRITE_OLD=geoai-na.web.app REWRITE_NEW=geoai-na.web.app
 BK = os.path.join(ROOT, "backups", f"asset_urls_{datetime.date.today():%Y%m%d}", "tistory")
 
 

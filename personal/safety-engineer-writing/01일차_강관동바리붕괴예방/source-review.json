@@ -53,7 +53,7 @@
       "note": "공식 월간일정 직접 열람. 2026년8월22일 기술사 제140회 필기시험 확인. 시행연도를 게시일로 추정하지 않음."
     },
     {
-      "url": "https://geoai-na.netlify.app/safety-questions/",
+      "url": "https://geoai-na.web.app/safety-questions/",
       "opened": true,
       "supports": "partly",
       "note": "Web 실패 후 curl HTTP200,9406bytes. name=safety-engineer-questions와 hidden form-name 및 POST 목적지 확인. 제출이나 접수 성공은 시험하지 않음."

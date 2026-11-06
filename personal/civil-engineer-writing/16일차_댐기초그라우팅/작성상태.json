@@ -122,6 +122,6 @@
     "blogger": "https://geoaina.blogspot.com/2026/11/16.html",
     "naver": "https://blog.naver.com/safeworking/224461838957"
   },
-  "공개자료": "https://geoai-na.netlify.app/civil-questions/materials/day16/",
+  "공개자료": "https://geoai-na.web.app/civil-questions/materials/day16/",
   "메모": "개념도(PIL 직접 작성), 수식 PNG 2장(티스토리 첨부, Blogger CDN) + Manim GIF 1개(CDN, civil_day16.py). 배너는 자동 배경이 측량 장면이라 --no-bg. civil 목록 등록(tags 댐)·배포."
 }

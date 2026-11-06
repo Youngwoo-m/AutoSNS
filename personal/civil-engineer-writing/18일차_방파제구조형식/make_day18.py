@@ -9,7 +9,7 @@ PDF_NAME = '18일차_방파제구조형식_답안예시_따라쓰기.pdf'
 FIG_NAME = '방파제_구조형식_단면개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_Hudson식.png', '수식2_계산예.png', '도식_파고별소요중량.gif'
 BANNER = 'banner.png'
-CDN = 'https://geoai-na.netlify.app/civil-questions/materials/day18/'
+CDN = 'https://geoai-na.web.app/civil-questions/materials/day18/'
 QNET = 'https://www.q-net.or.kr/cst006.do?id=cst00602&artlSeq={}&brdId=Q006&gSite=Q'
 TAGS = '토목시공기술사,방파제,경사식방파제,케이슨,혼성식방파제,소파블록,테트라포드,항만공사,토목시공기술사기출'
 
@@ -133,7 +133,7 @@ def body(banner_html, img_html, f1_html, f2_html, gif_html, pdf_html):
 <h2 data-ke-size="size26">따라쓰기 PDF</h2>
 {pdf_html}
 <p>Q-net 답안지 양식 위에 위 답안 예시를 옅은 회색 글씨로 얹은 3쪽짜리 PDF예요. 출력해서 그대로 따라 써 보세요.</p>
-<h2 data-ke-size="size26"><a href="https://geoai-na.netlify.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
+<h2 data-ke-size="size26"><a href="https://geoai-na.web.app/civil-questions/">함께 푸는 [토목시공기술사] 답안지 요청</a></h2>
 <p>문제를 요청하시면 접수 순서에 따라 매일 밤 11시에 요청을 확인하고, 정답예시와 따라쓰기 PDF를 작성해 블로그에 올립니다.</p>'''
 
 

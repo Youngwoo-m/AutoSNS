@@ -107,6 +107,6 @@
   "blogger": "https://geoaina.blogspot.com/2026/11/19.html",
   "naver": null
  },
- "공개자료": "https://geoai-na.netlify.app/civil-questions/materials/day19/",
+ "공개자료": "https://geoai-na.web.app/civil-questions/materials/day19/",
  "메모": "개념도(PIL 단면+전개도). 수식 없음 → 수식 PNG·GIF 없음. 배너 --no-bg. KCS/KDS 터널 원문 미열람, 탈형 강도·허용균열폭 미기재. 티스토리·블로거 공개 확인(200), civil 목록 등록(tags 터널)·배포. 네이버 교차 발행 실패: 로그인 세션 만료(login_setup.py 재실행 필요, 보고만 함)."
 }

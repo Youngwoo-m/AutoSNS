@@ -117,6 +117,6 @@
     "blogger": "https://geoaina.blogspot.com/2026/11/15.html",
     "naver": "https://blog.naver.com/safeworking/224460814479"
   },
-  "공개자료": "https://geoai-na.netlify.app/civil-questions/materials/day15/",
+  "공개자료": "https://geoai-na.web.app/civil-questions/materials/day15/",
   "메모": "개념도(PIL 직접 작성), 수식 PNG 2장(티스토리 첨부, Blogger CDN) + Manim GIF 1개(CDN, civil_day15.py). 티스토리 배너는 처음부터 맨 위라 옮기지 않음. 지하안전법 시행령은 korea.legal 정리본으로만 확인(국가법령정보센터 원문 못 엶, 본문에 밝힘). civil 목록 등록·배포 완료."
 }
