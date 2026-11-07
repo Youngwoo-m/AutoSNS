@@ -11,7 +11,17 @@ awaiting_review로 보존한다(재렌더/재시도 없음, ContentStore 등록 
 어떤 경우에도 not_checked로 남는다.
 """
 from contextlib import contextmanager
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows — common/shared/winfcntl.py(2026-11-06)
+    import importlib.util as _wf_u, os as _wf_os, sys as _wf_s
+    fcntl = _wf_s.modules.get('autosns_winfcntl')
+    if fcntl is None:
+        _wf_p = _wf_os.path.join(_wf_os.path.dirname(_wf_os.path.realpath(__file__)), '..', 'shared', 'winfcntl.py')
+        _wf_spec = _wf_u.spec_from_file_location('autosns_winfcntl', _wf_p)
+        fcntl = _wf_u.module_from_spec(_wf_spec)
+        _wf_spec.loader.exec_module(fcntl)
+        _wf_s.modules['autosns_winfcntl'] = fcntl
 import hashlib
 import json
 import math

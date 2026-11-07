@@ -88,6 +88,16 @@ def start_chrome(options, tries=3, wait=90):
     _ensure_legacy_directories()
     from selenium import webdriver
     from selenium.common.exceptions import SessionNotCreatedException, WebDriverException
+    # 계정별 크롬 실행 파일(개인 chrome-na.exe · 학과 chrome-dept.exe) — 프로필 폴더로 판단(2026-11-06)
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(options)
+    except Exception as e:
+        log(f"계정별 크롬 지정 실패 — 기본 크롬으로 띄웁니다: {type(e).__name__}: {str(e)[:120]}")
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     options.add_argument("--disable-features=MacAppCodeSignClone")
     # chromedriver 는 맥에서 --use-mock-keychain 을 붙여 가짜 키로 쿠키를 암호화한다. 그러면 로그인 앱(일반 크롬)으로

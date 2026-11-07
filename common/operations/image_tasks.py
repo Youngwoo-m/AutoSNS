@@ -1,6 +1,16 @@
 """명시 로컬 이미지 제작 원장. 생성자/조회는 무변이이며 실제 제작은 기본 비활성이다."""
 from contextlib import contextmanager
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows — common/shared/winfcntl.py(2026-11-06)
+    import importlib.util as _wf_u, os as _wf_os, sys as _wf_s
+    fcntl = _wf_s.modules.get('autosns_winfcntl')
+    if fcntl is None:
+        _wf_p = _wf_os.path.join(_wf_os.path.dirname(_wf_os.path.realpath(__file__)), '..', 'shared', 'winfcntl.py')
+        _wf_spec = _wf_u.spec_from_file_location('autosns_winfcntl', _wf_p)
+        fcntl = _wf_u.module_from_spec(_wf_spec)
+        _wf_spec.loader.exec_module(fcntl)
+        _wf_s.modules['autosns_winfcntl'] = fcntl
 import hashlib
 import json
 import os

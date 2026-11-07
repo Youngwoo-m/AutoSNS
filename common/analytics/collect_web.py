@@ -25,8 +25,17 @@ BOARDS = [                          # (게시판 ID, 이름, 기본 유형)
 ]
 
 
+def _ctx():
+    """학교 홈페이지는 옛 TLS 재협상을 쓴다. Windows 파이썬(OpenSSL 3)은 기본으로 거부해
+    UNSAFE_LEGACY_RENEGOTIATION_DISABLED 로 수집이 멈췄다(2026-11-07) — 이 서버 읽기에만 허용한다."""
+    import ssl
+    c = ssl.create_default_context()
+    c.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0x4)
+    return c
+
+
 def _get(url):
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30, context=_ctx()) as r:
         return r.read().decode("utf-8", "replace")
 
 

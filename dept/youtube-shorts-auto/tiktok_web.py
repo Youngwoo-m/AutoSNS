@@ -38,8 +38,24 @@ POST_LABELS = ["게시", "Post", "업로드", "Upload"]
 CAPTION_HINTS = ["설명", "캡션", "Description", "caption"]
 
 
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+def _chrome_bin():
+    """common/shared/chrome_bin.py(계정별 크롬 실행 파일, 2026-11-06). 못 읽으면 None."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        return _m
+    except Exception:
+        return None
+
+
+_cb = _chrome_bin()
+# 학과 계정 크롬(Windows: chrome-dept.exe, 2026-11-06). 없으면 OS 기본 크롬
+CHROME = (_cb and (_cb.binary("dept") or _cb.default_chrome())) or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 DEBUG_PORT = 9222
+_MOD = Keys.COMMAND if sys.platform == "darwin" else Keys.CONTROL   # 전체 선택 키(2026-11-06 Windows)
 
 
 def _port_open(port, host="127.0.0.1"):
@@ -75,8 +91,16 @@ def launch_chrome(url=None, port=DEBUG_PORT):
 
 def _kill_debug_chrome(port=DEBUG_PORT):
     """디버깅 포트에 떠 있는 틱톡 전용 Chrome 만 끈다(사용자의 다른 Chrome 은 건드리지 않는다)."""
-    subprocess.run(["pkill", "-f", f"remote-debugging-port={port}"], stdout=subprocess.DEVNULL,
-                   stderr=subprocess.DEVNULL)
+    if sys.platform == "win32":     # pkill 이 없다(2026-11-06) — common/shared/proc_compat.py
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_proc_compat", os.path.join(_r, "common", "shared", "proc_compat.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.kill_matching(f"remote-debugging-port={port}")
+    else:
+        subprocess.run(["pkill", "-f", f"remote-debugging-port={port}"], stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
     for _ in range(20):
         if not _port_open(port):
             return
@@ -129,8 +153,9 @@ def _mark(video):
 
 
 def already_posted(video):
-    full = os.path.abspath(video)
-    return any((x["path"] == full) if x.get("path") else (x["video"] == os.path.basename(video))
+    norm = lambda p: os.path.normcase(os.path.abspath(p))   # Windows: 슬래시·대소문자 차이로 놓치지 않게(2026-11-07)
+    full = norm(video)
+    return any((norm(x["path"]) == full) if x.get("path") else (x["video"] == os.path.basename(video))
                for x in _state()["posted"])
 
 
@@ -166,7 +191,14 @@ def _clear_caption(d, box):
     contenteditable 에서는 Cmd+A 가 안 먹는 경우가 있어 Selection API 로 고르고
     BACK_SPACE 를 보낸다(인스타에서 확인한 방식).
     """
-    box.click()
+    try:
+        box.click()
+    except Exception as e:      # 2026-11-06: 다른 층(안내 팝업·진행 표시)이 캡션칸을 가려 클릭이 막힘 → 닫고 스크립트로 포커스
+        log(f"캡션칸 클릭이 막혀({type(e).__name__}) Esc 후 스크립트로 포커스합니다")
+        ActionChains(d).send_keys(Keys.ESCAPE).perform()
+        time.sleep(0.5)
+        d.execute_script("arguments[0].scrollIntoView({block:'center'});", box)
+        time.sleep(0.3)
     time.sleep(0.3)
     d.execute_script("""
       const el = arguments[0];
@@ -179,6 +211,43 @@ def _clear_caption(d, box):
     time.sleep(0.5)
 
 
+def _focus_select(d, box):
+    d.execute_script("""
+      const el = arguments[0];
+      el.scrollIntoView({block:'center'}); el.focus();
+      const r = document.createRange(); r.selectNodeContents(el);
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    """, box)
+    time.sleep(0.3)
+
+
+def _cdp_key(d, key, code, vk, modifiers=0):
+    for t in ("rawKeyDown", "keyUp"):
+        d.execute_cdp_cmd("Input.dispatchKeyEvent", {"type": t, "key": key, "code": code,
+                                                     "windowsVirtualKeyCode": vk, "modifiers": modifiers})
+
+
+def _type_caption_cdp(d, box, caption):
+    """포커스를 스크립트로 잡고 CDP 로 글자를 넣는다. 2026-11-07: 클릭이 막혀 Esc 를 누른 뒤엔
+    ActionChains 키 입력이 캡션칸에 안 들어가 파일명만 남은 채 게시됐다(학과 틱톡 6편)."""
+    _focus_select(d, box)
+    _cdp_key(d, "Backspace", "Backspace", 8)
+    time.sleep(0.3)
+    for i, line in enumerate(caption.split("\n")):
+        if i:
+            _cdp_key(d, "Enter", "Enter", 13, modifiers=8)   # Shift+Enter = 줄바꿈
+        d.execute_cdp_cmd("Input.insertText", {"text": line})
+        time.sleep(0.4)
+    _cdp_key(d, "Escape", "Escape", 27)    # 해시태그 자동완성 닫기
+    time.sleep(0.5)
+    return (box.text or "").strip()
+
+
+def _caption_ok(got, caption):
+    first = (caption.split("\n")[0] or "").strip()[:10]
+    return bool(first) and first in got
+
+
 def _type_caption(d, box, caption):
     _clear_caption(d, box)
     for i, line in enumerate(caption.split("\n")):
@@ -189,7 +258,11 @@ def _type_caption(d, box, caption):
         time.sleep(0.4)     # 해시태그 자동완성 창이 뜨면 가라앉을 시간을 준다
     ActionChains(d).send_keys(Keys.ESCAPE).perform()
     time.sleep(0.5)
-    return box.text.strip()
+    got = (box.text or "").strip()
+    if not _caption_ok(got, caption):
+        log("캡션이 칸에 안 들어감 — 스크립트 포커스 + CDP 입력으로 다시")
+        got = _type_caption_cdp(d, box, caption)
+    return got
 
 
 def _click_post(d):
@@ -198,7 +271,12 @@ def _click_post(d):
                                  f"//button[normalize-space()='{lb}']"
                                  f"|//div[@role='button'][normalize-space()='{lb}']"):
             if e.is_displayed() and e.is_enabled():
-                e.click()
+                try:
+                    e.click()
+                except Exception:   # 자동완성 창 등이 가리면 스크립트로 누른다(2026-11-06)
+                    ActionChains(d).send_keys(Keys.ESCAPE).perform()
+                    time.sleep(0.5)
+                    d.execute_script("arguments[0].scrollIntoView({block:'center'}); arguments[0].click();", e)
                 return lb
     return None
 
@@ -233,12 +311,17 @@ def _confirm_posted(d, caption, timeout=150):
         if "/tiktokstudio/content" in d.current_url:
             break
         time.sleep(3)
-    for _ in range(6):
+    # 2026-11-07: 목록이 10초 안에 안 그려져('게시물 0개' 로딩) 실제로 올라간 영상을 실패로 보고
+    # 매시간 다시 올렸다(같은 영상 3번). 새로고침하지 않고 목록이 그려질 때까지 충분히 기다린다.
+    for _ in range(4):
         if "/tiktokstudio/content" not in d.current_url:
             d.get("https://www.tiktok.com/tiktokstudio/content")
-        time.sleep(10)
-        if title and title in (d.execute_script("return document.body.innerText||'';") or ""):
-            return True
+        end = time.time() + 60
+        while time.time() < end:
+            txt = d.execute_script("return document.body.innerText||'';") or ""
+            if title and title in txt:
+                return True
+            time.sleep(4)
         d.get("https://www.tiktok.com/tiktokstudio/content")
     return False
 
@@ -331,7 +414,7 @@ def _add_popular_sound(d, volume_db=-20):
             && (i.closest('[class*=PropSetting]')) && i.getBoundingClientRect().y<220) || null;""")
         if vol is None:
             raise RuntimeError("볼륨 칸 없음")
-        ActionChains(d).move_to_element(vol).click().key_down(Keys.COMMAND).send_keys("a").key_up(Keys.COMMAND)\
+        ActionChains(d).move_to_element(vol).click().key_down(_MOD).send_keys("a").key_up(_MOD)\
             .send_keys(str(volume_db)).send_keys(Keys.ENTER).perform()
         time.sleep(1)
         save = d.execute_script("""return [...document.querySelectorAll('button')].find(b=>b.offsetParent
@@ -443,9 +526,14 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
             raise SystemExit("영상 전송이 5분 안에 끝나지 않아 게시하지 않습니다")
         # AI 표시 스위치를 누르면 설명칸이 다시 그려지는 일이 있어, 게시 직전에 한 번 더 확인
         box = _caption_box(d, timeout=10)
-        if box is not None and (caption.split("\n")[0][:10] not in (box.text or "")):
+        if box is not None and not _caption_ok((box.text or ""), caption):
             got = _type_caption(d, box, caption)
             log(f"설명이 비어 다시 입력({len(got)}자)")
+        # 제목(설명)이 끝내 안 들어갔으면 파일명 캡션으로 올리지 않는다(2026-11-07)
+        box = _caption_box(d, timeout=10)
+        if box is None or not _caption_ok((box.text or ""), caption):
+            shot(d, "caption_missing")
+            raise SystemExit("캡션이 들어가지 않아 게시하지 않습니다(파일명 캡션 방지)")
         lb = _click_post(d)
         if lb is None:
             shot(d, "no_post_button")
@@ -461,7 +549,15 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
     finally:
         # 붙어 있는 브라우저는 닫지 않는다 — 닫으면 다음 실행 때 다시 띄워야 하고,
         # 종료 시점에 따라 쿠키가 제대로 기록되지 않을 수 있다.
-        pass
+        # 2026-11-06 Windows: 남겨 두면 axlock 이 학과 프로필을 '사용 중'으로 보고 인스타·네이버·다음 틱톡 작업이
+        # 모두 멈춘다. 그래서 Windows 에서는 브라우저 정상 종료(Browser.close — 쿠키를 저장하고 닫음)를 한다.
+        if sys.platform == "win32":
+            try:
+                d.execute_cdp_cmd("Browser.close", {})
+                time.sleep(3)
+            except Exception:
+                pass
+            _kill_debug_chrome(DEBUG_PORT)   # 실행 시점의 포트(개인 틱톡은 9223 으로 바꿔 쓴다)
 
 
 def _latest():

@@ -78,6 +78,19 @@ _register('personal', 'youtube', 'youtube-upload-cli', ('geoai.daily', 'geoai.ev
 for _action in ('upload', 'comment', 'delete', 'check'):
     _register('personal', 'youtube', 'geoai-short-' + _action,
               ('geoai.daily', 'geoai.evening') + tuple('claude.' + k for k in _CLAUDE_KEYS), reason='개인 업로드/댓글/삭제와 학과 큐 분해 필요')
+# 2026-11-06 학과 교차 발행(claude.dept-crosspost). operations.json 에 아직 job 이 없어 미등록 legacy 관측으로만 허용한다.
+# 관리 OAuth(dept.youtube·dept.blogger)는 발행 범위가 닫혀 있어 managed 로 접수하지 않는다.
+for _action in ('upload', 'comment', 'check'):
+    _register('dept', 'youtube', 'dept-short-' + _action, ('claude.dept-crosspost',), source='launchd',
+              unregistered=True, reason='학과 교차 발행 — 관리 OAuth 발행 범위 미개방')
+_register('dept', 'claude', 'dept-crosspost', ('claude.dept-crosspost',), source='launchd',
+          unregistered=True, reason='학과 교차 발행 클로드 작업(Windows dept/run_dept.py)')
+_register('dept', 'blogger', 'dept-blogger-post-cli', ('claude.dept-crosspost',), source='launchd',
+          unregistered=True, reason='학과 교차 발행 — 관리 OAuth 발행 범위 미개방')
+# 2026-11-07 기출 비축 작성(claude.<종목>-stock). 발행 없음 — 발행 채널 경로(_CLAUDE_KEYS)에는 넣지 않는다.
+for _key in ('civil-stock', 'building-stock', 'safety-stock', 'survey-stock'):
+    _register('personal', 'claude', _key, ('claude.' + _key,), source='launchd', unregistered=True,
+              reason='기출 비축 작성(발행 없음, personal/engineer-study-pack)')
 _register('personal', 'tistory', 'tistory-post-cli', ('tistory',) + tuple('claude.' + k for k in _CLAUDE_KEYS),
           reason='Tistory dry도 브라우저 쓰기 가능; 모든 Claude 내부 caller fence 필요')
 ACTION_ROUTES = MappingProxyType(_routes)

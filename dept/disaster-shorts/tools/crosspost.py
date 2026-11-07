@@ -6,11 +6,15 @@
 기존 AutoSNS 게시 도구를 그대로 쓴다(인스타·스레드: insta-cardnews, 블로그: naver-blog-auto).
 """
 import datetime as dt, json, os, re, subprocess, sys, time
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
 ROOT = CFG["root"]
-AS = "/Volumes/USB256/devAPP/AutoSNS"
+AS = _AXROOT
 IG_DIR, NB_DIR, YT_DIR = f"{AS}/channels/insta-cardnews", f"{AS}/channels/naver-blog-auto", f"{AS}/channels/youtube-shorts-auto"
 KST = dt.timezone(dt.timedelta(hours=9))
 OK = ("published", "shared_unconfirmed", "dry_run")

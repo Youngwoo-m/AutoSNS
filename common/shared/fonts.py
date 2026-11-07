@@ -35,7 +35,7 @@ def kopub_bold_css(font_dir=None, doubled=False):
     if not os.path.exists(path):
         require_fonts(font_dir or ROOT_FONT_DIR, (DOTUM_BOLD,))
     css = ("@font-face{font-family:'KoPub';font-weight:100 900;font-style:normal;"
-           f"src:url('file://{path}') format('opentype');}}")
+           f"src:url('{file_url(path)}') format('opentype');}}")
     return css.replace("{", "{{").replace("}", "}}") if doubled else css
 
 
@@ -83,6 +83,13 @@ def font_path(name, font_dir=None):
     return os.path.join(d, DOTUM_BOLD)
 
 
+
+def file_url(path):
+    r"""HTML 안에서 쓸 로컬 파일 주소. Windows 의 'file://E:\..' 는 잘못된 주소라 크롬이 글꼴·그림을 못 읽고
+    가는 기본 글꼴로 그렸다(2026-11-06 확인). pathlib 의 as_uri 는 Mac(file:///Users/..)·Windows(file:///E:/..) 모두 맞다."""
+    from pathlib import Path
+    return Path(os.path.abspath(path)).as_uri()
+
 def display_css(font_dir=None, doubled=False):
     """HTML 이미지용 @font-face — 'Display'(검은고딕)와 'Body'(Pretendard).
 
@@ -92,9 +99,9 @@ def display_css(font_dir=None, doubled=False):
     black = font_path(BODY_BLACK, font_dir)
     fmt = "truetype" if disp.lower().endswith(".ttf") else "opentype"
     css = (f"@font-face{{font-family:'Display';font-weight:100 900;"
-           f"src:url('file://{disp}') format('{fmt}');}}"
+           f"src:url('{file_url(disp)}') format('{fmt}');}}"
            f"@font-face{{font-family:'Body';font-weight:100 700;"
-           f"src:url('file://{body}') format('opentype');}}"
+           f"src:url('{file_url(body)}') format('opentype');}}"
            f"@font-face{{font-family:'Body';font-weight:800 900;"
-           f"src:url('file://{black}') format('opentype');}}")
+           f"src:url('{file_url(black)}') format('opentype');}}")
     return css.replace("{", "{{").replace("}", "}}") if doubled else css

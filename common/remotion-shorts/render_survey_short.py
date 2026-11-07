@@ -71,7 +71,7 @@ def main():
                     s[k] = name
         pj = os.path.join(pub, "_props.json")
         json.dump(props, open(pj, "w", encoding="utf-8"), ensure_ascii=False)
-        r = subprocess.run(["npx", "remotion", "render", "src/survey-short/index.ts", "SurveyShort", video,
+        r = subprocess.run([shutil.which("npx") or "npx", "remotion", "render", "src/survey-short/index.ts", "SurveyShort", video,
                             f"--props={pj}", f"--public-dir={pub}", "--log=error"],
                            cwd=HERE, capture_output=True, text=True)
         if r.returncode != 0 or not os.path.isfile(video):

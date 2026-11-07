@@ -1,5 +1,5 @@
 import os, sys, time
-ROOT = "/Volumes/USB256/devAPP/AutoSNS"
+ROOT = "G:/devAPP/AutoSNS"
 sys.path.insert(0, ROOT)
 from shared.fonts import display_css
 from selenium import webdriver

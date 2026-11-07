@@ -38,8 +38,8 @@ TOKENS = {"dept": os.path.join(BASE_DIR, "token.json"),
           "geoai": os.path.join(BASE_DIR, "token_youtube_geoai.json")}
 # 대본 보관 위치(현재 + USB 백업 아카이브)
 POST_DIRS = [os.path.join(BASE_DIR, "posts"),
-             "/Volumes/USB256/USB256_backup/AutoSNS_archive/youtube-shorts-auto",
-             "/Volumes/USB256/USB256_backup/AutoSNS_archive_20260917"]
+             "E:/MacMini/USB256_backup/AutoSNS_archive/youtube-shorts-auto",
+             "E:/MacMini/USB256_backup/AutoSNS_archive_20260917"]
 STATE = os.path.join(BASE_DIR, "thumbnail_backfill.json")
 
 

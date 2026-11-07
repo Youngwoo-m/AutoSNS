@@ -28,8 +28,12 @@ import uuid
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 VB = "http://127.0.0.1:17493/"
-PROFILE = "9ae4198e-a2c5-4604-9165-7d39adf0143c"       # 내 목소리(1샘플)
+# 내 목소리(강의 8샘플, E:\MacMini\voice\samples_lecture_20261106). 2026-11-06 사용자 선택 — 1샘플 6be74d1d·Mac 옛 9ae4198e 대신
+PROFILE = os.environ.get("VOICEBOX_PROFILE", "0918a877-1b62-440c-82e2-7a06dc4aae33")
 SH = os.path.join(ROOT, "shared", "voicebox.sh")
+# Windows(2026-11-06): voicebox.sh 대신 common/shared/voicebox_win.py 로 켜고 끈다
+VB_CTL = ([sys.executable, os.path.join(ROOT, "common", "shared", "voicebox_win.py")] if sys.platform == "win32"
+          else ["bash", SH])
 
 # 기본 음성 엔진. 2026-10-28 사용자 지시로 Voicebox 로 되돌렸다. 맥이 과부하되면 이 한 줄을 "edge" 로 바꾼다.
 DEFAULT_BACKEND = "voicebox"
@@ -135,7 +139,7 @@ def main():
             return out("ok", **res)
         except Exception as e:
             return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
-    started = subprocess.run(["bash", SH, "up", a.job], capture_output=True, text=True, timeout=240)
+    started = subprocess.run([*VB_CTL, "up", a.job], capture_output=True, text=True, timeout=240)
     if started.returncode != 0:
         return out("error", message="Voicebox 를 켜지 못했습니다: " + (started.stderr or started.stdout).strip()[-200:])
     try:
@@ -157,7 +161,7 @@ def main():
         return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
     finally:
         if not a.keep:
-            subprocess.run(["bash", SH, "down", a.job], capture_output=True, text=True, timeout=120)
+            subprocess.run([*VB_CTL, "down", a.job], capture_output=True, text=True, timeout=120)
 
 
 if __name__ == "__main__":

@@ -5,12 +5,16 @@
 """
 import json, os, re, subprocess, sys
 from PIL import Image, ImageDraw, ImageFont
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS)
-FONT_DIR = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS"
+FONT_DIR = _AXROOT + "/assets/FONTS"
 BOLD = os.path.join(FONT_DIR, "Pretendard-Bold.otf")
 MED = os.path.join(FONT_DIR, "Pretendard-Bold.otf")
 COMMON = os.path.join(CFG["root"], "common")
@@ -466,7 +470,7 @@ def remotion_body(ep_dir, sc, style, out):
     pp = os.path.join(work, "remotion_props.json")
     json.dump(props, open(pp, "w", encoding="utf-8"), ensure_ascii=False)
     npx = shutil.which("npx") or "/usr/local/bin/npx"   # launchd 는 PATH 가 짧다
-    env = dict(os.environ, PATH="/usr/local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", ""))
+    env = dict(os.environ) if os.name == "nt" else dict(os.environ, PATH="/usr/local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", ""))  # Windows: Mac 경로를 ':' 로 붙이면 첫 PATH 항목이 깨진다(2026-11-07)
     r = subprocess.run([npx, "remotion", "render", "src/index.ts", "DisasterShort", out, f"--props={pp}", "--concurrency=50%", "--log=error"],
                        cwd=REMOTION, env=env, capture_output=True, text=True, timeout=1800)
     if r.returncode != 0 or not os.path.exists(out):
@@ -499,8 +503,11 @@ def thumbnail(ep_dir, sc, style, out):
     ff("-ss", "0.3", "-i", clip, "-frames:v", "1", "-vf", f"scale={W}:{H}:flags=lanczos", raw)
     img = Image.open(raw).convert("RGBA"); os.remove(raw)
     shade = Image.new("RGBA", (W, H), (0, 0, 0, 0)); sd = ImageDraw.Draw(shade)
-    for y in range(0, 1100):                                   # 위에서 아래로 옅어지는 어두운 판
-        sd.line([(0, y), (W, y)], fill=(5, 12, 28, int(225 * max(0, 1 - y / 1100) ** 0.8)))
+    # 2026-11-06 사용자 지시 '썸네일이 잘 보이게': 제목 구역(~760px)은 진하게 유지하고 그 아래에서만 옅어지게 한다
+    # (전에는 위에서부터 바로 옅어져 제목 아래 줄이 밝은 배경에 걸렸다).
+    for y in range(0, 1260):
+        a = 232 if y < 760 else int(232 * max(0, 1 - (y - 760) / 500) ** 0.9)
+        sd.line([(0, y), (W, y)], fill=(5, 12, 28, a))
     img.alpha_composite(shade); d = ImageDraw.Draw(img)
     # 시리즈 꼬리표
     fk = ImageFont.truetype(BOLD, 44); tag = f"재난 대응 #{sc.get('ep_no', 1)} · {sc['type']}"
@@ -509,8 +516,8 @@ def thumbnail(ep_dir, sc, style, out):
     d.text((70 + 32, 190 + 14), tag, font=fk, fill=(255, 255, 255, 255))
     # 큰 제목(‘|’ 앞 부분), 최대 3줄
     title = sc["title"].split("|")[0].strip()
-    size, lines = 112, None
-    for sz in (112, 104, 96):                                  # 두 줄에 들어가는 가장 큰 크기
+    size, lines = 124, None
+    for sz in (124, 116, 108, 100):                            # 두 줄에 들어가는 가장 큰 크기(2026-11-06 키움)
         ft = ImageFont.truetype(BOLD, sz)
         l = _wrap(d, title, ft, W - 150, max_lines=2)
         if len(l) <= 2:

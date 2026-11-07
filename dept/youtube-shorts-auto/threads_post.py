@@ -5,13 +5,14 @@
 """
 import json
 import os
+import sys
 import re
 import subprocess
 
 from common import BASE_DIR, log
 
 IG_DIR = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
-IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python")
+IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
 TIMEOUT = 300
 
 

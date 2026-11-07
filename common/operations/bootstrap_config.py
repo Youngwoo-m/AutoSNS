@@ -5,7 +5,7 @@ from pathlib import Path
 from .models import ContractError
 
 CODE_ROOT=Path(__file__).resolve().parents[2]
-SOURCE_ROOT=Path('/Volumes/USB256/devAPP/AutoSNS')
+SOURCE_ROOT=Path('G:/devAPP/AutoSNS')
 
 
 @dataclass(frozen=True)

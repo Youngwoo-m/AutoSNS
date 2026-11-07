@@ -1,3 +1,11 @@
 Tistory writing files moved here. Original paths are symlinks for compatibility.
 16 shared dependencies remain in their original locations and are linked here. This folder is not standalone.
 See migration-manifest.json for the complete move list. No publishing or deployment was performed.
+
+2026-11-06: 개인 계정 발행기 20개(blogger_post·blogger_crosspost_personal·geoai_* · geoai_short_post 등)를 dept/naver-blog-auto, dept/youtube-shorts-auto 에서 personal/naver-blog-auto, personal/geoai-youtube 로 옮겼다(personal/youtube-shorts-auto 는 기존대로 학과 폴더 전체를 가리키는 링크)(Windows PC 에서 git mv, 옛 경로는 git 심볼릭 링크 항목). launchd·작업 지시문의 옛 경로는 그대로 동작한다. 새 경로에서 직접 실행하려면 Mac 에서 python3 personal/migrate_personal_publishers.py --relink --go 로 공용 파일 링크를 만든다.
+
+2026-11-06: 개인 웹사이트를 site/ 에서 personal/ 로 옮겼다 — site/geoai-site → personal/geoai-site(예전 personal/geoai-site 링크를 실제 폴더로), site/geoai-data → personal/geoai-data.
+루트 site 는 personal 을 가리키는 링크로 남겨 옛 경로(site/geoai-site/…)도 그대로 열린다.
+site/geoai-functions(Netlify 시절 함수 복사본)는 지웠다 — Firebase 는 personal/geoai-site/functions/legacy 를 쓴다(wthr.js 는 같은 내용, 나머지 4개는 legacy 쪽이 Firebase 용으로 고친 판).
+site/netlify_deploy(옛 학과 Netlify 페이지, git 제외)는 backups/netlify_deploy-20261106 으로 옮겼다(학과 사이트는 dept/site, smuds-dept.web.app 으로 대체).
+dept 세 모듈의 kakao_notify.py 복사본을 common/shared/kakao_notify.py 로 합치고 각 모듈에는 재수출 shim 을 남겼다(fetch_news 등과 같은 방식).

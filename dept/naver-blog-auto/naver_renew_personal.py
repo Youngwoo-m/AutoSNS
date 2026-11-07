@@ -15,8 +15,10 @@ import re
 import sys
 import time
 
-# 프로필 환경변수·sys.path 는 교차 발행 모듈이 잡는다
-from naver_crosspost_personal import HERE, BLOG_ID, build_data, out
+# 프로필 환경변수·sys.path 는 교차 발행 모듈이 잡는다 — 함수로 옮겨졌으므로 여기서 꼭 불러야 한다.
+# 부르지 않으면 학과 계정 프로필(chrome-profile)로 열려 수정 화면이 학과 블로그로 넘어갔다(2026-11-06).
+from naver_crosspost_personal import HERE, BLOG_ID, build_data, out, _legacy_profile_setup
+_legacy_profile_setup()
 
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
@@ -54,7 +56,8 @@ def clear_body(driver):
         time.sleep(0.5)
         # 에디터는 두 번째 전체 선택에서 글 전체(그림·표 포함)를 고른다
         for _ in range(2):
-            _key(driver, "a", "KeyA", 65, 4, ["selectAll"])
+            # 수식키: macOS Cmd=4, Windows Ctrl=2 (Windows 에서 Cmd 로 보내면 전체 선택이 안 됐다, 2026-11-07)
+            _key(driver, "a", "KeyA", 65, 2 if sys.platform == "win32" else 4, ["selectAll"])
             time.sleep(0.6)
         _key(driver, "Backspace", "Backspace", 8)
         time.sleep(2)

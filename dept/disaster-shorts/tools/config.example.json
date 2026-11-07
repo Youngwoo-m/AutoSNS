@@ -1,8 +1,8 @@
 {
-  "root": "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts",
+  "root": "E:/MacMini/devAPP/AutoSNS/channels/disaster-shorts",
   "voicebox": {
     "url": "http://localhost:17493",
-    "profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
+    "profile_id": "0918a877-1b62-440c-82e2-7a06dc4aae33",
     "profile_name": "내 목소리 04강(1샘플)",
     "model_size": "0.6B",
     "seeds": [

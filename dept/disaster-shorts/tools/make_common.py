@@ -6,10 +6,14 @@
 (크레딧은 요청 때 나간다).
 """
 import json, os, shutil, subprocess, sys
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); os.chdir(AUTOSNS)
 import heygen_anchor as HG
 

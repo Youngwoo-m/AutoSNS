@@ -6,13 +6,15 @@
 키: 주 키 → 추가 키 순서로, 남은 월 할당이 (이미지값 + 예비 150) 이상인 키를 쓴다. 구매 크레딧은 쓰지 않는다.
 """
 import argparse, base64, json, os, re, subprocess, sys, tempfile, urllib.error, urllib.request
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); os.chdir(AUTOSNS)
 import veo_clips as V
 from common import load_config
 
-ROOT = "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts"
+ROOT = _AXROOT + "/channels/disaster-shorts"
 MODEL, COST, RESERVE = "gemini-2.5-flash-image", 39, 150
 NO_TEXT = (" Absolutely no writing anywhere: every sign, signboard, banner, screen, label and license plate is "
            "completely blank; avoid storefronts and building facades with names.")

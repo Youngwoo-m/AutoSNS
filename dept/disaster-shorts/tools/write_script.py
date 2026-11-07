@@ -5,22 +5,27 @@
 원문에서 그대로 옮기게 하고, 원문에 실제로 있는지 검사한다 — 없으면 다시 쓰게 한다.
 """
 import html, json, os, re, sys, urllib.request
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
 CATS = json.load(open(os.path.join(HERE, "safekorea_categories.json"), encoding="utf-8"))
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); sys.path.insert(0, os.path.dirname(AUTOSNS))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(HERE))))  # 저장소 루트(shared/) — 폴더 개편 뒤 channels/ 위는 루트가 아니다
 ROOT = CFG["root"]
 
-STYLE_PREFIX = ("Style: photorealistic documentary footage filmed on location in Korea at real-world scale, natural light, "
-                "realistic materials and textures, natural-looking Korean people of mixed ages moving at real-time speed. "
-                "Thin, subtle glowing blue architectural wireframe outlines appear only on buildings in view; land, trees, water, "
-                "roads, sky, vehicles and people stay completely natural with no blue lines. All walls, signboards, banners, screens "
-                "and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. "
-                "Cinematic look: anamorphic lens feel with gentle shallow depth of field, warm highlights and cool shadows, subtle film grain. "
-                "Avoid: miniature or tilt-shift look, toy models, cartoon or video-game CGI, text, letters, numbers, logos.")
+# 2026-11-06 사용자 지시: 재난 숏츠도 CLAUDE.md 디오라마 지침을 기준으로 한다(예전: 실사 다큐 스타일, 축소 모형 금지).
+#   아이소메트릭 미니어처 디오라마 + 틸트시프트, 실제 사진처럼 보이지 않게, 글자 없음, 대비·대응·구조 장면.
+STYLE_PREFIX = ("Style: an isometric miniature diorama of a Korean scene, handcrafted scale-model look with tiny painted figurines, "
+                "model trees, buildings and vehicles, clearly a miniature and not a real photograph. Tilt-shift effect: top and bottom "
+                "of the frame softly blurred so the scene reads as a miniature. Natural outdoor light with sky visible, warm highlights "
+                "and cool shadows, anamorphic lens feel with gentle shallow depth of field, subtle film grain. All walls, signboards, "
+                "banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. "
+                "Avoid: photorealistic real-world footage, cartoon or video-game CGI, injured people, text, letters, numbers, logos.")
 # 장면마다 카메라 — 대본의 "camera" 값(aerial/eye). 영상은 움직임까지 정해 Veo 의 제멋대로 카메라를 막는다(10/12 프롬프트 개선)
 CAMERA = {"aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
           "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; "
@@ -32,12 +37,13 @@ CUTAWAY = (" Part of the ground is cut away as a clean vertical cross-section re
            "underneath, to show what happens below the surface.")
 
 RULES = """영상 프롬프트 규칙(지난 편에서 배운 것 — 반드시 지킬 것):
-- 파란 설계도 선은 장면에 건물이 있을 때 그 건물에만 그려진다(스타일 문구가 처리). video_prompt 에 파란 선·화살표·안내선을 쓰지 않는다. 건물이 필요 없는 장면(실내, 숲, 사람 행동)에 건물을 일부러 넣지 않는다.
+- video_prompt 에 파란 선·화살표·안내선을 쓰지 않는다(2026-11-06 디오라마 스타일로 바꾸며 파란 설계도 선은 뺐다). 건물이 필요 없는 장면(실내, 숲, 사람 행동)에 건물을 일부러 넣지 않는다.
 - camera: 지형·피해 규모·마을 전체를 보여 줄 장면은 aerial, 사람의 행동(신고, 소화, 대피, 준비)을 보여 줄 장면은 eye. shots 의 컷마다 따로 정할 수 있다.
 - 땅속 단면(cutaway)은 땅속을 보여 줘야 이해되는 장면에만 true(예: 산사태 흙층, 싱크홀, 지반·기초, 지하 침수). 그 밖에는 false.
 - 대피 장면(사람이 위험을 피해 대피소로 가는 장면)은 shots 로 4초짜리 두 컷으로 나눈다: 컷0 = 가까운 곳의 위험을 뒤로하고 사람들이 카메라 쪽으로 서둘러/뛰어서 피함, 컷1 = 대피소(학교·마을회관) 앞에서 사람들이 서둘러 들어가는 모습. 위급한 장면에서 사람은 걷지 않고 서두르거나 뛴다. 한 컷 안에서 '왼쪽→오른쪽' 같은 방향 지시는 AI 가 지키지 않는다(2026-10-06 산불편).
 - 장면 하나 = 8초짜리 한 컷(대피 장면만 shots 두 컷 예외). 'then' 으로 장면을 이어 붙이지 말고 동작 하나만 쓴다.
-- 실제 크기의 사실적인 풍경·사람(축소 모형, 인형, 만화 느낌 금지).
+- 모든 장면은 아이소메트릭 미니어처 디오라마(틸트시프트)로 보인다(스타일 문구가 처리, 2026-11-06 CLAUDE.md 디오라마 지침). 실제 사진처럼 보이게 쓰지 않는다. 사고 순간·부상자·불길 한가운데 대신 대비·대응·구조 장면을 고른다.
+- 카메라 기법은 장면마다 한 가지만 영어 한 줄로 덧붙일 수 있다: 전경으로 시작(에스태블리싱), 소품 인서트, 앞→뒤 초점 이동(랙 포커스), 아치·문·창 프레임 인 프레임. 기울인 앵글(더치 앵글)은 대응·구조 장면에만 쓴다.
 - video_prompt 에 카메라·구도 낱말(aerial, drone, close-up, wide shot, zoom)을 쓰지 않는다 — camera 값으로만 정한다(겹치면 AI 가 헷갈림).
 - video_prompt 좋은 예: \"Two Korean high school students in school uniforms crouch low and cover their heads under a sturdy classroom desk as the room shakes and books slide off the shelves, on a weekday morning with bright light coming through the windows.\"
 - 빨간 선·윤곽은 '위험한 곳'에만, 그것도 위험 요소(불, 물, 무너지는 곳) 바로 위에만 쓴다. 대피 장소·안전한 곳에는 절대 빨간색을 쓰지 않는다.

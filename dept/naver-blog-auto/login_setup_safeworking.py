@@ -19,6 +19,20 @@ PROFILE = os.path.join(BASE_DIR, "chrome-profile-safeworking")
 TIMEOUT_SEC = 900
 
 
+def _personal_chrome(o, account=None):
+    """개인 계정 프로필이면 chrome-na.exe 로 띄운다(2026-11-06, common/shared/chrome_bin.py)."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(o, account)
+    except Exception:
+        pass
+    return o
+
+
 def main():
     os.makedirs(PROFILE, exist_ok=True)
     opts = Options()
@@ -29,6 +43,7 @@ def main():
     opts.add_experimental_option("useAutomationExtension", False)
     opts.add_argument("--window-size=1100,900")
     opts.add_argument("--disable-features=MacAppCodeSignClone")
+    _personal_chrome(opts, "personal")
     d = webdriver.Chrome(options=opts)
     d.get("https://nid.naver.com/nidlogin.login")
     log("safeworking 계정으로 로그인하세요('로그인 상태 유지' 체크) — 최대 15분 대기")

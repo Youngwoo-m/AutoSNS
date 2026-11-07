@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
 
 MODEL, COST, RESERVE = "gemini-2.5-flash-image", 39, 150
-OCR = "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/ocr"
+OCR = "E:/MacMini/devAPP/AutoSNS/channels/disaster-shorts/tools/ocr"
 STYLE_T = ("Isometric miniature diorama on a small square base, handcrafted model look with tiny painted figures, "
          "soft studio lighting, strong tilt-shift shallow depth of field, clay and wood textures, "
          "clearly a toy-like scale model and not a real photograph, calm and orderly mood, {ASPECT} composition. "

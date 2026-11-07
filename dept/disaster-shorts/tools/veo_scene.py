@@ -6,13 +6,15 @@
 요청 번호와 쓴 키 순번을 <클립>.job.json 에 먼저 남겨, 도중에 멈춰도 다시 실행하면 이어 받는다.
 """
 import argparse, json, os, sys, time
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); os.chdir(AUTOSNS)
 import veo_clips as V
 V.MODEL = os.environ.get("VIDEO_MODEL", "google/gemini-omni-flash/v1.1")   # 10/15 게이트웨이에서 Veo 가 빠짐 → 대체
 from common import load_config
 
-ROOT = "/Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts"
+ROOT = _AXROOT + "/channels/disaster-shorts"
 ap = argparse.ArgumentParser(); ap.add_argument("ep"); ap.add_argument("scene", type=int)
 ap.add_argument("--seconds", type=int)
 ap.add_argument("--style", help="기본: script.json 의 style")

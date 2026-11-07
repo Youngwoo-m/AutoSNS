@@ -13,6 +13,8 @@ import datetime as dt, glob, json, os, sys, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
 ROOT, VB = CFG["root"], CFG["voicebox"]["url"]
 KST = dt.timezone(dt.timedelta(hours=9))
 KEEP_DAYS = 7

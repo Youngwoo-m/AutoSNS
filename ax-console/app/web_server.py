@@ -3,7 +3,17 @@
 import/factory는 파일을 쓰거나 운영 작업을 시작하지 않는다. 인증 세션의
 생성·갱신·삭제만 기존 auth.py가 담당하며 운영 서버는 import하지 않는다.
 """
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows — common/shared/winfcntl.py(2026-11-06)
+    import importlib.util as _wf_u, os as _wf_os, sys as _wf_s
+    fcntl = _wf_s.modules.get('autosns_winfcntl')
+    if fcntl is None:
+        _wf_p = _wf_os.path.join(_wf_os.path.dirname(_wf_os.path.realpath(__file__)), '..', '..', 'common', 'shared', 'winfcntl.py')
+        _wf_spec = _wf_u.spec_from_file_location('autosns_winfcntl', _wf_p)
+        fcntl = _wf_u.module_from_spec(_wf_spec)
+        _wf_spec.loader.exec_module(fcntl)
+        _wf_s.modules['autosns_winfcntl'] = fcntl
 import hashlib
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

@@ -3,3 +3,5 @@ selenium>=4.27.0
 imageio-ffmpeg>=0.5.1
 requests
 cryptography>=42  # shared/secret_env.py(암호화 환경설정)
+pillow
+keyring  # Windows: secret_env 열쇠(자격 증명 관리자)

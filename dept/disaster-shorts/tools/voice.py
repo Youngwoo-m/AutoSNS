@@ -16,6 +16,8 @@ import argparse, difflib, json, os, re, subprocess, sys, time, urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
 VB = CFG["voicebox"]
 BACKEND = CFG.get("voice_backend", "voicebox")
 
@@ -146,6 +148,18 @@ def ensure_server():
     if up():
         return
     print("Voicebox 서버가 꺼져 있어 다시 켭니다", flush=True)
+    if sys.platform == "win32":     # 2026-11-06 Windows — common/shared/voicebox_win.py 로 켠다(osascript·pkill·open 없음)
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+        _s = _u.spec_from_file_location("autosns_voicebox_win", os.path.join(_r, "common", "shared", "voicebox_win.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.up("disaster-shorts")
+        for _ in range(60):
+            if up():
+                return
+            time.sleep(5)
+        raise RuntimeError("Voicebox 서버가 뜨지 않습니다")
     subprocess.run(["osascript", "-e", 'quit app "Voicebox"']); time.sleep(3)
     subprocess.run(["pkill", "-f", "voicebox-server"]); subprocess.run(["pkill", "-f", "Voicebox.app"]); time.sleep(3)
     subprocess.run(["open", "-a", "/Applications/Voicebox.app"])

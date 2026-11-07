@@ -25,7 +25,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
-PROFILE_DIR = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto/chrome-profile-youtube"
+PROFILE_DIR = "E:/MacMini/devAPP/AutoSNS/channels/youtube-shorts-auto/chrome-profile-youtube"
 EDIT_URL = "https://www.blogger.com/profile/edit"
 PICKER = "docs.google.com/picker"
 

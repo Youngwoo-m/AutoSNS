@@ -1,7 +1,7 @@
 """샘플 (렌더: math_gif/render.sh soil_phase.py SoilPhase): 흙의 건조단위중량 γd = γt / (1 + w/100) — 3상 도식 + 수식 전개 (Manim -> GIF)"""
 from manim import *
 
-FONT_FILE = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
+FONT_FILE = "E:/MacMini/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
 FONT = "Pretendard"
 GREEN, DEEP, SAND, INK = "#1F4E3D", "#143528", "#E8DCC2", "#2B2A26"
 WATER, AIR = "#4F8FBF", "#F4F1E8"

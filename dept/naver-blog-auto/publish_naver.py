@@ -14,7 +14,7 @@ from datetime import datetime
 
 
 def _legacy_dependencies():
-    global webdriver, Options, ActionChains, By, Keys, WebDriverWait, EC
+    global webdriver, Options, ActionChains, By, Keys, WebDriverWait, EC, TimeoutException
     global LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, start_chrome
     global make_banner, make_gamma_image
     from selenium import webdriver
@@ -24,6 +24,7 @@ def _legacy_dependencies():
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
+    from selenium.common.exceptions import TimeoutException
 
     from common import LOGS_DIR, POSTS_DIR, PROFILE_DIR, load_config, start_chrome
     from make_banner import make_banner
@@ -85,6 +86,35 @@ def click_if_present(driver, by, sel, timeout=4):
         return False
 
 
+DRAFT_TEXTS = ("작성 중인 글이 있습니다", "작성중인 글이 있습니다", "작성중이던", "작성 중이던")
+
+
+def dismiss_draft_popup(driver, wait=0):
+    """'작성 중인 글이 있습니다 — 이어서 작성하시겠습니까?' 팝업이 있으면 '취소'를 눌러 새 글로 시작한다.
+
+    2026-11-06 사용자 지정: 이 팝업이 나오면 취소 후 다시 글쓰기. '확인'을 누르면 예전 임시 글을 이어 쓰게 되어
+    다른 글 내용이 섞일 수 있다. wait 초 동안 팝업이 뜨는지 기다린다. 눌렀으면 True."""
+    end = time.time() + wait
+    while True:
+        for pop in driver.find_elements(By.XPATH, "//*[contains(@class,'se-popup')]"):
+            try:
+                if not pop.is_displayed() or not any(t in (pop.text or "") for t in DRAFT_TEXTS):
+                    continue
+                btns = (pop.find_elements(By.CSS_SELECTOR, ".se-popup-button-cancel")
+                        or pop.find_elements(By.XPATH, ".//button[normalize-space(.)='취소']"))
+                for b in btns:
+                    if b.is_displayed():
+                        b.click()
+                        log("'작성 중인 글' 팝업 → 취소(새 글로 시작)")
+                        time.sleep(1)
+                        return True
+            except Exception:
+                continue
+        if time.time() >= end:
+            return False
+        time.sleep(0.5)
+
+
 def dismiss_upload_error(driver, quiet=False):
     """이미지 업로드 실패 모달('파일 전송 오류')이 떠 있으면 닫는다.
 
@@ -92,6 +122,8 @@ def dismiss_upload_error(driver, quiet=False):
     실패한다. 실패한 이미지는 에디터가 문서에서 자동 삭제하므로, 경고만 남기고
     발행은 계속 진행한다(이미지 수집 자체가 원래 best-effort 설계).
     """
+    if dismiss_draft_popup(driver):      # '작성 중인 글' 팝업의 '확인'을 누르면 예전 글을 이어 쓰게 된다
+        return True
     for xp in ("//*[contains(@class,'se-popup')]//button[normalize-space(.)='확인']",
                "//button[normalize-space(.)='확인']"):
         try:
@@ -694,40 +726,52 @@ def publish(data, dry_run=None):
         # GoBlogWrite 는 로그인된 계정의 블로그 에디터로 자동 연결된다
         # (로그인 ID와 블로그 주소가 달라도 안전)
         url = f"https://blog.naver.com/GoBlogWrite.naver?blogId={naver_id}"
-        driver.get(url)
-        time.sleep(5)
+        title_el = None
+        for attempt in (1, 2):      # 2026-11-06: '작성 중인 글' 팝업은 취소하고, 제목칸이 안 잡히면 글쓰기를 다시 연다
+            driver.switch_to.default_content()
+            driver.get(url)
+            time.sleep(5)
 
-        # 진입 시 네이버 alert 가 떠 있으면 닫는다
-        try:
-            driver.switch_to.alert.accept()
+            # 진입 시 네이버 alert 가 떠 있으면 닫는다
+            try:
+                driver.switch_to.alert.accept()
+                time.sleep(1)
+            except Exception:
+                pass
+
+            # 로그인 안 된 상태면 로그인 페이지로 튕긴다 -> 안내 후 중단
+            if "nidlogin" in driver.current_url or "nid.naver.com" in driver.current_url:
+                shot(driver, "not_logged_in")
+                raise RuntimeError(
+                    "로그인 세션이 만료되었습니다. login_setup.py 를 다시 실행해 주세요.")
+
+            # 에디터는 mainFrame iframe 안에 있다
+            WebDriverWait(driver, 20).until(
+                EC.frame_to_be_available_and_switch_to_it((By.ID, "mainFrame")))
+            time.sleep(3)
+
+            # 1) '작성 중인 글이 있습니다' 팝업 -> 취소(새 글로 시작). 늦게 뜨는 경우가 있어 8초까지 기다린다
+            dismiss_draft_popup(driver, wait=8)
+            # 2) 도움말/패널 팝업 닫기 (있으면)
+            click_if_present(driver, By.CSS_SELECTOR,
+                             ".se-help-panel-close-button", timeout=2)
             time.sleep(1)
-        except Exception:
-            pass
 
-        # 로그인 안 된 상태면 로그인 페이지로 튕긴다 -> 안내 후 중단
-        if "nidlogin" in driver.current_url or "nid.naver.com" in driver.current_url:
-            shot(driver, "not_logged_in")
-            raise RuntimeError(
-                "로그인 세션이 만료되었습니다. login_setup.py 를 다시 실행해 주세요.")
-
-        # 에디터는 mainFrame iframe 안에 있다
-        WebDriverWait(driver, 20).until(
-            EC.frame_to_be_available_and_switch_to_it((By.ID, "mainFrame")))
-        time.sleep(3)
-
-        # 1) '작성 중이던 글' 팝업 -> 취소(새 글로 시작)
-        click_if_present(driver, By.CSS_SELECTOR,
-                         ".se-popup-button-cancel", timeout=4)
-        # 2) 도움말/패널 팝업 닫기 (있으면)
-        click_if_present(driver, By.CSS_SELECTOR,
-                         ".se-help-panel-close-button", timeout=2)
-        time.sleep(1)
-
-        # 3) 제목 입력
-        title_el = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((
-                By.CSS_SELECTOR,
-                ".se-section-documentTitle .se-text-paragraph")))
+            # 3) 제목 입력칸
+            try:
+                title_el = WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((
+                        By.CSS_SELECTOR,
+                        ".se-section-documentTitle .se-text-paragraph")))
+                if dismiss_draft_popup(driver):     # 제목칸을 찾는 사이 팝업이 떴으면 취소하고 처음부터 다시
+                    title_el = None
+                    raise TimeoutException("작성 중인 글 팝업이 늦게 떴습니다")
+                break
+            except TimeoutException:
+                shot(driver, f"editor_retry{attempt}")
+                if attempt == 2:
+                    raise
+                log("글쓰기 화면을 다시 엽니다('작성 중인 글' 팝업 취소 후 재시도)")
         type_contenteditable(driver, title_el, data["title"])
         time.sleep(0.5)
 

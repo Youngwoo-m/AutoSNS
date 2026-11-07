@@ -241,6 +241,101 @@
     ]
    ],
    "minute": 30
+  },
+  {
+   "key": "dept-crosspost",
+   "codex": "신규",
+   "account": "dept",
+   "name": "학과 계정 교차 발행 (개인 기술사·GeoAI·안전한국훈련 → 학과 Blogger 요약 + 학과 유튜브 숏츠)",
+   "hours": [
+    21
+   ],
+   "model": "sonnet",
+   "channels": [
+    [
+     "dept",
+     "blogger"
+    ],
+    [
+     "dept",
+     "youtube"
+    ]
+   ],
+   "runs": {
+    "21": "21:00 실행 — 오늘 개인 계정에 공개된 글을 학과 Blogger 에 요약+원문 링크로, 오늘 공개된 숏츠를 학과 유튜브에 재업로드한다. 중복은 건너뛰고 지난 실패는 실패한 채널만 다시 한다."
+   }
+  },
+  {
+   "key": "civil-stock",
+   "codex": "신규",
+   "name": "토목시공 기출 비축 작성 (발행 없음, 하루 2편 — 판매본·하루 한 문제용)",
+   "hours": [
+    0,
+    13
+   ],
+   "minute": 20,
+   "model": "opus",
+   "channels": [],
+   "precheck": [
+    "python",
+    "../engineer-study-pack/src/stock_queue.py",
+    "check",
+    "civil"
+   ]
+  },
+  {
+   "key": "building-stock",
+   "codex": "신규",
+   "name": "건축시공 기출 비축 작성 (발행 없음, 하루 2편 — 판매본·하루 한 문제용)",
+   "hours": [
+    1,
+    14
+   ],
+   "minute": 20,
+   "model": "opus",
+   "channels": [],
+   "precheck": [
+    "python",
+    "../engineer-study-pack/src/stock_queue.py",
+    "check",
+    "building"
+   ]
+  },
+  {
+   "key": "safety-stock",
+   "codex": "신규",
+   "name": "건설안전 기출 비축 작성 (발행 없음, 하루 2편 — 판매본·하루 한 문제용)",
+   "hours": [
+    2,
+    15
+   ],
+   "minute": 20,
+   "model": "opus",
+   "channels": [],
+   "precheck": [
+    "python",
+    "../engineer-study-pack/src/stock_queue.py",
+    "check",
+    "safety"
+   ]
+  },
+  {
+   "key": "survey-stock",
+   "codex": "신규",
+   "name": "측량 기출 비축 작성 (발행 없음, 하루 2편 — 판매본·하루 한 문제용)",
+   "hours": [
+    3,
+    16
+   ],
+   "minute": 20,
+   "model": "opus",
+   "channels": [],
+   "precheck": [
+    "python",
+    "../engineer-study-pack/src/stock_queue.py",
+    "check",
+    "survey"
+   ]
   }
  ]
 }

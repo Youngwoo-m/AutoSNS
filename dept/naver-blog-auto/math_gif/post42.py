@@ -1,7 +1,7 @@
 """티스토리 42번: 최소제곱조정·가중평균 수식 PNG + 가중평균 저울 GIF."""
 from manim import *
 
-FONT_FILE = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
+FONT_FILE = "E:/MacMini/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
 FONT = "Pretendard"
 GREEN, DEEP, SAND, GOLD = "#1F4E3D", "#143528", "#E8DCC2", "#FFD27A"
 

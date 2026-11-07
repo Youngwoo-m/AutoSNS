@@ -12,7 +12,7 @@ from manim import *
 _ROOT = Path(__file__).resolve().parents[2]
 FONT_FILE = next(
     p for p in (_ROOT / "assets/FONTS/Pretendard-Bold.otf",
-                Path("/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"))
+                Path("G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"))
     if p.exists()
 )
 manimpango.register_font(str(FONT_FILE))

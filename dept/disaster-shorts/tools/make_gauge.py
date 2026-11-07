@@ -12,7 +12,7 @@ GAUGE_DIR = os.path.join(ROOT, "anatomy", "gauge")
 DRIVE = "/Users/youngwoo/.claude/skills/anatomy/scripts/drive.mjs"
 NODE = shutil.which("node") or "/usr/local/bin/node"           # launchd 는 PATH 가 짧다
 FFMPEG = shutil.which("ffmpeg") or "/usr/local/bin/ffmpeg"
-ENV = dict(os.environ, PATH="/usr/local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", ""))
+ENV = dict(os.environ) if os.name == "nt" else dict(os.environ, PATH="/usr/local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", ""))  # Windows: Mac 경로를 ':' 로 붙이면 첫 PATH 항목이 깨진다(2026-11-07)
 
 # 계기 종류 고르기 — 앞에 있는 규칙이 먼저(예: '체온'은 온도계)
 KINDS = [

@@ -37,7 +37,7 @@ HTML=f"""<!doctype html><html><head><meta charset="utf-8">
     <div class="en">SEMYUNG UNIVERSITY</div>
     <div class="en2">DISASTER &amp; SAFETY</div>
   </div>
-  <img class="mascot" src="file:///Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto/legal/mascot.png">
+  <img class="mascot" src="file://E:/MacMini/devAPP/AutoSNS/channels/youtube-shorts-auto/legal/mascot.png">
 </div></body></html>"""
 open("/tmp/_h2.html","w",encoding="utf-8").write(HTML)
 o=Options(); o.add_argument("--headless=new"); o.add_argument(f"--window-size={W},{H+300}")

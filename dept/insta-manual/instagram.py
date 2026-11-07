@@ -79,6 +79,19 @@ def _send_text(driver, text):
 
 
 # ------------------------------------------------------------------ 드라이버
+def _chrome_bin():
+    """common/shared/chrome_bin.py(계정별 크롬 실행 파일, 2026-11-06). 못 읽으면 None."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        return _m
+    except Exception:
+        return None
+
+
 def build_driver(headless=False):
     opts = Options()
     opts.add_argument(f"--user-data-dir={PROFILE_DIR}")
@@ -93,6 +106,9 @@ def build_driver(headless=False):
         opts.add_argument("--headless=new")
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     opts.add_argument("--disable-features=MacAppCodeSignClone")
+    _cb = _chrome_bin()
+    if _cb:
+        _cb.apply(opts, "dept")      # 학과 계정 크롬(chrome-dept.exe, 2026-11-06)
     driver = webdriver.Chrome(options=opts)
     driver.execute_cdp_cmd(
         "Page.addScriptToEvaluateOnNewDocument",

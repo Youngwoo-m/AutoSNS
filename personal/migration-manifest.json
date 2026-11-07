@@ -1,8 +1,8 @@
 {
   "moved": [
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/civil-engineer-writing",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing",
+      "source": "G:/devAPP/AutoSNS/civil-engineer-writing",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing",
       "entries": {
         ".": [
           585187,
@@ -889,8 +889,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/engineer-question-worker",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/engineer-question-worker",
+      "source": "G:/devAPP/AutoSNS/engineer-question-worker",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/engineer-question-worker",
       "entries": {
         ".": [
           350448,
@@ -1039,8 +1039,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/reference-posts",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/reference-posts",
+      "source": "G:/devAPP/AutoSNS/reference-posts",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/reference-posts",
       "entries": {
         ".": [
           354602,
@@ -1495,8 +1495,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/engineer-video-output",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/engineer-video-output",
+      "source": "G:/devAPP/AutoSNS/engineer-video-output",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/engineer-video-output",
       "entries": {
         ".": [
           376353,
@@ -6085,8 +6085,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/assets/tistory",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/assets/tistory",
+      "source": "G:/devAPP/AutoSNS/assets/tistory",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/assets/tistory",
       "entries": {
         ".": [
           336866,
@@ -6133,8 +6133,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/assets/engineer-series",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/assets/engineer-series",
+      "source": "G:/devAPP/AutoSNS/assets/engineer-series",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/assets/engineer-series",
       "entries": {
         ".": [
           376336,
@@ -6188,7 +6188,7 @@
     },
     {
       "source": "/Volumes/USB256/devAPP/tistory",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/tistory",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/tistory",
       "entries": {
         ".": [
           338927,
@@ -6283,8 +6283,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/chrome-profile-tistory",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/chrome-profile-tistory",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/chrome-profile-tistory",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/chrome-profile-tistory",
       "entries": {
         ".": [
           336879,
@@ -10873,8 +10873,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/run_tistory.sh",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/run_tistory.sh",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/run_tistory.sh",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/run_tistory.sh",
       "entries": {
         ".": [
           337280,
@@ -10885,8 +10885,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/setup_tistory_schedule.sh",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/setup_tistory_schedule.sh",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/setup_tistory_schedule.sh",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/setup_tistory_schedule.sh",
       "entries": {
         ".": [
           337281,
@@ -10897,8 +10897,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/tistory_cookies.json",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_cookies.json",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/tistory_cookies.json",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_cookies.json",
       "entries": {
         ".": [
           338376,
@@ -10909,8 +10909,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/tistory_crosspost.py",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_crosspost.py",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/tistory_crosspost.py",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_crosspost.py",
       "entries": {
         ".": [
           384617,
@@ -10921,8 +10921,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/tistory_jobs.py",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_jobs.py",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/tistory_jobs.py",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_jobs.py",
       "entries": {
         ".": [
           339186,
@@ -10933,8 +10933,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/tistory_login.py",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_login.py",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/tistory_login.py",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_login.py",
       "entries": {
         ".": [
           338235,
@@ -10945,8 +10945,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/tistory_state.json",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_state.json",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/tistory_state.json",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory_state.json",
       "entries": {
         ".": [
           338833,
@@ -10957,8 +10957,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261008_103916_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_103916_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261008_103916_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_103916_tistory_fail.png",
       "entries": {
         ".": [
           337646,
@@ -10969,8 +10969,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261008_104254_tistory_dry.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_104254_tistory_dry.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261008_104254_tistory_dry.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_104254_tistory_dry.png",
       "entries": {
         ".": [
           338668,
@@ -10981,8 +10981,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261008_113602_tistory_category_added.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_113602_tistory_category_added.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261008_113602_tistory_category_added.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_113602_tistory_category_added.png",
       "entries": {
         ".": [
           339170,
@@ -10993,8 +10993,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261008_113639_tistory_dry.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_113639_tistory_dry.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261008_113639_tistory_dry.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_113639_tistory_dry.png",
       "entries": {
         ".": [
           339277,
@@ -11005,8 +11005,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261008_185010_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_185010_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261008_185010_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261008_185010_tistory_fail.png",
       "entries": {
         ".": [
           350697,
@@ -11017,8 +11017,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261009_085007_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261009_085007_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261009_085007_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261009_085007_tistory_fail.png",
       "entries": {
         ".": [
           354377,
@@ -11029,8 +11029,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261009_185004_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261009_185004_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261009_185004_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261009_185004_tistory_fail.png",
       "entries": {
         ".": [
           370219,
@@ -11041,8 +11041,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261010_085010_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_085010_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261010_085010_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_085010_tistory_fail.png",
       "entries": {
         ".": [
           373632,
@@ -11053,8 +11053,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261010_110259_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_110259_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261010_110259_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_110259_tistory_fail.png",
       "entries": {
         ".": [
           375633,
@@ -11065,8 +11065,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261010_110415_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_110415_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261010_110415_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261010_110415_tistory_fail.png",
       "entries": {
         ".": [
           375875,
@@ -11077,8 +11077,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261015_185011_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_185011_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261015_185011_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_185011_tistory_fail.png",
       "entries": {
         ".": [
           495357,
@@ -11089,8 +11089,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261015_214602_tistory_dry.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_214602_tistory_dry.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261015_214602_tistory_dry.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_214602_tistory_dry.png",
       "entries": {
         ".": [
           541078,
@@ -11101,8 +11101,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261015_214703_tistory_dry.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_214703_tistory_dry.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261015_214703_tistory_dry.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261015_214703_tistory_dry.png",
       "entries": {
         ".": [
           541192,
@@ -11113,8 +11113,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/20261017_185016_tistory_fail.png",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261017_185016_tistory_fail.png",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/20261017_185016_tistory_fail.png",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/20261017_185016_tistory_fail.png",
       "entries": {
         ".": [
           589130,
@@ -11125,8 +11125,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/tistory.launchd.err.log",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.launchd.err.log",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/tistory.launchd.err.log",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.launchd.err.log",
       "entries": {
         ".": [
           350632,
@@ -11137,8 +11137,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/tistory.launchd.out.log",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.launchd.out.log",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/tistory.launchd.out.log",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.launchd.out.log",
       "entries": {
         ".": [
           350631,
@@ -11149,8 +11149,8 @@
       }
     },
     {
-      "source": "/Volumes/USB256/devAPP/AutoSNS/naver-blog-auto/logs/tistory.log",
-      "destination": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.log",
+      "source": "G:/devAPP/AutoSNS/naver-blog-auto/logs/tistory.log",
+      "destination": "G:/devAPP/AutoSNS/GeoAI_NA/naver-blog-auto/tistory-logs/tistory.log",
       "entries": {
         ".": [
           350633,

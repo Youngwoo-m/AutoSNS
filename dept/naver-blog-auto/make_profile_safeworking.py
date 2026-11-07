@@ -23,12 +23,18 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 # 워크트리에는 글꼴(git 제외)이 없을 수 있어 main 폴더 것을 대신 쓴다
 FONT_CANDIDATES = (
     os.path.join(ROOT, "assets", "FONTS", "Pretendard-Bold.otf"),
-    "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf",
+    "E:/MacMini/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf",
 )
 OUT_DIR = os.path.join(HERE, "posts", "safeworking")
 
 S = 640
 GREEN, DEEP, SAND, INK = "#1F4E3D", "#143528", "#E8DCC2", "#2B2A26"
+
+
+def file_url(p):
+    """로컬 파일 주소(file:///E:/.. · file:///Users/..) — Windows 의 'file://E:/..(역슬래시)' 는 크롬이 못 읽는다(2026-11-06)."""
+    from pathlib import Path
+    return Path(p).resolve().as_uri()
 
 
 def _font():
@@ -79,7 +85,7 @@ CARDS = {
 }
 
 CSS = f"""
- @font-face{{font-family:'PB';src:url('file://{_font()}') format('opentype');}}
+ @font-face{{font-family:'PB';src:url('{file_url(_font())}') format('opentype');}}
  body{{margin:0;background:#eee;font-family:'PB','Apple SD Gothic Neo',sans-serif}}
  .card{{width:{S}px;height:{S}px;position:relative;overflow:hidden;color:{SAND};
    display:flex;align-items:center;justify-content:center;margin:20px}}
@@ -115,7 +121,7 @@ def main():
         opts.add_argument(arg)
     d = webdriver.Chrome(options=opts)
     try:
-        d.get("file://" + page)
+        d.get(file_url(page))
         time.sleep(1.5)
         for key in CARDS:
             out = os.path.join(OUT_DIR, f"profile_{key}.png")

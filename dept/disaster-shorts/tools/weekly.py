@@ -6,12 +6,16 @@
 끝나면(또는 실패하면) 카톡으로 알린다.
 """
 import shutil, datetime as dt, json, os, subprocess, sys, time, traceback, urllib.request
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
 ROOT = CFG["root"]
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
-PY = os.path.join(AUTOSNS, ".venv", "bin", "python")
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
+PY = os.path.join(AUTOSNS, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
 KST = dt.timezone(dt.timedelta(hours=9))
 sys.path.insert(0, AUTOSNS)
 
@@ -41,7 +45,7 @@ def target():
     return None, None
 
 
-VBSH = "/Volumes/USB256/devAPP/AutoSNS/shared/voicebox.sh"
+VBSH = _AXROOT + "/shared/voicebox.sh"
 
 
 def ensure_voicebox():
@@ -52,7 +56,10 @@ def ensure_voicebox():
         except Exception:
             if i == 0:   # 필요할 때만 켬 — 끄기는 run_weekly.sh 가 끝에 한다(AutoSNS/shared/voicebox.sh)
                 log("Voicebox 실행")
-                subprocess.run(["/bin/bash", VBSH, "up", "disastershorts.weekly"])
+                if sys.platform == "win32":   # 2026-11-06 Windows — voicebox.sh 대신 voicebox_win.py
+                    subprocess.run([sys.executable, _AXROOT + "/common/shared/voicebox_win.py", "up", "disastershorts.weekly"])
+                else:
+                    subprocess.run(["/bin/bash", VBSH, "up", "disastershorts.weekly"])
             time.sleep(5)
     raise RuntimeError("Voicebox 서버가 뜨지 않습니다")
 
@@ -73,7 +80,7 @@ def main(check=False):
     log(f"대상: {e['date']} {e['type']} — {e['angle']}")
     if check:
         return
-    if not os.path.exists("/Volumes/USB256"):
+    if not os.path.exists("E:/MacMini"):
         raise RuntimeError("USB256 이 연결되어 있지 않습니다")
     step("대본", [PY, "write_script.py", e["date"]])
     sc = json.load(open(os.path.join(ep_dir, "script.json"), encoding="utf-8"))

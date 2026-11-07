@@ -13,6 +13,7 @@ import html as H
 import os
 import re
 import subprocess
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -91,7 +92,61 @@ def prep(body, workdir):
     return {"html": body, "images": images, "files": files, "expect": expect, "headings": [h for h in heads if h]}
 
 
+def _set_clipboard_html_windows(body):
+    """Windows 클립보드에 'HTML Format'(CF_HTML)으로 넣는다(2026-11-06 Mac 은퇴 후). 일반 텍스트도 함께 넣는다."""
+    import ctypes
+    from ctypes import wintypes
+    u32, k32 = ctypes.WinDLL("user32", use_last_error=True), ctypes.WinDLL("kernel32", use_last_error=True)
+    u32.RegisterClipboardFormatW.argtypes = [wintypes.LPCWSTR]
+    u32.RegisterClipboardFormatW.restype = wintypes.UINT
+    u32.OpenClipboard.argtypes = [wintypes.HWND]
+    u32.SetClipboardData.argtypes = [wintypes.UINT, wintypes.HANDLE]
+    u32.SetClipboardData.restype = wintypes.HANDLE
+    k32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+    k32.GlobalAlloc.restype = wintypes.HGLOBAL
+    k32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+    k32.GlobalLock.restype = wintypes.LPVOID
+    k32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+
+    head = ("Version:0.9\r\nStartHTML:{:010d}\r\nEndHTML:{:010d}\r\n"
+            "StartFragment:{:010d}\r\nEndFragment:{:010d}\r\n")
+    pre = "<html><body><!--StartFragment-->"
+    post = "<!--EndFragment--></body></html>"
+    frag = body.encode("utf-8")
+    hlen = len(head.format(0, 0, 0, 0).encode("ascii"))
+    start_html = hlen
+    start_frag = start_html + len(pre.encode("utf-8"))
+    end_frag = start_frag + len(frag)
+    end_html = end_frag + len(post.encode("utf-8"))
+    data = (head.format(start_html, end_html, start_frag, end_frag).encode("ascii")
+            + pre.encode("utf-8") + frag + post.encode("utf-8") + b"\0")
+    text = (re.sub(r"<[^>]+>", "", body) + "\0").encode("utf-16-le")
+
+    def _put(fmt, raw):
+        h = k32.GlobalAlloc(0x0002, len(raw))          # GMEM_MOVEABLE
+        p = k32.GlobalLock(h)
+        ctypes.memmove(p, raw, len(raw))
+        k32.GlobalUnlock(h)
+        if not u32.SetClipboardData(fmt, h):
+            raise RuntimeError(f"클립보드 쓰기 실패(형식 {fmt}, 오류 {ctypes.get_last_error()})")
+
+    for _ in range(20):                                 # 다른 프로그램이 잠깐 잡고 있으면 다시
+        if u32.OpenClipboard(None):
+            break
+        time.sleep(0.1)
+    else:
+        raise RuntimeError("클립보드를 열지 못함")
+    try:
+        u32.EmptyClipboard()
+        _put(u32.RegisterClipboardFormatW("HTML Format"), data)
+        _put(13, text)                                  # CF_UNICODETEXT
+    finally:
+        u32.CloseClipboard()
+
+
 def _set_clipboard_html(body):
+    if sys.platform == "win32":
+        return _set_clipboard_html_windows(body)
     hexs = body.encode("utf-8").hex()
     if len(hexs) > 900_000:
         raise RuntimeError(f"본문 HTML 이 너무 커 클립보드에 넣지 못함({len(body)}바이트)")

@@ -5,6 +5,7 @@
 """
 import json
 import os
+import sys
 import subprocess
 
 from common import BASE_DIR, load_config, log
@@ -19,7 +20,7 @@ def crosspost_naver_video(data, video_url, dry_run=False):
         return
 
     naver_dir = os.path.join(os.path.dirname(BASE_DIR), "naver-blog-auto")
-    py = os.path.join(naver_dir, ".venv", "bin", "python")
+    py = os.path.join(naver_dir, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
     script = os.path.join(naver_dir, "post_video.py")
     if not (os.path.exists(py) and os.path.exists(script)):
         log(f"동영상뉴스: naver-blog-auto 를 찾지 못해 건너뜀({naver_dir})")

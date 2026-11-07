@@ -85,19 +85,19 @@ def cues(data):
 def burn(video, data, work_dir):
     """video 에 자막을 입혀 제자리에서 바꾼다. 돌려주는 값은 입힌 줄 수."""
     from make_video import _ffmpeg
-    from overlays import _font
+    from overlays import _font, ff_path
     cs = cues(data)
     if not cs:
         return 0
     os.makedirs(work_dir, exist_ok=True)
-    fnt = _font().replace(":", r"\:")
+    fnt = ff_path(_font())
     parts = []
     for n, (a, b, t) in enumerate(cs):
         tf = os.path.join(work_dir, f"cap_{n:03d}.txt")
         with open(tf, "w", encoding="utf-8") as f:
             f.write(t)
         parts.append(
-            f"drawtext=fontfile='{fnt}':textfile='{tf}':fontcolor=white:fontsize=54:"
+            f"drawtext=fontfile='{fnt}':textfile='{ff_path(tf)}':fontcolor=white:fontsize=54:"
             f"box=1:boxcolor=0x0B1C3A@0.72:boxborderw=18:"
             f"x=(w-text_w)/2:y=h*{Y_1920 / 1920:.4f}:enable='between(t,{a},{b})'")
     tmp = video.replace(".mp4", ".cap.tmp.mp4")

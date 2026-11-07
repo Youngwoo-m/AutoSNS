@@ -155,10 +155,16 @@ def apply_bg(html, bg):
     bg 가 없으면 html 을 그대로 돌려준다(기존 디자인)."""
     if not bg:
         return html
-    url = "file://" + os.path.abspath(bg).replace("\\", "/")
-    css = ('#banner{background:linear-gradient(rgba(8,12,26,.38),rgba(8,12,26,.66)),'
+    from pathlib import Path
+    url = Path(os.path.abspath(bg)).as_uri()   # Windows 에서도 맞는 주소(2026-11-06)
+    # 2026-11-06 사용자 지시 '썸네일이 잘 보이게': 그림 위 제목이 밝은 곳에 걸리면 읽히지 않아 배경을 더 어둡게 하고
+    # 제목 뒤에 반투명 남색 판을 깐다(작은 썸네일·검색 목록에서도 제목이 먼저 읽히게).
+    css = ('#banner{background:linear-gradient(rgba(8,12,26,.50),rgba(8,12,26,.78)),'
            'url("%s") center/cover no-repeat !important}'
-           '.grid,.glow,.icon{display:none !important}.title,.foot,.badge{text-shadow:0 2px 14px rgba(0,0,0,.65)}' % url)
+           '.grid,.glow,.icon{display:none !important}'
+           '.title{background:rgba(11,20,42,.72);padding:.18em .42em .24em;border-radius:14px;'
+           'box-decoration-break:clone;-webkit-box-decoration-break:clone}'
+           '.title,.foot,.badge{text-shadow:0 2px 14px rgba(0,0,0,.65)}' % url)
     return html.replace("</style>", css + "</style>", 1)
 
 

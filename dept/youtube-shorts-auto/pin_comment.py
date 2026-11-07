@@ -69,6 +69,16 @@ def _options(profile_dir, headless=True):
     for k, v in o.experimental_options.items():   # excludeSwitches(진짜 키체인) 도 그대로 옮긴다
         o2.add_experimental_option(k, v)
     o2.add_argument(f"--user-data-dir={profile_dir}")
+    o2.binary_location = ""      # geoai_community 옵션의 개인 크롬 지정을 버리고 프로필 기준으로 다시 정한다
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(o2)                 # 학과 프로필(chrome-profile-youtube-dept)이면 chrome-dept.exe (2026-11-06)
+    except Exception:  # noqa: BLE001
+        pass
     return o2
 
 

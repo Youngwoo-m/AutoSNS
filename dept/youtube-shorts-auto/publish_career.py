@@ -32,7 +32,7 @@ CATEGORY_EDU = "27"
 
 # 인스타그램은 별도 프로젝트(insta-cardnews)의 venv·설정·크롬 프로필로 게시한다.
 IG_DIR = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
-IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python")
+IG_PY = os.path.join(IG_DIR, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
 IG_TIMEOUT = 600   # 릴 업로드·처리·공유·첫 댓글까지 넉넉히(초)
 
 

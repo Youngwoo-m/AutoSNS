@@ -28,7 +28,7 @@ from tiktok_upload import upload as tiktok_publish
 def _post_instagram_reel(data, ai_label=False):
     """뉴스 영상을 인스타 릴로 발행(insta-cardnews venv subprocess). AI 아나운서면 AI 레이블."""
     ig_dir = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
-    ig_py = os.path.join(ig_dir, ".venv", "bin", "python")
+    ig_py = os.path.join(ig_dir, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
     video = data.get("video")
     if not (os.path.exists(ig_py) and video and os.path.exists(video)):
         log("인스타 발행 생략(venv/영상 없음)"); return
@@ -214,7 +214,7 @@ def main(argv=()):
     # 쓰레드 텍스트 크로스포스트(설정 시). 헤드라인+요약+유튜브 링크+해시태그.
     try:
         ig_dir = os.path.join(os.path.dirname(BASE_DIR), "insta-cardnews")
-        ig_py = os.path.join(ig_dir, ".venv", "bin", "python")
+        ig_py = os.path.join(ig_dir, ".venv", "bin", "python" + (".exe" if sys.platform == "win32" else ""))
         url = result.get("url", "") if isinstance(result, dict) else ""
         if os.path.exists(os.path.join(ig_dir, "threads_cli.py")) and os.path.exists(ig_py):
             headline = data.get("title", "재난안전 소식")

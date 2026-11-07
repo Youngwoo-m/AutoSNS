@@ -77,7 +77,7 @@ def render_reel(data, images, audio, out, rcfg, title=None):
         }
         pj = os.path.join(pub, "_props.json")
         json.dump(props, open(pj, "w", encoding="utf-8"), ensure_ascii=False)
-        r = subprocess.run(["npx", "remotion", "render", "src/insta-reel/index.ts", "InstaReel", out,
+        r = subprocess.run([shutil.which("npx") or "npx", "remotion", "render", "src/insta-reel/index.ts", "InstaReel", out,
                             f"--props={pj}", f"--public-dir={pub}", "--log=error"],
                            cwd=SHORTS, capture_output=True, text=True)
     if r.returncode != 0 or not os.path.isfile(out):

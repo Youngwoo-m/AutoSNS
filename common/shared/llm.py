@@ -256,18 +256,22 @@ class _CliMessages:
         model = next((a for k, a in self.MODELS if k in name), "sonnet")
         env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}   # 구독 로그인으로만
         env["PATH"] = "/usr/local/bin:/opt/homebrew/bin:" + env.get("PATH", "/usr/bin:/bin")
-        env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(int(kw.get("max_tokens") or 4000))
+        # CLI 는 max_tokens 를 그대로 상한으로 쓰면 2000 같은 작은 값에서 "exceeded the 2000 output token maximum"
+        # 으로 실패해 유료 키로 넘어갔다(2026-11-04·05 geoai 영상 대본). 구독이라 상한은 넉넉히 둔다.
+        env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(max(int(kw.get("max_tokens") or 4000), 8000))
         allow = "Read" if self.images else ""
         # stream-json 으로 받아 모든 assistant 메시지의 글을 이어 붙인다. 긴 글은 한 응답이 두 메시지로 나뉘어 올 때가 있고
         # (문장 중간에서 끊겨 다음 메시지가 이어짐) json 출력의 result 는 마지막 메시지 글만 담는다 —
         # 2026-10-19 18:00 GeoAI 시리즈 글이 result 의 꼬리(약 290자)만 받아 '형식 파싱 실패'로 멈췄다.
-        cmd = ["claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
+        import shutil   # Windows: claude 는 claude.CMD 라 이름만으로는 못 찾는다(2026-11-06)
+        cmd = [shutil.which("claude") or "claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
                "--disable-slash-commands", "--no-session-persistence", "--output-format", "stream-json", "--verbose"]
         if allow:
             cmd += ["--allowedTools", allow]
         if system:
             cmd += ["--system-prompt", system]
-        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, cwd=self.work, env=env, timeout=900)
+        p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           cwd=self.work, env=env, timeout=900)
         d, pieces = None, []
         for line in p.stdout.splitlines():
             try:

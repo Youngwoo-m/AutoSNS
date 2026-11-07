@@ -14,7 +14,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 # 워크트리에는 assets/ 가 없을 수 있어 main 폴더도 찾는다.
 FONT_FILE = next(
     p for p in (_ROOT / "assets/FONTS/Pretendard-Bold.otf",
-                Path("/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"))
+                Path("G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"))
     if p.exists()
 )
 manimpango.register_font(str(FONT_FILE))

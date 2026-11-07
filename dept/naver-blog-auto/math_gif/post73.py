@@ -1,7 +1,7 @@
 """티스토리 73번 수식 PNG (+GIF). PNG: manim -qh -s -t --media_dir _media post73.py Post73F1 ... (이후 투명 여백 자르기)"""
 from manim import *
 
-FONT_FILE = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
+FONT_FILE = "E:/MacMini/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
 FONT = "Pretendard"
 GREEN, DEEP, SAND, GOLD = "#1F4E3D", "#143528", "#E8DCC2", "#FFD27A"
 

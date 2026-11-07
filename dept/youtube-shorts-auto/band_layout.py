@@ -42,7 +42,7 @@ CAP_X, CAP_Y, CAP_W = 64, 1322, 840
 OVERLAY_Y = {"hook_y": 235, "cta_y": 340, "cta_panel": (236, 386)}
 
 _FONT_CSS = """
-@font-face{{font-family:K;font-weight:100 900;src:url("file://{d}/Pretendard-Bold.otf")}}
+@font-face{{font-family:K;font-weight:100 900;src:url("file:///{d}/Pretendard-Bold.otf")}}
 """
 
 _BASE = """
@@ -120,7 +120,7 @@ def _theme(hc):
 
 def _font_css():
     here = os.path.dirname(os.path.abspath(__file__))
-    return _FONT_CSS.format(d=require_fonts(default_font_dir(here)))
+    return _FONT_CSS.format(d=require_fonts(default_font_dir(here)).replace("\\", "/").lstrip("/"))   # file:///E:/.. · file:///Users/..
 
 
 def render_frame(hc, headline, kicker, date_label, out_png):

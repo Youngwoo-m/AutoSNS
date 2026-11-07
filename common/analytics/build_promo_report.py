@@ -34,7 +34,10 @@ from analytics.build_monthly import prev_month  # noqa: E402
 from openpyxl import load_workbook  # noqa: E402
 from openpyxl.styles import Alignment, Font  # noqa: E402
 
-TEMPLATE = "/Volumes/USB256/온라인 홍보활동 보고서.xlsx"
+TEMPLATE = next((p for p in (
+    "E:/MacMini/온라인 홍보활동 보고서.xlsx",            # Windows(2026-11-07, Mac 은퇴 — USB256 이 E:\MacMini)
+    "/Volumes/USB256/온라인 홍보활동 보고서.xlsx") if os.path.exists(p)),
+    "E:/MacMini/온라인 홍보활동 보고서.xlsx")
 DEPT = "재난안전학과"
 SIGNER = "나영우"          # 작성자·홍보전담교원·학부(과)장 모두 같은 분이다
 HEAD_ROW = 6            # 구분/분류/내용/업로드일자/비고

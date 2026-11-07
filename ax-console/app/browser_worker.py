@@ -33,6 +33,15 @@ from shared import axlock  # noqa: E402
 import websocket  # noqa: E402  websocket-client
 
 CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+
+
+def _chrome_for(profile):
+    """프로필 계정의 크롬 실행 파일(학과 chrome-dept.exe·개인 chrome-na.exe, 2026-11-06 Windows)."""
+    try:
+        from shared import chrome_bin
+        return chrome_bin.binary(axlock.ACCOUNT_OF.get(profile)) or chrome_bin.default_chrome()
+    except Exception:  # noqa: BLE001
+        return CHROME
 PORT = int(os.environ.get('AX_BROWSER_PORT', 8711))
 KEY = (Path(os.environ.get('AX_AUTH_DIR') or CONSOLE / 'data' / 'auth') / 'internal.key').read_text().strip()
 IDLE = 900
@@ -79,7 +88,7 @@ class Session:
         else:
             self.fds = axlock.acquire([f'profile:{profile}'], job=f'browser:{profile}', wait=5)
         self.port = _free_port()
-        args = [CHROME, f'--user-data-dir={axlock.PROFILES[profile]}', f'--remote-debugging-port={self.port}', MARK,
+        args = [_chrome_for(profile), f'--user-data-dir={axlock.PROFILES[profile]}', f'--remote-debugging-port={self.port}', MARK,
                 '--remote-allow-origins=*', '--no-first-run', '--no-default-browser-check', '--disable-features=Translate,MacAppCodeSignClone',
                 f'--window-size={VW},{VH}', '--lang=ko-KR'] + [a for a in extra if a in ALLOWED_EXTRA]
         # 쿠키 암호화 키를 그 프로필을 여는 다른 도구와 맞춘다. 키가 다르면 크롬이 못 푸는 쿠키를 지워 로그인이 풀린다

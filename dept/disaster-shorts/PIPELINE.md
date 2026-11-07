@@ -59,3 +59,6 @@ Veo 클립에서 발이 뒤집히거나(빙판길 편 10~11초, 걷는 사람의
 - `heygen_anchor.py` — upload_audio(), generate(audio_asset_id=…), await_video()  ※ HeyGen v2 API는 2026-10-31 종료 예정 → 인트로·아웃트로는 그 전에 생성하거나 v3로 이전
 - `veo_clips.py` — 게이트웨이 Veo 요청·이어받기, MIN_MONTHLY 보호
 - `youtube_upload.py` — 업로드·합성 콘텐츠 표시
+
+## 2026-11-06 스타일 기준 변경
+재난 숏츠도 CLAUDE.md 디오라마 지침을 기준으로 한다(사용자 지시). `tools/write_script.py` 의 STYLE_PREFIX 를 아이소메트릭 미니어처 디오라마·틸트시프트로 바꿨고, "축소 모형 금지" 규칙과 파란 설계도 선을 뺐다. 이미 클립을 만든 편은 예전(실사) 스타일 그대로 둔다.

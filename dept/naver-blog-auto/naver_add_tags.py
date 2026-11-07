@@ -32,6 +32,20 @@ from publish_naver import click_if_present, shot
 BLOG_ID = "safeworking"
 
 
+def _personal_chrome(o, account=None):
+    """개인 계정 프로필이면 chrome-na.exe 로 띄운다(2026-11-06, common/shared/chrome_bin.py)."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(o, account)
+    except Exception:
+        pass
+    return o
+
+
 def build_driver():
     opts = Options()
     opts.add_argument(f"--user-data-dir={PROFILE_DIR}")
@@ -43,6 +57,7 @@ def build_driver():
     opts.add_argument("--lang=ko-KR")
     opts.add_argument("--disable-features=MacAppCodeSignClone")
     opts.set_capability("unhandledPromptBehavior", "accept")
+    _personal_chrome(opts, "personal")
     return webdriver.Chrome(options=opts)
 
 

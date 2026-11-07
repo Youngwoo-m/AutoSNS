@@ -23,7 +23,7 @@ BK = os.path.join(ROOT, "backups", f"asset_urls_{STAMP}")
 
 # 저장소 안에서 고칠 파일(옛 백업 html 은 역사 기록이라 건드리지 않는다)
 FILES = ["channels/naver-blog-auto/assets/widget/dinner_banner.json",
-         "channels/naver-blog-auto/assets/widget/shuttle_banner.json", "site/geoai-site/index.html",
+         "channels/naver-blog-auto/assets/widget/shuttle_banner.json", "personal/geoai-site/index.html",
          "channels/naver-blog-auto/README.md", "channels/naver-blog-auto/shots/README.md", "assets/blogger/README.md"]
 
 
@@ -45,7 +45,7 @@ def cmd_files(a):
             open(p, "w", encoding="utf-8").write(s.replace(a.old, a.new))
     print(("수정 완료" if a.go else "시험(고치지 않음)") + f": 파일 {n}곳")
     if a.go:
-        print("site/geoai-site/index.html 을 고쳤으면 Netlify 사이트를 다시 배포해야 반영된다.")
+        print("personal/geoai-site/index.html 을 고쳤으면 Firebase(geoai-na.web.app)에 다시 배포해야 반영된다.")
 
 
 def cmd_blogger(a):

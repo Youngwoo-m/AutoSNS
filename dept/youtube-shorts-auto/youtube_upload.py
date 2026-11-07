@@ -372,6 +372,10 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
         try:
             from tiktok_queue import add as tiktok_add
             geo = bool(token_path) and os.path.abspath(token_path) != os.path.abspath(TOKEN_PATH)
+            if geo:     # 2026-11-06: 개인 GeoAI 채널 숏츠는 학과가 아닌 개인 틱톡(@kor.geo.panda) 대기열로
+                import sys as _sys
+                _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "personal", "geoai-youtube"))
+                from tiktok_queue_personal import add as tiktok_add
             tiktok_add(video_path, data.get("title", ""), data.get("description", ""),
                        data.get("hashtags") or [], ai_generated=synthetic,
                        source="geoai" if geo else "youtube_upload")

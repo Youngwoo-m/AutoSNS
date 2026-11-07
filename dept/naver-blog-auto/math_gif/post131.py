@@ -5,7 +5,7 @@ PNG : manim -qh -s -t --media_dir _media post131.py Post131F1 Post131F2
 """
 from manim import *
 
-FONT_FILE = "/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
+FONT_FILE = "E:/MacMini/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf"
 FONT = "Pretendard"
 GREEN, DEEP, SAND, GOLD = "#1F4E3D", "#143528", "#E8DCC2", "#FFD27A"
 

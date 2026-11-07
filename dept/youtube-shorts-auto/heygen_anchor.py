@@ -239,7 +239,8 @@ def _text_width(text, size):
     import subprocess
     import imageio_ffmpeg
     cw, ch = 2400, max(int(size * 2.4), 80)
-    vf = (f"drawtext=fontfile='{_font()}':text='{_esc(text)}':"
+    from overlays import ff_path
+    vf = (f"drawtext=fontfile='{ff_path(_font())}':text='{_esc(text)}':"
           f"fontcolor=white:fontsize={size}:x=40:y=20")
     p = subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-hide_banner", "-loglevel", "error",
                         "-f", "lavfi", "-i", f"color=black:s={cw}x{ch}:d=0.1", "-vf", vf,
@@ -361,7 +362,8 @@ def compose_news_layout(video_in, out, title, ots_image=None, script=None, dur=N
     import subprocess
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
-    fnt = _font()
+    from overlays import ff_path
+    fnt = ff_path(_font())
     vw, vh = _img_size(video_in)
     s = (vw / LAYOUT_W) if vw else 1.0
 

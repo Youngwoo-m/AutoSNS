@@ -220,9 +220,15 @@ def main():
     dry = "--dry" in sys.argv
     posted = _posted_today()      # 오늘 이미 올린 글(브리핑 포함)부터 센다
     run_posted = 0                # 이번 실행에서 올린 편수
-    have = {p["title"] for p in svc.posts().list(
-        blogId=bid, maxResults=100, fetchBodies=False,
-        fields="items(title)").execute().get("items", [])}
+    import re as _re
+    # 편수가 바뀌어도(입시 14→13편, 2026-11-07 면접 편 삭제) 이미 올린 편을 다시 올리지 않게
+    # 끝의 ' [n/total]' 을 떼고 비교한다. 초안·예약 글도 '있음'으로 본다.
+    _strip = lambda t: _re.sub(r"\s*\[\d+/\d+\]\s*$", "", t or "").strip()
+    have = set()
+    for _st in ("LIVE", "DRAFT", "SCHEDULED"):
+        have |= {_strip(p["title"]) for p in svc.posts().list(
+            blogId=bid, maxResults=200, fetchBodies=False, status=_st, view="ADMIN",
+            fields="items(title)").execute().get("items", [])}
     maxn = int((cfg.get("blogger", {}) or {}).get("max_labels", 6))
     stop = False
 
@@ -238,7 +244,7 @@ def main():
                 vid = (ser.get("videos") or {}).get(slug, "")   # 짝이 맞는 편만
             full_title = f"{title} [{n}/{total}]"
             lead = ""
-            if full_title in have:
+            if title.strip() in have:
                 continue
             if posted >= DAILY_LIMIT:
                 print(f"오늘 한도({DAILY_LIMIT}편) 소진 — 나머지는 다음 실행에서")

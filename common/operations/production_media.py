@@ -382,10 +382,11 @@ class RemotionVideoRunner:
                         scene[key] = name
             props_path = public/'_props.json'
             props_path.write_text(json.dumps(props, ensure_ascii=False, allow_nan=False))
-            args = ['npx', '--no-install', 'remotion', 'render', 'src/survey-short/index.ts', 'SurveyShort', str(output),
+            args = [shutil.which('npx') or 'npx', '--no-install', 'remotion', 'render', 'src/survey-short/index.ts', 'SurveyShort', str(output),
                     f'--props={props_path}', f'--public-dir={public}', '--log=error']
             result = self.spawn(args, cwd=str(self.root), capture_output=True, text=True, timeout=900, shell=False,
-                                env={'PATH': '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin', 'LANG': 'en_US.UTF-8'})
+                                env={'PATH': '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin', 'LANG': 'en_US.UTF-8',
+                                     **(__import__('os').environ.copy() if __import__('os').name == 'nt' else {})})
             _require(result.returncode == 0 and output.is_file(), 'remotion_render_failed')
         return dict(path=str(output), font_sha256=self.font_hash)
 

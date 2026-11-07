@@ -10,7 +10,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from make_profile_safeworking import DEEP, GREEN, OUT_DIR, SAND, _font
+from make_profile_safeworking import DEEP, GREEN, OUT_DIR, SAND, _font, file_url
 
 W, H = 966, 260
 PHOTO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "banner_bg", "survey.png")  # 디오라마 배경(글자 없음)
@@ -26,12 +26,12 @@ def _contours():
 
 
 CSS = f"""
- @font-face{{font-family:'PB';src:url('file://{_font()}') format('opentype');}}
+ @font-face{{font-family:'PB';src:url('{file_url(_font())}') format('opentype');}}
  body{{margin:0;font-family:'PB','Apple SD Gothic Neo',sans-serif}}
  #b{{width:{W}px;height:{H}px;position:relative;overflow:hidden;color:{SAND};
    background:linear-gradient(110deg,{GREEN} 0%,{DEEP} 100%)}}
  .photo{{position:absolute;right:0;top:0;width:62%;height:100%;
-   background:url('file://{PHOTO}') center 30%/cover;
+   background:url('{file_url(PHOTO)}') center 30%/cover;
    -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 55%)}}
  .bg{{position:absolute;inset:0;width:100%;height:100%}}
  .mark{{display:none}}
@@ -65,7 +65,7 @@ def main():
         opts.add_argument(arg)
     d = webdriver.Chrome(options=opts)
     try:
-        d.get("file://" + page)
+        d.get(file_url(page))
         time.sleep(1.5)
         out = os.path.join(OUT_DIR, "banner.png")
         d.find_element("id", "b").screenshot(out)

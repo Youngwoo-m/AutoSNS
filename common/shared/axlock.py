@@ -4,7 +4,7 @@
 잡은 프로세스가 죽으면 잠금이 저절로 풀린다. 자원은 이름 순서로 잡아 서로 물고 늘어지지 않는다.
 
 실행 스크립트(run_*.sh) 맨 앞의 한 줄이 스크립트 자신을 이 래퍼 아래에서 다시 실행한다.
-    [ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job naverblog.weekly -- "$0" "$@"
+    [ -z "$AX_LOCKED" ] && exec /usr/bin/python3 G:/devAPP/AutoSNS/shared/axlock.py run --job naverblog.weekly -- "$0" "$@"
 
 명령줄
     python3 shared/axlock.py run --job <작업> [--res profile:naver ...] [--wait 2400] [--no-stop] -- 명령 …
@@ -26,7 +26,17 @@ import hashlib
 import tempfile
 import threading
 import uuid
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows — common/shared/winfcntl.py(2026-11-06)
+    import importlib.util as _wf_u, os as _wf_os, sys as _wf_s
+    fcntl = _wf_s.modules.get('autosns_winfcntl')
+    if fcntl is None:
+        _wf_p = _wf_os.path.join(_wf_os.path.dirname(_wf_os.path.realpath(__file__)), 'winfcntl.py')
+        _wf_spec = _wf_u.spec_from_file_location('autosns_winfcntl', _wf_p)
+        fcntl = _wf_u.module_from_spec(_wf_spec)
+        _wf_spec.loader.exec_module(fcntl)
+        _wf_s.modules['autosns_winfcntl'] = fcntl
 import json
 import os
 import re
@@ -104,6 +114,19 @@ _LINKS = {
 }
 PROFILES = {k: LOGIN_DIRS[a] for k, a in ACCOUNT_OF.items()}
 PROFILES['scratch'] = str(ROOT / 'ax-console' / 'data' / 'browser-scratch')   # 콘솔 내부 브라우저용 빈 프로필
+
+
+def _proc_compat():
+    """common/shared/proc_compat.py(같은 폴더)를 경로로 불러온다(2026-11-06 Windows)."""
+    import importlib.util
+    mod = sys.modules.get('autosns_proc_compat')
+    if mod is None:
+        spec = importlib.util.spec_from_file_location(
+            'autosns_proc_compat', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'proc_compat.py'))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        sys.modules['autosns_proc_compat'] = mod
+    return mod
 
 
 def _canon(res):
@@ -406,6 +429,10 @@ class AxLock:
         else:
             path = str(self.paths.root / 'ax-console' / 'data' / 'browser-scratch') if name == 'scratch' else PROFILES.get(name)
             cands = {path} if path else set()
+        if sys.platform == 'win32':     # pgrep 이 없다 — 크롬 명령줄의 --user-data-dir 를 realpath 로 맞춘다(정션 포함)
+            pc = _proc_compat()
+            procs = pc.processes()
+            return any(pc.profile_in_use(c, procs) for c in cands)
         for cand in cands:
             r = subprocess.run(['pgrep', '-f', f'user-data-dir={re.escape(cand)}( |$)'], capture_output=True)
             if r.returncode == 0:

@@ -49,8 +49,8 @@ def _font_face(font_dir):
     d = font_dir.replace("\\", "/")
     disp, body = font_path(DISPLAY, font_dir), font_path(BODY_BOLD, font_dir)
     extra = f"""
-    @font-face {{ font-family:'Display'; src:url("file://{disp}"); }}
-    @font-face {{ font-family:'Body'; font-weight:100 800; src:url("file://{body}"); }}
+    @font-face {{ font-family:'Display'; src:url("{_file_url(disp)}"); }}
+    @font-face {{ font-family:'Body'; font-weight:100 800; src:url("{_file_url(body)}"); }}
     .ctitle, .th, .heading {{ font-family:'Display','KoPub',sans-serif; font-weight:400; }}
     .sent, .csub, .foottext {{ font-family:'Body','KoPub',sans-serif; }}
     """

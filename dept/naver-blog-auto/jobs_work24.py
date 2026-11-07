@@ -459,7 +459,7 @@ def rewrite(log_no, data, go=False):
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
-    from publish_naver import (MOD_KEY, _type_text, build_driver, click_if_present,
+    from publish_naver import (MOD_KEY, _type_text, build_driver, click_if_present, dismiss_draft_popup,
                                insert_link_blocks, shot, type_contenteditable)
     driver = build_driver(load_config().get("publish", {}).get("headless", False))
     try:
@@ -474,7 +474,7 @@ def rewrite(log_no, data, go=False):
         except Exception:
             pass
         time.sleep(3)
-        click_if_present(driver, By.CSS_SELECTOR, ".se-popup-button-cancel", timeout=3)
+        dismiss_draft_popup(driver, wait=8)     # '작성 중인 글' 팝업 → 취소(2026-11-06)
         click_if_present(driver, By.CSS_SELECTOR, ".se-help-panel-close-button", timeout=2)
         WebDriverWait(driver, 20).until(EC.presence_of_element_located(
             (By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")))

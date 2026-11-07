@@ -3,7 +3,7 @@
 담기: 학과 유튜브 채널에 숏츠가 올라갈 때 add() 가 대기열에 넣는다. 게시 시각 = 유튜브 공개 + 30분.
   - youtube_upload.upload (수·토 뉴스, 속보, 수동 업로드) — 학과 채널·공개일 때만
   - publish_career.py (화 퀴즈·진로)
-  - /Volumes/USB256/devAPP/AutoSNS/channels/disaster-shorts/tools/publish.py (재난 숏츠 — 예약 공개 시각 + 30분, AI 아바타 표시)
+  - E:/MacMini/devAPP/AutoSNS/channels/disaster-shorts/tools/publish.py (재난 숏츠 — 예약 공개 시각 + 30분, AI 아바타 표시)
   개인 GeoAI 채널 숏츠도 담는다(2026-10-12 사용자 요청). 제휴(쿠팡) 고지가 있는 영상은 빼고 담는다.
 
 올리기(main): 게시 시각이 지난 것 중 가장 오래된 1편. 틱톡끼리는 3시간 이상 띄운다(같은 날
@@ -200,6 +200,14 @@ def main(argv):
         infra = type(ex).__name__ in ("SessionNotCreatedException", "WebDriverException",
                                       "ConnectionRefusedError", "MaxRetryError") \
             or "Chrome 디버깅 포트" in str(ex)
+        if "게시물 목록에서 확인되지 않았" in str(ex):
+            # '게시'는 눌렀다 — 실제로 올라갔을 수 있다. 다시 올리면 중복(2026-11-07 같은 영상 3번).
+            # 자동 재시도하지 않고 사람이 스튜디오에서 확인하게 둔다.
+            e["posted"] = {"at": dt.datetime.now().isoformat(timespec="seconds"), "caption": caption,
+                           "status": "unconfirmed"}
+            _save(q)
+            log(f"!!! 틱톡 게시 확인 안 됨 — 중복 방지로 재시도하지 않음(스튜디오에서 확인): {os.path.basename(e['video'])}")
+            return 1
         if not infra:
             e["tries"] = e.get("tries", 0) + 1
             sig = f"{type(ex).__name__}:{str(ex)[:40]}"

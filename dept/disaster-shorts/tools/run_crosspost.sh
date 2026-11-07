@@ -1,6 +1,6 @@
 #!/bin/bash
 # AX 오케스트레이터: 잠금(같은 크롬 프로필·한도를 쓰는 작업은 차례로)·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
-[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job disastershorts.crosspost -- "$0" "$@"
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 E:/MacMini/devAPP/AutoSNS/shared/axlock.py run --job disastershorts.crosspost -- "$0" "$@"
 # 단일 실행 주인 검사: 실패하면 legacy 본문으로 진행하지 않는다.
 _AX_OWNER_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 /usr/bin/python3 -I "$_AX_OWNER_ROOT/common/operations/legacy_fences.py" dept youtube disastershorts.crosspost || exit $?
@@ -9,4 +9,4 @@ if [ "$#" -ne 0 ]; then echo "인자를 받지 않습니다. 점검: .venv/bin/p
 cd "$(dirname "$0")" || exit 1
 mkdir -p ../logs
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
-exec /Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto/.venv/bin/python crosspost.py >> ../logs/crosspost.log 2>&1
+exec E:/MacMini/devAPP/AutoSNS/channels/youtube-shorts-auto/.venv/bin/python crosspost.py >> ../logs/crosspost.log 2>&1

@@ -16,7 +16,7 @@ def main(check=False):
     weekly.log(f"대상: {e['date']} {e['type']}")
     if check:
         return
-    if not os.path.exists("/Volumes/USB256"):
+    if not os.path.exists("E:/MacMini"):
         raise RuntimeError("USB256 이 연결되어 있지 않습니다")
     weekly.step("대본", [weekly.PY, "write_script.py", e["date"]])
     weekly.step("음성(미리)", [weekly.PY, "voice.py", "--episode", ep])

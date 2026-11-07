@@ -73,6 +73,30 @@ def _notify(text):
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
 
 
+def _make_reel_cover(data):
+    """릴 커버 = 1번 표지 카드를 9:16 남색 바탕 가운데에 놓은 그림. 커버를 안 주면 인스타가 영상 중간 프레임을
+    골라 피드·프로필 격자에서 제목이 안 보였다(2026-11-06 사용자 지시). 프로필 격자는 가운데 3:4 를 쓰므로
+    4:5 카드는 통째로 보인다. 실패해도 게시는 그대로(커버 없이)."""
+    try:
+        from PIL import Image
+        imgs = data.get("images") or []
+        if not imgs or not os.path.exists(imgs[0]):
+            return None
+        card = Image.open(imgs[0]).convert("RGB")
+        W, H = 1080, 1920
+        card = card.resize((W, int(card.height * W / card.width)))
+        bg = Image.new("RGB", (W, H), (11, 21, 46))
+        bg.paste(card, (0, (H - card.height) // 2))
+        out = os.path.splitext(imgs[0])[0] + "_reel_cover.jpg"
+        bg.save(out, "JPEG", quality=92)
+        data["cover"] = out
+        log(f"릴 커버 준비: {os.path.basename(out)}")
+        return out
+    except Exception as e:  # noqa: BLE001
+        log(f"릴 커버 건너뜀: {type(e).__name__}: {e}")
+        return None
+
+
 def main():
     log("===== 주간 인스타 카드뉴스 시작 =====")
     done = _already_posted_today()
@@ -88,6 +112,7 @@ def main():
         if cfg.get("reel", {}).get("enabled"):
             from make_reel import make_reel
             make_reel(data)                              # 카드+음악 → 세로 영상
+            _make_reel_cover(data)                       # 표지 카드로 릴 커버(2026-11-06 '썸네일이 잘 보이게')
             result = post_reel(data, dry_run=False)      # 릴 게시
         else:
             result = post_carousel(data, dry_run=False)  # 캐러셀 게시

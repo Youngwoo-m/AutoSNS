@@ -5,10 +5,14 @@
 예약 시각: 편의 날짜 19:00 KST(config.publish.time_kst, 2026-10-23 사용자 지정으로 다시 19:00 — 08:00 은 하루 시험). 이미 올렸으면(<편>/upload.json) 다시 올리지 않는다.
 """
 import argparse, datetime as dt, json, os, sys
+# 저장소 루트(이 파일 기준) — 2026-11-06 Windows: 옛 G:/devAPP·/Volumes/USB256 고정 경로를 대신한다
+_AXROOT = __import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.dirname(__import__("os").path.realpath(__file__))))).replace("\\", "/")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = json.load(open(os.path.join(HERE, "config.json"), encoding="utf-8"))
-AUTOSNS = "/Volumes/USB256/devAPP/AutoSNS/channels/youtube-shorts-auto"
+if not os.path.isdir(CFG.get("root", "")):   # 2026-11-06 Windows: 설정의 옛 고정 경로가 없으면 이 폴더 기준으로
+    CFG["root"] = os.path.dirname(os.path.realpath(HERE))
+AUTOSNS = _AXROOT + "/channels/youtube-shorts-auto"
 sys.path.insert(0, AUTOSNS); os.chdir(AUTOSNS)
 
 KST = dt.timezone(dt.timedelta(hours=9))
@@ -52,7 +56,8 @@ def meta(sc):
     return title[:100], "\n".join(lines)[:4900], tags
 
 
-def upload(ep, dry_run=False):
+def upload(ep, dry_run=False, now=False):
+    """now=True: 예약 없이 바로 공개(예정일이 지난 편을 사용자 지시로 올릴 때, 2026-11-06)."""
     ep_dir = os.path.join(CFG["root"], ep)
     rec = os.path.join(ep_dir, "upload.json")
     if os.path.exists(rec):
@@ -60,13 +65,14 @@ def upload(ep, dry_run=False):
         return json.load(open(rec))
     sc = json.load(open(os.path.join(ep_dir, "script.json"), encoding="utf-8"))
     video = os.path.join(ep_dir, "final.mp4")
-    when = publish_at(sc["date"])
-    if when <= dt.datetime.now(KST) + dt.timedelta(minutes=30):
+    when = dt.datetime.now(KST) if now else publish_at(sc["date"])
+    if not now and when <= dt.datetime.now(KST) + dt.timedelta(minutes=30):
         raise SystemExit(f"예약 시각이 이미 지났거나 너무 가깝습니다: {when}")
     title, desc, tags = meta(sc)
-    status = {"privacyStatus": "private", "publishAt": when.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z"),
+    status = {"privacyStatus": "public"} if now else {"privacyStatus": "private", "publishAt": when.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")}
+    status.update({
               "selfDeclaredMadeForKids": False, "containsSyntheticMedia": True,
-              "embeddable": True, "publicStatsViewable": True, "license": "youtube"}   # 블로그 임베드에 필요
+              "embeddable": True, "publicStatsViewable": True, "license": "youtube"})   # 블로그 임베드에 필요
     body = {"snippet": {"title": title, "description": desc, "tags": tags,
                         "categoryId": CFG["publish"]["category_id"], "defaultLanguage": "ko",
                         "defaultAudioLanguage": "ko"}, "status": status}
@@ -85,7 +91,7 @@ def upload(ep, dry_run=False):
         while r is None:
             _, r = req.next_chunk()
         return r
-    mode = "youtube_schedule"
+    mode = "public_now" if now else "youtube_schedule"
     try:
         resp = _insert(body)
     except Exception as e:
@@ -141,5 +147,6 @@ def replace(ep):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("ep"); ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--replace", action="store_true")
+    ap.add_argument("--now", action="store_true", help="예약 없이 바로 공개(예정일이 지난 편)")
     a = ap.parse_args()
-    replace(a.ep) if a.replace else upload(a.ep, a.dry_run)
+    replace(a.ep) if a.replace else upload(a.ep, a.dry_run, a.now)

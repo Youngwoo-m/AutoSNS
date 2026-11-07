@@ -42,6 +42,12 @@ def _font():
     return f
 
 
+def ff_path(p):
+    r"""ffmpeg 필터(drawtext fontfile/textfile)에 넣을 경로. Windows 의 'E:\..' 는 역슬래시와
+    드라이브 콜론 때문에 'Error opening output files' 가 난다 — 슬래시로 바꾸고 콜론을 이스케이프한다(2026-11-06)."""
+    return str(p).replace("\\", "/").replace(":", r"\:")
+
+
 def _esc(t):
     return (t or "").replace("[", "").replace("]", "").replace("\\", "") \
         .replace(":", "\\:").replace("'", "").replace("%", "")
@@ -77,7 +83,7 @@ def apply(video_in, out=None, dur=None, hook_y=None, cta_y=None, cta_panel=None)
     cfg.update(load_config().get("overlays", {}) or {})
     if not cfg.get("hook") and not cfg.get("cta"):
         return video_in
-    fnt = _font()
+    fnt = ff_path(_font())
     vw, vh = _img_size(video_in)
     if dur is None:
         dur = _duration(video_in)
