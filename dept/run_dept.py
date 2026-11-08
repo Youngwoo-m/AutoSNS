@@ -300,8 +300,21 @@ def main(argv):
         return 2
     if not os.environ.get("AX_LOCKED"):     # 잠금·비상 정지를 거쳐 자기 자신을 다시 실행한다
         ax = [PY, os.path.join(ROOT, "common", "shared", "axlock.py"), "run", "--job", cmd]
-        return subprocess.call(ax + ["--", PY, os.path.abspath(__file__), *(["--dry"] if dry else []), cmd],
-                               env=_env(dry), cwd=ROOT)
+        rc = subprocess.call(ax + ["--", PY, os.path.abspath(__file__), *(["--dry"] if dry else []), cmd],
+                             env=_env(dry), cwd=ROOT)
+        # 75 = axlock 이 잠금을 못 잡아 실행하지 않고 건너뜀(크롬 프로필 사용 중 등). 실패가 아니라서
+        # 안쪽 실행이 카톡을 보내지 않으므로 여기서 알린다(2026-11-08, 11-07 밤 블로그·퀴즈가 말없이 빠짐).
+        # 시간마다 도는 작업(틱톡 대기열)은 다음 회차가 있으니 알리지 않는다.
+        if rc == 75 and not dry and not JOBS[cmd].get("every_min"):
+            j = JOBS[cmd]
+            if j.get("log"):
+                d, n = j["log"]
+                append(os.path.join(d, n) if n.startswith("logs") else os.path.join(d, "logs", n),
+                       f"===== [{now()}] {cmd} 건너뜀 — 잠금을 잡지 못함(학과 크롬 등 사용 중) =====")
+            kakao(f"[AX] 학과 작업 건너뜀: {j['name']} ({cmd})\n"
+                  "학과 크롬 등이 40분 넘게 사용 중이라 이번 회차를 실행하지 않았습니다. "
+                  "크롬을 닫고 다시 실행해 주세요.")
+        return rc
     return run_claude(cmd, dry) if JOBS[cmd].get("claude") else run_steps(cmd, dry)
 
 

@@ -76,7 +76,24 @@ DEFAULT_NON_EVENT = [
     "교육", "체험", "캠페인", "협약", "MOU", "선정", "공모", "표창", "수상",
     "설명회", "간담회", "워크숍", "세미나", "포럼", "도입", "조성", "구축",
     "위탁운용", "운용사", "펀드", "예산",
+    # 2026-11-08: 기사 기준을 6→5건으로 낮추며 추가. 9~15건짜리 큰 묶음이 대부분
+    # 성금·기부·수신료 면제·교부세 소식이었다(심각도 단어가 섞이면 새어 들어올 수 있다).
+    "성금", "기부", "면제", "교부세",
 ]
+
+
+# common/shared/fetch_news.py 의 REGION_ALIASES 와 같은 규칙(흔한 낱말과 겹치는 군 이름은 '군'까지).
+LOCAL_ALIASES = {
+    "제천": ["제천"],
+    "충북": ["충북", "충청북도", "청주", "충주", "증평", "진천", "괴산", "단양",
+             "음성군", "영동군", "보은군", "옥천군"],
+}
+
+
+def _is_local(items, regions):
+    """묶음 기사 중 하나라도 제천·충북 등 지역 기사면 True(지역 편은 조회 중앙값이 약 3배)."""
+    names = [a for r in regions for a in LOCAL_ALIASES.get(r, [r])]
+    return any(any(a in (i.get("title", "")) for a in names) for i in items)
 
 
 def _is_non_event(title, non_event_words):
@@ -114,6 +131,10 @@ def decide(cfg):
     threshold = cfg.get("news", {}).get("dedup_similarity", 0.6)
     severity_words = tcfg.get("severity_keywords", DEFAULT_SEVERITY)
     non_event_words = tcfg.get("non_event_keywords", DEFAULT_NON_EVENT)
+    # 지역(제천·충북) 사건은 기사 수 문턱을 따로 낮춘다(2026-11-08, 11-06 제천 주택 화재 사망
+    # 5건을 놓침). 심각도 단어는 똑같이 필수. 0 이면 끈다.
+    local_min = tcfg.get("local_min_cluster", 0)
+    local_regions = tcfg.get("local_regions", ["제천", "충북"])
 
     raw = fetch_recent_raw(within_days=2)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=within_hours)
@@ -128,19 +149,22 @@ def decide(cfg):
     for c in clusters:
         size = len(c["items"])
         rep = c["items"][0]  # 최신 대표 기사
-        if size >= min_cluster and _mostly_non_event(c["items"], non_event_words):
+        local = local_min > 0 and size >= local_min and _is_local(c["items"], local_regions)
+        if (size >= min_cluster or local) and _mostly_non_event(c["items"], non_event_words):
             skipped.append(f"'{_norm_title(rep['title'])[:20]}'({size}건)")
             continue          # 예방·행정 보도자료 — 기사 수와 무관하게 사건 아님
         sev = any(_has_severity(i.get("title", ""), severity_words, non_event_words)
                   for i in c["items"])
-        big_enough = (size >= min_cluster and sev) or (strong_cluster > 0 and size >= strong_cluster)
+        big_enough = ((size >= min_cluster and sev) or (local and sev)
+                      or (strong_cluster > 0 and size >= strong_cluster))
         if big_enough:
             sig = _norm_title(rep["title"])[:40]
             return ({"sig": sig, "label": rep["title"][:40], "source": "news",
                      "rep": rep, "size": size, "severity": sev,
                      "items": c["items"][:3], "all_items": c["items"][:15]},
                     f"사건 감지: '{_norm_title(rep['title'])[:24]}' "
-                    f"기사 {size}건, 심각도 {'있음' if sev else '없음'}")
+                    f"기사 {size}건, 심각도 {'있음' if sev else '없음'}"
+                    + (" (지역 기준)" if local and size < min_cluster else ""))
     top = next((c for c in clusters
                 if not (len(c["items"]) >= min_cluster
                         and _mostly_non_event(c["items"], non_event_words))), None)

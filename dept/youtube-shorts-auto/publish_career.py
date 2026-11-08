@@ -165,7 +165,7 @@ def _post_threads(ep, url):
     env = {k: v for k, v in os.environ.items() if k != "SMUDS_EDITION"}
     try:
         p = subprocess.run([IG_PY, "threads_cli.py"], cwd=IG_DIR,
-                           input=json.dumps({"text": text}), text=True,
+                           input=json.dumps({"text": text}), text=True, encoding="utf-8", errors="replace",
                            capture_output=True, timeout=300, env=env)
     except subprocess.TimeoutExpired:
         return "error: timeout"
@@ -211,7 +211,7 @@ def _post_instagram(ep, dry=False):
     log(f"[{ep.get('label', ep['no'])}] 인스타 릴 게시 시작...")
     try:
         p = subprocess.run([IG_PY, "post_reel_cli.py"], cwd=IG_DIR,
-                           input=json.dumps(payload), text=True,
+                           input=json.dumps(payload), text=True, encoding="utf-8", errors="replace",
                            capture_output=True, timeout=IG_TIMEOUT, env=env)
     except subprocess.TimeoutExpired:
         return "error: timeout"
