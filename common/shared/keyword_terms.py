@@ -29,10 +29,24 @@ RELEVANCE_TERMS = SEARCH_DISASTER_TERMS + [
 ]
 
 
-def is_disaster_relevant(title, extra=()):
-    """제목에 재난·안전 관련 말이 하나라도 들면 True."""
+# 엄격 모드(strict=True, 학과 재난뉴스 숏츠 2026-11-09): 재난 소식 띠(geoai-na alerts.js)와 같은 거르기.
+#  - '문화재·문화재단' 속 '화재'는 재난 낱말로 치지 않는다.
+#  - 넓은 낱말(안전·훈련·예방·점검·구조·위험)만 걸린 기사 중 행사·홍보·채용 기사는 무관으로 본다.
+SOFT_TERMS = {"안전", "훈련", "예방", "점검", "구조", "위험"}
+EVENT_TERMS = ["개최", "한마당", "체험", "축제", "캠페인", "협약", "시상", "수상", "공모", "교육생", "모집", "채용", "기탁", "후원"]
+
+
+def is_disaster_relevant(title, extra=(), strict=False):
+    """제목에 재난·안전 관련 말이 하나라도 들면 True. strict 면 위 엄격 모드 규칙을 더한다."""
     t = title or ""
-    return any(w and w in t for w in list(RELEVANCE_TERMS) + list(extra or ()))
+    if strict:
+        t = t.replace("문화재", "")
+    hits = [w for w in list(RELEVANCE_TERMS) + list(extra or ()) if w and w in t]
+    if not hits:
+        return False
+    if strict and all(w in SOFT_TERMS for w in hits) and any(e in t for e in EVENT_TERMS):
+        return False
+    return True
 
 
 def queries_from_titles(titles):

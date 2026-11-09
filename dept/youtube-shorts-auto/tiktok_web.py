@@ -300,7 +300,21 @@ def _confirm_posted(d, caption, timeout=150):
     (전송·검사가 덜 끝난 상태). 끝날 때까지 기다리고, 목록에 제목이 보여야 성공으로 친다."""
     title = (caption.split("\n")[0] or "").strip()[:14]
     t0 = time.time()
+    reclicks = 0
     while time.time() - t0 < timeout:
+        # 2026-11-08: 11-07 22시·11-08 07시 두 번은 '게시'를 눌렀는데 '지금 게시' 창도 안 뜨고 업로드
+        # 화면 그대로였다(캡션·위치도 함께 실패 — 무언가 화면을 덮고 있었다). 목록 화면을 7분 기다리다
+        # 실패로 끝나 영상이 안 올라갔다. 20초가 지나도 업로드 화면에 '게시' 버튼이 그대로면 덮인 창을
+        # 닫고 다시 누른다(최대 2번). 첫 클릭이 먹지 않은 상태라 중복 게시가 되지 않는다.
+        if (reclicks < 2 and time.time() - t0 > 20 + reclicks * 20
+                and "/tiktokstudio/content" not in d.current_url):
+            shot(d, f"post_click_stuck_{reclicks + 1}")
+            ActionChains(d).send_keys(Keys.ESCAPE).perform()
+            time.sleep(1)
+            lb = _click_post(d)
+            reclicks += 1
+            if lb:
+                log(f"'게시' 클릭이 먹지 않아 다시 누름({reclicks}회)")
         for lb in ("지금 게시", "Post now"):
             for e in d.find_elements(By.XPATH, f"//button[normalize-space()='{lb}']"):
                 try:
@@ -534,6 +548,7 @@ def upload(video, caption, post=False, ai_generated=False, location="충북제�
         if box is None or not _caption_ok((box.text or ""), caption):
             shot(d, "caption_missing")
             raise SystemExit("캡션이 들어가지 않아 게시하지 않습니다(파일명 캡션 방지)")
+        shot(d, "before_post")           # 게시 직전 화면(덮인 창·위치·캡션 상태를 나중에 볼 수 있게)
         lb = _click_post(d)
         if lb is None:
             shot(d, "no_post_button")

@@ -1,0 +1,140 @@
+"""자동 발행 글 윤문 — 생성된 글을 한 번 더 읽고 '사람이 쓴 것처럼' 문체만 다듬는다(2026-11-08 사용자 지정).
+
+humanize_rules.HUMANIZE_KR 는 글을 쓸 때 프롬프트에 붙이는 규칙이고, 이 모듈은 다 쓴 글을 다시 보는
+두 번째 단계다. 규칙은 korean-humanize 스킬의 quick-rules(S1·S2)를 자동 발행용으로 줄였다.
+
+안전장치(문단마다 따로 검사해, 어긋난 문단만 원문으로 되돌린다):
+  - 숫자·날짜·주소(URL)·큰따옴표 인용이 원문과 하나라도 다르면 되돌린다.
+  - 바뀐 글자 비율이 45%를 넘으면(과윤문) 되돌린다. 길이가 원문의 65~120%를 벗어나도 되돌린다(군더더기를 걷으면 짧아진다).
+  - LLM 호출이 실패하면 글 전체를 그대로 쓴다 — 윤문 때문에 발행이 멈추지 않는다.
+
+사용:
+    from shared.humanize import polish_segments, polish
+    paras = polish_segments(paras, genre="블로그")
+    text = polish(text)
+끄기: 각 프로젝트 config.json 에 "humanize": {"enabled": false}
+"""
+import difflib
+import re
+
+RULES = """너는 한국어 글을 사람이 쓴 것처럼 다듬는 편집자다. 내용은 그대로 두고 문체·리듬·표현만 고친다.
+
+반드시 지킬 것
+- 숫자·날짜·단위·고유명사(기관·지명·사람·제품)·큰따옴표 인용·URL·법령은 한 글자도 바꾸지 않는다.
+- 사실·주장·가능성·추정·의무의 강도를 바꾸지 않는다. 없는 사례·수치·감정·교훈을 더하지 않는다.
+- 말투(합니다/해요)와 장르는 원문 그대로 둔다. 원문이 이미 자연스러운 문장은 손대지 않는다.
+- 문장을 잘게 쪼개 단문만 나열하지 않는다. 길이가 다른 문장이 섞이게 하고, 필요하면 인접 문장을 잇는다.
+
+고칠 것(같은 뜻일 때만)
+- 번역투: '~에 대해'→목적격, '~에 있어서'→'~에서', '~를 가지고 있다'→'~가 있다/~하다', '~되어진다'→'~된다',
+  '~에 의해'→행위자를 주어로, '~와 관련하여'→'~에', '~에서의/~으로의' 같은 이중 조사는 풀어 쓴다.
+- '~를 통해'는 한 문단에 세 번 넘을 때만 일부를 줄인다. '~것이다'는 연속으로 남발할 때만 줄인다.
+- 문두 접속사(또한·따라서·즉·나아가·아울러·더욱이)와 '이는·이 점에서' 같은 메타 진입을 덜어낸다.
+- '결론적으로·요약하면·이를 통해' 같은 결산 표현, '시사하는 바가 크다·주목할 만하다·본질적으로' 같은 빈 수사,
+  '~할 때다·지금이야말로' 같은 결말 공식, 근거 없는 '획기적·강력한·압도적' 수식을 덜어낸다.
+- 'A가 아니라 B' 수사적 대조와 'A인가, B인가' 공식은 한 번만 남긴다.
+- '-성/-적/-화' 명사 나열과 '진행됩니다·제공됩니다·가능합니다' 피동 반복은 누가 무엇을 하는지 동사로 쓴다.
+- 연결어미 뒤 쉼표('-고,' '-며,' '-지만,')는 쉼표만 뺀다.
+- 따옴표 강조 남발, 괄호 영어 병기 반복(첫 등장만 남김)을 줄인다."""
+
+_NUM = re.compile(r"\d[\d,.]*")
+_URL = re.compile(r"https?://\S+")
+_QUOTE = re.compile(r"[\"“”]([^\"“”]{2,})[\"“”]")
+_TAG = re.compile(r"<[^>]+>")
+
+
+def _anchors(s):
+    return (sorted(_NUM.findall(s)), sorted(_URL.findall(s)), sorted(_QUOTE.findall(s)), _TAG.findall(s))
+
+
+def change_rate(a, b):
+    return 1.0 - difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
+
+
+def _ok(orig, new, max_change):
+    if not new.strip():
+        return False, "빈 결과"
+    if _anchors(orig) != _anchors(new):
+        return False, "숫자·주소·인용·태그가 달라짐"
+    if not (0.65 <= len(new) / max(1, len(orig)) <= 1.2):
+        return False, f"길이 {len(new)}/{len(orig)}"
+    cr = change_rate(orig, new)
+    if cr > max_change:
+        return False, f"변경률 {cr:.0%}"
+    return True, f"변경률 {cr:.0%}"
+
+
+def _enabled(cfg):
+    return ((cfg or {}).get("humanize") or {}).get("enabled", True)
+
+
+def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=None):
+    """글 조각 목록을 한 번의 호출로 윤문한다. 같은 길이의 목록을 돌려준다(어긋난 조각은 원문)."""
+    log = log or (lambda m: None)
+    segs = [s if isinstance(s, str) else "" for s in (segments or [])]
+    idx = [i for i, s in enumerate(segs) if len(s.strip()) >= 20]   # 짧은 제목·라벨은 건드리지 않는다
+    if not idx:
+        return segs
+    cfg = cfg or {}
+    try:
+        if not _enabled(cfg):
+            return segs
+        from shared.llm import client
+        body = "\n\n".join(f"[[{n}]]\n{segs[i]}" for n, i in enumerate(idx, 1))
+        prompt = (f"{RULES}\n\n장르: {genre}\n\n아래 [[번호]] 조각마다 다듬은 글을 같은 [[번호]] 머리표 아래에 쓴다. "
+                  f"머리표 수와 순서를 그대로 두고, 설명·인사말은 쓰지 않는다. 고칠 것이 없으면 원문을 그대로 쓴다.\n\n{body}")
+        msg = client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
+                                          max_tokens=max(2000, int(len(body) * 1.5)),
+                                          messages=[{"role": "user", "content": prompt}])
+        text = msg.content[0].text
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀(원문 그대로): {type(e).__name__}: {str(e)[:80]}")
+        return segs
+    parts = dict((int(m.group(1)), m.group(2).strip())
+                 for m in re.finditer(r"\[\[(\d+)\]\]\s*\n?(.*?)(?=\n?\[\[\d+\]\]|\Z)", text, flags=re.S))
+    out, kept, changed = list(segs), 0, []
+    for n, i in enumerate(idx, 1):
+        new = parts.get(n, "")
+        good, why = _ok(segs[i], new, max_change)
+        if good:
+            out[i] = new
+            if new != segs[i]:
+                changed.append(change_rate(segs[i], new))
+        else:
+            kept += 1
+            log(f"윤문 되돌림(조각 {n}): {why}")
+    if changed:
+        log(f"윤문: {len(changed)}/{len(idx)}개 조각 다듬음(평균 변경률 {sum(changed) / len(changed):.0%})"
+            + (f", {kept}개 원문 유지" if kept else ""))
+    return out
+
+
+_BLOCK = re.compile(r"(<(p|li|blockquote)\b[^>]*>)(.*?)(</\2>)", re.S | re.I)
+
+
+def polish_html(html, genre="블로그", cfg=None, max_change=0.45, log=None):
+    """HTML 원고의 <p>·<li>·<blockquote> 안쪽 글만 윤문한다. 제목·표·코드·그림은 건드리지 않는다.
+    안쪽 태그(<a>·<strong> 등)는 그대로 남아야 하고, 달라지면 그 문단은 원문으로 둔다."""
+    if not html:
+        return html
+    pre = [(m.start(), m.end()) for m in re.finditer(r"<(pre|code|table)\b.*?</\1>", html, re.S | re.I)]
+    hits = [m for m in _BLOCK.finditer(html) if not any(a <= m.start() < b for a, b in pre)]
+    if not hits:
+        return html
+    new = polish_segments([m.group(3) for m in hits], genre=genre, cfg=cfg, max_change=max_change, log=log)
+    out, last = [], 0
+    for m, inner in zip(hits, new):
+        out += [html[last:m.start(3)], inner]
+        last = m.end(3)
+    out.append(html[last:])
+    return "".join(out)
+
+
+def polish(text, genre="블로그", cfg=None, max_change=0.45, log=None):
+    """긴 글 하나 — 빈 줄 기준 문단으로 나눠 윤문한다."""
+    paras = re.split(r"(\n\s*\n)", text or "")
+    body_idx = [i for i in range(0, len(paras), 2)]
+    new = polish_segments([paras[i] for i in body_idx], genre=genre, cfg=cfg, max_change=max_change, log=log)
+    for i, s in zip(body_idx, new):
+        paras[i] = s
+    return "".join(paras)

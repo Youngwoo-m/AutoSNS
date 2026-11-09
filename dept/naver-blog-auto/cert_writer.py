@@ -167,7 +167,18 @@ def write(n, total, title, angle, cfg=None, profile="cert"):
     if len(summary) < 2 or len(paras) < 3:
         raise RuntimeError(f"형식 미달(요약 {len(summary)}줄, 문단 {len(paras)}개)")
     log(f"{kind} 본문 생성: {sum(len(p) for p in paras)}자 / 문단 {len(paras)} / FAQ {len(faq)}")
-    return {"summary": summary, "paras": paras, "faq": faq[:3], "lead": lead}
+    faq = faq[:3]
+    # 다 쓴 글을 한 번 더 읽고 문체만 다듬는다(2026-11-08 사용자 지정 — shared/humanize.py).
+    # 숫자·주소·인용이 달라지거나 많이 바뀐 조각은 원문으로 되돌린다. 실패해도 글은 그대로 나간다.
+    try:
+        _humanize_rules()                      # sys.path 에 AutoSNS 루트를 넣는다
+        from shared.humanize import polish_segments
+        segs = polish_segments([lead] + paras + [a for _, a in faq], genre="블로그", cfg=cfg, log=log)
+        lead, paras = segs[0], segs[1:1 + len(paras)]
+        faq = [(q, a) for (q, _), a in zip(faq, segs[1 + len(paras):])]
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀: {type(e).__name__}")
+    return {"summary": summary, "paras": paras, "faq": faq, "lead": lead}
 
 
 def _humanize_rules():

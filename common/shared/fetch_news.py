@@ -135,14 +135,14 @@ def _region_rank(item, region_priority, exclude=()):
     return len(region_priority)
 
 
-def _select_rank(item, region_priority, exclude=(), extra_terms=()):
+def _select_rank(item, region_priority, exclude=(), extra_terms=(), strict=False):
     """최종 선정 순서: 재난 관련 지역 기사 → 재난 관련 기타 지역 → 재난 무관 기사.
 
     지역 가점은 재난·안전 관련 말이 제목에 든 기사에만 준다. 무관한 기사는
     버리지 않고 맨 뒤로 보낸다(기사가 모자란 날엔 자리를 채우게).
     """
     n = len(region_priority)
-    if not is_disaster_relevant(item.get("title", ""), extra_terms):
+    if not is_disaster_relevant(item.get("title", ""), extra_terms, strict=strict):
         return n + 1
     return _region_rank(item, region_priority, exclude)
 
@@ -298,6 +298,30 @@ def fetch_news():
 
             log(f"커넥트데일리 건너뜀({type(e).__name__})")
 
+    # 재난 소식 띠(geoai-na /fn/alerts — 저녁 룰렛·셔틀 앱 띠와 같은 목록)가 모은 재난뉴스를 참고로 더한다
+    # (config.news.alerts=true). 아래에서 alerts_keep 건은 자리를 보장한다.
+    alerts_added = []
+    if cfg.get("alerts", False):
+        try:
+            from shared.alerts_feed import fetch_alerts, URL as _AURL
+            al = fetch_alerts(cfg.get("alerts_url", _AURL), within_days=min(within, 3),
+                              warnings=cfg.get("alerts_warnings", False))
+            by_norm = {_norm_title(r.get("title", "")): r for r in results}
+            by_link = {r.get("link"): r for r in results}
+            new = []
+            for it in al:
+                old = by_link.get(it["link"]) or by_norm.get(_norm_title(it["title"]))
+                if old is not None:          # 구글 검색에도 있던 기사 — 그 기사를 띠 기사로 표시(자리 보장 대상)
+                    old["via"] = "alerts"
+                    alerts_added.append(old)
+                else:
+                    new.append(it)
+                    alerts_added.append(it)
+            results.extend(new)
+            log(f"재난 소식 띠 뉴스 {len(alerts_added)}건 참고(새로 {len(new)}건)")
+        except Exception as e:
+            log(f"재난 소식 띠 건너뜀({type(e).__name__})")
+
     # 웹(네이버 블로그) 검색 결과를 소스 풀에 추가 (config.news.web_naver=true + 키)
     ns = cfg.get("naver_search", {})
     if cfg.get("web_naver", False) and ns.get("client_id"):
@@ -335,7 +359,8 @@ def fetch_news():
     merged = before_dedup - len(results)
     if region_priority:
         rel_extra = cfg.get("relevance_extra", [])
-        results.sort(key=lambda x: _select_rank(x, region_priority, region_exclude, rel_extra))
+        strict = cfg.get("relevance_strict", False)   # 행사·홍보·문화재 기사 거르기(keyword_terms 엄격 모드)
+        results.sort(key=lambda x: _select_rank(x, region_priority, region_exclude, rel_extra, strict))
     results = results[:max_items]
     # Esri 글은 날짜가 조금 지나도 참고 가치가 커서, 최소 N건은 자리를 보장한다
     keep = cfg.get("esri_keep", 2)
@@ -345,9 +370,29 @@ def fetch_news():
         if missing:
             results = results[:max(0, max_items - len(missing))] + missing
             log(f"Esri 글 {len(missing)}건 자리 보장(참고용)")
+    # 띠 기사는 이미 제천·충북 재난으로 걸러진 것이라 최소 N건 자리를 보장한다(제천·충북 기사 먼저)
+    akeep = cfg.get("alerts_keep", 2)
+    if alerts_added and akeep:
+        from difflib import SequenceMatcher
+        have = [_norm_title(r.get("title", "")) for r in results]
+        present = lambda a: any(SequenceMatcher(None, _norm_title(a["title"]), h).ratio() >= dedup_similarity for h in have)
+        pick = sorted(alerts_added, key=lambda x: (x["source"] != "기상청", _region_rank(x, ["제천", "충북"]) >= 2))
+        need = akeep - sum(1 for r in results if r.get("via") == "alerts")
+        missing = [a for a in pick if not present(a)][:max(0, need)]
+        if missing:
+            # 뒤에서부터 띠 기사가 아닌 것만 비워 자리를 만든다(이미 든 띠 기사는 밀어내지 않는다)
+            drop = len(missing) - max(0, max_items - len(results))
+            for i in range(len(results) - 1, -1, -1):
+                if drop <= 0:
+                    break
+                if results[i].get("via") != "alerts":
+                    del results[i]
+                    drop -= 1
+            results += missing
+            log(f"재난 소식 띠 뉴스 {len(missing)}건 자리 보장")
     if region_priority:
         matched = sum(1 for x in results
-                      if _select_rank(x, region_priority, region_exclude, rel_extra)
+                      if _select_rank(x, region_priority, region_exclude, rel_extra, strict)
                       < len(region_priority))
         log(f"뉴스 {len(results)}건 수집(최근 {within}일, 지역우선 "
             f"{' > '.join(region_priority)}; 우선지역 {matched}건, 중복 {merged}건 병합).")

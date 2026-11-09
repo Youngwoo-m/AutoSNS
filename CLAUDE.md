@@ -54,6 +54,18 @@ claude CLI 로 먼저 보낸다(그림은 파일로 넘겨 Read, 도구는 `<too
 GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄이지 않고 올린다(`math_gif/post_draft.py`).
 시험 글은 공개하지 말고 Blogger 초안으로 먼저 확인한다. 숫자 계산은 calc-verifier, 출처는 source-reviewer 로 검토한다.
 
+## 글 윤문 (2026-11-08 사용자 지정)
+
+자동으로 쓰는 글은 사람이 쓴 것처럼 윤문해서 내보낸다. 글을 쓸 때는 `shared/humanize_rules.py`(HUMANIZE_KR)를
+프롬프트에 붙이고, 다 쓴 글은 `shared/humanize.py` 의 `polish_segments()` 로 한 번 더 다듬는다(korean-humanize 스킬 규칙 요약).
+숫자·날짜·URL·인용이 달라지거나 많이 바뀐 조각은 원문으로 되돌리고, 실패해도 발행은 그대로 간다.
+현재 연결: 네이버 브리핑(`generate_content.py`), 진로·자격증·입시 시리즈(`cert_writer.py` — 블로거·네이버),
+GeoAI 개념 시리즈(`personal/naver-blog-auto/geoai_series.py` — 따라하기·프롬프트 예시는 제외),
+학과 Blogger 교차 게시(`dept_blogger_post.py --go` — `polish_html()` 로 <p>·<li> 안쪽 글만, 코드·표·제목 제외).
+규칙만 붙인 곳(길이가 정해진 대본이라 2차 윤문 없음): GeoAI 숏츠 대본(`geoai_script.py`), 틱톡 1분 해설(`personal/geoai-youtube/tiktok_long.py`).
+클로드 자동 작업은 `personal/claude-jobs/공통규칙.md` 의 korean-humanize 규칙을 따른다.
+새 글쓰기 경로를 만들면 같은 단계를 넣는다. 끄려면 config.json 에 `"humanize": {"enabled": false}`.
+
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.

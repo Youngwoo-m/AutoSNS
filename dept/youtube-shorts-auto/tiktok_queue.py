@@ -36,8 +36,8 @@ CAPTION_SYSTEM = """너는 세명대학교 재난안전학과 틱톡 계정의 �
 
 정확히 4줄만 출력한다. 다른 말은 쓰지 않는다.
 1줄: 스크롤을 멈추게 하는 질문형 첫 줄. 30자 이내. 이모지는 최대 1개.
-2줄: 영상에서 알 수 있는 것 한 문장. 40자 이내.
-3줄: 댓글을 부르는 한 줄. 25자 이내, 👇로 끝낸다. 퀴즈면 "정답은 O? X? 댓글로 👇",
+2줄: 영상에서 알 수 있는 것 한 문장. 40자 이내. 퀴즈(O·X)면 정답을 절대 밝히지 말고 궁금하게 만드는 한 줄로.
+3줄: 댓글을 부르는 한 줄. 25자 이내, 👇로 끝낸다. 퀴즈면 "O면 1, X면 2 댓글로 👇"(숫자 하나로 답하게 해 댓글 문턱을 낮춘다),
      그 밖에는 시청자 경험·지역을 묻는다(예: "우리 동네는 대비돼 있나요? 👇").
 4줄: 해시태그 정확히 5개를 공백으로 구분. #재난안전학과 와, #제천 또는 #충북 중 하나를 반드시 넣는다.
 링크·주소·"#Shorts"는 넣지 않는다.
@@ -45,8 +45,8 @@ CAPTION_SYSTEM = """너는 세명대학교 재난안전학과 틱톡 계정의 �
 예)
 제목: [재난안전 O·X] 인공호흡 자신 없으면 CPR 하면 안 된다?
 인공호흡 못 하면 CPR도 하지 말아야 할까요? 🫀
-가슴압박만 해도 생명을 살릴 수 있어요.
-정답은 O? X? 댓글로 👇
+헷갈리는 사람이 의외로 많아요. 영상 끝에서 정답 공개!
+O면 1, X면 2 댓글로 👇
 #심폐소생술 #CPR #응급처치 #재난안전학과 #충북"""
 
 
@@ -66,7 +66,7 @@ def _save(q):
     os.replace(tmp, QUEUE)
 
 
-def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source="", backfill=False, notice="", ai_voice=False):
+def add(video, title, description="", hashtags=(), ai_generated=False, not_before=None, source="", backfill=False, notice="", ai_voice=False, caption=""):
     """대기열에 한 편 넣는다. 어떤 경우에도 예외를 올리지 않는다(발행 흐름을 막지 않게)."""
     try:
         if not ((load_config().get("tiktok_web") or {}).get("daily", True)):
@@ -86,6 +86,7 @@ def add(video, title, description="", hashtags=(), ai_generated=False, not_befor
                   "not_before": ((dt.datetime.fromisoformat(not_before) if not_before else dt.datetime.now())
                                  + dt.timedelta(minutes=DELAY_MIN)).isoformat(timespec="seconds"),
                   "source": source, "backfill": bool(backfill), "notice": (notice or "").strip(), "ai_voice": bool(ai_voice),
+                  "caption": (caption or "").strip(),
                   "added": dt.datetime.now().isoformat(timespec="seconds"),
                   "posted": None, "tries": 0})
         _save(q)
@@ -96,32 +97,42 @@ def add(video, title, description="", hashtags=(), ai_generated=False, not_befor
         return False
 
 
-CROSS_LINE = "📌 유튜브·블로그 등 전 채널 모음 👉 url.kr/gitdat"
+# 2026-11-08 끔: 틱톡은 캡션 첫 줄만 보이고 주소도 눌리지 않는다. 150~180자이던 캡션을 줄이려고 뺐다.
+CROSS_LINE = ""
 
 
 def _fallback_caption(e):
+    """Claude 캡션이 형식에 안 맞을 때 — 제목·댓글 유도·해시태그 세 줄만.
+
+    설명 첫 문장은 넣지 않는다(2026-11-08: '[재난 유형별 피해 양상과 대응 방안] …' 같은 머리말이 붙어 길어졌다)."""
     title = re.sub(r"\s*\|.*$", "", re.sub(r"\s*#Shorts\b", "", e["title"], flags=re.I)).strip()
-    first = re.split(r"(?<=[.!?。])\s+", (e.get("description") or "").strip())[0][:45]
     tags = [t for t in e.get("hashtags", []) if t not in ("세명대학교", "재난안전학과")][:3]
     tags += ["재난안전학과", "제천"]
-    cta = "정답은 O? X? 댓글로 👇" if ("O·X" in e["title"] or "OX" in e["title"]) else "여러분 생각은 어떤가요? 👇"
-    return "\n".join(x for x in [title[:40], first, cta, " ".join("#" + t for t in tags[:5])] if x)
+    cta = "O면 1, X면 2 댓글로 👇" if ("O·X" in e["title"] or "OX" in e["title"]) else "여러분 생각은 어떤가요? 👇"
+    return "\n".join(x for x in [title[:40], cta, " ".join("#" + t for t in tags[:5])] if x)
 
 
 def make_caption(e, cfg=None):
     cfg = cfg or load_config()
-    text = ""
+    text = (e.get("caption") or "").strip()   # 미리 써 둔 캡션(개인 1분 해설 등, 2026-11-08)이 있으면 그대로
     try:
+        if text:
+            raise StopIteration
         sys.path.insert(0, os.path.dirname(os.path.dirname(BASE_DIR)))
         from shared.llm import client
         msg = client(cfg).messages.create(
             model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=200, system=CAPTION_SYSTEM,
-            messages=[{"role": "user", "content": f"제목: {e['title']}\n설명: {e.get('description','')[:400]}\n"
+            # 지시문을 본문에도 넣는다 — Max 구독(claude CLI) 경로가 system 을 약하게 따라
+            # 4줄 형식을 어기고 긴 글을 써서 늘 기본 형식으로 떨어졌다(2026-11-08 확인).
+            messages=[{"role": "user", "content": f"{CAPTION_SYSTEM}\n\n---\n"
+                                                  f"제목: {e['title']}\n설명: {e.get('description','')[:400]}\n"
                                                   f"참고 태그: {', '.join(e.get('hashtags', [])[:10])}"}])
         lines = [ln.strip() for ln in msg.content[0].text.strip().splitlines() if ln.strip()]
         if (len(lines) == 4 and len(lines[0]) <= 40 and 4 <= lines[3].count("#") <= 6
                 and "http" not in " ".join(lines)):
             text = "\n".join(lines)
+    except StopIteration:
+        pass
     except Exception as ex:  # noqa: BLE001
         log(f"틱톡 설명 생성 실패 → 기본 형식: {type(ex).__name__}")
     text = text or _fallback_caption(e)
@@ -131,8 +142,8 @@ def make_caption(e, cfg=None):
         text = "\n".join(lines)
     if e.get("ai_generated"):
         lines = text.split("\n")
-        lines.insert(len(lines) - 1, "※ 영상의 목소리는 AI로 합성한 음성입니다." if e.get("ai_voice")
-                     else "※ 진행자 모습과 목소리는 AI로 합성한 아바타입니다.")
+        lines.insert(len(lines) - 1, "※ AI 합성 음성" if e.get("ai_voice")
+                     else "※ AI 합성 아바타(모습·목소리)")
         text = "\n".join(lines)
     # 채널 간 상호 언급. 틱톡 캡션의 주소는 클릭되지 않으므로 외우기 쉬운 단축주소로 적는다.
     if CROSS_LINE and CROSS_LINE not in text:

@@ -307,6 +307,18 @@ def generate():
     log(f"본문 분량 {_body_len(intro, blocks, tips, outro)}자 (기준 {min_chars}자), "
         f"뉴스 {len(blocks)}블록")
 
+    # 다 쓴 글을 한 번 더 읽고 문체만 다듬는다(2026-11-08 사용자 지정 — shared/humanize.py).
+    # 숫자·주소·인용이 달라지거나 많이 바뀐 조각은 원문으로 되돌린다. 실패해도 글은 그대로 나간다.
+    try:
+        from shared.humanize import polish_segments
+        segs = polish_segments([intro, tips, outro, faq or ""] + [b["paragraph"] for b in blocks],
+                               genre="블로그", cfg=cfg, log=log)
+        intro, tips, outro, faq = segs[0], segs[1], segs[2], segs[3]
+        for b, p in zip(blocks, segs[4:]):
+            b["paragraph"] = p
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀: {type(e).__name__}")
+
     # 제목: 검색어가 앞, 브랜드는 짧게 뒤. 날짜는 넣지 않는다.
     #
     # 예전에는 '부제 | 세명대 재난안전학과 2026.09.21' 이었는데, 네이버 검색결과는

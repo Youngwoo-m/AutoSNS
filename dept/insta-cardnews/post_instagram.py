@@ -159,15 +159,41 @@ def _click_by_labels(driver, labels, timeout=8):
     return False
 
 
-def _find_file_input(driver, timeout=8):
+def _file_inputs(driver, video=False):
+    """쓸 만한 파일 칸을 좋은 순서로. '새 게시물 만들기' 창(role=dialog) 안의 칸을 먼저,
+    영상이면 accept 에 video 가 든 칸을 먼저 둔다.
+
+    2026-11-08: 첫 번째로 찾은 칸에 영상을 넣었는데 업로드 창이 '끌어다 놓으세요' 그대로였다
+    (창 밖의 다른 파일 칸 — 프로필 사진 등 — 에 들어간 것으로 보인다)."""
+    out = []
+    for inp in driver.find_elements(By.CSS_SELECTOR, "input[type='file']"):
+        accept = (inp.get_attribute("accept") or "").lower()
+        if not (accept == "" or "image" in accept or "jpeg" in accept or "png" in accept or "video" in accept):
+            continue
+        try:
+            in_dialog = bool(driver.execute_script("return !!arguments[0].closest('[role=dialog]');", inp))
+        except Exception:
+            in_dialog = False
+        out.append((0 if in_dialog else 1, 0 if (video and "video" in accept) else 1, inp))
+    return [x[2] for x in sorted(out, key=lambda t: (t[0], t[1]))]
+
+
+def _find_file_input(driver, timeout=8, video=False):
     end = time.time() + timeout
     while time.time() < end:
-        for inp in driver.find_elements(By.CSS_SELECTOR, "input[type='file']"):
-            accept = (inp.get_attribute("accept") or "").lower()
-            if accept == "" or "image" in accept or "jpeg" in accept or "png" in accept:
-                return inp
+        got = _file_inputs(driver, video=video)
+        if got:
+            return got[0]
         time.sleep(0.5)
     return None
+
+
+def _upload_waiting(driver):
+    """업로드 창이 아직 파일을 기다리는 화면인가('끌어다 놓으세요')."""
+    try:
+        return "끌어다 놓으세요" in (_dialog(driver).text or "") or "Drag photos" in (_dialog(driver).text or "")
+    except Exception:
+        return False
 
 
 def _dialog(driver):
@@ -864,16 +890,27 @@ def post_reel(data, dry_run=None):
         time.sleep(1.5)
 
         # 2) 영상 파일 선택
-        inp = _find_file_input(driver, timeout=8)
+        inp = _find_file_input(driver, timeout=8, video=True)
         if inp is None:
             _click_by_labels(driver, SELECT_LABELS, timeout=4)
-            inp = _find_file_input(driver, timeout=6)
+            inp = _find_file_input(driver, timeout=6, video=True)
         if inp is None:
             shot(driver, "reel_no_file_input")
             raise RuntimeError("파일 입력(input[type=file])을 찾지 못했습니다.")
         inp.send_keys(os.path.abspath(video))
         log("릴 영상 업로드 시작...")
         time.sleep(8)
+        # 영상이 창에 안 들어갔으면(아직 '끌어다 놓으세요') 다른 파일 칸에 차례로 다시 넣는다.
+        if _upload_waiting(driver):
+            for alt in [x for x in _file_inputs(driver, video=True) if x != inp]:
+                log("업로드 창이 그대로 — 다른 파일 칸에 다시 넣습니다.")
+                try:
+                    alt.send_keys(os.path.abspath(video))
+                except Exception:
+                    continue
+                time.sleep(8)
+                if not _upload_waiting(driver):
+                    break
         # 2-1) '이 동영상은 릴로 공유됩니다' 확인 팝업(있으면)
         _click_by_labels(driver, ["확인", "OK"], timeout=6)
         time.sleep(4)

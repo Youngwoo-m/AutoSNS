@@ -97,6 +97,17 @@ def main():
     blog_id = str(bcfg.get("blog_id", "")).strip()
     if not blog_id:
         return out("error", message="config.json blogger.blog_id 가 없습니다")
+    if a.go:
+        # 사람이 쓴 것처럼 문체만 한 번 더 다듬는다(2026-11-08 사용자 지정 — shared/humanize.py).
+        # 문단 안쪽 글만 고치고 숫자·주소·인용·태그가 달라진 문단은 원문으로 둔다. 실패해도 원고 그대로 올린다.
+        try:
+            import json as _j
+            from shared.humanize import polish_html
+            with open(os.path.join(BASE, "config.json"), encoding="utf-8") as f:
+                _cfg = _j.load(f)
+            body_html = polish_html(body_html, cfg=_cfg, log=lambda m: print(m, file=sys.stderr))
+        except Exception as e:  # noqa: BLE001
+            print(f"윤문 건너뜀: {type(e).__name__}", file=sys.stderr)
     labels = list(dict.fromkeys(x.strip() for x in a.labels.split(",") if x.strip()))[:int(bcfg.get("max_labels", 1)) or 1]
     post = {"kind": "blogger#post", "title": a.title.strip(), "content": body_html, "labels": labels}
     loc = bcfg.get("location") or {}
