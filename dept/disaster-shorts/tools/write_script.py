@@ -281,6 +281,11 @@ def write(date, loop=False, sample=False):
                                                        card_hint=(',\n  {"id": 6, "media": "card", "narration": "정리합니다. ...", "tts_text": "...", '
                                                                   '"subtitle": [], "labels_3d": [], "source_quote": [], "video_prompt": "", '
                                                                   '"card": {"title": "오늘의 핵심", "items": ["...", "...", "..."]}}') if long else "")}]
+    try:    # 사람이 쓴 것처럼(2026-11-09 사용자 지정) — 규칙을 본문에 붙인다
+        from shared.humanize_rules import HUMANIZE_KR
+        msgs[0]["content"] += "\n\n" + HUMANIZE_KR
+    except Exception as e:  # noqa: BLE001
+        print(f"윤문 규칙 붙이기 건너뜀: {type(e).__name__}")
     for attempt in range(5):
         r = client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=3000, messages=msgs)
         txt = "".join(getattr(b, "text", "") for b in r.content)
@@ -310,6 +315,19 @@ def write(date, loop=False, sample=False):
         json.dump({"errors": errs, "draft": locals().get("last")}, open(os.path.join(ep_dir, "script_draft.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=2)
         raise SystemExit(f"대본 검사 5회 실패 — 초안을 script_draft.json 에 남김: {str(errs)[:300]}")
+    # 제작 전 2차 윤문(2026-11-09 사용자 지정): 내레이션만 다듬고 tts_text 는 숫자 읽기를 다시 맞춘다.
+    # 윤문본이 길이·고리(loop)·119 표기 검사를 못 넘으면 검사를 통과한 원래 대본을 그대로 쓴다.
+    try:
+        from shared.humanize import polish_script
+        cand = json.loads(json.dumps(gen))
+        polish_script(cand["scenes"], tts_field="tts_text", cfg=cfg, log=print)
+        perr = check(cand, source, long, loop, model)
+        if perr:
+            print("윤문본 검사 실패 → 원래 대본 사용:", perr)
+        else:
+            gen = cand
+    except Exception as e:  # noqa: BLE001
+        print(f"대본 윤문 건너뜀: {type(e).__name__}")
     sc = {"series": "재난 유형별 피해 양상과 대응 방안", "date": date, "type": e["type"], "angle": e["angle"], "ep_no": ep_no, "visual_mode": e.get("visual", "video"),
           "title": gen["title"], "intro": None if loop else "../common/intro.mp4", "outro": None if loop else "../common/outro.mp4",
           "loop": loop, "loop_bridge": gen.get("loop_bridge", ""), "hook_text": gen.get("hook_text", ""),

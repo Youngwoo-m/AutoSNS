@@ -57,6 +57,58 @@ def _event_signal(cfg):
     return decide(cfg)
 
 
+def _fresh_news(cfg):
+    """매일 발행 판단(2026-11-09 사용자 지정): 최근 N일 영상이 다룬 기사와 겹치지 않는 재난 기사만 센다.
+
+    다룬 기사 = posts/YYYYMMDD_HHMMSS.json 의 sources(정기·즉시 숏츠 모두 generate() 가 남긴다).
+    점수 = 새 재난 기사 수 + 그중 재난 소식 띠(alerts) 기사 수(가산점).
+    돌려줌: (영상에 넘길 뉴스 목록, 새 기사 목록, 점수, 다룬 기사 수)
+    """
+    import glob
+    import re
+    from datetime import timedelta
+    from difflib import SequenceMatcher
+    from fetch_news import fetch_news, _norm_title
+    sys.path.insert(0, os.path.dirname(os.path.dirname(BASE_DIR)))
+    from shared.keyword_terms import is_disaster_relevant
+    wcfg = cfg.get("weekly", {})
+    days = int(wcfg.get("daily_dedup_days", 7))
+    since = (datetime.now() - timedelta(days=days)).strftime("%Y%m%d")
+    covered = []
+    for p in glob.glob(os.path.join(BASE_DIR, "posts", "2*_*.json")):
+        m = re.match(r"(\d{8})_\d{6}\.json$", os.path.basename(p))
+        if not m or m.group(1) < since:
+            continue
+        try:
+            with open(p, encoding="utf-8") as f:
+                covered += [_norm_title(s.get("title", "")) for s in json.load(f).get("sources", [])]
+        except Exception:
+            continue
+    covered = [c for c in covered if c]
+    sim = float(wcfg.get("daily_dedup_similarity", 0.5))
+    seen = lambda t: any(SequenceMatcher(None, t, c).ratio() >= sim for c in covered)
+    news = fetch_news()
+    strict = cfg.get("news", {}).get("relevance_strict", False)
+    fresh, rest = [], []
+    for n in news:
+        t = _norm_title(n.get("title", ""))
+        if seen(t):
+            continue
+        (fresh if is_disaster_relevant(n.get("title", ""), strict=strict) else rest).append(n)
+    score = len(fresh) + sum(1 for n in fresh if n.get("via") == "alerts")
+    return fresh + rest, fresh, score, len(covered)
+
+
+def _kakao(text):
+    try:    # run_dept.kakao 와 같은 경로(shared/kakao_notify.py — Windows 에서 동작)
+        root = os.path.dirname(os.path.dirname(BASE_DIR))
+        sys.path.insert(0, root)
+        from shared.kakao_notify import notify
+        notify(text[:190])
+    except Exception as e:
+        log(f"카톡 알림 실패: {type(e).__name__}")
+
+
 def _publish_fallback(cfg, check_only=False):
     """큰 사건이 없는 주엔 뉴스를 억지로 만들지 않고 예약 시리즈(O·X 퀴즈) 1편을 올린다.
 
@@ -117,11 +169,27 @@ def main(argv=()):
             log("===== 종료(대체 발행) =====")
             return
         log(f"뉴스로 진행 — {why}")
+    # 0') 매일 발행 판단(2026-11-09 사용자 지정): 최근 7일 영상이 다루지 않은 재난 기사가 충분할 때만 만든다.
+    #     조용한 날은 억지로 채우지 않고 건너뛴 뒤 카톡으로 알린다(행사·점검 기사로 채운 뉴스가 가장 부진했다).
+    news_in = None
+    if wcfg0.get("daily_gate", True):
+        need = int(wcfg0.get("daily_min_score", 3))
+        try:
+            news_in, fresh, score, n_cov = _fresh_news(cfg0)
+        except Exception as e:
+            news_in, fresh, score, n_cov = None, [], need, 0
+            log(f"새 소식 판단 실패 → 평소처럼 진행({type(e).__name__}: {str(e)[:80]})")
+        log(f"새 소식 판단: 새 재난 기사 {len(fresh)}건(띠 기사 {sum(1 for n in fresh if n.get('via') == 'alerts')}건) "
+            f"· 점수 {score}/{need} · 최근 영상이 다룬 기사 {n_cov}건과 비교")
+        for n in fresh[:6]:
+            log(f"  - {n['title'][:60]}")
+        if score < need or len(fresh) < 2:
+            log(f"===== 종료(새 소식 부족 — 오늘은 뉴스 숏츠를 만들지 않음){' [CHECK]' if check_only else ''} =====")
+            if not check_only:
+                _kakao(f"[AX] 재난 뉴스 숏츠: 오늘은 새 소식이 부족해 건너뜁니다(새 재난 기사 {len(fresh)}건, 점수 {score}/{need}).")
+            return
     if check_only:
-        wd = "월화수목금토일"[datetime.now().weekday()]
-        why = ("뉴스 경로로 진행할 상황" if datetime.now().weekday() in fb_days
-               else f"{wd}요일은 대체 대상이 아님(대체 요일 {fb_days}) — 늘 뉴스")
-        log(f"===== 종료(CHECK: {why}) =====")
+        log("===== 종료(CHECK: 오늘은 뉴스 숏츠를 만들 상황) =====")
         return
 
     try:
@@ -129,7 +197,7 @@ def main(argv=()):
         _h = cfg.get("heygen", {})
         anchor_today = bool(_h.get("anchor_news", False)
                             and datetime.now().weekday() in _h.get("anchor_days", [5]))
-        data = generate(anchor=anchor_today)   # 1) 뉴스 → 대본(아나운서 날은 이어 읽는 말투)
+        data = generate(anchor=anchor_today, news=news_in)   # 1) 뉴스 → 대본(아나운서 날은 이어 읽는 말투)
 
         # 2~5) 영상 만들기 — 아나운서 발행일(기본 토요일)만 'AI 아나운서', 그 외(수)엔 카드.
         #      아나운서 실패(크레딧·오류) 시에도 카드로 자동 폴백(발행이 멈추지 않게).

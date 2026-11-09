@@ -36,7 +36,7 @@ def S(cwd, *args, dry=None, ok_fail=False, venv=None):
 
 
 JOBS = {
-    "ytshorts.weekly": {"name": "재난 뉴스 숏츠(유튜브·릴·스레드·X·틱톡)", "times": [(3, "20:00"), (6, "20:00")],
+    "ytshorts.weekly": {"name": "재난 뉴스 숏츠(매일 판단, 새 소식 있는 날만)", "times": [(None, "18:00")],   # 2026-11-09 주2회→매일
                         "log": (YT, "run.out.log"), "disk": "유튜브뉴스",
                         "steps": [S(YT, "run_weekly.py", dry=["run_weekly.py", "--check"])]},
     "ytcareer.weekly": {"name": "진로·퀴즈 시리즈", "times": [(2, "19:00")], "log": (YT, "career_publish.out.log"),

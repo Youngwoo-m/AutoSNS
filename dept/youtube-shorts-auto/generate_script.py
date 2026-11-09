@@ -283,7 +283,7 @@ def _script_issues(scenes):
     return out
 
 
-def generate(lead=None, anchor=False):
+def generate(lead=None, anchor=False, news=None):
     """lead: 트리거가 잡은 사건의 기사들. 주면 영상이 그 사건으로 시작한다.
 
     예전엔 트리거가 발행 여부만 정하고 내용은 평소 수집을 그대로 써서, 9/28 트리거가
@@ -300,7 +300,8 @@ def generate(lead=None, anchor=False):
     system = (SYSTEM.replace("__DOMAIN__", domain)
               .replace("__TIPSLABEL__", tips_label))
 
-    news = _with_lead(fetch_news(), lead)
+    # news: 매일 발행 판단(run_weekly._fresh_news)이 이미 모아 거른 목록을 주면 다시 모으지 않는다
+    news = _with_lead(news if news is not None else fetch_news(), lead)
     user_msg = (USER_TEMPLATE
                 .replace("__TIPSLABEL__", tips_label)
                 .replace("__TIPSDESC__", tips_desc)
@@ -310,6 +311,12 @@ def generate(lead=None, anchor=False):
                     news_block=_news_block(news),
                     recent=recent,
                 ))
+    # 사람이 쓴 것처럼(2026-11-08·11-09 사용자 지정): 규칙을 본문에 붙인다(claude CLI 경로는 system 을 약하게 따른다)
+    try:
+        from shared.humanize_rules import HUMANIZE_KR
+        user_msg += "\n\n" + HUMANIZE_KR
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 규칙 붙이기 건너뜀: {type(e).__name__}")
     if lead:
         user_msg += LEAD_NOTE
     if anchor:                       # 아나운서가 이어 읽는 대본(토요일 뉴스)
@@ -341,6 +348,15 @@ def generate(lead=None, anchor=False):
         log(f"대본 형식 불완전(시도 {attempt}/3, 장면 {len(scenes)}개) → 재시도")
     if not (title and len(scenes) >= 3):
         raise RuntimeError("대본 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
+
+    # 제작 전 2차 윤문(2026-11-09 사용자 지정): 내레이션·설명만, 숫자·인용 보존·길이 85~110% 검사.
+    # 실패하거나 어긋난 장면은 원문 그대로 — 윤문 때문에 제작이 멈추지 않는다.
+    try:
+        from shared.humanize import polish_script, polish_segments
+        polish_script(scenes, cfg=cfg, log=log)
+        description = polish_segments([description], genre="유튜브 설명", cfg=cfg, log=log)[0]
+    except Exception as e:  # noqa: BLE001
+        log(f"대본 윤문 건너뜀: {type(e).__name__}")
 
     # 기본 해시태그 병합(#Shorts 항상 포함) + 중복 제거 + 15개 제한
     base_tags = cfg.get("hashtags", [])

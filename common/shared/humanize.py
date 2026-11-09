@@ -51,12 +51,12 @@ def change_rate(a, b):
     return 1.0 - difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
 
 
-def _ok(orig, new, max_change):
+def _ok(orig, new, max_change, length=(0.65, 1.2)):
     if not new.strip():
         return False, "빈 결과"
     if _anchors(orig) != _anchors(new):
         return False, "숫자·주소·인용·태그가 달라짐"
-    if not (0.65 <= len(new) / max(1, len(orig)) <= 1.2):
+    if not (length[0] <= len(new) / max(1, len(orig)) <= length[1]):
         return False, f"길이 {len(new)}/{len(orig)}"
     cr = change_rate(orig, new)
     if cr > max_change:
@@ -68,8 +68,10 @@ def _enabled(cfg):
     return ((cfg or {}).get("humanize") or {}).get("enabled", True)
 
 
-def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=None):
-    """글 조각 목록을 한 번의 호출로 윤문한다. 같은 길이의 목록을 돌려준다(어긋난 조각은 원문)."""
+def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=None, length=(0.65, 1.2), note=""):
+    """글 조각 목록을 한 번의 호출로 윤문한다. 같은 길이의 목록을 돌려준다(어긋난 조각은 원문).
+    length: 원문 대비 허용 길이 비율. 영상 대본은 시간이 정해져 있어 (0.85, 1.1) 처럼 좁게 준다.
+    note: 장르별 추가 지시(예: 소리 내어 읽는 내레이션)."""
     log = log or (lambda m: None)
     segs = [s if isinstance(s, str) else "" for s in (segments or [])]
     idx = [i for i, s in enumerate(segs) if len(s.strip()) >= 20]   # 짧은 제목·라벨은 건드리지 않는다
@@ -81,7 +83,7 @@ def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=
             return segs
         from shared.llm import client
         body = "\n\n".join(f"[[{n}]]\n{segs[i]}" for n, i in enumerate(idx, 1))
-        prompt = (f"{RULES}\n\n장르: {genre}\n\n아래 [[번호]] 조각마다 다듬은 글을 같은 [[번호]] 머리표 아래에 쓴다. "
+        prompt = (f"{RULES}\n\n장르: {genre}\n{note}\n\n아래 [[번호]] 조각마다 다듬은 글을 같은 [[번호]] 머리표 아래에 쓴다. "
                   f"머리표 수와 순서를 그대로 두고, 설명·인사말은 쓰지 않는다. 고칠 것이 없으면 원문을 그대로 쓴다.\n\n{body}")
         msg = client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
                                           max_tokens=max(2000, int(len(body) * 1.5)),
@@ -95,7 +97,7 @@ def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=
     out, kept, changed = list(segs), 0, []
     for n, i in enumerate(idx, 1):
         new = parts.get(n, "")
-        good, why = _ok(segs[i], new, max_change)
+        good, why = _ok(segs[i], new, max_change, length)
         if good:
             out[i] = new
             if new != segs[i]:
@@ -138,3 +140,49 @@ def polish(text, genre="블로그", cfg=None, max_change=0.45, log=None):
     for i, s in zip(body_idx, new):
         paras[i] = s
     return "".join(paras)
+
+
+NARR_NOTE = ("소리 내어 읽는 영상 내레이션이다. 귀로 듣기 쉽게 고치되 문장 수·순서·길이는 거의 그대로 둔다"
+             "(영상 길이가 정해져 있다). 행동 수칙의 조건('~일 때만')과 단정의 강도를 바꾸지 않는다.")
+
+
+def _num_map(orig, spoken):
+    """narration(숫자 표기)과 tts_text(한글로 읽기)의 차이 = 숫자 읽기 치환 목록. 숫자 말고 다른 차이가 있으면 None."""
+    import difflib as _d
+    out = []
+    for tag, i1, i2, j1, j2 in _d.SequenceMatcher(None, orig, spoken, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        a, b = orig[i1:i2], spoken[j1:j2]
+        if tag != "replace" or not any(c.isdigit() for c in a):
+            return None
+        out.append((a, b))
+    return sorted(out, key=lambda x: -len(x[0]))
+
+
+def polish_script(scenes, field="narration", tts_field=None, cfg=None, log=None,
+                  max_change=0.3, length=(0.85, 1.1)):
+    """영상 대본 장면들의 내레이션을 윤문한다(2026-11-09 사용자 지정: 제작 대본도 한 번 더 윤문).
+    tts_field(예: tts_text)가 있으면 숫자 읽기 치환을 다시 적용해 함께 맞춘다. 맞출 수 없으면 그 장면은 원문 유지."""
+    origs = [s.get(field, "") or "" for s in scenes]
+    new = polish_segments(origs, genre="영상 내레이션", cfg=cfg, max_change=max_change, log=log,
+                          length=length, note=NARR_NOTE)
+    for s, o, n in zip(scenes, origs, new):
+        if n == o:
+            continue
+        if tts_field and s.get(tts_field):
+            t = s[tts_field]
+            if t == o:
+                s[tts_field] = n
+            else:
+                m = _num_map(o, t)
+                if m is None:
+                    continue
+                nt = n
+                for a, b in m:
+                    nt = nt.replace(a, b)
+                if any(c.isdigit() for c in nt):
+                    continue
+                s[tts_field] = nt
+        s[field] = n
+    return scenes

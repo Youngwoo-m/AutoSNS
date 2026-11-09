@@ -62,7 +62,11 @@ GIF 는 mp4 로 그린 뒤 ffmpeg 팔레트 변환(2MB 이하), Blogger 는 줄�
 현재 연결: 네이버 브리핑(`generate_content.py`), 진로·자격증·입시 시리즈(`cert_writer.py` — 블로거·네이버),
 GeoAI 개념 시리즈(`personal/naver-blog-auto/geoai_series.py` — 따라하기·프롬프트 예시는 제외),
 학과 Blogger 교차 게시(`dept_blogger_post.py --go` — `polish_html()` 로 <p>·<li> 안쪽 글만, 코드·표·제목 제외).
-규칙만 붙인 곳(길이가 정해진 대본이라 2차 윤문 없음): GeoAI 숏츠 대본(`geoai_script.py`), 틱톡 1분 해설(`personal/geoai-youtube/tiktok_long.py`).
+영상 제작 대본(2026-11-09 사용자 지정 — 규칙을 붙이고 제작 전 `polish_script()` 로 내레이션만 2차 윤문, 길이 85~110%·tts_text 숫자 읽기 재적용,
+대본 검사를 다시 못 넘으면 원래 대본): 학과 뉴스 숏츠(`generate_script.py`, 설명도), 재난 유형 숏츠(`disaster-shorts/tools/write_script.py`).
+직접 대본을 써서 영상을 만들 때도 같은 단계를 거친다.
+영상 대본도 제작 전에 한 번 더 윤문한다(2026-11-09 사용자 지정): GeoAI 숏츠 대본(`geoai_script.py` `_polish_script()` — 글자 상한·첫 문장 질문형이 깨지면 원문),
+틱톡 1분 해설(`personal/geoai-youtube/tiktok_long.py` `polish_script()` — 장면 70자·목표 글자 수 밖이면 원문). 새 영상 대본 경로에도 같은 단계를 넣는다.
 클로드 자동 작업은 `personal/claude-jobs/공통규칙.md` 의 korean-humanize 규칙을 따른다.
 새 글쓰기 경로를 만들면 같은 단계를 넣는다. 끄려면 config.json 에 `"humanize": {"enabled": false}`.
 
