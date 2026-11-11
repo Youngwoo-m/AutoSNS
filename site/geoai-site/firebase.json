@@ -9,7 +9,8 @@
       "**/node_modules/**",
       "firestore.rules",
       "**/*.md",
-      "functions/**"
+      "functions/**",
+      "check-hosting-content.cjs"
     ],
     "cleanUrls": false,
     "trailingSlash": true,
@@ -109,6 +110,9 @@
           "region": "asia-northeast3"
         }
       }
+    ],
+    "predeploy": [
+      "node check-hosting-content.cjs"
     ]
   },
   "functions": {
