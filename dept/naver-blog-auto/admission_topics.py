@@ -225,3 +225,6 @@ VIDEOS = {
     "adm-life": "Umdxiyk-er0",    # 재난안전학과 대학생의 하루 브이로그
     "adm-after": "cDwQ52M2wn0",   # 진로 1/8 진로 8가지
 }
+
+# 블로그와 함께 숏츠로도 올릴 입시 편(2026-11-11 사용자 지정) — career_series.SHORTS_SLUGS
+NAVER_FIRST_SHORTS = ("adm-after-csat", "adm-jungsi-gun", "adm-waitlist", "adm-before-entry")

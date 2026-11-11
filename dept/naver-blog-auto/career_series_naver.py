@@ -47,11 +47,26 @@ def _episodes():
 
     진로 8편을 먼저 다 올리고 자격증 16편으로 넘어간다 — 진로는 원고가 이미
     확정돼 있어 실패할 일이 없고, 자격증은 매번 생성해야 해서 느리다.
+
+    2026-11-11 사용자 지정: 네이버는 주 2편이라 정시 시즌 글(NAVER_FIRST)을 맨 앞에 내고,
+    나머지는 Blogger 와 달리 예전 순서(진로 → 자격증 → 입시 → 진로 9편~)를 지킨다.
+    번호(n/total)는 시리즈 안 순번 그대로라 state 의 '키-번호' 와 어긋나지 않는다.
     """
-    for s in career_series.SERIES:
+    order = {"career": 0, "cert": 1, "admission": 2, "career2": 3}
+    series = sorted(career_series.SERIES, key=lambda s: order.get(s["key"], 9))
+    allep = []
+    for s in series:
         eps, start = s["eps"], s.get("start", 1)     # 진로 9편~ 은 앞 8편에 이어 번호를 매긴다
         for i, ep in enumerate(eps, start):
-            yield s["key"], s["label"], i, len(eps) + start - 1, ep
+            allep.append((s["key"], s["label"], i, len(eps) + start - 1, ep))
+    first = [e for e in allep if e[4][0] in NAVER_FIRST]
+    first.sort(key=lambda e: NAVER_FIRST.index(e[4][0]))
+    yield from first
+    yield from (e for e in allep if e[4][0] not in NAVER_FIRST)
+
+
+# 네이버에서 먼저 낼 편(slug). 정시 원서접수(2027-01-04~07) 전에 다 나가야 한다.
+NAVER_FIRST = ("adm-after-csat", "adm-jungsi-gun", "adm-waitlist", "adm-before-entry")
 
 
 def _plain(t):

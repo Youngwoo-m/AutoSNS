@@ -56,15 +56,18 @@ def _save(sched):
     _refresh_dashboard()
 
 
-def _pick(sched, ignore_date):
+def _pick(sched, ignore_date, only=None):
     """발행할 편 1개 선택: 미발행 중 예정일 이른 순. ignore_date 면 날짜 조건 무시.
 
     영상 파일이 없는 편은 건너뛴다 — 한 편이 빠져도 주간 슬롯 전체가 죽지 않게.
+    only(label) 가 있으면 그 편만 본다 — series_short.py 가 블로그 시리즈 숏츠를 바로 올릴 때(2026-11-11).
     """
     today = datetime.date.today()
     cand = []
     for e in sched:
         if e.get("published"):
+            continue
+        if only and e.get("label") != only:
             continue
         due = datetime.date.fromisoformat(e["date"])
         if ignore_date or due <= today:
@@ -234,8 +237,9 @@ def main(argv):
     no_ig = "--no-ig" in argv
     no_threads = "--no-threads" in argv
     ig_test = "--ig-test" in argv
+    only = argv[argv.index("--only") + 1] if "--only" in argv else None
     sched = _load()
-    ep = _pick(sched, ignore_date)
+    ep = _pick(sched, ignore_date, only)
     if not ep:
         log("발행할 예약 편이 없습니다(오늘 기준 미발행/예정일 없음, 또는 영상 파일 없음).")
         return

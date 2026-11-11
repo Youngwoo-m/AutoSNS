@@ -214,6 +214,33 @@ def build_html(summary, paras, faq, vid, hub, label, generated, image_url="", ph
     return "\n".join(x for x in P if x)
 
 
+# 블로그에 올릴 때 숏츠로도 함께 발행할 편(2026-11-11 사용자 지정 — 이날 추가한 새 편 14개).
+SHORTS_SLUGS = set(admission_topics.NAVER_FIRST_SHORTS) | {t[0] for t in cert_topics.TOPICS[18:]} | {
+    t[0] for t in career_topics.TOPICS}
+
+
+def _series_short(ser, n, total, title, summary, paras, url):
+    """학과 유튜브 숏츠로도 올린다(youtube-shorts-auto/series_short.py). 실패해도 블로그 발행은 그대로."""
+    if not (cfg.get("blogger", {}) or {}).get("series_shorts", True):
+        return
+    import json as _json
+    import subprocess as _sp
+    yt = os.path.join(os.path.dirname(BASE_DIR), "youtube-shorts-auto")
+    py = os.path.join(yt, ".venv", "Scripts" if os.name == "nt" else "bin",
+                      "python.exe" if os.name == "nt" else "python")
+    ep = {"series": ser["key"], "label": ser["label"], "n": n, "total": total, "title": title,
+          "summary": list(summary or []), "paras": list(paras or []), "blog_url": url}
+    path = os.path.join(BASE_DIR, "posts", f"series_short_{ser['key']}{n:02d}.json")
+    _json.dump(ep, open(path, "w", encoding="utf-8"), ensure_ascii=False)
+    try:
+        r = _sp.run([py, os.path.join(yt, "series_short.py"), path], cwd=yt, capture_output=True,
+                    text=True, encoding="utf-8", errors="replace", timeout=2400)
+        last = (r.stdout or "").strip().splitlines()[-1:] or [(r.stderr or "").strip()[-200:]]
+        print(f"  숏츠: {last[0][:300]}")
+    except Exception as e:  # noqa: BLE001
+        print(f"  숏츠 건너뜀: {type(e).__name__}: {str(e)[:120]}")
+
+
 def main():
     """발행 루틴.
 
@@ -294,6 +321,8 @@ def main():
                 posted += 1
                 run_posted += 1
                 print(f"{ser['label']} {n}/{total} 발행: {r['url']}")
+                if ser["kind"] == "generated" and ep[0] in SHORTS_SLUGS:
+                    _series_short(ser, n, total, title, summary, paras, r["url"])
             except Exception as e:
                 print(f"{ser['label']} {n}/{total} 실패(다음 실행에서 재시도): {str(e)[:110]}")
                 try:
