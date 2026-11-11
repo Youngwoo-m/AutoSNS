@@ -4,6 +4,13 @@ const path=require('path');
 const root=path.resolve(process.argv[2]||__dirname);
 const required=['index.html','privacy/index.html','terms/index.html','about/index.html','contact/index.html','study/index.html','ai-education/index.html','ai-education/game-demos/index.html','ai-education/guides/index.html',...['request-and-check','agent-tools','game-verification','hwpx-report'].map(x=>'ai-education/guides/'+x+'/index.html')];
 const errors=required.filter(relative=>!fs.existsSync(path.join(root,relative))).map(relative=>'Missing: '+relative);
+const supplement=path.join(root,'ai-education/visual-effects/index.html');
+if(!fs.existsSync(supplement))errors.push('Missing visual-effects supplement.');
+else {
+ const html=fs.readFileSync(supplement,'utf8');
+ if((html.match(/data-copy="/g)||[]).length!==8)errors.push('The supplement must contain 8 prompt copy buttons.');
+ for(const m of html.matchAll(/(?:src|poster)="(assets\/[^"?]+)"/g))if(!fs.existsSync(path.resolve(path.dirname(supplement),m[1])))errors.push('Missing supplement asset: '+m[1]);
+}
 const course=path.join(root,'ai-education/index.html');
 if(fs.existsSync(course)){
  const html=fs.readFileSync(course,'utf8');
