@@ -23,6 +23,16 @@
         "source": "/channels",
         "destination": "/links/",
         "type": 301
+      },
+      {
+        "source": "/ai-game",
+        "destination": "https://youngwoo-m.github.io/highschool-ai-prompt-master/05_%EA%B2%8C%EC%9E%84%EC%8B%A4%EC%8A%B5/%EC%99%84%EC%84%B1%EA%B2%8C%EC%9E%84/index.html",
+        "type": 302
+      },
+      {
+        "source": "/ai-game/",
+        "destination": "https://youngwoo-m.github.io/highschool-ai-prompt-master/05_%EA%B2%8C%EC%9E%84%EC%8B%A4%EC%8A%B5/%EC%99%84%EC%84%B1%EA%B2%8C%EC%9E%84/index.html",
+        "type": 302
       }
     ],
     "headers": [
