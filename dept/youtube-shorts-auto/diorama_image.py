@@ -73,9 +73,14 @@ def gen(prompt, aspect="9:16"):
 
 
 def text_in(path):
-    if not os.path.exists(OCR):
+    # ocr 은 맥 전용 실행 파일이다. 윈도우에서는 WinError 193 으로 그림 생성 전체가 실패하므로
+    # (2026-11-11) 맥이 아니거나 실행이 안 되면 글자 검사만 건너뛰고 그림은 그대로 쓴다.
+    if sys.platform != "darwin" or not os.path.exists(OCR):
         return []
-    r = subprocess.run([OCR, path], capture_output=True, text=True)
+    try:
+        r = subprocess.run([OCR, path], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return []
     return [p[1] for p in (ln.split("\t") for ln in r.stdout.splitlines())
             if len(p) == 3 and len(re.findall(r"[가-힣A-Za-z0-9]", p[1])) >= 2 and float(p[2]) >= 0.3]
 

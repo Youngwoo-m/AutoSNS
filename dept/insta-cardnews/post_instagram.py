@@ -107,6 +107,10 @@ def build_driver(headless):
     opts.add_experimental_option("useAutomationExtension", False)
     opts.add_argument("--window-size=1280,1000")
     opts.add_argument("--lang=ko-KR")
+    # 예약 작업으로 뜬 창은 가려져 있어 크롬이 동영상 처리를 늦춘다 → 릴 업로드가 진행 막대에서 멈춤(2026-11-11)
+    for a in ("--disable-backgrounding-occluded-windows", "--disable-renderer-backgrounding",
+              "--disable-background-timer-throttling"):
+        opts.add_argument(a)
     opts.set_capability("unhandledPromptBehavior", "accept")
     if headless:
         opts.add_argument("--headless=new")
@@ -835,6 +839,30 @@ def _set_reel_cover(driver, path):
     return True
 
 
+def _browser_safe_video(video):
+    """학과 크롬(Chromium)은 H.264·AAC 를 못 읽어 인스타가 '브라우저에서 동영상 파일을 읽지 못했습니다'로
+    거부한다(2026-11-11 확인, Chromium 157). 올릴 때만 VP9+Opus MP4 사본을 만들어 넘긴다.
+    변환이 실패하면 원본을 그대로 쓴다. config instagram.reel_vp9=false 로 끈다."""
+    import subprocess
+    out = os.path.splitext(video)[0] + "_vp9.mp4"
+    if os.path.exists(out) and os.path.getmtime(out) >= os.path.getmtime(video):
+        return out
+    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", video,
+           "-c:v", "libvpx-vp9", "-crf", "30", "-b:v", "0", "-row-mt", "1",
+           "-deadline", "good", "-cpu-used", "4", "-pix_fmt", "yuv420p",
+           "-c:a", "libopus", "-b:a", "128k", "-movflags", "+faststart", out]
+    t0 = time.time()
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        if r.returncode == 0 and os.path.getsize(out) > 10000:
+            log(f"릴 업로드용 VP9 사본: {os.path.basename(out)} ({os.path.getsize(out) // 1024}KB, {time.time() - t0:.0f}초)")
+            return out
+        log(f"VP9 변환 실패 — 원본으로 올립니다: {(r.stderr or '')[-200:]}")
+    except Exception as e:  # noqa: BLE001
+        log(f"VP9 변환 실패 — 원본으로 올립니다: {type(e).__name__}")
+    return video
+
+
 def post_reel(data, dry_run=None):
     """카드 슬라이드쇼 영상(data['reel'])을 인스타 릴로 게시한다. (음악은 영상에 포함됨)
 
@@ -852,6 +880,8 @@ def post_reel(data, dry_run=None):
     if not video or not os.path.exists(video):
         raise RuntimeError("게시할 릴 영상이 없습니다. 먼저 make_reel 을 실행하세요.")
     caption = _build_caption(data, cfg)
+    if ig.get("reel_vp9", True):
+        video = _browser_safe_video(video)
 
     driver = build_driver(headless)
     try:
@@ -900,6 +930,17 @@ def post_reel(data, dry_run=None):
         inp.send_keys(os.path.abspath(video))
         log("릴 영상 업로드 시작...")
         time.sleep(8)
+        # VP9 사본은 브라우저 처리에 시간이 더 걸린다(2026-11-11: 8초엔 아직 진행 막대).
+        # '자르기/다음' 화면이나 오류가 뜰 때까지 최대 60초 더 기다린다.
+        for _ in range(30):
+            try:
+                txt = driver.execute_script(
+                    "var g=document.querySelector('div[role=dialog]'); return g ? g.innerText : '';") or ""
+            except Exception:  # noqa: BLE001
+                txt = ""
+            if any(k in txt for k in ("자르기", "Crop", "다음", "Next", "읽지 못", "couldn't")):
+                break
+            time.sleep(2)
         # 영상이 창에 안 들어갔으면(아직 '끌어다 놓으세요') 다른 파일 칸에 차례로 다시 넣는다.
         if _upload_waiting(driver):
             for alt in [x for x in _file_inputs(driver, video=True) if x != inp]:
