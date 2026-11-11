@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://geoai-na.web.app/</loc><lastmod>2026-10-26</lastmod><priority>1.0</priority></url>
-  <url><loc>https://geoai-na.web.app/links/</loc><lastmod>2026-10-26</lastmod><priority>0.8</priority></url>
-  <url><loc>https://geoai-na.web.app/questions/</loc><lastmod>2026-10-26</lastmod><priority>0.7</priority></url>
-  <url><loc>https://geoai-na.web.app/civil-questions/</loc><lastmod>2026-10-26</lastmod><priority>0.7</priority></url>
-  <url><loc>https://geoai-na.web.app/building-questions/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://geoai-na.web.app/safety-questions/</loc><lastmod>2026-10-27</lastmod><priority>0.7</priority></url>
-  <url><loc>https://geoai-na.web.app/dinner/</loc><lastmod>2026-10-26</lastmod><priority>0.3</priority></url>
-  <url><loc>https://geoai-na.web.app/ai-education/</loc><lastmod>2026-11-11</lastmod><priority>0.8</priority></url>
-</urlset>
+  <url><loc>https://geoai-na.web.app/</loc><lastmod>2026-11-08</lastmod><priority>1.0</priority></url>
+  <url><loc>https://geoai-na.web.app/study/</loc><lastmod>2026-11-08</lastmod><priority>0.9</priority></url>
+  <url><loc>https://geoai-na.web.app/questions/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
+  <url><loc>https://geoai-na.web.app/civil-questions/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
+  <url><loc>https://geoai-na.web.app/building-questions/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
+  <url><loc>https://geoai-na.web.app/safety-questions/</loc><lastmod>2026-11-08</lastmod><priority>0.8</priority></url>
+  <url><loc>https://geoai-na.web.app/links/</loc><lastmod>2026-11-05</lastmod><priority>0.6</priority></url>
+  <url><loc>https://geoai-na.web.app/dinner/</loc><lastmod>2026-11-08</lastmod><priority>0.5</priority></url>
+  <url><loc>https://geoai-na.web.app/privacy/</loc><lastmod>2026-11-06</lastmod><priority>0.2</priority></url>
+  <url><loc>https://geoai-na.web.app/terms/</loc><lastmod>2026-11-06</lastmod><priority>0.2</priority></url>
+<url><loc>https://geoai-na.web.app/about/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/contact/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/guides/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/guides/request-and-check/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/guides/agent-tools/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/guides/game-verification/</loc><lastmod>2026-11-11</lastmod></url><url><loc>https://geoai-na.web.app/ai-education/guides/hwpx-report/</loc><lastmod>2026-11-11</lastmod></url></urlset>
