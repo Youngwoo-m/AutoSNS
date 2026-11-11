@@ -21,6 +21,7 @@ from googleapiclient.discovery import build
 from post_blogger import _count_post, _creds, _esc, _posted_today, _url
 from common import BASE_DIR, load_config, log
 import admission_topics
+import career_topics
 import cert_topics
 import cert_writer
 
@@ -114,14 +115,19 @@ CAREER = [
 
 SERIES = [
     {"key": "career", "label": "진로", "hub": HUB, "eps": CAREER, "kind": "static"},
-    {"key": "cert", "label": "자격증", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%90%EA%B2%A9%EC%A6%9D",
-     "eps": cert_topics.TOPICS, "kind": "generated", "profile": "cert",
-     "videos": cert_topics.VIDEOS},
     # 자격증 18편이 끝나면 이어진다(2026-10 중순 예정). 입시 정보는 틀리면 학생이
     # 지원을 그르치므로 생성 지침을 따로 쓴다 — cert_writer.PROFILES["admission"].
     {"key": "admission", "label": "입시", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%85%EC%8B%9C",
      "eps": admission_topics.TOPICS, "kind": "generated", "profile": "admission",
      "images": admission_topics.IMAGES, "videos": admission_topics.VIDEOS},
+    # 2026-11-11: 세 시리즈가 다 나간 뒤 새 편을 붙였다. 정시 시즌이라 입시를 먼저 내도록
+    # 자격증을 입시 뒤로 옮겼다(이미 나간 편은 제목으로 가리므로 순서를 바꿔도 다시 안 나간다).
+    {"key": "cert", "label": "자격증", "hub": "https://smuds2026.blogspot.com/search/label/%EC%9E%90%EA%B2%A9%EC%A6%9D",
+     "eps": cert_topics.TOPICS, "kind": "generated", "profile": "cert",
+     "videos": cert_topics.VIDEOS},
+    # 진로 9~13편 — 1~8편(CAREER)에 이어 번호를 매기고, 본문은 발행할 때 생성한다.
+    {"key": "career2", "label": "진로", "hub": HUB, "eps": career_topics.TOPICS, "kind": "generated",
+     "profile": "career", "start": 9, "videos": career_topics.VIDEOS},
 ]
 
 # 하루 상한은 config.blogger.daily_limit 하나로 관리한다(주간 브리핑 크로스포스트와 합산).
@@ -235,8 +241,9 @@ def main():
     for ser in SERIES:
         if stop:
             break
-        eps, total = ser["eps"], len(ser["eps"])
-        for n, ep in enumerate(eps, start=1):
+        start = ser.get("start", 1)          # 앞 시리즈에 이어 번호를 매길 때(진로 9편~)
+        eps, total = ser["eps"], len(ser["eps"]) + start - 1
+        for n, ep in enumerate(eps, start=start):
             if ser["kind"] == "static":
                 vid, title, summary, paras, faq, tags = ep
             else:

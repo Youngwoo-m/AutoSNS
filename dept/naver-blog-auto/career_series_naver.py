@@ -49,9 +49,9 @@ def _episodes():
     확정돼 있어 실패할 일이 없고, 자격증은 매번 생성해야 해서 느리다.
     """
     for s in career_series.SERIES:
-        eps = s["eps"]
-        for i, ep in enumerate(eps, 1):
-            yield s["key"], s["label"], i, len(eps), ep
+        eps, start = s["eps"], s.get("start", 1)     # 진로 9편~ 은 앞 8편에 이어 번호를 매긴다
+        for i, ep in enumerate(eps, start):
+            yield s["key"], s["label"], i, len(eps) + start - 1, ep
 
 
 def _plain(t):
