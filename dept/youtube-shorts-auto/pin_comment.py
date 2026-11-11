@@ -122,13 +122,22 @@ def pin(video_id, go=False, headless=True, profile_dir=None):
     d = webdriver.Chrome(options=_options(profile_dir, headless=headless))
     try:
         log(f"로그인 계정: {who(d)}")
-        d.get(f"https://www.youtube.com/watch?v={video_id}")
-        time.sleep(7)
-        # 댓글 영역은 스크롤해야 불러온다(지연 로딩).
-        for _ in range(4):
-            d.execute_script("window.scrollBy(0, 900);")
-            time.sleep(1.5)
-        threads = d.find_elements("css selector", "ytd-comment-thread-renderer")
+        # 업로드 직후엔 페이지가 늦게 떠서 댓글을 0개로 읽을 때가 있다(2026-11-10).
+        # 못 찾으면 잠시 기다렸다 새로고침해 두 번 더 본다.
+        threads = []
+        for attempt in range(3):
+            if attempt:
+                log(f"댓글을 못 찾음 — {20 * attempt}초 뒤 새로고침해 다시 봅니다({attempt + 1}/3)")
+                time.sleep(20 * attempt)
+            d.get(f"https://www.youtube.com/watch?v={video_id}")
+            time.sleep(7)
+            # 댓글 영역은 스크롤해야 불러온다(지연 로딩).
+            for _ in range(4):
+                d.execute_script("window.scrollBy(0, 900);")
+                time.sleep(1.5)
+            threads = d.find_elements("css selector", "ytd-comment-thread-renderer")
+            if threads:
+                break
         log(f"댓글 {len(threads)}개 로드됨")
         if not threads:
             _shot(d, "no_comments")

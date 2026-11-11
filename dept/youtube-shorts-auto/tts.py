@@ -16,6 +16,19 @@ from mutagen.mp3 import MP3
 
 from common import POSTS_DIR, load_config, log
 
+try:   # 119 → '일일구'로 읽게(2026-11-10 사용자 지정). 자막 단어는 다시 119 로.
+    import sys as _sys
+    _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if _root not in _sys.path:
+        _sys.path.insert(0, _root)
+    from shared.tts_read import shown, spoken
+except Exception:  # noqa: BLE001
+    def spoken(t):
+        return t
+
+    def shown(t):
+        return t
+
 
 async def _synth(text, voice, rate, out_path):
     """음성을 저장하고 단어 경계 [[시작초, 끝초, 단어], …]를 돌려준다(나레이션 자막용)."""
@@ -24,12 +37,12 @@ async def _synth(text, voice, rate, out_path):
         kwargs["rate"] = rate
     words = []
     with open(out_path, "wb") as f:
-        async for ch in edge_tts.Communicate(text, **kwargs).stream():
+        async for ch in edge_tts.Communicate(spoken(text), **kwargs).stream():
             if ch["type"] == "audio":
                 f.write(ch["data"])
             elif ch["type"] == "WordBoundary":
                 words.append([round(ch["offset"] / 1e7, 3),
-                              round((ch["offset"] + ch["duration"]) / 1e7, 3), ch["text"]])
+                              round((ch["offset"] + ch["duration"]) / 1e7, 3), shown(ch["text"])])
     return words
 
 

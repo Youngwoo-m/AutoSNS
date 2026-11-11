@@ -27,10 +27,11 @@ async def _words_async(text, voice, rate):
     if rate:
         kw["rate"] = rate
     out = []
-    async for ch in edge_tts.Communicate(text, **kw).stream():
+    from tts import shown, spoken   # 119 → '일일구' 읽기와 같은 타이밍을 받도록
+    async for ch in edge_tts.Communicate(spoken(text), **kw).stream():
         if ch["type"] == "WordBoundary":
             out.append([round(ch["offset"] / 1e7, 3),
-                        round((ch["offset"] + ch["duration"]) / 1e7, 3), ch["text"]])
+                        round((ch["offset"] + ch["duration"]) / 1e7, 3), shown(ch["text"])])
     return out
 
 

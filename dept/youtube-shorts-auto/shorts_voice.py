@@ -126,6 +126,13 @@ def main():
     text = " ".join(open(a.text_file, encoding="utf-8").read().split())
     if not text:
         return out("error", message="대본이 비어 있습니다")
+    try:   # 119 → '일일구', 112 → '일일이'(2026-11-10 사용자 지정 — TTS 가 '백십구'로 읽음)
+        if ROOT not in sys.path:
+            sys.path.insert(0, ROOT)
+        from shared.tts_read import spoken
+        text = spoken(text)
+    except Exception:  # noqa: BLE001
+        pass
     if a.backend == "edge":
         try:
             edge_generate(text, a.out, a.voice, a.rate)
