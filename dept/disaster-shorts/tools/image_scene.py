@@ -71,7 +71,12 @@ def _gen(p):
 
 
 def _text(path):
-    r = subprocess.run([f"{ROOT}/tools/ocr", path], capture_output=True, text=True)
+    # ocr 은 맥 전용 실행 파일이다. 윈도우에서 부르면 WinError 193 으로 멈춰, 이미 만든 그림(39크레딧)을
+    # 버리게 된다(2026-11-12 확인). 맥이 아니거나 파일이 없으면 글자 검사를 건너뛴다.
+    ocr = f"{ROOT}/tools/ocr"
+    if sys.platform != "darwin" or not os.path.exists(ocr):
+        return []
+    r = subprocess.run([ocr, path], capture_output=True, text=True)
     return [p[1] for p in (l.split("\t") for l in r.stdout.splitlines())
             if len(p) == 3 and len(re.findall(r"[가-힣A-Za-z]", p[1])) >= 2 and float(p[2]) >= 0.3]
 

@@ -91,6 +91,10 @@ def text_in(clip):
     here = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else ROOT + "/tools"
     ocr = os.path.join(ROOT, "tools", "ocr")
     found = []
+    # ocr 은 맥 전용 실행 파일이다. 윈도우에서 부르면 WinError 193 으로 멈춰, 이미 만든 클립(크레딧)을
+    # 버리게 된다(2026-11-12 확인). 맥이 아니거나 파일이 없으면 글자 검사를 건너뛴다.
+    if sys.platform != "darwin" or not os.path.exists(ocr):
+        return found
     with tempfile.TemporaryDirectory() as td:
         for t in (1, 3, 5, 7):
             f = os.path.join(td, f"f{t}.png")
