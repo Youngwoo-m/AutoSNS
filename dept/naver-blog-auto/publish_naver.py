@@ -332,6 +332,29 @@ def _send_text(driver, text):
     ActionChains(driver).send_keys(text).perform()
 
 
+def _focus_end(driver):
+    """커서를 본문 마지막 글 문단 끝으로 다시 가져온다.
+
+    2026-11-12: 상단 배너를 붙여넣은 뒤 첫 문단을 클릭해도 키 입력이 에디터에 닿지 않아
+    3줄 요약·인사·첫 블록이 통째로 빠졌다(다음 그림을 붙여넣을 때에야 포커스가 돌아옴).
+    본문은 위에서 아래로 이어 쓰기만 하므로 마지막 문단 끝이 늘 올바른 입력 자리다."""
+    try:
+        paras = driver.find_elements(By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")
+        if not paras:
+            return False
+        last = paras[-1]
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", last)
+        time.sleep(0.2)
+        ActionChains(driver).move_to_element(last).click().perform()
+        time.sleep(0.3)
+        ActionChains(driver).send_keys(Keys.END).perform()
+        time.sleep(0.1)
+        return True
+    except Exception as e:
+        log(f"커서 되돌리기 실패: {type(e).__name__}")
+        return False
+
+
 def _type_text(driver, text):
     """현재 커서 위치에 여러 줄 텍스트를 입력(줄바꿈은 ENTER).
 
@@ -348,8 +371,10 @@ def _type_text(driver, text):
             _send_text(driver, line)
             grew = len(_doc_text(driver)) - before
             if grew < min(3, len(line)):          # 아무것도 안 들어갔다
-                log(f"입력 누락 감지 → 다시 넣는다: {line[:24]}")
+                log(f"입력 누락 감지 → 커서를 본문 끝으로 되돌리고 다시 넣는다: {line[:24]}")
                 time.sleep(0.8)
+                _focus_end(driver)
+                before = len(_doc_text(driver))
                 _send_text(driver, line)
                 if len(_doc_text(driver)) - before < min(3, len(line)):
                     log(f"⚠ 두 번째도 들어가지 않음: {line[:24]}")
@@ -405,6 +430,9 @@ def type_structured_post(driver, data):
             (By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")))
     ActionChains(driver).move_to_element(body_el).click().perform()
     time.sleep(0.4)
+    # 상단 배너가 들어갔으면 첫 문단은 배너 위의 빈 줄일 수 있고, 붙여넣기 뒤 포커스가
+    # 에디터를 떠나 있을 수 있다 — 마지막 문단 끝(배너 다음 줄)으로 커서를 옮긴다.
+    _focus_end(driver)
 
     # 글 맨 위 3줄 요약 — 네이버 지식스니펫·AI 검색 요약이 이 부분을 그대로 가져간다.
     if data.get("summary"):
