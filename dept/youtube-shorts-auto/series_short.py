@@ -141,19 +141,43 @@ def _run_json(cmd, cwd=None, timeout=900):
     raise RuntimeError(f"결과 JSON 없음: {(r.stderr or r.stdout).strip()[-300:]}")
 
 
+PAD = 0.35        # 장면마다 음성 뒤 여유
+TARGET = 19.6     # 렌더 상한 20초보다 조금 짧게
+
+
 def make(ep, workdir, cfg):
     os.makedirs(workdir, exist_ok=True)
     script = polish(write_script(ep, cfg), cfg)
     json.dump(script, open(os.path.join(workdir, "script.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    def voices(rate):
+        secs = []
+        for i, sc in enumerate(script["scenes"], 1):
+            txt = os.path.join(workdir, f"voice{i}.txt")
+            open(txt, "w", encoding="utf-8").write(sc.get("tts_text") or sc["narration"])
+            v = _run_json([PY, os.path.join(BASE_DIR, "shorts_voice.py"), "--backend", "edge", "--rate", rate,
+                           "--text-file", txt, "--out", os.path.join(workdir, f"voice{i}.wav")],
+                          cwd=BASE_DIR, timeout=180)
+            if v.get("status") != "ok":
+                raise RuntimeError(f"음성 {i} 실패: {v.get('message')}")
+            secs.append(float(v["seconds"]))
+        return secs
+
+    # 렌더는 20초를 넘으면 거부한다(배속 금지). 2026-11-13 입시 15편이 21.7초로 실패했다 —
+    # 넘으면 말 속도를 필요한 만큼만 올려(+10% 기본, 최대 +30%) 음성을 다시 만든다.
+    rate, secs = "+10%", None
+    secs = voices(rate)
+    total = sum(s + PAD for s in secs)
+    if total > TARGET:
+        need = 1.10 * sum(secs) / (TARGET - PAD * len(secs))
+        pct = min(30, int(-(-(need - 1) * 100 // 1)) + 1)
+        if pct > 10:
+            log(f"장면 합 {total:.2f}초 > {TARGET}초 → 말 속도 +{pct}% 로 음성 다시 만듦")
+            rate = f"+{pct}%"
+            secs = voices(rate)
     scenes = []
     for i, sc in enumerate(script["scenes"], 1):
-        txt = os.path.join(workdir, f"voice{i}.txt")
-        open(txt, "w", encoding="utf-8").write(sc.get("tts_text") or sc["narration"])
         wav = os.path.join(workdir, f"voice{i}.wav")
-        v = _run_json([PY, os.path.join(BASE_DIR, "shorts_voice.py"), "--backend", "edge",
-                       "--text-file", txt, "--out", wav], cwd=BASE_DIR, timeout=180)
-        if v.get("status") != "ok":
-            raise RuntimeError(f"음성 {i} 실패: {v.get('message')}")
+        v = {"seconds": secs[i - 1]}
         img, kind = "", "diorama"
         if sc.get("diorama"):
             png = os.path.join(workdir, f"diorama{i}.png")
@@ -168,7 +192,7 @@ def make(ep, workdir, cfg):
             img, kind = summary_card(ep.get("summary") or [sc["narration"]],
                                      os.path.join(workdir, f"card{i}.png")), "diagram"
         scenes.append({"title": sc["title"].replace("\\n", "\n"), "caption": sc["narration"], "image": img,
-                       "kind": kind, "audio": wav, "seconds": round(float(v["seconds"]) + 0.35, 2)})
+                       "kind": kind, "audio": wav, "seconds": round(float(v["seconds"]) + PAD, 2)})
     props = {"exam": "세명대 재난안전학과", "field": f"{ep['label']} 시리즈 {ep['n']}/{ep['total']}",
              "source": "", "footer": "자세한 내용 → 학과 블로그(설명란 링크)", "disclosure": DISCLOSURE,
              "scenes": scenes}
