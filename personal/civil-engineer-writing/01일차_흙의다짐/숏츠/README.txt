@@ -1,5 +1,5 @@
 토목시공기술사 1일차 개념 숏츠
-프로젝트: /Volumes/USB256/devAPP/AutoSNS/remotion-shorts
+프로젝트: G:/devAPP/AutoSNS/remotion-shorts
 구성 ID: CivilDay01
 원고: 대본.txt
 장면 소스: remotion-shorts/src/civil-day01/

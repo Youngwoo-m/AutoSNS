@@ -17,7 +17,7 @@ FIG_NAME = '보강토옹벽_붕괴원인과대책_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_랭킨토압.png', '수식2_계산예.png', '도식_배면수압토압비교.gif'
 BANNER = 'banner.png'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day12/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시): 배면 수위 유무에 따른 수평력 ─────────────────
 H, PHI, GT, GSAT, GW, Q = 6.0, 30.0, 19.0, 20.0, 9.81, 10.0

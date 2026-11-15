@@ -8,7 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from pypdf import PdfReader, PdfWriter
 
 OUT=Path(__file__).parent
-BASE=Path('/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing')
+BASE=Path('G:/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing')
 DAY=5
 FIG='SPT_N값보정_개념도.jpg'
 PDF='05일차_SPT_N값보정_답안예시_따라쓰기.pdf'

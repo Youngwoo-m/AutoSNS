@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 fp=str(ROOT/'assets/FONTS/Pretendard-Bold.otf');f=lambda n:ImageFont.truetype(fp,n)
 W,H=1480,980;im=Image.new('RGB',(W,H),'#f3f6fa');d=ImageDraw.Draw(im)
 d.text((45,26),'해체작업 붕괴 예방 흐름 — 산업안전보건법령과 건축물관리법',font=f(38),fill='#112b45')

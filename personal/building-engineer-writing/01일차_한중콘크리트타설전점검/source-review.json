@@ -101,39 +101,39 @@
   ],
   "evidence_files": [
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-kcs.json",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-kcs.json",
       "sha256": "7f411489aae74d8e695e95cef8750dde96428ecb7f266b71144fb223f7d77f60"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-history.json",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-live-history.json",
       "sha256": "27247b16cd7473fe63f065ed3600188929adbda3d6c2c38cd610bbf9666b9f81"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.pdf",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.pdf",
       "sha256": "1b7df08442d2edc793ab2554678c01892b3d22d2f970d46ab7259981fb36deb8"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.png",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-qnet132.png",
       "sha256": "c822ecb97e586b52d148f54104a45fff49f0b83979838a896cc1dee603f3b9bd"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule-full.pdf",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule-full.pdf",
       "sha256": "ceaafc60a9856237cb6052dd439959bfb50390eef2a95adc2ff1ec3562549247"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule.pdf",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-2024schedule.pdf",
       "sha256": "8abc93395d47660e332271d6b888483f92d7e84ea7f0dcb09b79f0646db34ede"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-1.png",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-1.png",
       "sha256": "ce6e66f6e3975651cfe91a52e4b6c54693ba4b9dbd867c848af3fd2b830b52e6"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-2.png",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-2.png",
       "sha256": "aed93bfdbe971b500eecb7b1f5e087c3d9ea0aa50205cd0990f62cfb5db42914"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-3.png",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-review-evidence/building-source-page-3.png",
       "sha256": "31d35eb896674649d454caff8e135fd0b5acdd458fd763a32e7c1ee7d1c5a7a0"
     }
   ]

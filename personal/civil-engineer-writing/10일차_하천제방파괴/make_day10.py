@@ -17,7 +17,7 @@ FIG_NAME = '하천제방_파괴원인과대책_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_한계동수경사.png', '수식2_계산예.png', '도식_제방파이핑검토.gif'
 BANNER = 'banner.png'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day10/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
 GS, E, I1, I2 = 2.65, 0.65, 0.30, 0.20         # 비중, 간극비, 대책 전·후 유출부 국부 동수경사(가정)

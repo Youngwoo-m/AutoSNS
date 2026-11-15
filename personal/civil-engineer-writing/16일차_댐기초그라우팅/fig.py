@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '댐기초그라우팅_종류_개념도.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, GRAYC, ROCK, ROCK2, CONC, WATER, CORE, SHELL = '#263746', '#7A8790', '#CBBFA8', '#B5A78C', '#D7D9DB', '#4C8DB5', '#B98B5E', '#E3D6B8'
 CUR, CON, CNT, BLK = '#B6462F', '#2F7D5B', '#C98A1B', '#6A4C93'
 f = lambda z: ImageFont.truetype(PRET, z)

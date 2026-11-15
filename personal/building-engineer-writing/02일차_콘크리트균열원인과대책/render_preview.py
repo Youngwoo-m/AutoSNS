@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys,time,json
 from selenium.webdriver.chrome.options import Options
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT/'dept/naver-blog-auto'))
 from common import start_chrome
 op=Options();op.add_argument('--headless=new');op.add_argument('--allow-file-access-from-files');op.add_argument('--window-size=1100,1050');op.add_argument('--hide-scrollbars')

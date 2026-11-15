@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont,ImageOps
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 fp=str(ROOT/'assets/FONTS/Pretendard-Bold.otf');f=lambda n:ImageFont.truetype(fp,n)
 # 단면도: 높이 3.0m(가상)에서 지반별 수평거리
 W,H=1480,600;im=Image.new('RGB',(W,H),'#f3f6fa');d=ImageDraw.Draw(im)

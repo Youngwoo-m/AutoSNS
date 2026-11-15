@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '소성변형_종류별_횡단형상.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, TEAL, RED, GRAYC, SOFT = '#263746', '#176977', '#B6462F', '#7A8790', '#EAF2F3'
 LAYERS = [('표층·중간층', '#3E4347'), ('기층', '#8C8577'), ('보조기층', '#C2B79F'), ('노상', '#DCCFB4')]
 f = lambda z: ImageFont.truetype(PRET, z)

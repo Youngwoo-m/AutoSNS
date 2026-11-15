@@ -1,6 +1,6 @@
 {
   "status": "source_fixes_applied_pending_parent_rereview",
-  "ownership": "/Volumes/USB256/devAPP/AutoSNS/personal/safety-engineer-writing/01일차_강관동바리붕괴예방",
+  "ownership": "G:/devAPP/AutoSNS/personal/safety-engineer-writing/01일차_강관동바리붕괴예방",
   "model": "claude-sonnet-5-5 via Claude Max subscription tool0 clean env",
   "humanizer_passes": 2,
   "targeted_editorial_pass": 1,

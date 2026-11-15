@@ -73,19 +73,19 @@
   ],
   "reviewed_files": [
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/티스토리게시본문.html",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/티스토리게시본문.html",
       "sha256": "08298c1ccda0a82ed74511300c4385e93e75d4352cece4d52c791d2bb28946a3"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/Blogger게시본문.html",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/Blogger게시본문.html",
       "sha256": "8e5b8a24a355a049b755971f9e1f75adafa265f48a1fb42a258bf4243c9fbf28"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manuscript-final.json",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manuscript-final.json",
       "sha256": "60dac3f31ab6356da34b836f80d5b4a00974e5b2ee787cc93d37ad8cc38f67fd"
     },
     {
-      "path": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manifest.json",
+      "path": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/manifest.json",
       "sha256": "797ab78770ffb10ee676608d734bd4625f28b3f9e174651673b0511d92b3ee51"
     }
   ],
@@ -96,5 +96,5 @@
     3,
     4
   ],
-  "previous_review": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-rereview.json"
+  "previous_review": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/01일차_한중콘크리트타설전점검/source-rereview.json"
 }

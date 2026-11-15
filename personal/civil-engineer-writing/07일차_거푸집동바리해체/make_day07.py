@@ -16,7 +16,7 @@ PDF_NAME = '07일차_거푸집동바리해체_답안예시_따라쓰기.pdf'
 FIG_NAME = '거푸집해체_기준과순서_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_슬래브밑면_해체강도.png', '수식2_계산예.png', '도식_강도발현과_해체시점.gif'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day07/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
 FCK = 27.0                                   # MPa, 설계기준압축강도

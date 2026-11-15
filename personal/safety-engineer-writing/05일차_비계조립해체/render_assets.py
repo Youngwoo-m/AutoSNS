@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 fp=str(ROOT/'assets/FONTS/Pretendard-Bold.otf');f=lambda n:ImageFont.truetype(fp,n)
 W,H=1480,1000;im=Image.new('RGB',(W,H),'#f3f6fa');d=ImageDraw.Draw(im)
 d.text((45,24),'강관비계 구조 기준 한눈에 보기 (산업안전보건기준에 관한 규칙 제59·60조, 별표 5)',font=f(34),fill='#112b45')

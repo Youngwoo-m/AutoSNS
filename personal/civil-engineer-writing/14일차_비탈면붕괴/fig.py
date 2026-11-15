@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '비탈면_붕괴형태_개념도.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, RED, GRAYC, SOFT, SOIL, ROCK, WATER = '#263746', '#B6462F', '#7A8790', '#EEF3F1', '#C9B48E', '#8E949A', '#4C8DB5'
 f = lambda z: ImageFont.truetype(PRET, z)
 

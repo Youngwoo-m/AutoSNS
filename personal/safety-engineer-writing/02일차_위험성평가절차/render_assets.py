@@ -1,5 +1,5 @@
 from pathlib import Path
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 from PIL import Image,ImageDraw,ImageFont
 im=Image.new('RGB',(1300,650),'#f3f6fa');draw=ImageDraw.Draw(im)
 fontpath=str(ROOT/'assets/FONTS/Pretendard-Bold.otf');f=lambda n:ImageFont.truetype(fontpath,n)

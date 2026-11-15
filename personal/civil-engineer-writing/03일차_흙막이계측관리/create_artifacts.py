@@ -8,7 +8,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from pypdf import PdfReader, PdfWriter
 
 OUT=Path(__file__).parent
-BASE=Path('/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing')
+BASE=Path('G:/devAPP/AutoSNS/GeoAI_NA/civil-engineer-writing')
 DAY=3
 FIG='흙막이_계측기_배치_개념도.jpg'
 PDF='03일차_흙막이계측관리_답안예시_따라쓰기.pdf'

@@ -17,7 +17,7 @@ FIG_NAME = '연약지반성토_계측기배치_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_쌍곡선법.png', '수식2_계산예.png', '도식_쌍곡선법침하예측.gif'
 BANNER = 'banner.png'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day11/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시): 쌍곡선법 ──────────────────────────────────────
 S0 = 0.80                                  # 성토 완료 시점 침하량(m)

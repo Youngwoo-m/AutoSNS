@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT/'dept/naver-blog-auto'))
 import make_banner as m
 m.POSTS_DIR=str(OUT)

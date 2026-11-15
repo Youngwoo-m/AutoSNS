@@ -16,7 +16,7 @@ PDF_NAME = '08일차_한중콘크리트_답안예시_따라쓰기.pdf'
 FIG_NAME = '한중콘크리트_관리흐름_개념도.jpg'
 F1_NAME, F2_NAME, GIF_NAME = '수식1_호칭강도_적산온도.png', '수식2_계산예.png', '도식_적산온도_누적.gif'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day08/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(가상 예시) ───────────────────────────────────────────────
 FCQ, TN = 24.0, 6.0                 # MPa, 품질기준강도(가상)·기온보정값(28일 예상평균 0 ℃ 이상 4 ℃ 미만)

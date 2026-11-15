@@ -15,7 +15,7 @@ TITLE = '[토목시공기술사] 말뚝기초 재하시험의 종류와 결과 �
 PDF_NAME = '06일차_말뚝재하시험_답안예시_따라쓰기.pdf'
 FIG_NAME = '말뚝재하시험_하중침하_개념도.jpg'
 CDN = 'https://geoai-na.web.app/civil-questions/materials/day06/'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 
 # ── 계산 예(학습용 가정) ─────────────────────────────────────────────
 D, T, L, E = 508.0, 12.0, 20000.0, 200000.0           # mm, mm, mm, MPa

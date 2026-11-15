@@ -1,6 +1,6 @@
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 fp=str(ROOT/'assets/FONTS/Pretendard-Bold.otf');f=lambda n:ImageFont.truetype(fp,n)
 # 1) 밀폐공간 작업 절차 흐름도(조문 번호 포함)
 W,H=1480,900;im=Image.new('RGB',(W,H),'#f3f6fa');d=ImageDraw.Draw(im)

@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys,time
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');OUT=Path(__file__).resolve().parent
 sys.path.insert(0,str(ROOT/'dept/naver-blog-auto'))
 from common import start_chrome
 from selenium.webdriver.chrome.options import Options

@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '라이닝_균열형태_개념도.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, GRAYC, ROCK, SHOT, LIN = '#263746', '#7A8790', '#CFC3AA', '#B4ADA0', '#DCDFE2'
 C_LONG, C_TRANS, C_SHEAR = '#B6462F', '#2E6FA8', '#2F7D5B'
 f = lambda z: ImageFont.truetype(PRET, z)

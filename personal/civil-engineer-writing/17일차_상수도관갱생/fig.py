@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '상수도관갱생_단면_개념도.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, GRAYC, PIPE, RUST, WATER, EPOXY, LINER, GROUT = '#263746', '#7A8790', '#5E6B75', '#A0522D', '#CFE6F5', '#2F7D5B', '#C98A1B', '#B9B9B9'
 f = lambda z: ImageFont.truetype(PRET, z)
 

@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).parent
 FIG_NAME = '방파제_구조형식_단면개념도.jpg'
-PRET = '/Volumes/USB256/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
+PRET = 'G:/devAPP/AutoSNS/assets/FONTS/Pretendard-Bold.otf'
 INK, GRAYC, SEA, SEAF, BED = '#263746', '#7A8790', '#4C8DB5', '#DCEBF5', '#D9CDB2'
 CORE, ARMOR, BLOCK, CAIS, CAP, FOOT = '#B9AE98', '#8F8573', '#9AA7B0', '#D7D9DB', '#BFC4C8', '#6F7F8C'
 RED, GRN = '#B6462F', '#2F7D5B'

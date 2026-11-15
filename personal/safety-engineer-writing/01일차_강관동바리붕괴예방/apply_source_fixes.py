@@ -24,7 +24,7 @@ s=s.replace("esc=lambda s:html.escape(str(s))", "esc=lambda s:html.escape(str(s)
 s=s.replace("esc(x)+f'</{tag}>'", "esc(x).replace('\\n','<br>')+f'</{tag}>'")
 s=s.replace("image('banner.png','거푸집·강관 동바리 타설 전 확인사항',blogger),paras(D['intro'])", "image('banner.png','거푸집·강관 동바리 타설 전 확인사항',blogger),'<p><small>배너: AI 생성 디오라마(학습용 이미지).</small></p>',intro_html()")
 build.write_text(s)
-subprocess.run([str(Path('/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/.venv/bin/python')),str(build)],check=True)
+subprocess.run([str(Path('G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/.venv/bin/python')),str(build)],check=True)
 # 답안 예시 내용은 변경되지 않았으므로 기존 검산/렌더 PDF 바이트를 유지한다.
 (p/'01일차_강관동바리_답안예시_따라쓰기.pdf').write_bytes(before_pdf)
 state=json.loads((p/'작성상태.json').read_text())
