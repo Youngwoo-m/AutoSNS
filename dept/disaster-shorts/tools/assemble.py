@@ -376,6 +376,8 @@ def hook_lines(sc):
 
 def hook_png(lines, out, y=1450):
     """인트로 위에 얹는 훅 박스(투명 1080x1920 PNG). 아바타 얼굴·AI 표시 띠 아래 빈 공간에 둔다."""
+    if _AXROOT not in sys.path:   # 아웃트로를 다시 만들지 않으면(band_layout 미호출) shared 경로가 안 잡힌다
+        sys.path.insert(0, _AXROOT)
     from shared.fonts import font_path, DISPLAY
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
     longest = max(len(x) for x in lines)
