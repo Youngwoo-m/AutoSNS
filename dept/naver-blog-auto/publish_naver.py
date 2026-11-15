@@ -355,6 +355,32 @@ def _focus_end(driver):
         return False
 
 
+def _wait_typable(driver, limit=40):
+    """에디터가 실제로 키 입력을 받을 때까지 기다린다(시험 글자 하나를 넣었다 지운다).
+
+    2026-11-12·11-14: 상단 배너를 붙여넣은 뒤 한동안 키 입력이 어디에도 들어가지 않아
+    요약·인사·첫 블록이 빠지고 발행이 멈췄다(다음 그림을 붙여넣은 뒤에야 입력이 됨).
+    커서만 옮겨서는 해결되지 않아, 입력이 실제로 먹는지 확인하고 시작한다."""
+    t0 = time.time()
+    tries = 0
+    while time.time() - t0 < limit:
+        tries += 1
+        before = len(_doc_text(driver))
+        ActionChains(driver).send_keys("x").perform()
+        time.sleep(0.4)
+        if len(_doc_text(driver)) > before:
+            ActionChains(driver).send_keys(Keys.BACKSPACE).perform()
+            time.sleep(0.2)
+            if tries > 1:
+                log(f"에디터 입력 준비 확인({tries}번째, {time.time() - t0:.0f}초)")
+            return True
+        ActionChains(driver).send_keys(Keys.ESCAPE).perform()   # 사진 편집·라이브러리 같은 층이 키를 가로채면 닫는다
+        time.sleep(2)
+        _focus_end(driver)
+    log(f"⚠ {limit}초 동안 에디터가 키 입력을 받지 않음 — 그대로 진행")
+    return False
+
+
 def _type_text(driver, text):
     """현재 커서 위치에 여러 줄 텍스트를 입력(줄바꿈은 ENTER).
 
@@ -433,6 +459,7 @@ def type_structured_post(driver, data):
     # 상단 배너가 들어갔으면 첫 문단은 배너 위의 빈 줄일 수 있고, 붙여넣기 뒤 포커스가
     # 에디터를 떠나 있을 수 있다 — 마지막 문단 끝(배너 다음 줄)으로 커서를 옮긴다.
     _focus_end(driver)
+    _wait_typable(driver)
 
     # 글 맨 위 3줄 요약 — 네이버 지식스니펫·AI 검색 요약이 이 부분을 그대로 가져간다.
     if data.get("summary"):
