@@ -107,6 +107,17 @@ def _kill_debug_chrome(port=DEBUG_PORT):
         time.sleep(0.5)
 
 
+def _chrome_version():
+    """띄우는 크롬(CHROME) 옆의 버전 폴더(예: 156.0.8078.48). Selenium Manager 가 이 버전 드라이버를 받게 한다."""
+    try:
+        import re as _re
+        d = os.path.dirname(CHROME)
+        vs = [x for x in os.listdir(d) if _re.fullmatch(r"\d+\.\d+\.\d+\.\d+", x)]
+        return max(vs, key=lambda x: tuple(map(int, x.split(".")))).split(".")[0] if vs else None  # 주 버전만
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def build_driver(headless=False, port=DEBUG_PORT):
     """평범하게 띄운 Chrome 에 붙는다(headless 는 틱톡에서 쓰지 않는다).
 
@@ -116,6 +127,9 @@ def build_driver(headless=False, port=DEBUG_PORT):
         launch_chrome(port=port)
         o = Options()
         o.add_experimental_option("debuggerAddress", f"127.0.0.1:{port}")
+        v = _chrome_version()
+        if v:
+            o.browser_version = v   # 11-10: 구글 크롬이 157로 올라 드라이버 157을 받아 와 Chromium 156 에 못 붙었다
         try:
             return webdriver.Chrome(options=o)
         except Exception as e:  # noqa: BLE001

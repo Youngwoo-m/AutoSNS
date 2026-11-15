@@ -56,7 +56,8 @@ def article_body(page):
     m = re.search(r'<div class="(?:tt_article_useless_p_margin|contents_style)[^>]*>(.*?)<div class="(?:container_postbtn|another_category)', page, re.S)
     if not m:
         raise RuntimeError("티스토리 본문을 찾지 못함")
-    return m.group(1)
+    # 쿠팡 파트너스 수험서 칸은 블로거·티스토리 전용 — 네이버에는 넣지 않는다(공통규칙 2026-11-11)
+    return re.sub(r'<div[^>]*>(?:(?!</?div).)*?link\.coupang\.com(?:(?!</?div).)*?</div>\s*', '', m.group(1), flags=re.S)
 
 
 # 작업 이름 접두 → safeworking 카테고리 (2026-10-26 분리)
@@ -76,7 +77,9 @@ def build_data(url, workdir, category, tags_arg):
     m = re.search(r'<meta property="og:title" content="([^"]+)"', page)
     title = html.unescape(m.group(1)) if m else ""
     body = article_body(page)
-    tags = [t.strip() for t in tags_arg.split(",") if t.strip()] if tags_arg else []
+    # 쿠팡 파트너스 칸은 티스토리·블로거에만 둔다(2026-11-11 사용자 지정: 네이버는 파트너스 미등록 채널)
+    body = re.sub(r'<div[^>]*>(?:(?!<div).)*?link\.coupang\.com(?:(?!<div).)*?</div>', '', body, flags=re.S)
+    tags =[t.strip() for t in tags_arg.split(",") if t.strip()] if tags_arg else []
     if not tags:
         # 본문 끝 '#태그' 줄 → 없으면 티스토리 글의 태그 목록(184·189 는 태그 줄이 없어 태그 없이 발행됐다, 2026-10-28)
         hm = re.findall(r"<p[^>]*>\s*((?:#[^\s<#]+\s*)+)</p>", body)

@@ -3,6 +3,14 @@ import json
 import os
 import time
 from datetime import datetime
+import sys
+
+# 2026-11-10: Windows 콘솔 기본 인코딩(cp949)에서 제목의 '²' 같은 글자를 찍다 발행기가 죽지 않게 UTF-8 로 고정
+for _st in (sys.stdout, sys.stderr):
+    try:
+        _st.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")

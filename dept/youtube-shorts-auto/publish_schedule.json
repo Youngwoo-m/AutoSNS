@@ -444,7 +444,14 @@
       "재난안전학과",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/QSwJrAD-HN0",
+      "instagram": "published",
+      "threads": "unparsed(rc=0)",
+      "x": "disabled",
+      "at": "2026-11-08T13:16:52",
+      "instagram_retry": "2026-11-08 파일 칸 수정 후 재게시"
+    },
     "season_note": "첫눈·빙판",
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
   },
@@ -466,7 +473,13 @@
       "재난안전학과",
       "Shorts"
     ],
-    "published": null,
+    "published": {
+      "youtube": "https://youtu.be/dJnfRF-p-CE",
+      "instagram": "published",
+      "threads": "published",
+      "x": "disabled",
+      "at": "2026-11-14T18:03:15"
+    },
     "season_note": "한파",
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
   },
@@ -796,5 +809,109 @@
     ],
     "published": null,
     "bgm_credit": "🎵 배경음악: Blip Stream — Kevin MacLeod (incompetech.com) / CC BY 4.0"
+  },
+  {
+    "series": "blogseries",
+    "label": "입시 14",
+    "date": "2026-11-12",
+    "video": "posts/series_admission14_20261112_083110/short.mp4",
+    "title": "세명대 재난안전학과 정시, 수능 끝나면 뭐부터 할까요? | 세명대 재난안전학과 입시 [14/17] #Shorts",
+    "description": "수능 끝나고 원서 쓰기 전, 꼭 확인해야 할 세 가지입니다.\n\n▶ 블로그에서 자세히 읽기: https://smuds2026.blogspot.com/2026/11/1417.html\n\n세명대학교 재난안전학과 입시 시리즈 — 세명대 재난안전학과 정시 | 수능 끝나고 원서 쓰기 전까지 할 일\n\n※ AI 생성 그림 · AI 합성 음성(TTS)\n\n#정시입시 #수능성적표 #대입원서 #재난안전학과 #세명대학교 #Shorts",
+    "tags": [
+      "정시입시",
+      "수능성적표",
+      "대입원서",
+      "재난안전학과",
+      "세명대학교",
+      "Shorts"
+    ],
+    "blog_series": "admission",
+    "blog_n": 14,
+    "published": {
+      "youtube": "https://youtu.be/MdkdDLVVsgY",
+      "instagram": "skipped",
+      "threads": "skipped",
+      "x": "disabled",
+      "at": "2026-11-12T08:32:48"
+    },
+    "no": 26
+  },
+  {
+    "series": "blogseries",
+    "label": "입시 15",
+    "date": "2026-11-13",
+    "video": "posts/series_admission15_20261113_143836/short.mp4",
+    "title": "정시 가·나·다군, 원서 세 장 어떻게 나눌까? | 세명대 재난안전학과 입시 [15/17] #Shorts",
+    "description": "세명대 재난안전학과는 2027학년도 정시에서 다군으로 모집해요.\n\n▶ 블로그에서 자세히 읽기: https://smuds2026.blogspot.com/2026/11/1517.html\n\n세명대학교 재난안전학과 입시 시리즈 — 재난안전학과 정시 가·나·다군 이해하기 | 원서 세 장을 나누는 법\n\n※ AI 생성 그림 · AI 합성 음성(TTS)\n\n#정시지원 #가나다군 #대입준비 #재난안전학과 #세명대학교 #Shorts",
+    "tags": [
+      "정시지원",
+      "가나다군",
+      "대입준비",
+      "재난안전학과",
+      "세명대학교",
+      "Shorts"
+    ],
+    "blog_series": "admission",
+    "blog_n": 15,
+    "published": {
+      "youtube": "https://youtu.be/U-awehjYFn4",
+      "instagram": "skipped",
+      "threads": "skipped",
+      "x": "disabled",
+      "at": "2026-11-13T14:40:46"
+    },
+    "no": 27
+  },
+  {
+    "series": "blogseries",
+    "label": "입시 16",
+    "date": "2026-11-14",
+    "video": "posts/series_admission16_20261114_083058/short.mp4",
+    "title": "정시 예비번호 받으면 뭐부터 해야 할까? | 세명대 재난안전학과 입시 [16/17] #Shorts",
+    "description": "정시 추가합격은 포기로 생긴 빈자리를 예비후보 성적순으로 채우는 절차이고, 등록 기한 안에 등록해야 유효합니다.\n\n▶ 블로그에서 자세히 읽기: https://smuds2026.blogspot.com/2026/11/1617.html\n\n세명대학교 재난안전학과 입시 시리즈 — 정시 추가합격 이해하기 | 예비번호와 충원 합격\n\n※ AI 생성 그림 · AI 합성 음성(TTS)\n\n#정시추가합격 #예비번호 #입시 #재난안전학과 #세명대학교 #Shorts",
+    "tags": [
+      "정시추가합격",
+      "예비번호",
+      "입시",
+      "재난안전학과",
+      "세명대학교",
+      "Shorts"
+    ],
+    "blog_series": "admission",
+    "blog_n": 16,
+    "published": {
+      "youtube": "https://youtu.be/SJ9POo82Uvg",
+      "instagram": "skipped",
+      "threads": "skipped",
+      "x": "disabled",
+      "at": "2026-11-14T08:32:21"
+    },
+    "no": 28
+  },
+  {
+    "series": "blogseries",
+    "label": "입시 17",
+    "date": "2026-11-15",
+    "video": "posts/series_admission17_20261115_083108/short.mp4",
+    "title": "재난안전학과 입학 전 겨울방학, 뭘 준비할까요? | 세명대 재난안전학과 입시 [17/17] #Shorts",
+    "description": "입학 전 겨울방학, 부담 없이 할 수 있는 재난안전학과 몸풀기를 소개해요.\n\n▶ 블로그에서 자세히 읽기: https://smuds2026.blogspot.com/2026/11/1717.html\n\n세명대학교 재난안전학과 입시 시리즈 — 재난안전학과 신입생 입학 전 준비 | 겨울방학에 해 두면 좋은 것\n\n※ AI 생성 그림 · AI 합성 음성(TTS)\n\n#신입생준비 #겨울방학 #재난문자 #재난안전학과 #세명대학교 #Shorts",
+    "tags": [
+      "신입생준비",
+      "겨울방학",
+      "재난문자",
+      "재난안전학과",
+      "세명대학교",
+      "Shorts"
+    ],
+    "blog_series": "admission",
+    "blog_n": 17,
+    "published": {
+      "youtube": "https://youtu.be/7qQFa6HGxDg",
+      "instagram": "skipped",
+      "threads": "skipped",
+      "x": "disabled",
+      "at": "2026-11-15T08:32:24"
+    },
+    "no": 29
   }
 ]

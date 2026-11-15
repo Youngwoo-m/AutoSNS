@@ -16,7 +16,8 @@ import subprocess
 import sys
 import tempfile
 
-YTDLP = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv", "bin", "yt-dlp")
+_V = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
+YTDLP = os.path.join(_V, "Scripts", "yt-dlp.exe") if os.name == "nt" else os.path.join(_V, "bin", "yt-dlp")
 
 
 def out(status, **kw):

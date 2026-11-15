@@ -374,7 +374,9 @@ def upload(data, dry_run=None, privacy=None, token_path=None):
             geo = bool(token_path) and os.path.abspath(token_path) != os.path.abspath(TOKEN_PATH)
             if geo:     # 2026-11-06: 개인 GeoAI 채널 숏츠는 학과가 아닌 개인 틱톡(@kor.geo.panda) 대기열로
                 import sys as _sys
-                _sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(BASE_DIR)), "personal", "geoai-youtube"))
+                # BASE_DIR 이 이 파일에 없어 NameError 로 11/06~ 개인 틱톡 대기열이 비었다(2026-11-08)
+                _root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+                _sys.path.insert(0, os.path.join(_root, "personal", "geoai-youtube"))
                 from tiktok_queue_personal import add as tiktok_add
             tiktok_add(video_path, data.get("title", ""), data.get("description", ""),
                        data.get("hashtags") or [], ai_generated=synthetic,

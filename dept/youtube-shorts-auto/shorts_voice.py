@@ -82,6 +82,15 @@ def edge_generate(text, out_wav, voice=EDGE_VOICE, rate=EDGE_RATE):
             raise RuntimeError("wav 변환 실패: " + r.stderr.strip()[-200:])
 
 
+class Stuck(RuntimeError):
+    """음성 하나가 대기 한도 안에 끝나지 않음(모델이 끝을 못 맺고 계속 만드는 경우 — 2026-11-08 13:24 실제로 10분 멈춤)."""
+
+
+def wait_limit(text):
+    """대기 한도(초): 20초 + 글자당 1초, 최대 2분. RTX 3080 Ti 실측은 문장 하나 12~20초(2026-11-08)."""
+    return min(120, 20 + len(text))
+
+
 def generate(text, seed):
     body = dict(profile_id=PROFILE, text=text, language="ko", engine="qwen", model_size="0.6B",
                 seed=seed, normalize=True, max_chunk_chars=250)
@@ -91,11 +100,41 @@ def generate(text, seed):
     while g.get("status") != "completed":
         if g.get("status") in ("failed", "cancelled"):
             raise RuntimeError("음성 합성 실패: " + json.dumps(g, ensure_ascii=False)[:300])
-        if time.time() - t0 > 600:
-            raise RuntimeError("음성 합성 10분 초과")
+        if time.time() - t0 > wait_limit(text):
+            raise Stuck(f"음성 합성 {wait_limit(text)}초 초과(멈춤)")
         time.sleep(3)
         g = _json(urllib.request.Request(VB + "history/" + g["id"]), 40)
     return g
+
+
+def _voicebox_lock(job):
+    """음성을 만드는 동안만 'voicebox' 자원을 잡는다(2026-11-08) — 작업 전체가 아니라 생성 구간만이라 긴 작업끼리 오래 막지 않는다.
+    잠금 도구를 못 읽으면 잠금 없이 진행한다(음성 생성을 막지 않게)."""
+    import contextlib
+    try:
+        sys.path.insert(0, ROOT)
+        from shared.axlock import hold
+        return hold(["voicebox"], job=f"voice:{job}", wait=900, check_stop=False)
+    except Exception:  # noqa: BLE001
+        return contextlib.nullcontext()
+
+
+def generate_safely(text, seed, job):
+    """멈추거나 실패하면 Voicebox 를 다시 켜고 다른 시드로 다시(최대 3번, 2026-11-08). 모두 실패하면 예외를 올린다.
+    잠금을 잡은 채 다시 켜므로 다른 작업의 생성을 끊지 않는다(그 작업은 잠금을 기다리는 중)."""
+    # 2026-11-08 실측: 같은 문장도 시드에 따라 멈추거나(문장 A) 두 시드 모두 멈춘다(문장 B) → 다른 시드로 최대 2번 더
+    with _voicebox_lock(job):
+        fails = []
+        for k in range(3):
+            if k:
+                r = subprocess.run([*VB_CTL, "restart", job], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+                if r.returncode != 0:
+                    raise RuntimeError(f"{fails} → Voicebox 다시 켜기 실패: {(r.stdout or r.stderr).strip()[-150:]}")
+            try:
+                return generate(text, seed + k), seed + k, ("; ".join(fails) or None)
+            except (Stuck, RuntimeError, OSError) as e:
+                fails.append(f"시드 {seed + k}: {type(e).__name__}: {str(e)[:80]}")
+        raise Stuck(" / ".join(fails))
 
 
 def transcribe(path):
@@ -146,17 +185,19 @@ def main():
             return out("ok", **res)
         except Exception as e:
             return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
-    started = subprocess.run([*VB_CTL, "up", a.job], capture_output=True, text=True, timeout=240)
+    started = subprocess.run([*VB_CTL, "up", a.job], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=240)
     if started.returncode != 0:
         return out("error", message="Voicebox 를 켜지 못했습니다: " + (started.stderr or started.stdout).strip()[-200:])
     try:
-        g = generate(text, a.seed)
+        g, seed, retried = generate_safely(text, a.seed, a.job)
         os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
         with open(a.out, "wb") as f:
             f.write(urllib.request.urlopen(VB + "audio/" + g["id"], timeout=120).read())
         sec = seconds_of(a.out)
         res = {"out": os.path.abspath(a.out), "seconds": sec, "backend": "voicebox", "voice_label": VOICE_LABEL["voicebox"],
-               "seed": a.seed, "generation_id": g["id"]}
+               "seed": seed, "generation_id": g["id"]}
+        if retried:
+            res["retried"] = retried
         if a.check:
             t = transcribe(a.out)
             res["check"] = {"heard": (t.get("text") or "").strip(), "script": text,
@@ -168,7 +209,7 @@ def main():
         return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
     finally:
         if not a.keep:
-            subprocess.run([*VB_CTL, "down", a.job], capture_output=True, text=True, timeout=120)
+            subprocess.run([*VB_CTL, "down", a.job], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
 
 
 if __name__ == "__main__":
