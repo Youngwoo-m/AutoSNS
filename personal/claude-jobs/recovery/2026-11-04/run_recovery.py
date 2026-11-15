@@ -1,6 +1,6 @@
 import argparse,json,subprocess,sys
 from pathlib import Path
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent
 p=argparse.ArgumentParser();p.add_argument('--mode',choices=['dry','go'],required=True);a=p.parse_args()
 approval=H/'approval.json';targets=json.loads(approval.read_text())['targets']
 for t in targets:

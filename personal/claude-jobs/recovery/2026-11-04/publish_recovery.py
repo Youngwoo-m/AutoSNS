@@ -1,7 +1,7 @@
 """2026-11-04 사용자 게시 지시로 건축4·안전4·5 누락 세 편만 기존 발행기로 복구."""
 import hashlib,json,os,re,sys
 from pathlib import Path
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
 APPROVAL=HERE/'approval.json'
 DATE='2026-11-04';ID='2026-11-04-building4-safety4-5';REPLY='블로거에 올려봐 주세요'
 SLOTS={('building-daily',4),('safety-daily',4),('safety-daily',5)}

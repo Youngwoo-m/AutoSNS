@@ -1,7 +1,7 @@
 from pathlib import Path
 import re,json,html,hashlib,difflib,collections
 OUT=Path(__file__).resolve().parent
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS')
+ROOT=Path('G:/devAPP/AutoSNS')
 source=ROOT/'GeoAI_NA/building-engineer-writing/첫글_준비하기/수정본_새문체.html'
 s=source.read_text();body=(ROOT/'GeoAI_NA/claude-jobs/recovery/2026-10-31/building-corrected-pending-banner.html').read_text()
 model=json.loads((OUT/'humanizer-pass2.json').read_text())

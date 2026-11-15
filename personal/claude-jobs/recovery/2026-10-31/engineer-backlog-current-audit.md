@@ -49,7 +49,7 @@
 
 ### 현행 재사용 후보 (새 유료그림 불필요)
 
-/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/engineer-video-output/premade/2026-10-29-survey-am/
+G:/devAPP/AutoSNS/GeoAI_NA/engineer-video-output/premade/2026-10-29-survey-am/
 - short.mp4(meta15.04초), props.json(Remotion3장면), d1.png/d2.png/d3.png(디오라마3장), voice.wav, 대본.txt, title.txt, description.txt, tags.txt, 장면메모.txt 존재.
 - used.txt 없음. 최상위주제 최소제곱법, prev폴더가10/29에쓴정확도·정밀도.
 - 명시재사용근거: survey-daily.md 마지막의 “2026-10-29 미리 만든 숏츠 우선”, 같은폴더장면메모의 “그림은 기존d1~d3.png 재사용”. 기존공개블로그원고·출처·그림재사용도 survey-daily 허용.

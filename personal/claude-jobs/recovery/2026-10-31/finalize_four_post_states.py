@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,datetime
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent
 now=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).isoformat()
 p=H/'first-second-day-publishing-progress.json';s=json.loads(p.read_text());naverchecks=json.loads((H/'naver-four-public-verification.json').read_text()) if (H/'naver-four-public-verification.json').exists() else []
 for row in s['posts']:

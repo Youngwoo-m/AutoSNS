@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,urllib.request,urllib.parse,re,html,hashlib,datetime
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent
 A=json.loads((H/'approval.json').read_text())
 def get(u):
  import subprocess

@@ -118,7 +118,8 @@ def main():
     import geoai_blogger as gb
     from shared.axlock import hold, stopped
     os.environ["TZ"] = "Asia/Seoul"
-    time.tzset()
+    if hasattr(time, "tzset"):
+        time.tzset()
     body = Path(args.html).read_text(encoding="utf-8")
     if re.search(r'(src|href)="(?!https?://)[^"#]', body):
         raise ValueError("Blogger 원고에는 공개 HTTP(S) 주소만 사용해야 합니다")

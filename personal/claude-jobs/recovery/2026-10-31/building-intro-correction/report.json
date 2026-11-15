@@ -3,14 +3,14 @@
   "at": "2026-10-31T12:04:39.300558+09:00",
   "scope": "건축 입문글 182 보완 원고만; worker 발행/원본수정 없음",
   "files": {
-    "edit_html": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/edit-ready.html",
-    "blogger_html": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/Blogger-ready.html",
-    "banner": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/banner.png",
-    "preview": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/preview.html",
-    "public_backup": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.full.html",
-    "public_readable": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.readable.txt",
-    "local_diff": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-local-before.patch",
-    "public_diff": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-public-readable.patch"
+    "edit_html": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/edit-ready.html",
+    "blogger_html": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/Blogger-ready.html",
+    "banner": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/banner.png",
+    "preview": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/preview.html",
+    "public_backup": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.full.html",
+    "public_readable": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/before-public-182.readable.txt",
+    "local_diff": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-local-before.patch",
+    "public_diff": "G:/devAPP/AutoSNS/personal/claude-jobs/recovery/2026-10-31/building-intro-correction/diff-from-public-readable.patch"
   },
   "changes": [
     "공정·원가·계약 오탐 통계행 삭제(대체 집계값 추가 없음)",

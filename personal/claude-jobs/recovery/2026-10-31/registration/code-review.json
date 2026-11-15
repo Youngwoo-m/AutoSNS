@@ -21,7 +21,7 @@
     {
       "id": "R1",
       "priority": "P1",
-      "file": "/Volumes/USB256/devAPP/AutoSNS/personal/claude-jobs/publish_engineer_blogger.py",
+      "file": "G:/devAPP/AutoSNS/personal/claude-jobs/publish_engineer_blogger.py",
       "line": 80,
       "title": "Blogger 목록 조회에 ADMIN view를 명시해야 status 기반 중복·상한 검사가 동작함",
       "problem": "posts().list 요청에서 view를 생략한다. 설치된 공식 Blogger v3 discovery schema는 Post.status를 Only set for admin-level requests.로 정의한다. 기본 reader 응답은 status가 없을 수 있고, quota_snapshot은 모든 항목의 status가 LIVE/DRAFT/SCHEDULED인지 검사하므로 정상 기존 글만 있어도 ValueError로 종료한다. 이 경우 건축·안전 Blogger 발행이 매번 실패하며 예약·비공개 제목 조회 요구도 신뢰할 수 없다.",

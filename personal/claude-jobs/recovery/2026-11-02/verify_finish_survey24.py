@@ -1,7 +1,7 @@
 from pathlib import Path
 import urllib.request,urllib.parse,re,html,json,hashlib,datetime
 from html.parser import HTMLParser
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent;D=Path('/Volumes/USB256/기술사/24일차_지상라이다')
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent;D=Path('/Volumes/USB256/기술사/24일차_지상라이다')
 class Links(HTMLParser):
  def __init__(self):super().__init__();self.files=[]
  def handle_starttag(self,t,attrs):

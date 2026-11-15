@@ -6,7 +6,7 @@
   "manuscripts": {
     "building": {
       "verdict": "block",
-      "recommended_source_filepath": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/수정본_새문체.html",
+      "recommended_source_filepath": "G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/수정본_새문체.html",
       "publishable_source_filepath": null,
       "summary": "핵심 집계 오탐 수정 필요",
       "issues": [
@@ -87,7 +87,7 @@
     },
     "safety": {
       "verdict": "fix",
-      "recommended_source_filepath": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/safety-engineer-writing/첫글_준비하기/게시본문.html",
+      "recommended_source_filepath": "G:/devAPP/AutoSNS/GeoAI_NA/safety-engineer-writing/첫글_준비하기/게시본문.html",
       "publishable_source_filepath": null,
       "summary": "배치·예고·배너 및 포괄 법령 확인 문구 수정 후 발행 가능",
       "issues": [

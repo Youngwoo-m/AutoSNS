@@ -1,7 +1,7 @@
 {
   "verdict": "pass",
   "summary": "이전 필수 수정 4건이 모두 반영됐습니다. 원본과 대조했으며 새 숫자·시험정보·법령 주장은 추가되지 않았습니다.",
-  "file": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/safety-Blogger-final.html",
+  "file": "G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/safety-Blogger-final.html",
   "sha256": "2f1591355de86d8732c8b0f19eeeb343764ac3f65954aad86ce0c1eff70f60d6",
   "issues": [],
   "resolved": [

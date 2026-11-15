@@ -2,7 +2,7 @@
   "reviewed_at": "2026-10-31T16:08:39.802212+09:00",
   "verdict": "pass",
   "scope": "TOKEN 정규식의 문단 전체 매칭을 Image/File bare token 매칭으로 바꾼 최소 수정",
-  "file": "/Volumes/USB256/devAPP/AutoSNS/personal/naver-blog-auto/tistory_post.py",
+  "file": "G:/devAPP/AutoSNS/personal/naver-blog-auto/tistory_post.py",
   "sha256": "e743e3ec8249470be3f75b5d40d93b9219b1bfea8c1c1acfd14ebd4e74a09545",
   "issues": [],
   "checks": [

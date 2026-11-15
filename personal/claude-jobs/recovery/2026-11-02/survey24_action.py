@@ -1,6 +1,6 @@
 import argparse,json,subprocess,sys
 from pathlib import Path
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent;D=Path('/Volumes/USB256/기술사/24일차_지상라이다');URL='https://na-geoai.tistory.com/213'
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent;D=Path('/Volumes/USB256/기술사/24일차_지상라이다');URL='https://na-geoai.tistory.com/213'
 p=argparse.ArgumentParser();p.add_argument('action',choices=['naver','short','comment']);p.add_argument('--mode',choices=['dry','go'],required=True);p.add_argument('--video-id');a=p.parse_args();leaf=R/'dept/naver-blog-auto';yt=R/'dept/youtube-shorts-auto'
 if a.action=='naver':
  cmd=[str(leaf/'.venv/bin/python'),str(leaf/'naver_crosspost_personal.py'),'--tistory-url',URL,'--category','측량기술사','--tags',(D/'태그.txt').read_text().strip(),'--'+a.mode,'--job','survey-daily-recovery']

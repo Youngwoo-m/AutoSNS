@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS')
+ROOT=Path('G:/devAPP/AutoSNS')
 sys.path.insert(0,str(ROOT/'dept/naver-blog-auto'))
 import tistory_post as tp
 # Observed editor shape: two attachment tokens share a paragraph with a caption.

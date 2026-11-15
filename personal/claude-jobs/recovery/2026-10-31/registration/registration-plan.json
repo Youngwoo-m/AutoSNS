@@ -8,7 +8,7 @@
         9
       ],
       "run_at_load": false,
-      "staged_plist": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.building-daily.plist",
+      "staged_plist": "G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.building-daily.plist",
       "target": "/Users/youngwoo/Library/LaunchAgents/com.smuds.claude.building-daily.plist"
     },
     {
@@ -18,7 +18,7 @@
         10
       ],
       "run_at_load": false,
-      "staged_plist": "/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.safety-daily.plist",
+      "staged_plist": "G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/registration/com.smuds.claude.safety-daily.plist",
       "target": "/Users/youngwoo/Library/LaunchAgents/com.smuds.claude.safety-daily.plist"
     }
   ],

@@ -23,7 +23,7 @@ import subprocess
 import sys
 import tempfile
 
-HERE = '/Volumes/USB256/devAPP/AutoSNS/common/remotion-shorts'
+HERE = 'G:/devAPP/AutoSNS/common/remotion-shorts'
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT)
 MAX_SECONDS = 20.0
@@ -71,7 +71,7 @@ def main():
                     s[k] = name
         pj = os.path.join(pub, "_props.json")
         json.dump(props, open(pj, "w", encoding="utf-8"), ensure_ascii=False)
-        r = subprocess.run(["npx", "remotion", "render", '/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/remotion-project/src/survey-short/index.ts', "SurveyShort", video,
+        r = subprocess.run(["npx", "remotion", "render", 'G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short/remotion-project/src/survey-short/index.ts', "SurveyShort", video,
                             f"--props={pj}", f"--public-dir={pub}", "--log=error"],
                            cwd=HERE, capture_output=True, text=True)
         if r.returncode != 0 or not os.path.isfile(video):

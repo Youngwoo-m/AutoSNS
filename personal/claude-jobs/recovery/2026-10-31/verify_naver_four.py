@@ -1,7 +1,7 @@
 import json,re,hashlib,html,urllib.request,urllib.parse
 from pathlib import Path
 from html.parser import HTMLParser
-R=Path('/Volumes/USB256/devAPP/AutoSNS');H=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');H=Path(__file__).resolve().parent
 class A(HTMLParser):
  def __init__(self):super().__init__();self.files=[]
  def handle_starttag(self,t,attrs):

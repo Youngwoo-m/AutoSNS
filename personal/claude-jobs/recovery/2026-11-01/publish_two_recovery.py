@@ -1,7 +1,7 @@
 """사용자가 승인한 2026-11-01 건축·안전 3일차 두 편만 기존 발행기로 복구."""
 import hashlib,json,os,re,sys
 from pathlib import Path
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
+ROOT=Path('G:/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
 APPROVAL=HERE/'blogger-two-post-exception-approval.json'
 DATE='2026-11-01';ID='2026-11-01-building-safety-day3';REPLY='이번 두 편만 예외로 발행'
 SLOTS={('building-daily',3),('safety-daily',3)}

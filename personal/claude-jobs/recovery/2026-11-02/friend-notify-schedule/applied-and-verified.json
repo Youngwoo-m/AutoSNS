@@ -6,7 +6,7 @@
   "hourly_interval_removed": true,
   "program_unchanged": [
     "/usr/bin/python3",
-    "/Volumes/USB256/devAPP/AutoSNS/personal/engineer-question-worker/notify_new.py"
+    "G:/devAPP/AutoSNS/personal/engineer-question-worker/notify_new.py"
   ],
   "immediate_run_requested": false,
   "launchctl": [

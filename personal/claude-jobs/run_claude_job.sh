@@ -1,6 +1,6 @@
 #!/bin/bash
 # AX 오케스트레이터: 잠금·비상 정지를 거쳐 다시 실행한다 — shared/axlock.py
-[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 /Volumes/USB256/devAPP/AutoSNS/shared/axlock.py run --job "claude.$1" -- "$0" "$@"
+[ -z "$AX_LOCKED" ] && exec /usr/bin/python3 G:/devAPP/AutoSNS/shared/axlock.py run --job "claude.$1" -- "$0" "$@"
 # 단일 실행 주인 검사: 실패하면 legacy 본문으로 진행하지 않는다.
 _AX_OWNER_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 /usr/bin/python3 -I "$_AX_OWNER_ROOT/common/operations/legacy_fences.py" personal claude "$1" || exit $?
@@ -11,7 +11,7 @@ _AX_OWNER_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 # 지시문 = 공통규칙.md + 실행 정보 + jobs/<작업>.md. 티스토리 크롬은 발행기(tistory_post.py)가 잠금을 잡고 연다.
 JOB="$1"
 HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT=/Volumes/USB256/devAPP/AutoSNS
+ROOT=G:/devAPP/AutoSNS
 export PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 [ -n "$JOB" ] && [ -f "$HERE/jobs/$JOB.md" ] || { echo "작업 지시문이 없습니다: $JOB" >&2; exit 2; }
 mkdir -p "$HERE/logs" "$HERE/state"

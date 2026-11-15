@@ -11,13 +11,13 @@
 
 ### 안전 입문
 
-원본 폴더 `/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/safety-engineer-writing/첫글_준비하기/`.
+원본 폴더 `G:/devAPP/AutoSNS/GeoAI_NA/safety-engineer-writing/첫글_준비하기/`.
 `게시본문.html`은 작성상태에 10/28 00:48 Tistory183 반영본으로 명시. 기존 source-reviewer 발행직전 pass(10/28), 다듬은 수정본 fix1 반영, calc ok 기록. 독립검토 JSON 파일은 별도 발견 못했으며 작성상태 안 요약기록만 있음. 신규 independent source-reviewer 재검토를 권장.
 HTML img0/첨부0/PDF0, 모든 href는 https, 로컬 경로·티스토리 서명첨부 없음. 자산 재배포 불필요. 법령·시험정보 최신 재검토 후 기존본문 Blogger 복구가 가장 단순함.
 
 ### 건축 입문
 
-원본 폴더 `/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/`.
+원본 폴더 `G:/devAPP/AutoSNS/GeoAI_NA/building-engineer-writing/첫글_준비하기/`.
 `게시본문.html`은 옛 ~이다체 원본, `수정본_새문체.html`은 새 문체. 작성상태에는 첫 새문체 버전 10/28 00:12 Tistory182 반영과, 같은 파일의 야간 재수정은 아직182 미반영(사용자확인대기)이 함께 적혀 있음. 현재 로컬 수정본을 그대로 현재 공개본문과 동일하다고 단정하면 안 됨. 실제182 공개본문을 읽고 추출한 검토용 사본 또는 명시적으로 검토된 로컬본으로 복구할 것. 두 HTML 모두 img0/첨부0/PDF0, 모든 href https, 자산배포 불필요.
 
 ## 2. 오늘 상한: 코드와 정책 차이
@@ -61,7 +61,7 @@ https://www.law.go.kr/LSW/lsLinkCommonInfo.do?lsJoLnkSeq=1028543971
 
 ## 4. 기존 PDF·배포 실행경로
 
-- 전용 Python `/Volumes/USB256/devAPP/AutoSNS/GeoAI_NA/claude-jobs/.venv/bin/python` (python3.12 링크), 공통규칙에서 이 환경만 사용.
+- 전용 Python `G:/devAPP/AutoSNS/GeoAI_NA/claude-jobs/.venv/bin/python` (python3.12 링크), 공통규칙에서 이 환경만 사용.
 - Q-net 원본 답안지 `/Volumes/USB256/기술사/2026기술사 답안지-1교시(안내용)_Qnet원본.pdf` 실존1464367bytes.
 - 가장 최근 견본 `personal/civil-engineer-writing/14일차_비탈면붕괴/make_pdf.py`: reportlab+pypdf, template pages[4] deepcopy overlay, 회색184/255, 모든page pypdfium2 scale1.6 렌더. 좌표·템플릿은 재확인 필요, 코드 그대로 새글에 실행하면 토목내용 생성하므로 복사실행 금지.
 - 기존 PDF 글꼴 `/System/Library/Fonts/Supplemental/AppleGothic.ttf` 실존. 공통assets/FONTS Pretendard-Bold.otf/KoPub...Bold.otf도 있으나 reportlab TTFont지원 여부 먼저 확인. 제목/배너는 PretendardBold 규칙.

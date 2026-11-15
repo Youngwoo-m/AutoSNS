@@ -1,7 +1,7 @@
 """검토된 네 원고의 기존 발행기 호출 인자를 파일에서 읽는 운영 보조 도구."""
 import argparse,json,subprocess,sys,re
 from pathlib import Path
-R=Path('/Volumes/USB256/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
 p=argparse.ArgumentParser();p.add_argument('--exam',choices=['building','safety'],required=True);p.add_argument('--day',type=int,choices=[1,2],required=True);p.add_argument('--channel',choices=['tistory','blogger','naver'],required=True);p.add_argument('--mode',choices=['dry','go'],required=True);p.add_argument('--url');a=p.parse_args()
 dirs=list((R/'GeoAI_NA'/f'{a.exam}-engineer-writing').glob(f'{a.day:02}일차_*'));assert len(dirs)==1;d=dirs[0]
 title=(d/'제목.txt').read_text().strip();tags=(d/'태그.txt').read_text().strip();category={'building':'건축시공기술사','safety':'건설안전기술사'}[a.exam];leaf=R/'dept/naver-blog-auto';py=str(leaf/'.venv/bin/python');job=a.exam+'-daily'

@@ -1,7 +1,7 @@
 """현재 한 건의 승인된 발행이 잠금을 통과한 뒤 검증·댓글·기록만 마무리한다."""
 from pathlib import Path
 import datetime,json,subprocess,time,urllib.request,urllib.parse
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS')
+ROOT=Path('G:/devAPP/AutoSNS')
 OUT=ROOT/'GeoAI_NA/claude-jobs/recovery/2026-10-31/least-squares-short'
 PYTHON=ROOT/'dept/youtube-shorts-auto/.venv/bin/python'
 TOOL=ROOT/'dept/youtube-shorts-auto/geoai_short_post.py'

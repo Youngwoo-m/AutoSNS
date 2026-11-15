@@ -1,7 +1,7 @@
 """현재 로그인 창의 다른 사이트 쿠키를 지우지 않고 티스토리 세션만 저장·재검증."""
 from pathlib import Path
 import sys,json,datetime
-ROOT=Path('/Volumes/USB256/devAPP/AutoSNS')
+ROOT=Path('G:/devAPP/AutoSNS')
 sys.path.insert(0,str(ROOT/'dept/naver-blog-auto'))
 import tistory_crosspost as tc
 import tistory_login as login

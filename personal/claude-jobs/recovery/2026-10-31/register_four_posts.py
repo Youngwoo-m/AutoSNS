@@ -1,6 +1,6 @@
 from pathlib import Path
 import json,subprocess,sys
-R=Path('/Volumes/USB256/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
+R=Path('G:/devAPP/AutoSNS');HERE=Path(__file__).resolve().parent
 rows=json.loads((HERE/'first-second-day-publishing-progress.json').read_text())['posts']
 for ex in ['building','safety']:
  p=R/'site/geoai-site'/f'{ex}-questions/published.json';backup=HERE/f'{ex}-published.before-four-posts.json'
