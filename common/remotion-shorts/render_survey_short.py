@@ -14,6 +14,7 @@ props.json (그림·음성은 절대 경로로 적는다 — 이 스크립트가
   (Manim 샘플: manim/error_propagation.py ErrorPropagationBox — 디오라마 2~3장 규칙에는 세지 않는다)
 
 지키는 것(CLAUDE.md 영상 지침·2026-10-17 숏츠 지침): 디오라마 장면 2~3장, 1080×1920, 전체 20.0초 이하.
+"format": "tiktok-long" 이면(2026-11-08, 개인 틱톡 1분 해설 — 틱톡 리워드는 1분 넘는 영상만) 61.0~90.0초를 지킨다.
 결과는 마지막 줄 JSON: {"status": "ok"|"error", "video", "seconds", "size", "frames": [장면별 확인용 jpg], "message"}
 """
 import json
@@ -27,6 +28,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT)
 MAX_SECONDS = 20.0
+LONG_RANGE = (61.0, 90.0)   # format "tiktok-long"
 
 
 def out(status, **kw):
@@ -42,11 +44,12 @@ def main():
     scenes = props.get("scenes") or []
     dio = sum(1 for s in scenes if s.get("kind") in ("diorama", "dioclip") and s.get("image"))
     total = sum(round(float(s["seconds"]) * 30) for s in scenes) / 30
+    lo, hi = LONG_RANGE if props.get("format") == "tiktok-long" else (0.0, MAX_SECONDS)
     problems = []
     if not 2 <= dio <= 3:
         problems.append(f"디오라마 장면이 {dio}장입니다 — 2~3장 넣을 것")
-    if total > MAX_SECONDS:
-        problems.append(f"장면 길이 합 {total:.2f}초 > {MAX_SECONDS}초 — 대본·장면을 줄일 것(배속 금지)")
+    if not lo <= total <= hi:
+        problems.append(f"장면 길이 합 {total:.2f}초가 {lo:g}~{hi:g}초 밖 — 대본·장면을 고칠 것(배속 금지)")
     if props.get("voice") and not os.path.isfile(props["voice"]):
         problems.append(f"voice 파일이 없습니다: {props['voice']}")
     for i, s in enumerate(scenes, 1):
@@ -90,9 +93,9 @@ def main():
         f = os.path.splitext(video)[0] + f"-frame{i}.jpg"
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{mid:.2f}", "-i", video, "-frames:v", "1", f])
         frames.append(f)
-    if sec > MAX_SECONDS or (w, h) != (1080, 1920):
+    if not lo <= sec <= hi + (0.5 if lo else 0) or (w, h) != (1080, 1920):
         return out("error", video=video, seconds=round(sec, 2), size=f"{w}x{h}", frames=frames,
-                   message="렌더 결과가 20.0초 이하 1080×1920 이 아닙니다")
+                   message=f"렌더 결과가 {lo:g}~{hi:g}초 1080×1920 이 아닙니다")
     return out("ok", video=video, seconds=round(sec, 2), size=f"{w}x{h}", frames=frames)
 
 

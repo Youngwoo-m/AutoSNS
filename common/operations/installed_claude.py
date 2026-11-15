@@ -22,7 +22,9 @@ from .production_providers import _REQUIRED_FLAGS, _parse
 
 PROBE_MARKER = 'AUTOSNS_INSTALLED_CLAUDE_PROBE_7f3a9c1e5b2d'
 PROBE_PROMPT = 'Reply with exactly this single token and nothing else: ' + PROBE_MARKER
-_PATH = '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin'
+# Windows 에서는 맥 PATH 로는 claude·node 를 못 찾는다(2026-11-07 Mac 은퇴) — 이 PC 의 PATH 와 필수 변수를 쓴다
+_PATH = os.environ.get('PATH', '') if os.name == 'nt' else '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin'
+_WIN_ENV = {k: os.environ[k] for k in ('PATH','SYSTEMROOT','SYSTEMDRIVE','USERPROFILE','APPDATA','LOCALAPPDATA','TEMP','TMP','PATHEXT','COMSPEC') if k in os.environ} if os.name == 'nt' else {}
 _LANG = 'en_US.UTF-8'
 _QUICK_TIMEOUT = 30
 _PROBE_TIMEOUT = 180
@@ -90,7 +92,7 @@ class InstalledClaudeRunner:
     # -- 공통 ---------------------------------------------------------------
     def _environment(self):
         return {'HOME': self._home, 'USER': self._username, 'LOGNAME': self._username,
-                'PATH': _PATH, 'LANG': _LANG}
+                'PATH': _PATH, 'LANG': _LANG, **_WIN_ENV}
 
     def _generation_args(self):
         # ClaudeSubscriptionProvider.generate가 만드는 명령과 정확히 같아야 한다.

@@ -28,6 +28,8 @@ _DEPT_DIRS = ("chrome-profile", "chrome-profile-insta", "chrome-profile-tiktok",
 
 def binary(account):
     """계정의 크롬 실행 파일. 지정이 없거나 파일이 없으면 None(셀레니움 기본 크롬)."""
+    if account == "personal-tiktok":    # 2026-11-15 개인 틱톡 전용 프로필도 개인 크롬(chrome-na)으로 띄운다
+        account = "personal"
     if account not in ("dept", "personal"):
         return None
     p = os.environ.get(f"AX_CHROME_{account.upper()}") or _DEFAULTS.get(account)

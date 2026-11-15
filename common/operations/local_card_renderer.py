@@ -95,6 +95,8 @@ class LocalCardRenderer:
         args=[sys.executable,str(lock),'run','--job','managed-local-card','--res','renderer:local-card','--','npx','--no-install','remotion','still','src/local-card/index.ts','LocalCard',str(output),'--props='+str(props),'--image-format=png','--browser-executable='+str(browser)]
         env={key:os.environ.get(key,'') for key in ('HOME','USER','LOGNAME')}
         env.update(PATH='/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin',LANG='en_US.UTF-8')
+        if os.name=='nt':   # Windows: 맥 PATH 로는 npx 를 못 찾는다(2026-11-07)
+            env.update({k: os.environ[k] for k in ('PATH','SYSTEMROOT','SYSTEMDRIVE','USERPROFILE','APPDATA','LOCALAPPDATA','TEMP','TMP','PATHEXT','COMSPEC') if k in os.environ})
         try:
             result=self.execute(args,cwd=self.root,env=env,shell=False,stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=120,check=False)
             _require(result.returncode==0,'image_render_failed')

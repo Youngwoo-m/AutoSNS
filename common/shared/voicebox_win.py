@@ -2,6 +2,7 @@
 
     python common\\shared\\voicebox_win.py up [이름]      켜고 API 가 응답할 때까지 기다림(최대 3분). 이미 켜져 있으면 바로 끝
     python common\\shared\\voicebox_win.py down [이름]    이 도구가 켠 서버이고 다른 사용자가 없으면 끔
+    python common\\shared\\voicebox_win.py restart [이름] 이 도구가 켠 서버를 끄고 다시 켬(음성 하나가 멈췄을 때, 2026-11-08)
     python common\\shared\\voicebox_win.py status
     python common\\shared\\voicebox_win.py run -- 명령 …  켜고 → 명령 실행 → 끔
 
@@ -79,6 +80,25 @@ def up(name="manual"):
     return 1
 
 
+def restart(name="manual"):
+    """음성 하나가 끝나지 않고 멈췄을 때(2026-11-08) — 이 도구가 켠 서버만 끄고 다시 켠다.
+    멈춘 생성이 그래픽카드 대기열을 붙잡아 다음 요청도 밀리므로 다시 켜야 풀린다. 사람이 연 서버는 건드리지 않는다."""
+    if alive() and not os.path.exists(OURS):
+        print("사람이 연 서버라 다시 켜지 않습니다")
+        return 1
+    if os.path.exists(OURS):
+        with open(OURS, encoding="utf-8") as f:
+            pid = json.load(f)["pid"]
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+        os.remove(OURS)
+        for _ in range(30):
+            if not alive():
+                break
+            time.sleep(1)
+    print("Voicebox 다시 켜는 중")
+    return up(name)
+
+
 def down(name="manual"):
     try:
         os.remove(os.path.join(USERS, name))
@@ -105,6 +125,8 @@ def main(argv):
         return up(name)
     if cmd == "down":
         return down(name)
+    if cmd == "restart":
+        return restart(name)
     if cmd == "run" and "--" in argv:
         rc = up("run-%d" % os.getpid())
         if rc:

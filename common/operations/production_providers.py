@@ -120,6 +120,9 @@ class ClaudeSubscriptionProvider:
                 '--no-session-persistence', '--output-format', 'stream-json', '--verbose']
         # 부모 환경 전체를 읽거나 복사하지 않는다. 인증은 CLI 자체에 맡긴다.
         environment = {'PATH': '/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin', 'LANG': 'en_US.UTF-8'}
+        import os as _os
+        if _os.name == 'nt':   # Windows: 맥 PATH 로는 claude 를 못 찾고, 인증 폴더 변수도 있어야 한다(2026-11-07)
+            environment.update({k: _os.environ[k] for k in ('PATH','SYSTEMROOT','SYSTEMDRIVE','USERPROFILE','APPDATA','LOCALAPPDATA','TEMP','TMP','PATHEXT','COMSPEC') if k in _os.environ})
         try:
             with tempfile.TemporaryDirectory(prefix='autosns-production-') as scratch:
                 completed = self.spawn(args, input=prompt, capture_output=True, text=True,
