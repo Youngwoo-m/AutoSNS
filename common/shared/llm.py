@@ -11,6 +11,8 @@ CLI 가 실패하면(사용 한도·로그인·시간 초과) Anthropic 키로 �
   "llm_gateway": {"enabled": true, "api_key": "...", "extra_keys": ["..."], "text_enabled": false, ...}
   "llm_cli": {"enabled": true}        # 끄면 CLI 를 건너뛴다
   "anthropic_api_key": "..."          # 대비책
+  "local_llm": {"enabled": true, "model": "qwen3.5:9b-32k", "tasks": ["polish"]}  # client(cfg, task=...) 일 때 Ollama 먼저
+  "free_llm": {"enabled": true, "model": "inclusionai/ling-3.2-flash:free", "tasks": ["polish", "caption"]}  # 그다음 OpenRouter 무료
 
 사용: from shared.llm import client;  client(cfg).messages.create(model=..., ...)
       — Anthropic(api_key=...) 자리에 그대로 바꿔 끼우면 된다.
@@ -264,14 +266,15 @@ class _CliMessages:
         # (문장 중간에서 끊겨 다음 메시지가 이어짐) json 출력의 result 는 마지막 메시지 글만 담는다 —
         # 2026-10-19 18:00 GeoAI 시리즈 글이 result 의 꼬리(약 290자)만 받아 '형식 파싱 실패'로 멈췄다.
         import shutil   # Windows: claude 는 claude.CMD 라 이름만으로는 못 찾는다(2026-11-06)
-        cmd = [shutil.which("claude") or "claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
+        cmd = [claude_bin() or shutil.which("claude") or "claude", "-p", "--model", model, "--tools", allow, "--setting-sources", "", "--strict-mcp-config",
                "--disable-slash-commands", "--no-session-persistence", "--output-format", "stream-json", "--verbose"]
         if allow:
             cmd += ["--allowedTools", allow]
         if system:
             cmd += ["--system-prompt", system]
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           cwd=self.work, env=env, timeout=900)
+                           cwd=self.work, env=env, timeout=900,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))  # 2026-11-11: 콘솔 창이 뜨지 않게
         d, pieces = None, []
         for line in p.stdout.splitlines():
             try:
@@ -317,17 +320,112 @@ class _Cli:
         self.messages = _CliMessages()
 
 
+class _OllamaMessages:
+    """로컬 Ollama(/api/chat)를 messages.create 처럼 쓴다(2026-11-13 크레딧 절약: 윤문 같은 가벼운 일).
+    글만 받는다 — 그림·도구 요청은 다음 창구로 넘긴다. 서버가 꺼져 있으면 연결 실패로 바로 다음 창구."""
+    def __init__(self, model, base):
+        self.model, self.base = model, base.rstrip("/")
+
+    @staticmethod
+    def _msgs(kw):
+        def flat(c):
+            if isinstance(c, str):
+                return c
+            if any(_get(b, "type") != "text" for b in c):
+                raise _Unsupported
+            return "".join(_get(b, "text", "") for b in c)
+        msgs = [{"role": "system", "content": flat(kw["system"])}] if kw.get("system") else []
+        return msgs + [{"role": m["role"], "content": flat(m["content"])} for m in kw.get("messages", [])]
+
+    def create(self, **kw):
+        import json
+        import urllib.request
+        if kw.get("tools"):
+            raise _Unsupported
+        msgs = self._msgs(kw)
+        body = {"model": self.model, "messages": msgs, "stream": False, "think": False,
+                "options": {"num_predict": kw.get("max_tokens", 2000), "temperature": kw.get("temperature", 0.3)}}
+        req = urllib.request.Request(self.base + "/api/chat", json.dumps(body).encode(),
+                                     {"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=600) as r:
+            d = json.load(r)
+        return _Block(content=[_Block(type="text", text=d["message"]["content"])], role="assistant",
+                      stop_reason="max_tokens" if d.get("done_reason") == "length" else "end_turn",
+                      model=f"ollama:{self.model}")
+
+
+class _Ollama:
+    def __init__(self, model, base):
+        self.messages = _OllamaMessages(model, base)
+
+
+class _OpenRouterMessages(_OllamaMessages):
+    """OpenRouter 무료 모형(OpenAI 호환 /chat/completions). 키는 환경변수 OPENROUTER_API_KEY 에서만 읽는다
+    (크레딧 절약 규칙 2026-11-13). 공개될 글(윤문·캡션)만 보낸다 — 무료 모형은 요청을 기록할 수 있다."""
+    def create(self, **kw):
+        import json
+        import os
+        import urllib.request
+        key = os.environ.get("OPENROUTER_API_KEY")
+        if not key and os.name == "nt":   # 작업 스케줄러는 새 사용자 환경변수를 못 받을 때가 있다
+            import winreg
+            try:
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                    key = winreg.QueryValueEx(k, "OPENROUTER_API_KEY")[0]
+            except OSError:
+                key = None
+        if not key or kw.get("tools"):
+            raise _Unsupported
+        msgs = self._msgs(kw)
+        # 무료 모형은 속으로 추론하며 토큰을 써서 200 한도면 빈 답이 온다(2026-11-15) — 무료라 넉넉히 준다
+        body = {"model": self.model, "messages": msgs, "max_tokens": max(kw.get("max_tokens", 2000), 2000),
+                "temperature": kw.get("temperature", 0.3)}
+        req = urllib.request.Request(self.base + "/chat/completions", json.dumps(body).encode(),
+                                     {"Content-Type": "application/json", "Authorization": f"Bearer {key}"})
+        with urllib.request.urlopen(req, timeout=180) as r:
+            d = json.load(r)
+        c = d["choices"][0]
+        text = (c.get("message") or {}).get("content") or ""
+        if not text.strip():
+            raise RuntimeError("빈 응답")
+        return _Block(content=[_Block(type="text", text=text)], role="assistant",
+                      stop_reason="max_tokens" if c.get("finish_reason") == "length" else "end_turn",
+                      model=f"openrouter:{d.get('model', self.model)}")
+
+
+class _OpenRouter:
+    def __init__(self, model, base):
+        self.messages = _OpenRouterMessages(model, base)
+
+
+def claude_bin():
+    """claude CLI 경로. 2026-11-11: Windows 에서 npm 설치가 ~/.local/bin/claude.exe(PATH 밖)로 바뀌어 못 찾고
+    Anthropic 키로 넘어갔다 → 그 자리도 본다."""
+    import os, shutil
+    local = os.path.expanduser(os.path.join("~", ".local", "bin", "claude.exe" if os.name == "nt" else "claude"))
+    return (shutil.which("claude") or shutil.which("claude", path="/usr/local/bin:/opt/homebrew/bin")
+            or (local if os.path.isfile(local) else None))
+
+
 def cli_available(cfg):
-    import shutil
-    return (cfg.get("llm_cli") or {}).get("enabled", True) and bool(
-        shutil.which("claude") or shutil.which("claude", path="/usr/local/bin:/opt/homebrew/bin"))
+    return (cfg.get("llm_cli") or {}).get("enabled", True) and bool(claude_bin())
 
 
-def client(cfg):
+def client(cfg, task=None):
+    """task: 가벼운 작업 이름(예: "polish"). config 의 local_llm.tasks 에 있으면 로컬 Ollama 를 맨 앞에 두고,
+    실패하면 지금 순서(CLI → 키)로 넘어간다. 끄기: "local_llm": {"enabled": false}."""
     from anthropic import Anthropic
     g = cfg.get("llm_gateway") or {}
     base = g.get("base_url") or DEFAULT_BASE
     gws = []
+    ol = cfg.get("local_llm") or {}
+    if task and ol.get("enabled", True) and task in ol.get("tasks", ["polish", "keywords", "classify"]):
+        model = ol.get("model", "qwen3.5:9b-32k")
+        gws.append((f"로컬 Ollama({model})", _Ollama(model, ol.get("base_url", "http://127.0.0.1:11434"))))
+    fr = cfg.get("free_llm") or {}   # 크레딧 절약 규칙: Ollama → OpenRouter 무료 → 주 모형(CLI) 순
+    if task and fr.get("enabled", True) and task in fr.get("tasks", ["polish", "caption"]):
+        model = fr.get("model", "inclusionai/ling-3.2-flash:free")   # 2026-11-15 비교: 자동 배정은 빈 답·400, gemma 429, nemotron 빈 답
+        gws.append((f"OpenRouter 무료({model})", _OpenRouter(model, fr.get("base_url", "https://openrouter.ai/api/v1"))))
     if g.get("text_enabled"):           # 예전 방식(게이트웨이로 글 쓰기)을 일부러 켠 경우만
         gws += [(f"학교 게이트웨이{label}", Anthropic(api_key=k, base_url=base, max_retries=1, timeout=180))
                 for label, k in usable_gateway_keys(cfg)]

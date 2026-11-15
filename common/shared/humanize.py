@@ -68,6 +68,11 @@ def _enabled(cfg):
     return ((cfg or {}).get("humanize") or {}).get("enabled", True)
 
 
+def _parts(text):
+    return dict((int(m.group(1)), m.group(2).strip())
+                for m in re.finditer(r"\[\[(\d+)\]\]\s*\n?(.*?)(?=\n?\[\[\d+\]\]|\Z)", text, flags=re.S))
+
+
 def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=None, length=(0.65, 1.2), note=""):
     """글 조각 목록을 한 번의 호출로 윤문한다. 같은 길이의 목록을 돌려준다(어긋난 조각은 원문).
     length: 원문 대비 허용 길이 비율. 영상 대본은 시간이 정해져 있어 (0.85, 1.1) 처럼 좁게 준다.
@@ -85,18 +90,23 @@ def polish_segments(segments, genre="블로그", cfg=None, max_change=0.45, log=
         body = "\n\n".join(f"[[{n}]]\n{segs[i]}" for n, i in enumerate(idx, 1))
         prompt = (f"{RULES}\n\n장르: {genre}\n{note}\n\n아래 [[번호]] 조각마다 다듬은 글을 같은 [[번호]] 머리표 아래에 쓴다. "
                   f"머리표 수와 순서를 그대로 두고, 설명·인사말은 쓰지 않는다. 고칠 것이 없으면 원문을 그대로 쓴다.\n\n{body}")
-        msg = client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
-                                          max_tokens=max(2000, int(len(body) * 1.5)),
-                                          messages=[{"role": "user", "content": prompt}])
-        text = msg.content[0].text
+        def ask(c):
+            msg = c.messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
+                                    max_tokens=max(2000, int(len(body) * 1.5)),
+                                    messages=[{"role": "user", "content": prompt}])
+            return _parts(msg.content[0].text), str(getattr(msg, "model", ""))
+        parts, used = ask(client(cfg, task="polish"))   # 로컬 Ollama 먼저(2026-11-13 크레딧 절약)
+        if used.startswith(("ollama:", "openrouter:")) and len(parts) < len(idx):
+            log(f"윤문: 로컬 모델이 머리표를 {len(parts)}/{len(idx)}개만 지킴 → 원래 창구로 다시")
+            parts, used = ask(client(cfg))
     except Exception as e:  # noqa: BLE001
         log(f"윤문 건너뜀(원문 그대로): {type(e).__name__}: {str(e)[:80]}")
         return segs
-    parts = dict((int(m.group(1)), m.group(2).strip())
-                 for m in re.finditer(r"\[\[(\d+)\]\]\s*\n?(.*?)(?=\n?\[\[\d+\]\]|\Z)", text, flags=re.S))
     out, kept, changed = list(segs), 0, []
     for n, i in enumerate(idx, 1):
         new = parts.get(n, "")
+        if not re.search(r"\d [가-힣]", segs[i]):   # 로컬 qwen 이 '12 월 29 일'처럼 숫자 뒤에 빈칸을 넣는다(2026-11-13)
+            new = re.sub(r"(\d) (?=[가-힣])", r"\1", new)
         good, why = _ok(segs[i], new, max_change, length)
         if good:
             out[i] = new

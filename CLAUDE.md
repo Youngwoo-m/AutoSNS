@@ -69,6 +69,11 @@ GeoAI 개념 시리즈(`personal/naver-blog-auto/geoai_series.py` — 따라하�
 틱톡 1분 해설(`personal/geoai-youtube/tiktok_long.py` `polish_script()` — 장면 70자·목표 글자 수 밖이면 원문). 새 영상 대본 경로에도 같은 단계를 넣는다.
 클로드 자동 작업은 `personal/claude-jobs/공통규칙.md` 의 korean-humanize 규칙을 따른다.
 새 글쓰기 경로를 만들면 같은 단계를 넣는다. 끄려면 config.json 에 `"humanize": {"enabled": false}`.
+윤문·틱톡 캡션은 크레딧 절약 규칙(`~/.agents/memory/model-routing-credit-saving.md`)대로 로컬 Ollama(`qwen3.5:9b-32k`, 윤문만)
+→ OpenRouter 무료(`inclusionai/ling-3.2-flash:free`, 키는 환경변수 OPENROUTER_API_KEY) → claude CLI → 키 순으로 보낸다
+(`client(cfg, task="polish"|"caption")`, 2026-11-15). 무료 모형은 공개될 글만 받는다. 끄기: `"local_llm"`/`"free_llm": {"enabled": false}`.
+크레딧 절약 배분(2026-11-15): `client(cfg, task=…)` 로 부른다 — `polish`(윤문)·`keywords`(자료사진 검색어, `blog_photo.py`)는
+Ollama 먼저, `caption`(틱톡 캡션)은 OpenRouter 무료 먼저. 공개 글 본문·대본·사실 확인은 task 없이 주 모형(claude CLI)이 쓴다.
 
 ## 발행
 

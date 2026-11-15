@@ -120,7 +120,7 @@ def make_caption(e, cfg=None):
             raise StopIteration
         sys.path.insert(0, os.path.dirname(os.path.dirname(BASE_DIR)))
         from shared.llm import client
-        msg = client(cfg).messages.create(
+        msg = client(cfg, task="caption").messages.create(   # 짧은 캡션: 무료 모형 먼저, 형식 검사 못 넘으면 기본 형식
             model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=200, system=CAPTION_SYSTEM,
             # 지시문을 본문에도 넣는다 — Max 구독(claude CLI) 경로가 system 을 약하게 따라
             # 4줄 형식을 어기고 긴 글을 써서 늘 기본 형식으로 떨어졌다(2026-11-08 확인).
