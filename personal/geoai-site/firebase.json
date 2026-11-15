@@ -1,8 +1,18 @@
 {
   "hosting": {
     "public": ".",
+    "predeploy": [
+      "node \"$PROJECT_DIR/sync-dinner.js\" copy",
+      "node \"$PROJECT_DIR/prerender-published.js\"",
+      "node check-hosting-content.cjs"
+    ],
+    "postdeploy": [
+      "node \"$PROJECT_DIR/sync-dinner.js\" clean"
+    ],
     "ignore": [
       "firebase.json",
+      "sync-dinner.js",
+      "prerender-published.js",
       "**/.*",
       "_redirects",
       "_headers",
@@ -110,9 +120,6 @@
           "region": "asia-northeast3"
         }
       }
-    ],
-    "predeploy": [
-      "node check-hosting-content.cjs"
     ]
   },
   "functions": {

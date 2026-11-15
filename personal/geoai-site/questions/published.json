@@ -1,6 +1,94 @@
 {
   "items": [
     {
+      "title": "국가기준점의 종류와 역할, 기준점 간의 상호 연계성 (2026년 제138회 기출)",
+      "url": "https://na-geoai.tistory.com/290",
+      "kind": "daily",
+      "date": "2026-11-15",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 35
+    },
+    {
+      "title": "정오차와 우연오차, 착오의 차이와 측량오차 원인별 분류 (2023년 제131회 기출)",
+      "url": "https://na-geoai.tistory.com/284",
+      "kind": "daily",
+      "date": "2026-11-14",
+      "tags": [
+        "오차론·망조정"
+      ],
+      "tracingPdf": true,
+      "day": 34
+    },
+    {
+      "title": "중력이상(Gravity Anomaly), 프리에어 이상과 부게 이상의 차이 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/278",
+      "kind": "daily",
+      "date": "2026-11-13",
+      "tags": [
+        "측지학·좌표계"
+      ],
+      "tracingPdf": true,
+      "day": 33
+    },
+    {
+      "title": "항공 LiDAR 측량의 원리와 특징 및 활용 분야 (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/274",
+      "kind": "daily",
+      "date": "2026-11-12",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 32
+    },
+    {
+      "title": "무인비행장치(UAV)를 이용한 수치표고모형, 수치정사영상 제작과정 (2024년 제134회 기출)",
+      "url": "https://na-geoai.tistory.com/264",
+      "kind": "daily",
+      "date": "2026-11-11",
+      "tags": [
+        "사진측량·UAV"
+      ],
+      "tracingPdf": true,
+      "day": 31
+    },
+    {
+      "title": "완화곡선이 필요한 이유와 클로소이드 A²=RL (2026년 제140회 기출)",
+      "url": "https://na-geoai.tistory.com/258",
+      "kind": "daily",
+      "date": "2026-11-10",
+      "tags": [
+        "지상측량"
+      ],
+      "tracingPdf": true,
+      "day": 30
+    },
+    {
+      "title": "정규식생지수(NDVI) (2025년 제135회 기출)",
+      "url": "https://na-geoai.tistory.com/249",
+      "kind": "daily",
+      "date": "2026-11-09",
+      "tags": [
+        "LiDAR·원격탐사"
+      ],
+      "tracingPdf": true,
+      "day": 29
+    },
+    {
+      "title": "PPP-RTK(Precise Point Positioning - Real Time Kinematic) (2026년 제138회 기출)",
+      "url": "https://na-geoai.tistory.com/241",
+      "kind": "daily",
+      "date": "2026-11-08",
+      "tags": [
+        "GNSS"
+      ],
+      "tracingPdf": true,
+      "day": 28
+    },
+    {
       "title": "합성 지오이드모델(Hybrid Geoid Model) (2026년 제138회 기출)",
       "url": "https://na-geoai.tistory.com/231",
       "kind": "daily",

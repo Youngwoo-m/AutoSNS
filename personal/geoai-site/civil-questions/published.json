@@ -1,6 +1,108 @@
 {
   "items": [
     {
+      "title": "[토목시공기술사] 하수관로 성능보증방법, 수밀시험과 CCTV 검사 기준 | 하루 한 문제 28일차",
+      "url": "https://na-geoai.tistory.com/291",
+      "kind": "daily",
+      "date": "2026-11-15",
+      "tags": [
+        "하수관로",
+        "수밀시험",
+        "CCTV조사",
+        "상하수도"
+      ],
+      "tracingPdf": true,
+      "day": 28
+    },
+    {
+      "title": "[토목시공기술사] 시설물안전법 안전점검 종류와 실시 주기, 정밀안전진단과의 차이 | 하루 한 문제 27일차",
+      "url": "https://na-geoai.tistory.com/285",
+      "kind": "daily",
+      "date": "2026-11-14",
+      "tags": [
+        "품질·안전·유지관리"
+      ],
+      "tracingPdf": true,
+      "day": 27
+    },
+    {
+      "title": "[토목시공기술사] 현장타설말뚝 콘크리트 타설 유의사항과 내부결함 판정기준 | 하루 한 문제 26일차",
+      "url": "https://na-geoai.tistory.com/279",
+      "kind": "daily",
+      "date": "2026-11-13",
+      "tags": [
+        "기초"
+      ],
+      "tracingPdf": true,
+      "day": 26
+    },
+    {
+      "title": "[토목시공기술사] 교량받침 유지관리, 점검 항목과 상태평가 기준 | 하루 한 문제 25일차",
+      "url": "https://na-geoai.tistory.com/273",
+      "kind": "daily",
+      "date": "2026-11-12",
+      "tags": [
+        "교량"
+      ],
+      "tracingPdf": true,
+      "day": 25
+    },
+    {
+      "title": "[토목시공기술사] 암버럭 성토 다짐방법과 평판재하시험 다짐도 평가 | 하루 한 문제 24일차",
+      "url": "https://na-geoai.tistory.com/266",
+      "kind": "daily",
+      "date": "2026-11-11",
+      "tags": [
+        "토공"
+      ],
+      "tracingPdf": true,
+      "day": 24
+    },
+    {
+      "title": "[토목시공기술사] 공정률이 계획보다 늦을 때, 부진공정 판단 기준과 만회대책 | 하루 한 문제 23일차",
+      "url": "https://na-geoai.tistory.com/255",
+      "kind": "daily",
+      "date": "2026-11-10",
+      "tags": [
+        "공정·원가·계약"
+      ],
+      "tracingPdf": true,
+      "day": 23
+    },
+    {
+      "title": "[토목시공기술사] 준설선 종류와 장단점, 그래브·펌프·디퍼 준설선 선정 | 하루 한 문제 22일차",
+      "url": "https://na-geoai.tistory.com/251",
+      "kind": "daily",
+      "date": "2026-11-09",
+      "tags": [
+        "항만·준설"
+      ],
+      "tracingPdf": true,
+      "day": 22
+    },
+    {
+      "title": "[토목시공기술사] 콘크리트 포장 줄눈 종류와 특징, 다웰바·타이바 구분 | 하루 한 문제 21일차",
+      "url": "https://na-geoai.tistory.com/243",
+      "kind": "daily",
+      "date": "2026-11-08",
+      "tags": [
+        "도로·포장"
+      ],
+      "tracingPdf": true,
+      "day": 21
+    },
+    {
+      "title": "[토목시공기술사] PSC 거더 포스트텐션, 제작부터 공용까지 응력과 시공관리 | 하루 한 문제 20일차",
+      "url": "https://na-geoai.tistory.com/242",
+      "kind": "daily",
+      "date": "2026-11-07",
+      "tags": [
+        "교량"
+      ],
+      "tracingPdf": true,
+      "day": 20
+    },
+    {
       "title": "[토목시공기술사] 터널 라이닝 균열 종류와 원인, 균열억제 대책 | 하루 한 문제 19일차",
       "url": "https://na-geoai.tistory.com/232",
       "kind": "daily",

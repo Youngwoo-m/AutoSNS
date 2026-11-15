@@ -30,8 +30,27 @@
   a{ color:var(--brand); }
   nav.back{ margin-bottom:16px; font-size:.93rem; }
   @media (max-width:520px){ .card{ padding:20px 16px; } }
-.site-nav{display:flex;flex-wrap:wrap;gap:12px 18px}.site-nav a{font-size:16px}.site-footer{max-width:960px;margin:auto;padding:24px;font-size:16px}td,th{overflow-wrap:anywhere}</style>
-</head>
+</style>
+<style>
+  :root{ --bg:#f4f6f9; --card:#fff; --ink:#16212e; --muted:#5b6b7d; --line:#e2e8f0; --brand:#0e5a6b; }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4; --line:#233040; --brand:#7fd3e0; }
+  }
+  :root[data-theme="dark"]{ --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4; --line:#233040; --brand:#7fd3e0; }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif; line-height:1.8; word-break:keep-all; }
+  main{ max-width:760px; margin:0 auto; padding:40px 16px 64px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px 24px; }
+  h1{ font-size:1.6rem; margin:0 0 4px; }
+  h2{ font-size:1.1rem; margin:28px 0 8px; color:var(--brand); }
+  p, li{ font-size:.97rem; }
+  ul{ padding-left:1.2em; margin:6px 0; }
+  .meta{ color:var(--muted); font-size:.9rem; margin:0 0 20px; }
+  a{ color:var(--brand); }
+  nav.back{ margin-bottom:16px; font-size:.93rem; }
+  @media (max-width:520px){ .card{ padding:20px 16px; } }
+.site-nav{display:flex;flex-wrap:wrap;gap:12px 18px}.site-nav a{font-size:16px}.site-footer{max-width:960px;margin:auto;padding:24px;font-size:16px}td,th{overflow-wrap:anywhere}</style></head>
 <body><nav aria-label="사이트 메뉴" class="site-nav"><a href="/">홈</a><a href="/ai-education/">AI 교육 교재</a><a href="/ai-education/guides/">학습 해설</a><a href="/about/">사이트 소개</a><a href="/contact/">문의</a><a href="/privacy/">개인정보처리방침</a></nav>
 <main>
 <nav class="back"><a href="/">← 재난안전과 GeoAI 홈</a> · <a href="/privacy/">개인정보처리방침</a></nav>
