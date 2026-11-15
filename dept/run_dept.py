@@ -198,14 +198,18 @@ def run_claude(key, dry):
     fd, prompt = tempfile.mkstemp(prefix="deptjob_", suffix=".md")
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    claude = shutil.which("claude") or shutil.which("claude.cmd")
+    # 2026-11-11: claude 가 ~/.local/bin/claude.exe(PATH 밖)로 바뀌어 못 찾던 문제 → 그 자리도 찾는다
+    _local = os.path.expanduser(r"~\.local\bin\claude.exe")
+    claude = (shutil.which("claude") or shutil.which("claude.cmd")
+              or (_local if os.path.isfile(_local) else None))
     if not claude:
         raise SystemExit("claude CLI 를 찾지 못했습니다")
     cmd = [claude, "-p", "--model", meta.get("model", "sonnet"), "--permission-mode", "bypassPermissions", "--no-chrome"]
     env = {**_env(dry), "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS": "7200000"}
     append(log, f"===== [{now()}] {name} 시작 (모델 {meta.get('model')}{', 시험 실행' if dry else ''}, Windows run_dept.py) =====")
     with open(prompt, encoding="utf-8") as fin, open(log, "a", encoding="utf-8") as fout:
-        p = subprocess.Popen(cmd, stdin=fin, stdout=fout, stderr=subprocess.STDOUT, cwd=ROOT, env=env)
+        p = subprocess.Popen(cmd, stdin=fin, stdout=fout, stderr=subprocess.STDOUT, cwd=ROOT, env=env,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))  # 2026-11-11: claude.exe 콘솔 창이 뜨지 않게
         try:
             rc = p.wait(timeout=3 * 3600)
         except subprocess.TimeoutExpired:
