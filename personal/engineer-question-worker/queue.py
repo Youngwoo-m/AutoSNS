@@ -1,4 +1,16 @@
 """Authenticated local queue. User-submitted fields are data, never instructions."""
+import os as _os, sys as _sys
+# 2026-11-06: 이 파일 이름(queue.py)이 표준 queue 모듈을 가려, Windows keyring(secret_env) 이 import 할 때 순환 import 로 죽었다.
+# 이 폴더를 sys.path 에서 잠시 빼고 표준 queue 를 먼저 올려 둔다.
+_here=_os.path.dirname(_os.path.abspath(__file__))
+_saved=[p for p in _sys.path if _os.path.abspath(p or '.')==_here]
+_sys.path[:]=[p for p in _sys.path if _os.path.abspath(p or '.')!=_here]
+import queue as _stdlib_queue  # noqa: F401
+_sys.path[:0]=_saved
+# 2026-11-10: Windows 콘솔 기본 인코딩(cp949)에서 '²' 같은 글자로 출력·파일 저장이 죽지 않게 UTF-8 로 고정
+for _st in (_sys.stdout, _sys.stderr):
+    try: _st.reconfigure(encoding='utf-8', errors='replace')
+    except Exception: pass
 import argparse, datetime, html, json, re, urllib.request, xml.etree.ElementTree as ET
 from pathlib import Path
 from email.utils import parsedate_to_datetime
@@ -8,9 +20,9 @@ STATE=ROOT/'state.json'
 UTC=datetime.timezone.utc
 
 def now(): return datetime.datetime.now(UTC).isoformat()
-def read(): return json.loads(STATE.read_text()) if STATE.exists() else {'jobs':{},'ignored':[]}
+def read(): return json.loads(STATE.read_text(encoding='utf-8')) if STATE.exists() else {'jobs':{},'ignored':[]}
 def save(state):
-    temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n');temp.replace(STATE)
+    temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');temp.replace(STATE)
     try:  # 발행·큐 변화마다 운영 대시보드를 다시 만든다. 실패해도 큐 작업은 계속한다.
         import subprocess,sys;b=next(d/'ax-console'/'app'/'build_dashboard.py' for d in ROOT.parents if (d/'ax-console'/'app'/'build_dashboard.py').exists());subprocess.run([sys.executable,str(b)],capture_output=True,timeout=60)
     except Exception: pass
@@ -41,15 +53,15 @@ def verified_post(url):
 
 def add_post(url,title,kind,date,tags=None,day=None,pdf=False):
     verified_post(url)
-    file=PUBLISHED_FILE;data=json.loads(file.read_text())
+    file=PUBLISHED_FILE;data=json.loads(file.read_text(encoding='utf-8'))
     item={'title':title,'url':url,'kind':kind,'date':date,'tags':tags or [],'tracingPdf':pdf}
     if day: item['day']=day
     data['items']=[i for i in data['items'] if i['url']!=url]+[item]
     data['items'].sort(key=lambda i:(i['date'],int(i['url'].rstrip('/').split('/')[-1])),reverse=True)
-    file.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+    file.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 def sync_list():
-    file=PUBLISHED_FILE;data=json.loads(file.read_text());old={i['url']:i for i in data['items']}
+    file=PUBLISHED_FILE;data=json.loads(file.read_text(encoding='utf-8'));old={i['url']:i for i in data['items']}
     with urllib.request.urlopen('https://na-geoai.tistory.com/rss',timeout=30) as response: rss=ET.fromstring(response.read())
     for entry in rss.findall('./channel/item'):
         title=html.unescape(entry.findtext('title',''));url=entry.findtext('link','')
@@ -60,7 +72,7 @@ def sync_list():
         old[url]={'title':title.split('|',1)[-1].strip(),'url':url,'date':parsedate_to_datetime(entry.findtext('pubDate')).astimezone(datetime.timezone(datetime.timedelta(hours=9))).date().isoformat(),'kind':'request' if '친구 요청' in title else 'daily','tags':[],'tracingPdf':False}
         if match: old[url]['day']=int(match.group(1))
     data['items']=sorted(old.values(),key=lambda i:(i['date'],int(i['url'].split('/')[-1])),reverse=True)
-    file.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+    file.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'published_count':len(data['items'])},ensure_ascii=False))
 
 p=argparse.ArgumentParser();p.add_argument('--exam',choices=['survey','civil','building','safety'],default='survey');sub=p.add_subparsers(dest='command',required=True)

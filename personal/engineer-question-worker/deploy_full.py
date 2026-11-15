@@ -5,11 +5,11 @@
 함수 키(DATA_GO_KR_KEY·KAKAO_REST_KEY·COLLECTOR_KEY)는 Firebase Secret Manager 에 있다(사이트 파일에 없음).
 """
 import sys
-from firebase_api import deploy, SITE_DIR
+from firebase_api import deploy, firebase_cmd, SITE_DIR
 
 def main():
     if "--check" in sys.argv:
-        print("deploy target:", SITE_DIR, "-> project geoai-na"); return
+        print("deploy target:", SITE_DIR, "-> project geoai-na", "| firebase:", " ".join(firebase_cmd())); return
     deploy()
 
 if __name__ == "__main__":

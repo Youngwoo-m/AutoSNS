@@ -59,7 +59,7 @@
   ],
   "voice_profile_id": "9ae4198e-a2c5-4604-9165-7d39adf0143c",
   "thumbnail": {
-    "background_path": "/Volumes/USB256/devAPP/AutoSNS/assets/engineer-series/thumbnail-background-v2.png",
+    "background_path": "G:/devAPP/AutoSNS/assets/engineer-series/thumbnail-background-v2.png",
     "reuse_same_background": true,
     "per_question_changes": "local_text_overlay_only",
     "title_area": "left",
