@@ -208,19 +208,19 @@ SUMMARIZE = """아래 채용공고 원문에서 항목마다 짧게 뽑아라. �
 {items}"""
 
 
-def _client(cfg):
+def _client(cfg, task=None):
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     if root not in sys.path:
         sys.path.insert(0, root)
     from shared.llm import client
-    return client(cfg)
+    return client(cfg, task=task)
 
 
-def _llm_text(cfg, prompt, max_tokens):
+def _llm_text(cfg, prompt, max_tokens, task=None):
     """게이트웨이 Sonnet 5 는 먼저 생각(thinking)에 토큰을 쓰고, 그 양이 실행마다 다르다
     (선별에서 800·4000 토큰을 생각만 하다 답 없이 끝남, 9/29). 비면 한도를 두 배로 한 번 더."""
     for mt in (max_tokens, max_tokens * 2):
-        msg = _client(cfg).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
+        msg = _client(cfg, task).messages.create(model=cfg.get("model", "claude-sonnet-4-6"),
                                            max_tokens=mt,
                                            messages=[{"role": "user", "content": prompt}])
         text = "".join(getattr(b, "text", "") for b in msg.content)
@@ -230,8 +230,8 @@ def _llm_text(cfg, prompt, max_tokens):
     raise RuntimeError("답이 비었습니다 — 두 번 모두 생각만 하다 끝남")
 
 
-def _ask(cfg, prompt, max_tokens=3000):
-    text = _llm_text(cfg, prompt, max_tokens)
+def _ask(cfg, prompt, max_tokens=3000, task=None):
+    text = _llm_text(cfg, prompt, max_tokens, task)
     i = text.find("[")
     return json.JSONDecoder().raw_decode(text[i:])[0] if i >= 0 else []
 
@@ -248,12 +248,29 @@ def _ask_obj(cfg, prompt, max_tokens=4000):
 def pick(cfg, cands, n=MAX_JOBS):
     rows = "\n".join(f"{i}. {'[공공] ' if c.get('public') else ''}{c['company']} | {c['title']}"
                      for i, c in enumerate(cands))
-    ids = _ask(cfg, PICK.format(n=n, rows=rows), 12000)
-    out = []
-    for k in ids:
-        if isinstance(k, int) and 0 <= k < len(cands) and cands[k] not in out:
-            out.append(cands[k])
-    return out[:n]
+    prompt = PICK.format(n=n, rows=rows)
+
+    def choose(task):
+        try:
+            ids = _ask(cfg, prompt, 12000, task)
+        except Exception as e:  # noqa: BLE001
+            log(f"채용공고 선별 실패({task or '주 모형'}): {type(e).__name__}: {str(e)[:80]}")
+            return []
+        out = []
+        for k in ids if isinstance(ids, list) else []:
+            # 같은 회사는 한 건만 — 로컬 모형이 이 규칙을 놓친 적이 있어 코드로 막는다(2026-11-15)
+            if (isinstance(k, int) and 0 <= k < len(cands) and cands[k] not in out
+                    and all(c["company"] != cands[k]["company"] for c in out)):
+                out.append(cands[k])
+        return out[:n]
+
+    # 선별은 회사명·공고명만 보고 번호를 고르는 일이라 로컬 Ollama 먼저(2026-11-15 크레딧 절약).
+    # 고른 수가 절반도 안 되면(형식 깨짐·빈 답) 주 모형으로 다시 고른다.
+    out = choose("classify")
+    if len(out) < min(n, len(cands)) // 2:
+        log(f"로컬 선별 결과 {len(out)}편 — 주 모형으로 다시")
+        out = choose(None)
+    return out
 
 
 def _detail_text(url):

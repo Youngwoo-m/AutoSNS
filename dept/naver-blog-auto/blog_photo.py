@@ -101,7 +101,7 @@ def queries_for(title, summary="", cfg=None):
     cfg = cfg or load_config()
     try:
         from anthropic import Anthropic
-        client = _llm_client(cfg)
+        client = _llm_client(cfg, task="keywords")   # 검색어 3개(글에 안 실림, 형식 검사함) — 로컬 Ollama 먼저(2026-11-15 크레딧 절약)
         msg = client.messages.create(
             model=cfg.get("model", "claude-sonnet-4-6"), max_tokens=120, system=SYSTEM,
             messages=[{"role": "user", "content": f"Title: {title}\nSummary: {summary[:400]}"}])
@@ -194,13 +194,13 @@ def photo_html(title, summary="", cfg=None, dry_run=False):
     return figure_html(urls[0], photo)
 
 
-def _llm_client(cfg):
-    """학교 AI 게이트웨이 → (실패 시) Anthropic 키. shared/llm.py 참고."""
+def _llm_client(cfg, task=None):
+    """shared/llm.py 창구. task 가 있으면 저비용 모형(Ollama·OpenRouter 무료)을 먼저 쓴다."""
     import os
     import sys
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     if root not in sys.path:
         sys.path.insert(0, root)
     from shared.llm import client
-    return client(cfg)
+    return client(cfg, task=task)
 

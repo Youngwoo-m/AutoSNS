@@ -78,7 +78,7 @@
    "hours": [
     23
    ],
-   "model": "opus",
+   "model": "sonnet",
    "channels": [
     [
      "personal",
@@ -103,7 +103,7 @@
     23
    ],
    "minute": 10,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [
     [
      "personal",
@@ -147,7 +147,7 @@
     23
    ],
    "minute": 20,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [
     [
      "personal",
@@ -191,7 +191,7 @@
     23
    ],
    "minute": 30,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [
     [
      "personal",
@@ -274,7 +274,7 @@
     13
    ],
    "minute": 20,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [],
    "precheck": [
     "python",
@@ -292,7 +292,7 @@
     14
    ],
    "minute": 20,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [],
    "precheck": [
     "python",
@@ -310,7 +310,7 @@
     15
    ],
    "minute": 20,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [],
    "precheck": [
     "python",
@@ -328,7 +328,7 @@
     16
    ],
    "minute": 20,
-   "model": "opus",
+   "model": "sonnet",
    "channels": [],
    "precheck": [
     "python",
