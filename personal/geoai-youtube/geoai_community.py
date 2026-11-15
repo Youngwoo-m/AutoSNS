@@ -43,6 +43,20 @@ PROFILE_DIR = os.path.join(BASE_DIR, "chrome-profile-youtube")
 VERIFY_CHARS = 12
 
 
+def _personal_chrome(o, account=None):
+    """개인 계정 프로필이면 chrome-na.exe 로 띄운다(2026-11-06, common/shared/chrome_bin.py)."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(o, account)
+    except Exception:
+        pass
+    return o
+
+
 def chrome_options(headless=True):
     o = Options()
     o.add_argument(f"--user-data-dir={PROFILE_DIR}")
@@ -56,7 +70,7 @@ def chrome_options(headless=True):
         o.add_argument("--headless=new")
     # 크롬이 실행마다 앱 전체(~1.4GB)를 임시 폴더에 복제하고 남기는 것을 막는다(2026-10-09)
     o.add_argument("--disable-features=MacAppCodeSignClone")
-    return o
+    return _personal_chrome(o, "personal")
 
 
 # shadow DOM 까지 훑어 버튼을 찾는다(유튜브는 대부분 shadow DOM 안에 있다).

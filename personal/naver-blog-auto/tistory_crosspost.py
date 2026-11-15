@@ -241,6 +241,20 @@ def pick(posts, done, per_run):
 
 
 # ─── 티스토리 글쓰기 화면 ────────────────────────────────────────────────────
+def _personal_chrome(o, account=None):
+    """개인 계정 프로필이면 chrome-na.exe 로 띄운다(2026-11-06, common/shared/chrome_bin.py)."""
+    try:
+        import importlib.util as _u
+        _r = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        _s = _u.spec_from_file_location("autosns_chrome_bin", os.path.join(_r, "common", "shared", "chrome_bin.py"))
+        _m = _u.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        _m.apply(o, account)
+    except Exception:
+        pass
+    return o
+
+
 def build_driver(headless):
     from selenium.webdriver.chrome.options import Options
     o = Options()
@@ -253,6 +267,7 @@ def build_driver(headless):
     o.add_argument("--lang=ko-KR")
     # 글쓰기 화면이 '임시 저장된 글을 이어서 쓸까요?' 를 물으면 '아니오' — 남의 초안을 끌어오지 않게
     o.set_capability("unhandledPromptBehavior", "dismiss")
+    _personal_chrome(o, "personal")
     if headless:
         o.add_argument("--headless=new")
     d = start_chrome(o)
@@ -352,10 +367,22 @@ def close(d):
 
 
 def restore_cookies(d):
+    """저장해 둔 쿠키 가운데 프로필에 '없는' 것만 넣는다(있는 쿠키는 덮어쓰지 않는다).
+
+    TSSESSION 같은 세션 쿠키는 크롬을 닫으면 사라지므로 파일에서 채우고, 카카오 _kawlt 처럼
+    프로필에 남아 있는 쿠키는 프로필 값이 더 최신이라 그대로 둔다(2026-11-06: 11-05 Mac 시절
+    파일이 살아 있던 카카오 쿠키를 덮어 로그인이 풀리고 카카오가 비밀번호를 물었다)."""
     if not os.path.exists(COOKIES):
         return 0
+    try:
+        have = {(c.get("name"), c.get("domain")) for c in
+                d.execute_cdp_cmd("Network.getAllCookies", {}).get("cookies", [])}
+    except Exception:
+        have = set()
     with open(COOKIES, encoding="utf-8") as f:
-        cs = json.load(f)
+        cs = [c for c in json.load(f) if (c.get("name"), c.get("domain")) not in have]
+    if not cs:
+        return 0
     for c in cs:
         if c.get("expires", -1) in (-1, 0):
             c.pop("expires", None)          # 세션 쿠키는 만료일 없이 넣는다
@@ -383,9 +410,23 @@ def write_post(d, post, body, category, tags, go):
         d.set_window_size(1400, 1000)       # 두 번째 글부터 창이 낮아져 발행 버튼이 화면 밖으로 밀렸다(10/10)
     except Exception:
         pass
+    def no_draft():
+        # '…에 저장된 글이 있습니다. 이어서 작성하시겠습니까?' 확인 창 — unhandledPromptBehavior=dismiss 가
+        # Windows 크롬에서는 오류를 내며 멈췄다(2026-11-07). 직접 '취소'해 남은 초안을 끌어오지 않는다.
+        for _ in range(6):
+            try:
+                a = d.switch_to.alert
+                log(f"  임시 저장 글 확인 창 닫음: {a.text[:40]!r}")
+                a.dismiss()
+                return
+            except Exception:
+                time.sleep(0.5)
+
     d.get(f"{BLOG}/manage/newpost/")
+    no_draft()
     if "/manage/newpost" not in _cur_url(d) and kakao_relogin(d):
         d.get(f"{BLOG}/manage/newpost/")
+        no_draft()
     if "/manage/newpost" not in _cur_url(d):
         raise RuntimeError(f"글쓰기 화면이 아님(로그인 풀림?): {_cur_url(d)} — tistory_login.py 로 다시 로그인")
     W.until(lambda x: x.execute_script("return !!(window.tinymce && tinymce.activeEditor && tinymce.activeEditor.initialized)"))
@@ -688,6 +729,7 @@ def build_read_driver(*, profile=None, headless=True):
     options.set_capability('unhandledPromptBehavior', 'dismiss')
     if headless:
         options.add_argument('--headless=new')
+    _personal_chrome(options, "personal")
     return webdriver.Chrome(options=options)
 
 

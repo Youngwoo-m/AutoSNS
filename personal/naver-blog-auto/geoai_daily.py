@@ -28,6 +28,7 @@
 """
 import json
 import os
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # 11-10: 자식(geoai_video 등) 출력을 utf-8 로 받는다 — cp949 로 읽다 영상 결과를 놓쳤다
 import subprocess
 import sys
 import time
@@ -153,7 +154,8 @@ def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
 
     영상 제작은 youtube-shorts-auto 프로젝트(별도 venv)에서 돈다 — HeyGen·ffmpeg·
     유튜브 업로드가 모두 거기 있다. 실패는 삼킨다(영상 없이 글만 나간다)."""
-    py = os.path.join(YT_DIR, ".venv", "bin", "python")
+    # Windows 는 Scripts\python.exe — bin/python 만 찾아 11/06~ 영상을 매일 건너뛰었다(2026-11-08)
+    py = os.path.join(YT_DIR, ".venv", "Scripts", "python.exe") if os.name == "nt" else os.path.join(YT_DIR, ".venv", "bin", "python")
     if not os.path.exists(py):
         log("영상 건너뜀: youtube-shorts-auto/.venv 가 없습니다")
         return {}
@@ -177,7 +179,7 @@ def make_video(data, cfg, dry_run=False, heygen_video_id=None, style="cards"):
     try:
         # HeyGen 생성이 수 분 걸린다 — 넉넉히 기다린다.
         p = subprocess.run([py, "geoai_video.py"], cwd=YT_DIR, input=json.dumps(payload),
-                           text=True, capture_output=True, timeout=2400)
+                           text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=2400)
         lines = [l for l in (p.stdout or "").strip().splitlines() if l.strip()]
         out = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
         if not out:
@@ -210,7 +212,8 @@ def post_community(data, post_url, cfg, dry_run=False, video_url=""):
 
     공개 API 가 없어 로그인 프로필을 쓴 브라우저 자동화다(youtube-shorts-auto 쪽).
     실패해도 삼킨다 — 블로그·영상은 이미 나간 뒤다."""
-    py = os.path.join(YT_DIR, ".venv", "bin", "python")
+    # Windows 는 Scripts\python.exe — bin/python 만 찾아 11/06~ 영상을 매일 건너뛰었다(2026-11-08)
+    py = os.path.join(YT_DIR, ".venv", "Scripts", "python.exe") if os.name == "nt" else os.path.join(YT_DIR, ".venv", "bin", "python")
     if not os.path.exists(py):
         return {}
     payload = {"title": data.get("title", ""), "summary": data.get("summary"),
@@ -219,7 +222,7 @@ def post_community(data, post_url, cfg, dry_run=False, video_url=""):
     try:
         cmd = [py, "geoai_community.py"] + ([] if dry_run else ["--go"])
         p = subprocess.run(cmd, cwd=YT_DIR, input=json.dumps(payload),
-                           text=True, capture_output=True, timeout=600)
+                           text=True, encoding="utf-8", errors="replace", capture_output=True, timeout=600)
         lines = [l for l in (p.stdout or "").strip().splitlines() if l.startswith("{")]
         out = json.loads(lines[-1]) if lines else {}
         log(f"유튜브 게시물: {out.get('status') or out.get('error') or '응답 없음'}")
@@ -262,7 +265,7 @@ def post_threads(data, post_url, cfg, dry_run=False, video_url=""):
         return {"status": "dry_run"}
     try:
         p = subprocess.run([py, "threads_cli.py"], cwd=ig_dir,
-                           input=json.dumps({"text": text}), text=True,
+                           input=json.dumps({"text": text}), text=True, encoding="utf-8", errors="replace",
                            capture_output=True, timeout=300)
         lines = [l for l in (p.stdout or "").strip().splitlines() if l.startswith("{")]
         out = json.loads(lines[-1]) if lines else {}

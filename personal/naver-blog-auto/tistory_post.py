@@ -78,6 +78,7 @@ for (const t of ['dragenter', 'dragover', 'drop'])
   body.dispatchEvent(new DragEvent(t, {bubbles: true, cancelable: true, dataTransfer: dt}));
 """
 TOKEN = re.compile(r'<p[^>]*>\s*\[##_(?:Image|File)\|.*?_##\]\s*</p>', re.S)
+RAW_TOKEN = re.compile(r'\[##_(?:Image|File)\|.*?_##\]', re.S)
 MARKER = re.compile(r'<p[^>]*\bdata-ax-attach="[^"]*"[^>]*>.*?</p>', re.S)
 _LEAD_EMPTY = re.compile(r'^\s*(?:<p>(?:\s|&nbsp;|<br[^>]*>)*</p>\s*)+')
 
@@ -93,7 +94,9 @@ def upload_at(d, path, *, managed=False):
     import mimetypes
     get = "return tinymce.activeEditor.getContent()"
     before = d.execute_script(get)
-    old = set(TOKEN.findall(before))
+    # 문단(<p>)째가 아니라 토큰 자체로 비교한다 — 새 그림이 앞서 올린 배너와 같은 <p> 안에 붙어 들어오면
+    # '<p>토큰</p>' 모양을 찾는 방식은 3분 내내 못 찾았다(2026-11-07 건축 5일차, 사흘 연속 실패)
+    old_raw = set(RAW_TOKEN.findall(before))
     mt = mimetypes.guess_type(path)[0] or "application/octet-stream"
     with open(path, "rb") as asset_file:
         encoded = base64.b64encode(asset_file.read()).decode()
@@ -102,17 +105,32 @@ def upload_at(d, path, *, managed=False):
     while time.time() - t0 < 180:
         time.sleep(1.5)
         c = d.execute_script(get)
-        new = [t for t in TOKEN.findall(c) if t not in old]
+        new = [t for t in RAW_TOKEN.findall(c) if t not in old_raw]
         if new:
             break
     else:
         if not managed:
             tc._shot(d, "attach_timeout")
         emit(f"  첨부 대기 중 본문 앞부분: {c[:200]!r}")
+        emit(f"  본문 구조(앞 40개): {re.findall(r'<(?:p|figure|div)[^>]*>|[[]##_[A-Za-z]+[|][^|]{0,24}|data-ax-attach=.[^ >]{0,30}', c)[:40]}")
         raise RuntimeError(f"첨부 업로드 시간 초과: {os.path.basename(path)}")
-    token = new[0]
-    head, rest = token.split("[##_", 1)
-    if len(MARKER.findall(c)) < len(MARKER.findall(before)):
+    raw = new[0]
+    idx = c.find(raw)
+    ps = c.rfind("<p", 0, idx)
+    pe = c.find(">", ps) + 1 if ps >= 0 else -1
+    head = c[ps:pe] if ps >= 0 else ""          # 새 토큰을 감싼 <p …> 여는 태그
+    alone = bool(re.fullmatch(r"<p[^>]*>\s*", c[ps:idx])) and bool(re.match(r"\s*</p>", c[idx + len(raw):]))
+    if alone:
+        token = c[ps:idx + len(raw) + re.match(r"\s*</p>", c[idx + len(raw):]).end()]
+    else:
+        # 다른 첨부와 한 문단에 붙었다 — 토큰만 떼어 내고 자기 문단으로 감싼다
+        c = c[:idx] + c[idx + len(raw):]
+        d.execute_script("tinymce.activeEditor.setContent(arguments[0]); tinymce.activeEditor.fire('change');"
+                         "tinymce.activeEditor.save();", c)
+        token = f'<p data-ke-size="size16">{raw}</p>'
+        c = d.execute_script(get)
+    head, rest = token.split("[##_", 1) if alone else ("", "")
+    if alone and len(MARKER.findall(c)) < len(MARKER.findall(before)):
         # 끌어다 놓은 자리가 빈 첫 자리표시 <p> 면 편집기가 그 문단을 첨부 문단으로 바꿔 자리표시가 사라진다 —
         # 첨부는 이미 제자리다(2026-10-25 토목 9일차: 여기서 자리표시를 또 쓰면 하나씩 밀려 PDF 가 실패)
         emit(f"  첨부 올림(첫 자리표시 대체): {os.path.basename(path)} ({mt})")
@@ -162,7 +180,10 @@ def publish(args, body, files):
                 if embeds:
                     log(f"  유튜브 임베드 유지 확인: {sorted(embeds)}")
                 c = re.sub(r"\[##_Image\|.*?_##\]", "[그림]", re.sub(r"\[##_File\|.*?_##\]", "[파일]", c, flags=re.S), flags=re.S)
-                log(f"  본문 순서: {re.sub(r'<[^>]+>', ' ', c).split()[:40]}")
+                words = re.sub(r'<[^>]+>', ' ', c).split()
+                log(f"  본문 순서: {words[:40]}")
+                log("  첨부 위치: " + " / ".join(" ".join(words[max(0, i - 4):i + 1])
+                                                for i, w in enumerate(words) if w in ("[그림]", "[파일]")))
             return r
         d.execute_script = hooked
         return tc.write_post(d, {"title": args.title}, body, args.category, args.tags, args.go)

@@ -184,6 +184,64 @@ GEO_TOPICS = [
      "디지털트윈·지구관측 파운데이션 모델과 어떻게 이어지는지. "
      "특정 제품이나 벤치마크 수치는 말하지 않는다.",
      ["GeoPhysicalAI", "물리정보신경망", "PINN", "재난예측"]),
+    # ── 2026-11-08 추가(주제 소진). 제목은 질문형 — 채널 분석에서 질문형 제목 조회 중앙값 72회,
+    #    설명형('~하는 법') 9~26회였다. 검색어를 맨 앞에 두고 물음표로 끝낸다.
+    ("snow-detection", "폭설, 위성으로 어디까지 볼 수 있을까? 적설 탐지와 한계",
+     "광학 위성에서 눈과 구름을 가르는 원리(NDSI 등 분광 차이), 구름·야간에 막힐 때 SAR 가 보는 것, "
+     "적설 깊이는 위성만으로 알기 어렵다는 한계, 비닐하우스·축사 붕괴 같은 폭설 피해 파악에 쓰는 흐름.",
+     ["폭설", "적설탐지", "위성영상", "겨울재난"]),
+    ("coldwave-vulnerable", "한파 취약지역은 어떻게 찾을까? 공간분석으로 보는 취약계층",
+     "기온 자료와 고령 인구·노후 주택·난방 취약 같은 사회 자료를 겹쳐 보는 방법, 격자 단위 분석의 장점, "
+     "한파 쉼터 접근성 확인, 개인정보를 다룰 때의 주의점. 수치는 공식 통계 출처로만.",
+     ["한파", "취약계층", "공간분석", "겨울재난"]),
+    ("insar-subsidence", "InSAR란? 땅이 몇 mm 꺼지는 것을 위성이 어떻게 알까",
+     "두 시기 SAR 영상의 위상 차이로 지표 변위를 재는 원리를 쉬운 말로, 지반침하·산사태 전조·구조물 감시 활용, "
+     "식생·대기 때문에 생기는 오차와 지상 측량으로 검증해야 하는 이유.",
+     ["InSAR", "지반침하", "SAR", "원격탐사"]),
+    ("sinkhole-risk", "땅꺼짐(싱크홀) 위험, 공간 데이터로 미리 알 수 있을까?",
+     "도심 땅꺼짐의 주요 원인(노후 상하수도관·굴착 공사·지하수), 지하시설물 지도·GPR 탐사·InSAR 를 겹쳐 보는 방법, "
+     "위험도 지도가 '예측'이 아니라 '우선 점검 순서'라는 점.",
+     ["싱크홀", "땅꺼짐", "지하안전", "GPR"]),
+    ("typhoon-impact", "태풍 피해 예측, 지도 위에서는 어떻게 할까?",
+     "태풍 진로·강풍 반경 자료를 지형·건물·인구와 겹치는 흐름, 해안 저지대와 폭풍해일 위험, "
+     "예보 불확실성(진로 오차 범위)을 지도에 함께 보여야 하는 이유.",
+     ["태풍", "피해예측", "재난지도", "폭풍해일"]),
+    ("night-light", "야간 위성영상으로 정전 지역을 찾을 수 있을까?",
+     "야간 조명 영상(VIIRS 등)이 보여 주는 것, 재난 전후 밝기 비교로 정전·피해 지역을 추정하는 방법, "
+     "달빛·구름·계절 차이 보정과 해상도 한계.",
+     ["야간영상", "정전", "위성영상", "피해추정"]),
+    ("video-georeferencing", "CCTV·드론 영상에 위치를 붙이면 무엇이 달라질까?",
+     "영상 지오레퍼런싱의 뜻, 카메라 위치·방향으로 화면 속 지점을 지도 좌표로 옮기는 원리, "
+     "재난 상황실에서 여러 영상을 한 지도에 모아 보는 효과, 정확도를 떨어뜨리는 요인.",
+     ["지오레퍼런싱", "CCTV", "드론영상", "상황관리"]),
+    ("geocoding", "주소를 좌표로 바꾸는 지오코딩, 왜 엉뚱한 곳이 나올까?",
+     "지오코딩·역지오코딩의 뜻, 도로명·지번 주소 차이와 오타·건물 단위 문제로 생기는 오류, "
+     "신고 위치 확인·대피 안내처럼 정확도가 중요한 업무에서의 확인 순서.",
+     ["지오코딩", "주소", "좌표", "GIS"]),
+    ("evacuation-route", "대피 경로, 가장 가까운 길이 가장 안전할까?",
+     "최단 경로와 안전 경로의 차이(침수·경사·계단·혼잡), 도로망 분석에 위험 요소를 비용으로 넣는 방법, "
+     "보행 약자를 고려한 경로, 현장 확인이 필요한 이유.",
+     ["대피경로", "네트워크분석", "재난대피", "GIS"]),
+    ("raster-vs-vector", "래스터와 벡터, 언제 무엇을 써야 할까?",
+     "두 자료 구조의 차이(격자 vs 점·선·면), 위성영상·DEM 과 행정경계·도로가 왜 다른 형식인지, "
+     "서로 바꿀 때 잃는 정보, 분석 목적별 선택 기준.",
+     ["래스터", "벡터", "GIS기초", "공간데이터"]),
+    ("projection-area", "지도에서 잰 면적은 왜 실제와 다를까? 투영과 왜곡",
+     "둥근 지구를 평면에 펼칠 때 생기는 왜곡, 경위도 좌표로 면적을 재면 틀리는 이유, "
+     "피해 면적·산불 면적을 보고할 때 써야 할 좌표계와 확인 습관.",
+     ["지도투영", "면적계산", "좌표계", "GIS"]),
+    ("satellite-timeseries", "위성 시계열 분석, 한 장 대신 여러 장을 보면 무엇이 보일까?",
+     "같은 곳을 시간 순으로 쌓아 보는 이유(계절 변화와 이상 변화 구분), 식생 지수 시계열로 가뭄·산불 회복을 보는 예, "
+     "구름 빠진 날 채우기와 자료 간격의 한계.",
+     ["시계열", "위성영상", "변화탐지", "원격탐사"]),
+    ("3d-flood-damage", "3차원 건물 모델로 침수 피해를 어떻게 셀까?",
+     "건물 높이·1층 높이·지하 공간 정보가 침수 피해 추정에 왜 중요한지, 침수 심도와 3D 건물을 겹치는 흐름, "
+     "피해액 곡선을 쓸 때의 가정과 불확실성.",
+     ["3D건물", "침수피해", "디지털트윈", "홍수"]),
+    ("ai-weather", "AI 기상예측 모델, 수치예보와 무엇이 다를까?",
+     "물리 방정식을 푸는 수치예보와 과거 자료로 학습한 AI 예측의 차이, 빠른 계산이라는 장점, "
+     "극한 현상·처음 겪는 기후에서의 한계, 공식 예보를 대신하지 않는다는 점. 특정 모델 성능 수치는 말하지 않는다.",
+     ["AI기상예측", "수치예보", "기상재난", "GeoAI"]),
 ]
 
 # 생성형 AI 사용법 계열 — 위 GeoAI 계열과 번갈아 나간다.
@@ -250,6 +308,16 @@ GENAI_TOPICS = [
      "계속 끌려오는 경우), 마음에 드는 답이 나왔으면 그 프롬프트를 바로 저장해 두라는 마무리. "
      "1편이 프롬프트의 구성 요소를 다룬다면 이 편은 '고쳐 쓰는 과정'을 다룬다.",
      ["프롬프트", "생성형AI", "프롬프트수정", "AI활용"]),
+    # 2026-11-08 추가 — 질문형 제목
+    ("genai-data-analysis", "AI에게 표 데이터 분석을 맡겨도 될까? | 생성형 AI 사용법 16",
+     "표 파일을 올려 요약·집계·그래프를 받는 흐름, 계산 결과를 원본과 대조하는 습관, 개인정보가 든 표를 올리기 전 확인할 것.",
+     ["생성형AI", "데이터분석", "AI활용", "엑셀"]),
+    ("genai-plagiarism", "AI로 쓴 글, 그대로 내도 괜찮을까? | 생성형 AI 사용법 17",
+     "과제·보고서에서 AI 활용 허용 범위를 먼저 확인하는 이유, 출처 표기와 사실 확인, AI 초안을 자기 글로 고쳐 쓰는 순서. 특정 탐지 도구의 정확도는 단정하지 않는다.",
+     ["생성형AI", "AI윤리", "글쓰기", "출처표기"]),
+    ("genai-voice-video", "AI 음성·영상 합성, 업무에 써도 될까? | 생성형 AI 사용법 18",
+     "안내 영상·교육 자료에 AI 음성·아바타를 쓸 때의 장점, AI 합성 고지와 초상·목소리 권리, 재난 안내처럼 신뢰가 중요한 곳에서의 주의점.",
+     ["생성형AI", "AI음성", "영상합성", "AI고지"]),
 ]
 
 # 안전한국훈련 문서 실무 계열 — 생성형 AI 로 초안을 잡고 hwpx 스킬로 한글 문서를 만든다.
@@ -366,19 +434,21 @@ _CAT_CONCEPT = {
     "what-is-geoai", "gis-vs-geoai", "satellite-basics", "spectral-index",
     "label-data", "cnn-remote-sensing", "landcover", "digital-twin",
     "foundation-model", "geoai-ethics", "geoai-career", "population-grid",
-    "geo-physical-ai",
+    "geo-physical-ai", "night-light", "satellite-timeseries", "ai-weather",
 }
 _CAT_TOOLS = {
     "qgis-start", "crs-basics", "geopandas", "earth-engine", "interpolation",
     "spatial-autocorrelation", "change-detection", "llm-for-gis", "gis-agent",
     "rag-manual", "openstreetmap", "public-geodata", "sentinel-download",
     "accuracy-assessment", "web-map", "gps-accuracy", "geoai-toolmap",
+    "video-georeferencing", "geocoding", "raster-vs-vector", "projection-area",
 }
 _CAT_FIELD = {
     "sar-flood", "landslide-susceptibility", "wildfire", "drone-mapping",
     "lidar-dem", "flood-hazard-map", "shelter-siting", "urban-heat",
     "network-analysis", "earthquake-geoai", "debris-flow", "air-dispersion",
-    "damage-survey",
+    "damage-survey", "snow-detection", "coldwave-vulnerable", "insar-subsidence",
+    "sinkhole-risk", "typhoon-impact", "evacuation-route", "3d-flood-damage",
 }
 
 
@@ -682,12 +752,35 @@ def generate(idx, topic, cfg=None, recent=()):
             best = (data, length)
         if ok and length >= min_chars and len(secs) >= 4:
             log(f"본문 {length}자 / 소제목 {len(secs)}개 — 생성 완료")
-            return data
+            return _polish(data, cfg)
         log(f"분량·형식 미달(시도 {attempt}/3: 본문 {length}자, 소제목 {len(secs)}개) → 재시도")
     if best is None:
         raise RuntimeError("시리즈 글 생성 형식 파싱 실패(3회).")
     log("3회 시도 후 기준 미달 → 그중 가장 긴 결과로 진행합니다.")
-    return best[0]
+    return _polish(best[0], cfg)
+
+
+def _polish(data, cfg):
+    """다 쓴 글을 한 번 더 읽고 문체만 다듬는다(2026-11-08 사용자 지정 — shared/humanize.py).
+
+    도입·리드·소제목 본문·자주 묻는 질문·마무리만 다듬는다. 따라하기 단계와 프롬프트 예시는
+    그대로 둔다(독자가 그대로 따라 치는 글이다). 숫자·주소·인용이 달라지거나 많이 바뀐 조각은
+    원문으로 되돌리고, 실패해도 글은 그대로 나간다."""
+    try:
+        import os, sys
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        from shared.humanize import polish_segments
+        secs = data.get("sections") or []
+        segs = polish_segments([data.get("lead", ""), data.get("intro", ""), data.get("faq", ""),
+                                data.get("outro", "")] + [p for _, p in secs],
+                               genre="블로그", cfg=cfg, log=log)
+        data["lead"], data["intro"], data["faq"], data["outro"] = segs[:4]
+        data["sections"] = [(h, p) for (h, _), p in zip(secs, segs[4:])]
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀: {type(e).__name__}")
+    return data
 
 
 def _shot_html(url, caption=""):

@@ -224,14 +224,20 @@ def cmd_upload(a):
         info = video_info(yt, vid) or {"video_id": vid}
         if not info.get("channel_ok", True):
             return out("error", message="올라간 영상의 채널이 @geoai-safety 가 아닙니다 — 즉시 확인", **info)
-        try:    # 2026-10-26 사용자 지정: 올라간 숏츠는 학과 틱톡에도 교차 발행(공개 30분 뒤, 3시간 간격)
-            from tiktok_queue import add as tiktok_add
+        try:    # 올라간 숏츠는 틱톡에도 교차 발행(공개 30분 뒤, 3시간 간격) — 2026-11-06 부터 학과가 아닌
+            # 개인 틱톡(@kor.geo.panda) 대기열로 보낸다(tiktok_queue_personal.py)
+            # 2026-11-11: 이 파일은 dept/youtube-shorts-auto 링크로 실행돼 BASE 가 학과 폴더라,
+            # 실제 위치(personal/geoai-youtube)의 대기열 모듈을 못 찾고(ModuleNotFoundError) 늘 건너뛰었다
+            _real = os.path.dirname(os.path.realpath(__file__))
+            if _real not in sys.path:
+                sys.path.append(_real)
+            from tiktok_queue_personal import add as tiktok_add
             tiktok_add(a.video, a.title, desc, [t.strip() for t in a.tags.split(",") if t.strip()],
                        ai_generated=True, ai_voice=True, source="geoai_short",
                        not_before=(t.astimezone().replace(tzinfo=None).isoformat(timespec="seconds")
                                    if publish_at else None))
         except Exception as e:  # noqa: BLE001
-            log(f"  틱톡 대기열 건너뜀(업로드는 정상): {type(e).__name__}")
+            log(f"  틱톡 대기열 건너뜀(업로드는 정상): {type(e).__name__}: {str(e)[:120]}")
         return out("scheduled" if publish_at else "uploaded", **{**facts, **info})
     return locked(a.job, "youtube_upload", go)
 

@@ -22,7 +22,11 @@ def logged_in(d):
 
 def main():
     d = build_driver(headless=False)
-    d.execute_cdp_cmd("Network.clearBrowserCookies", {})     # 받아 둔 옛 쿠키 없이 새로 로그인
+    # 받아 둔 옛 쿠키 없이 새로 로그인 — 티스토리·카카오 쿠키만 지운다. 프로필 전체를 지우면
+    # 같은 개인 프로필의 네이버(safeworking)·틱톡 로그인까지 풀린다(2026-11-06 실제로 풀렸다).
+    for c in d.execute_cdp_cmd("Network.getAllCookies", {}).get("cookies", []):
+        if "tistory" in c.get("domain", "") or "kakao" in c.get("domain", ""):
+            d.execute_cdp_cmd("Network.deleteCookies", {"name": c["name"], "domain": c["domain"], "path": c.get("path", "/")})
     d.get("https://www.tistory.com/auth/login")
     log("열린 창에서 '카카오계정으로 로그인'으로 로그인하세요. 최대 10분")
     waited = 0
