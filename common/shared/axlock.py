@@ -54,6 +54,26 @@ SKIP = ROOT / 'ax-console' / 'data' / 'skip_once.json'   # {작업: {'date': 'YY
 LOG = ROOT / 'ax-console' / 'data' / 'logs' / 'orchestrator.log'
 CATALOG = ROOT / 'ax-console' / 'config' / 'automations.json'
 
+# 개인 발행 동안 Seller 앱 작업 엔진 일시정지·끝나면 3분 뒤 재개(2026-11-13 지정, 11-14 '엔진만 멈춤'으로 변경 —
+# 서버·크롬을 강제로 끄지 않고 표시 파일만 남긴다) — common/shared/seller_pause.py, seller-app/app/external_pause.py
+_SELLER_RES = 'profile:acct-personal'
+
+
+def _seller(fn, *args, **kwargs):
+    if sys.platform != 'win32' or os.environ.get('AX_SELLER_PAUSE', '1') == '0':
+        return False
+    try:
+        mod = sys.modules.get('autosns_seller_pause')
+        if mod is None:
+            import importlib.util as _u
+            spec = _u.spec_from_file_location('autosns_seller_pause', os.path.join(os.path.dirname(os.path.realpath(__file__)), 'seller_pause.py'))
+            mod = _u.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            sys.modules['autosns_seller_pause'] = mod
+        return getattr(mod, fn)(*args, **kwargs)
+    except Exception:
+        return False
+
 
 def _now():
     return datetime.datetime.now().isoformat(timespec='seconds')
@@ -100,10 +120,13 @@ class Timeout(Exception):
 LOGIN_DIRS = {
     'personal': str(Path.home() / '.autosns-login' / 'personal'),   # 개인: 개인 네이버·티스토리·개인 유튜브(블로거)
     'dept': str(Path.home() / '.autosns-login' / 'dept'),           # 학과: 학과 네이버·유튜브·틱톡·인스타
+    # 2026-11-15 사용자 지시: 개인 틱톡 업로드를 발행용 personal 에서 분리(같은 폴더를 15분마다 붙잡아 로그인이 풀렸다)
+    'personal-tiktok': str(Path.home() / '.autosns-login' / 'personal-tiktok'),   # 개인 틱톡 @kor.geo.panda 전용
 }
 ACCOUNT_OF = {
     'naver': 'dept', 'insta': 'dept', 'tiktok': 'dept', 'youtube-dept': 'dept', 'insta-manual': 'dept',
     'safeworking': 'personal', 'tistory': 'personal', 'youtube-personal': 'personal',
+    'tiktok-personal': 'personal-tiktok',
 }
 # 링크 경로로 띄운 크롬도 같은 폴더로 보고 잡는다
 _LINKS = {
@@ -190,6 +213,8 @@ def main(argv):
         code = subprocess.call(cmd, env={**os.environ, 'AX_LOCKED': '1', 'AX_JOB': job})
     finally:
         _release(fds)
+        if any(r == _SELLER_RES for r, _ in fds):
+            _default()._seller_resume(job)
     log(f'{job}: 끝 (코드 {code}, {int(time.monotonic() - t0)}초)')
     if code != 0 and os.environ.get('AX_DRY') != '1' and job_info(job).get('notify_fail'):
         kakao(f"[AX] 작업 실패: {job} (코드 {code}, {int(time.monotonic() - t0)}초). 콘솔 '자동 작업' 탭에서 기록을 확인하세요.")
@@ -425,7 +450,8 @@ class AxLock:
         name = res[len('profile:'):]
         if name.startswith('acct-'):
             acct = name[len('acct-'):]
-            cands = {LOGIN_DIRS[acct]} | {str(self.paths.root / _LINKS[k]) for k, a in ACCOUNT_OF.items() if a == acct}
+            cands = {LOGIN_DIRS[acct]} | {str(self.paths.root / _LINKS[k]) for k, a in ACCOUNT_OF.items()
+                                          if a == acct and k in _LINKS}
         else:
             path = str(self.paths.root / 'ax-console' / 'data' / 'browser-scratch') if name == 'scratch' else PROFILES.get(name)
             cands = {path} if path else set()
@@ -445,7 +471,7 @@ class AxLock:
         holder = {'job': job, 'pid': os.getpid(), 'since': _now()}
         wfile = self.paths.lock_dir / 'waiting' / f'{os.getpid()}-{threading.get_ident()}.json'
         wfile.parent.mkdir(parents=True, exist_ok=True)
-        t0, said = time.monotonic(), False
+        t0, said, got_all = time.monotonic(), False, False
         try:
             while True:
                 if check_stop:
@@ -455,6 +481,9 @@ class AxLock:
                     for res in sorted(resources):
                         if self._profile_busy_outside(res) and not self.holder_of(res):
                             busy = f'{res}(잠금 밖 프로세스)'
+                            # Seller 앱이 개인 크롬을 쥐고 있으면 발행 동안 멈춘다(2026-11-13 사용자 지정)
+                            if res == _SELLER_RES and _seller('pause', str(self.paths.lock_dir), job=job, log=self.log):
+                                time.sleep(3)
                             break
                         fd = self._try(res, holder)
                         if fd is None:
@@ -474,6 +503,10 @@ class AxLock:
                     except BaseException:
                         self._release(got)
                         raise
+                    got_all = True
+                    # 개인 발행 동안 Seller 작업 엔진 일시정지 표시(2026-11-14 사용자 선택: 엔진만 멈춤)
+                    if _SELLER_RES in resources:
+                        _seller('pause', str(self.paths.lock_dir), job=job, log=self.log)
                     return got
                 self._release(got)
                 if not said:
@@ -491,6 +524,13 @@ class AxLock:
                 wfile.unlink()
             except OSError:
                 pass
+            if _SELLER_RES in resources and not got_all:   # 기다리다 포기했을 때만(잡았으면 놓을 때 hold/_release 쪽에서)
+                self._seller_resume(job)
+
+    def _seller_resume(self, job):
+        """멈춰 둔 Seller 앱 서버를 개인 발행이 다 끝났으면 다시 켠다."""
+        _seller('resume_if_idle', str(self.paths.lock_dir), str(self.paths.lock_dir / f'{_safe(_SELLER_RES)}.json'),
+                job=job, log=self.log)
 
     @contextmanager
     def hold(self, resources, job, wait=2400, check_stop=True):
@@ -499,6 +539,8 @@ class AxLock:
             yield
         finally:
             self._release(fds)
+            if any(r == _SELLER_RES for r, _ in fds):
+                self._seller_resume(job)
 
     def set_skip(self, job, date, reason='', by='명령줄'):
         """그 날짜에 그 작업의 실행을 한 번 건너뛴다(그날 첫 실행이 건너뛰고 기록은 지워진다)."""
