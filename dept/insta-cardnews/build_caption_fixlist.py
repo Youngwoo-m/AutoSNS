@@ -14,6 +14,7 @@ ig_caption_restore.py 가 채워 넣지만 코드→캡션 매핑 파일을 사�
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -52,6 +53,21 @@ def caption_for(code, recorded):
     return cap, f"기록 {hit.get('at', '')}"
 
 
+def _kill_profile_chrome():
+    """멈춘 시도가 남긴, 인스타 프로필(chrome-profile-insta)을 쓰는 크롬만 끈다."""
+    if os.name != "nt":
+        return
+    import subprocess
+    from common import PROFILE_DIR
+    ps = ("Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*" + PROFILE_DIR.replace("'", "''")
+          + "*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }")
+    try:
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps], timeout=60,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def main(argv):
     days = int(argv[0]) if argv and argv[0].isdigit() else 14
     out = next((a for a in argv if a.endswith(".json")), "captions_auto.json")
@@ -64,7 +80,26 @@ def main(argv):
     log(f"캡션 기록 {len(recorded)}건 보유")
     since = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
 
-    d = build_driver(headless=False)
+    # 2026-11-11 07:00: 크롬이 세션 생성에서 120초 응답 없이 멈춰 작업이 실패했다(12:09 재실행은 정상) → 한 번 더 띄운다
+    try:
+        d = build_driver(headless=False)
+    except Exception as e:  # noqa: BLE001
+        log(f"크롬 시작 실패({type(e).__name__}) — 남은 학과 크롬 정리 후 30초 뒤 다시 시도")
+        _kill_profile_chrome()
+        time.sleep(30)
+        try:
+            d = build_driver(headless=False)
+        except Exception:
+            # 2026-11-14: 다시 시도도 멈춤 → 아침 회차(7시)만 1시간 뒤 한 번 더 예약(재실행은 다시 예약하지 않음)
+            if datetime.now().hour == 7:
+                at = (datetime.now() + timedelta(hours=1)).strftime("%H:%M")
+                tr = (f'"{sys.executable}" "{os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "run_dept.py")}" '
+                      "captionautofix.daily")
+                subprocess.run(["schtasks", "/create", "/f", "/tn", "dept.captionautofix.retry", "/sc", "once",
+                                "/st", at, "/tr", tr], capture_output=True,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                log(f"크롬 두 번 실패 — {at} 에 다시 실행 예약")
+            raise
     d.set_script_timeout(60)
     found, skipped = {}, []
     try:
