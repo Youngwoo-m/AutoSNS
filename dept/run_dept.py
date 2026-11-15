@@ -41,7 +41,7 @@ JOBS = {
                         "steps": [S(YT, "run_weekly.py", dry=["run_weekly.py", "--check"])]},
     "ytcareer.weekly": {"name": "진로·퀴즈 시리즈", "times": [(2, "19:00")], "log": (YT, "career_publish.out.log"),
                         "disk": "유튜브진로퀴즈", "steps": [S(YT, "publish_career.py", dry=["publish_career.py", "--dry"])]},
-    "ytshorts.trigger": {"name": "큰 재난 즉시 숏츠 판단", "times": [(None, t) for t in ("08:00", "11:00", "14:00", "17:00", "20:00")],
+    "ytshorts.trigger": {"name": "큰 재난 즉시 숏츠 판단", "times": [(None, t) for t in ("08:15", "11:00", "14:00", "17:00", "20:00")],
                          "log": (YT, "trigger.out.log"), "disk": "유튜브트리거",
                          "steps": [S(YT, "check_trigger.py", dry=["check_trigger.py", "--dry"])]},
     "captionbackfill.daily": {"name": "유튜브 자막 보충", "times": [(None, "17:10")], "log": (YT, "caption_backfill.log"),
