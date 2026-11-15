@@ -1,0 +1,50 @@
+<!-- title: What Is GeoAI, and How Does It Help Disaster Safety? -->
+<!-- labels: GeoAI basics, Disaster safety, GIS -->
+<p>When a heavy rain warning goes out, the first questions are spatial. Which streets flood first? Which slopes might slide? Who lives there, and how far is the nearest shelter? GeoAI is a practical way to answer questions like these faster. This post explains what the term means, what it can and cannot do, and how you can try it with free tools.</p>
+
+<h2>GeoAI in one sentence</h2>
+<p>GeoAI means using artificial intelligence on data that has a location. That data can be satellite and drone images, elevation models, road and building maps, sensor readings, or reports tagged with coordinates. Ordinary AI asks "what is this?" GeoAI also asks "where is it, and what is around it?"</p>
+
+<h2>Why location changes the problem</h2>
+<p>Spatial data has a few habits that general AI tools do not expect.</p>
+<ul>
+<li><strong>Nearby things are related.</strong> Two neighboring hillsides usually share soil, slope and rainfall. A model that treats every pixel or point as independent can look accurate in testing and still fail on a new area.</li>
+<li><strong>Scale matters.</strong> A 30 m grid cell and a 1 m grid cell describe the same slope very differently. The resolution you choose can change the answer.</li>
+<li><strong>Coordinates must line up.</strong> Layers from different sources use different coordinate reference systems. If they are not aligned, the analysis is wrong before it begins.</li>
+</ul>
+<p>Much of the real work in GeoAI is handling these three points carefully, not picking the newest model.</p>
+
+<h2>Where it helps in disaster safety</h2>
+<p>GeoAI supports people who make decisions. It does not replace them. Common uses include:</p>
+<ul>
+<li><strong>Floods:</strong> finding low-lying areas and water surfaces in satellite images, and combining them with elevation to see which roads may be cut off.</li>
+<li><strong>Landslides:</strong> mapping slope, soil and past slide locations to show where field checks should go first.</li>
+<li><strong>Wildfires:</strong> spotting burned areas after a fire and tracking how vegetation recovers.</li>
+<li><strong>Heat waves:</strong> comparing surface temperature with where older residents live, to plan cooling centers and visits.</li>
+</ul>
+<p>In each case the output is a map that helps someone decide where to look, where to send people, and what to check on the ground.</p>
+
+<h2>A simple workflow</h2>
+<ol>
+<li><strong>Ask a clear question.</strong> "Which shelters may be hard to reach during a flood?" is better than "analyze flood risk."</li>
+<li><strong>Collect and align the data.</strong> Download the layers, put them in one coordinate system, and clip them to your area.</li>
+<li><strong>Analyze.</strong> Start with plain GIS steps such as buffers, overlays and slope. Add a machine learning model only when it answers something the simple steps cannot.</li>
+<li><strong>Check the result.</strong> Compare it with past events, field photos or local knowledge. Note where the model is unsure.</li>
+<li><strong>Share it clearly.</strong> Make a map with a legend, the data date and the limits of the analysis.</li>
+</ol>
+
+<h2>What GeoAI cannot do</h2>
+<p>A model is only as good as its data. If past flood records are missing for a neighborhood, the model will not learn that it floods. Results can look precise on a map even when the input was coarse. Treat GeoAI output as a starting point for checking, and always state the data source, its date and its resolution.</p>
+
+<h2>Try it with free tools</h2>
+<ul>
+<li><a href="https://qgis.org/" rel="noopener" target="_blank">QGIS</a>: a free desktop GIS for viewing, aligning and analyzing layers.</li>
+<li><a href="https://www.openstreetmap.org/" rel="noopener" target="_blank">OpenStreetMap</a>: open data on roads, buildings and facilities around the world.</li>
+<li><a href="https://browser.dataspace.copernicus.eu/" rel="noopener" target="_blank">Copernicus Browser</a>: free Sentinel satellite images you can view online.</li>
+</ul>
+<p>A good first exercise: load your town's roads from OpenStreetMap into QGIS, add an elevation layer, and highlight the roads in the lowest areas. That is already a small, useful GeoAI-ready analysis.</p>
+
+<h2>What comes next</h2>
+<p>Later posts will walk through these steps one at a time, from aligning coordinate systems to reading satellite images for flood mapping. The Korean version of this series and more learning materials are on <a href="https://geoai-na.web.app/en/" rel="noopener" target="_blank">GeoAI for Disaster Safety</a>.</p>
+
+<p style="font-size:13px;color:#666">This post was drafted with the help of AI tools and reviewed by the author. Tool features and data portals change over time, so check the official documentation when you practice.</p>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>GeoAI for Disaster Safety | Spatial data and AI for disaster risk work</title>
+<link href="/favicon.ico" rel="icon" sizes="any"/>
+<link href="/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="/apple-touch-icon.png" rel="apple-touch-icon"/>
+<meta content="Plain-language notes on using GIS, spatial data and AI for disaster safety: core GeoAI ideas, hands-on tools, field use for floods, landslides, wildfires and heat waves, and responsible use of generative AI." name="description"/>
+<meta content="GeoAI for Disaster Safety" property="og:title"/>
+<meta content="Plain-language notes on using GIS, spatial data and AI for disaster safety." property="og:description"/>
+<meta content="https://geoai-na.web.app/og.jpg" property="og:image"/>
+<meta content="https://geoai-na.web.app/en/" property="og:url"/>
+<meta content="website" property="og:type"/>
+<meta content="en_US" property="og:locale"/>
+<meta content="ko_KR" property="og:locale:alternate"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<link href="https://geoai-na.web.app/en/" rel="canonical"/>
+<link href="https://geoai-na.web.app/" hreflang="ko" rel="alternate"/>
+<link href="https://geoai-na.web.app/en/" hreflang="en" rel="alternate"/>
+<link href="https://geoai-na.web.app/en/" hreflang="x-default" rel="alternate"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --ink:#16212e; --muted:#5b6b7d;
+    --line:#e2e8f0; --brand:#0e5a6b; --brand-deep:#0b1c3a; --accent:#7fd3e0;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4;
+      --line:#233040; --brand:#7fd3e0; --brand-deep:#0b1c3a; --accent:#7fd3e0;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d141c; --card:#141d28; --ink:#e8eef5; --muted:#9bb0c4;
+    --line:#233040; --brand:#7fd3e0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    line-height:1.65;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:0 16px}
+  a{color:inherit}
+  nav.site-nav{display:flex; flex-wrap:wrap; gap:10px 18px; max-width:960px; margin:auto; padding:16px}
+  nav.site-nav a{font-size:15px; font-weight:700; text-decoration:none}
+  nav.site-nav a.lang{margin-left:auto; color:var(--brand)}
+  header{
+    background:linear-gradient(135deg,#0b1c3a 0%,#123a5e 60%,#0e5a6b 100%);
+    color:#fff; padding:56px 0 48px; text-align:center;
+  }
+  header img.logo{width:96px; height:96px; border-radius:50%; background:#fff; border:3px solid #7fd3e0; display:block; margin:0 auto 14px}
+  header h1{font-size:clamp(28px,6vw,42px); margin:0 0 10px; letter-spacing:-.02em}
+  header p{margin:0 auto; max-width:620px; font-size:clamp(15px,2.6vw,18px); opacity:.88}
+  section{padding:44px 0 8px}
+  h2{font-size:clamp(20px,4.6vw,25px); margin:0 0 6px; letter-spacing:-.01em}
+  .sub{color:var(--muted); margin:0 0 22px; font-size:15px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px}
+  .card{display:block; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 16px; text-decoration:none; transition:border-color .15s}
+  a.card:hover{border-color:var(--brand)}
+  .card h3{margin:0 0 6px; font-size:17px; color:var(--brand)}
+  .card p{margin:0; color:var(--muted); font-size:14.5px}
+  .tag{display:inline-block; font-size:12px; font-weight:700; color:var(--brand); border:1px solid var(--line); border-radius:999px; padding:1px 9px; margin-top:10px}
+  .note{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:10px; padding:14px 16px; color:var(--muted); font-size:14.5px}
+  .note strong{color:var(--ink)}
+  footer{margin-top:48px; padding:28px 0 36px; border-top:1px solid var(--line); color:var(--muted); font-size:14px; text-align:center}
+  footer a{margin:0 8px}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"WebSite","@id":"https://geoai-na.web.app/en/#site","url":"https://geoai-na.web.app/en/","name":"GeoAI for Disaster Safety","inLanguage":"en","description":"Plain-language notes on using GIS, spatial data and AI for disaster safety.","publisher":{"@id":"https://geoai-na.web.app/#author"}},
+{"@type":"Person","@id":"https://geoai-na.web.app/#author","name":"GeoAI for Disaster Safety","url":"https://geoai-na.web.app/","sameAs":["https://geoai-safety.blogspot.com/","https://geoaina.blogspot.com/","https://www.youtube.com/@geoai-safety"]}
+]}
+</script>
+<!-- Google Analytics 4 -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-ZJHFVZ6PP5"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-ZJHFVZ6PP5');</script>
+<script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9090348634380226"></script>
+</head>
+<body>
+<nav aria-label="Site menu" class="site-nav">
+  <a href="/en/">Home</a>
+  <a href="https://geoai-safety.blogspot.com/" rel="noopener" target="_blank">English blog</a>
+  <a href="/ai-education/" hreflang="ko">AI lessons (Korean)</a>
+  <a href="/about/" hreflang="ko">About (Korean)</a>
+  <a class="lang" href="/" hreflang="ko" lang="ko">한국어</a>
+</nav>
+<header>
+  <div class="wrap">
+    <img alt="GEOPANDA logo" class="logo" height="96" src="/geopanda.png" width="96"/>
+    <h1>GeoAI for Disaster Safety</h1>
+    <p>Plain-language notes on using spatial data, GIS and AI in disaster risk work, written by an educator in Korea.</p>
+  </div>
+</header>
+<main class="wrap">
+<section>
+  <h2>What we cover</h2>
+  <p class="sub">From core ideas to the tools you actually open. Five topics.</p>
+  <div class="grid">
+    <div class="card"><h3>GeoAI concepts and practice</h3><p>The basic ideas behind spatial AI, with step-by-step exercises you can follow.</p></div>
+    <div class="card"><h3>GIS tools</h3><p>Working with QGIS, Python and open data, in real projects.</p></div>
+    <div class="card"><h3>Disaster field use</h3><p>Reading floods, landslides, wildfires and heat waves through spatial data.</p></div>
+    <div class="card"><h3>Using generative AI</h3><p>Practical tips for work, and the lines you should not cross.</p></div>
+    <div class="card"><h3>Emergency drill paperwork</h3><p>How Korean safety drill documents are drafted and reviewed.</p></div>
+  </div>
+</section>
+<section>
+  <h2>Read in English</h2>
+  <p class="sub">New English articles go to the English blog first.</p>
+  <div class="grid">
+    <a class="card" href="https://geoai-safety.blogspot.com/" rel="noopener" target="_blank"><h3>GeoAI for Disaster Safety blog →</h3><p>English articles on GeoAI concepts and disaster safety, starting with an introduction to GeoAI.</p><span class="tag">English</span></a>
+    <a class="card" href="https://www.youtube.com/@geoai-safety" rel="noopener" target="_blank"><h3>YouTube @geoai-safety →</h3><p>Short videos on spatial data and disaster safety.</p><span class="tag">Korean audio</span></a>
+  </div>
+</section>
+<section>
+  <h2>Korean materials</h2>
+  <p class="sub">These pages are written in Korean. Your browser's translate feature works well on them.</p>
+  <div class="grid">
+    <a class="card" href="/ai-education/" hreflang="ko"><h3>AI lessons for teachers and students →</h3><p>Hands-on AI lessons with prompts and demo videos: a roulette web app, a shuttle bus route map, and an introduction to Claude Code and Codex.</p><span class="tag">Korean</span></a>
+    <a class="card" href="/ai-education/guides/" hreflang="ko"><h3>Study guides →</h3><p>How to ask an AI tool for work and check the result, agent tools, game testing, and HWPX reports.</p><span class="tag">Korean</span></a>
+    <a class="card" href="https://geoaina.blogspot.com/" hreflang="ko" rel="noopener" target="_blank"><h3>Korean blog →</h3><p>The full Korean archive of GeoAI and disaster safety articles.</p><span class="tag">Korean</span></a>
+  </div>
+</section>
+<section>
+  <div class="note"><strong>About this site.</strong> GeoAI for Disaster Safety is an independent educational site run by an individual. It is not an official service of any public agency or tool maker. AI tools help draft and edit the materials, and we mark which parts are confirmed facts, learning examples and suggestions. The site may show Google ads.</div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <a href="/en/">Home</a><a href="/contact/" hreflang="ko">Contact (Korean)</a><a href="/privacy/" hreflang="ko">Privacy (Korean)</a><a href="/" hreflang="ko" lang="ko">한국어</a>
+    <p>GeoAI for Disaster Safety | Independent educational site</p>
+  </div>
+</footer>
+</body>
+</html>
