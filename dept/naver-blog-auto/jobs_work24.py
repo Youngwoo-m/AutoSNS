@@ -236,13 +236,39 @@ def _ask(cfg, prompt, max_tokens=3000, task=None):
     return json.JSONDecoder().raw_decode(text[i:])[0] if i >= 0 else []
 
 
-def _ask_obj(cfg, prompt, max_tokens=4000):
+def _nums_ok(value, source):
+    """요약에 나온 숫자가 모두 원문에 있는지 — 로컬 모형이 숫자를 지어내면 주 모형으로 다시 묻는다(2026-11-15)."""
+    vals = value.values() if isinstance(value, dict) else value if isinstance(value, list) else [value]
+    for v in vals:
+        if isinstance(v, (dict, list)):
+            if not _nums_ok(v, source):
+                return False
+        elif isinstance(v, str):
+            if any(n not in source for n in re.findall(r"\d+", v)):
+                return False
+    return True
+
+
+def _ask_obj(cfg, prompt, max_tokens=4000, task=None):
     """JSON 객체 하나를 돌려받는다(원서접수센터 공고 한 건 요약용)."""
-    text = _llm_text(cfg, prompt, max_tokens)
+    text = _llm_text(cfg, prompt, max_tokens, task)
     i = text.find("{")
     if i < 0:
         raise ValueError("JSON 없음")
     return json.JSONDecoder().raw_decode(text[i:])[0]
+
+
+def _ask_gosi(cfg, prompt):
+    """원서접수센터 공고 한 건 요약: 로컬 Ollama 먼저, 형식이 틀리거나 원문(프롬프트)에 없는 숫자(날짜·인원)를
+    쓰면 주 모형으로 다시 묻는다(2026-11-15 크레딧 절약)."""
+    try:
+        r = _ask_obj(cfg, prompt, task="summary")
+        if isinstance(r, dict) and isinstance(r.get("related"), bool) and _nums_ok(r, prompt):
+            return r
+        log("공고문 요약: 로컬 결과가 검사에 걸려 주 모형으로 다시")
+    except Exception as e:  # noqa: BLE001
+        log(f"공고문 요약 로컬 실패: {type(e).__name__}: {str(e)[:80]}")
+    return _ask_obj(cfg, prompt)
 
 
 def pick(cfg, cands, n=MAX_JOBS):
@@ -296,18 +322,42 @@ def summarize(cfg, jobs):
     # JSON 이 중간에 잘렸다(2026-09-29). 한 묶음이 실패하면 한 번 더 묻는다.
     res = {}
     for k in range(0, len(items), 6):
-        for attempt in (1, 2):
-            try:
-                got = _ask(cfg, SUMMARIZE.format(items="\n\n".join(items[k:k + 6])), 8000)
-                res.update({r.get("id"): r for r in got if isinstance(r, dict)})
-                break
-            except (ValueError, RuntimeError) as e:
-                log(f"요약 {k // 6 + 1}묶음 실패({attempt}/2): {type(e).__name__}: {str(e)[:80]}")
+        batch = jobs[k:k + 6]
+        # 로컬 Ollama 가 먼저 요약하고(2026-11-15 크레딧 절약), 형식·길이가 틀리거나 원문에 없는 숫자를 쓴
+        # 공고만 주 모형으로 다시 요약한다. 요약 문구는 블로그에 그대로 실린다.
+        try:
+            got = _ask(cfg, SUMMARIZE.format(items="\n\n".join(items[k:k + 6])), 8000, task="summary")
+        except (ValueError, RuntimeError) as e:
+            log(f"요약 {k // 6 + 1}묶음 로컬 실패: {type(e).__name__}: {str(e)[:80]}")
+            got = []
+        by_id = {r.get("id"): r for r in got if isinstance(r, dict)}
+        redo = []
+        for i, j in enumerate(batch):
+            r = by_id.get(j["id"])
+            ok = (isinstance(r, dict) and isinstance(r.get("duty"), str) and 0 < len(r["duty"]) <= 60
+                  and isinstance(r.get("quals"), str) and 0 < len(r["quals"]) <= 90
+                  and isinstance(r.get("newbie"), bool) and isinstance(r.get("related"), bool)
+                  and _nums_ok([r["duty"], r["quals"]], items[k + i]))
+            if ok:
+                res[j["id"]] = r
+            else:
+                redo.append(items[k + i])
+        if redo:
+            log(f"요약 {k // 6 + 1}묶음: 로컬 {len(batch) - len(redo)}건 통과, {len(redo)}건 주 모형으로 다시")
+            for attempt in (1, 2):
+                try:
+                    got = _ask(cfg, SUMMARIZE.format(items="\n\n".join(redo)), 8000)
+                    res.update({r.get("id"): r for r in got if isinstance(r, dict)})
+                    break
+                except (ValueError, RuntimeError) as e:
+                    log(f"요약 {k // 6 + 1}묶음 실패({attempt}/2): {type(e).__name__}: {str(e)[:80]}")
     keep = []
     for j in jobs:
         r = res.get(j["id"], {})
-        j["duty"] = (r.get("duty") or "").strip() or "공고 원문 참고"
-        j["quals"] = (r.get("quals") or "").strip() or "공고 원문 참고"
+        # 로컬 모형이 '2 급'·'5 년'처럼 숫자와 단위를 띄어 쓴다(2026-11-15) — 붙여 쓴다
+        unit = lambda t: re.sub(r"(\d) (급|년|개월|명|원|만원|시간|일|종)", r"\1\2", t)
+        j["duty"] = unit((r.get("duty") or "").strip()) or "공고 원문 참고"
+        j["quals"] = unit((r.get("quals") or "").strip()) or "공고 원문 참고"
         # 특급 소방안전관리자는 실무경력이 있어야 딸 수 있는 자격이다. 모델 판정이 실행마다
         # 달라서(9/29 같은 공고가 한 번은 빠지고 한 번은 남음) 규칙으로 뺀다.
         if NO_FIRE.search(j["title"] + j["duty"] + j["quals"]):
@@ -439,7 +489,7 @@ def main():
     # 지자체 공무원 공채(원서접수센터) — 고용24 공무원 공고는 대부분 임기제 경력직이다
     try:
         from jobs_gosi import collect as collect_gosi
-        gov = collect_gosi(lambda prompt: _ask_obj(cfg, prompt), posted=_load_state())
+        gov = collect_gosi(lambda prompt: _ask_gosi(cfg, prompt), posted=_load_state())
     except Exception as e:
         log(f"원서접수센터 수집 건너뜀: {type(e).__name__}: {e}")
         gov = []

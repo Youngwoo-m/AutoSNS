@@ -419,7 +419,7 @@ def client(cfg, task=None):
     base = g.get("base_url") or DEFAULT_BASE
     gws = []
     ol = cfg.get("local_llm") or {}
-    if task and ol.get("enabled", True) and task in ol.get("tasks", ["polish", "keywords", "classify"]):
+    if task and ol.get("enabled", True) and task in ol.get("tasks", ["polish", "keywords", "classify", "summary"]):
         model = ol.get("model", "qwen3.5:9b-32k")
         gws.append((f"로컬 Ollama({model})", _Ollama(model, ol.get("base_url", "http://127.0.0.1:11434"))))
     fr = cfg.get("free_llm") or {}   # 크레딧 절약 규칙: Ollama → OpenRouter 무료 → 주 모형(CLI) 순

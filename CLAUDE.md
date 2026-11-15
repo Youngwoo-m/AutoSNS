@@ -72,7 +72,7 @@ GeoAI 개념 시리즈(`personal/naver-blog-auto/geoai_series.py` — 따라하�
 윤문·틱톡 캡션은 크레딧 절약 규칙(`~/.agents/memory/model-routing-credit-saving.md`)대로 로컬 Ollama(`qwen3.5:9b-32k`, 윤문만)
 → OpenRouter 무료(`inclusionai/ling-3.2-flash:free`, 키는 환경변수 OPENROUTER_API_KEY) → claude CLI → 키 순으로 보낸다
 (`client(cfg, task="polish"|"caption")`, 2026-11-15). 무료 모형은 공개될 글만 받는다. 끄기: `"local_llm"`/`"free_llm": {"enabled": false}`.
-크레딧 절약 배분(2026-11-15): `client(cfg, task=…)` 로 부른다 — `polish`(윤문)·`keywords`(자료사진 검색어, `blog_photo.py`)는
+크레딧 절약 배분(2026-11-15): `client(cfg, task=…)` 로 부른다 — `polish`(윤문)·`keywords`(자료사진 검색어, `blog_photo.py`)·`classify`(채용공고 선별, `jobs_work24.py` `pick()` — 절반 못 고르면 주 모형으로 다시)·`summary`(채용공고·공고문 요약 — 형식·길이·원문에 없는 숫자 검사에 걸린 건만 주 모형으로 다시)는
 Ollama 먼저, `caption`(틱톡 캡션)은 OpenRouter 무료 먼저. 공개 글 본문·대본·사실 확인은 task 없이 주 모형(claude CLI)이 쓴다.
 
 ## 발행
