@@ -1,0 +1,238 @@
+{
+  "series": "재난 유형별 피해 양상과 대응 방안",
+  "date": "2026-11-17",
+  "type": "전기·가스 사고",
+  "angle": "가스 냄새가 날 때 해야 할 일",
+  "ep_no": 2,
+  "visual_mode": "video",
+  "title": "가스 냄새가 날 때, 가장 먼저 할 일 | 재난 대응 #2 전기·가스 사고",
+  "intro": null,
+  "outro": null,
+  "loop": true,
+  "loop_bridge": "그래서 이 사실을 꼭 알아야 합니다. → 불쾌한 냄새가 나면 가스가 새고 있는 것입니다.",
+  "hook_text": "불쾌한 냄새가 나면?\n가스가 새는 중!",
+  "next_episode_text": "이번 주 금요일: 지진",
+  "body_target_seconds": 43,
+  "clip_seconds": 8,
+  "format": "long50",
+  "max_seconds": 52,
+  "tone": "쉬운 낱말 + 합쇼체(~습니다/~합니다)",
+  "style": "3d_real",
+  "style_prefix": {
+    "3d_real": "Style: an isometric miniature diorama of a Korean scene, handcrafted scale-model look with tiny painted figurines, model trees, buildings and vehicles, clearly a miniature and not a real photograph. Tilt-shift effect: top and bottom of the frame softly blurred so the scene reads as a miniature. Natural outdoor light with sky visible, warm highlights and cool shadows, anamorphic lens feel with gentle shallow depth of field, subtle film grain. All walls, signboards, banners, screens and vehicles are plain and unmarked; single continuous shot, no captions or on-screen graphics. Avoid: photorealistic real-world footage, cartoon or video-game CGI, injured people, text, letters, numbers, logos."
+  },
+  "cutaway_text": " Part of the ground is cut away as a clean vertical cross-section revealing the real soil and rock layers underneath, to show what happens below the surface.",
+  "camera_text": {
+    "aerial": " Camera: wide establishing shot from a high drone, slow steady forward glide, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens, steady tripod with a slow gentle push-in; the people and their actions fill a large part of the frame."
+  },
+  "camera_text_image": {
+    "aerial": " Camera: wide establishing shot from a high drone, level horizon.",
+    "eye": " Camera: eye-level medium-wide shot, 35mm lens; the people and their actions fill a large part of the frame."
+  },
+  "prompt_order": "scene_first",
+  "hashtags": {
+    "youtube": [
+      "전기가스사고",
+      "가스누출",
+      "가스냄새",
+      "가스밸브"
+    ],
+    "instagram": [
+      "가스누출",
+      "가스냄새",
+      "가스안전",
+      "겨울난방안전",
+      "가스밸브잠그기"
+    ],
+    "threads": "가스누출",
+    "naver": [
+      "가스누출",
+      "가스냄새",
+      "가스냄새날때",
+      "가스누출대처",
+      "가스안전수칙",
+      "가스밸브잠그기",
+      "LPG누출",
+      "도시가스누출",
+      "가스점검방법",
+      "가스사고예방"
+    ]
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "role": "훅 + 피해 양상",
+      "narration": "불쾌한 냄새가 나면 가스가 새고 있는 것입니다. 작은 스파크에도 불이 붙을 수 있습니다.",
+      "tts_text": "불쾌한 냄새가 나면 가스가 새고 있는 것입니다. 작은 스파크에도 불이 붙을 수 있습니다.",
+      "subtitle": [
+        "불쾌한 냄새는 가스 누출",
+        "스파크로 불이 붙을 수 있음"
+      ],
+      "labels_3d": [
+        "가스 냄새",
+        "스파크"
+      ],
+      "source_quote": [
+        "불쾌한 냄새가 나면 가스가 새고 있는 것입니다.",
+        "스파크에 의해 점화될 수 있으니 전기기구는 절대 조작하지 않습니다."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean woman in her 30s wearing an apron stops stirring a pot, lifts her head and sniffs the air in a small apartment kitchen, on a quiet weekday morning with soft light coming through the window."
+      }
+    },
+    {
+      "id": 2,
+      "role": "피해 특징·위험한 이유",
+      "narration": "LPG는 공기보다 무거워 바닥에 가라앉습니다. 그래서 바닥 쪽 환기를 충분히 해야 합니다.",
+      "tts_text": "엘피지는 공기보다 무거워 바닥에 가라앉습니다. 그래서 바닥 쪽 환기를 충분히 해야 합니다.",
+      "subtitle": [
+        "LPG는 공기보다 무거움",
+        "바닥에 가라앉는 가스"
+      ],
+      "labels_3d": [
+        "LPG",
+        "바닥 환기"
+      ],
+      "source_quote": [
+        "LPG의 경우에는 공기보다 무겁기 때문에 바닥으로 가라앉으므로 바닥의 환기를 충분히 해야 합니다."
+      ],
+      "media": "diorama",
+      "camera": "eye",
+      "cutaway": false,
+      "diorama_prompt": "A finely detailed miniature model of an apartment kitchen built on a workbench, with the front wall cut away so the inside is visible. Pale translucent mist leaks from beside the small stove, slowly sinks and spreads along the floor while the air near the ceiling stays clear.",
+      "gauge": "",
+      "video_prompt": {
+        "3d_real": "A small miniature apartment kitchen on a workbench with the front wall cut away, where pale translucent mist slowly sinks from beside the stove and spreads along the floor, in bright soft morning light."
+      }
+    },
+    {
+      "id": 3,
+      "role": "미리 지킬 일·예방",
+      "narration": "가스를 쓰기 전에 냄새로 확인합니다. 비눗물을 바른 호스 연결 부분에 거품이 생기면 샙니다.",
+      "tts_text": "가스를 쓰기 전에 냄새로 확인합니다. 비눗물을 바른 호스 연결 부분에 거품이 생기면 샙니다.",
+      "subtitle": [
+        "쓰기 전 냄새로 확인",
+        "비눗물 거품은 누출 신호"
+      ],
+      "labels_3d": [
+        "비눗물",
+        "호스 연결부"
+      ],
+      "source_quote": [
+        "가스 사용 시 우선 냄새로 누출여부를 확인합니다.",
+        "세제를 물과 섞어서 붓에 묻혀서 호스의 연결부위에 바르고, 이때 비누방울이 생기면 누출이 발생하는 것입니다."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean father in his 40s in a casual shirt brushes soapy water onto the connection of a gas hose beside the stove, in a tidy apartment kitchen on a calm afternoon with warm light."
+      }
+    },
+    {
+      "id": 4,
+      "role": "일이 났을 때 행동",
+      "narration": "먼저 밸브를 잠그고 창문과 출입문을 엽니다. 스파크가 날 수 있어 전기기구는 만지지 않습니다.",
+      "tts_text": "먼저 밸브를 잠그고 창문과 출입문을 엽니다. 스파크가 날 수 있어 전기기구는 만지지 않습니다.",
+      "subtitle": [
+        "밸브를 먼저 잠그기",
+        "창문·출입문 열어 환기"
+      ],
+      "labels_3d": [
+        "밸브 잠금",
+        "창문 열기"
+      ],
+      "source_quote": [
+        "먼저 코크와 중간밸브, 용기밸브를 잠그고 창문과 출입문을 열어 환기를 시킵니다.",
+        "스파크에 의해 점화될 수 있으니 전기기구는 절대 조작하지 않습니다."
+      ],
+      "media": "image",
+      "camera": "eye",
+      "cutaway": false,
+      "video_prompt": {
+        "3d_real": "A Korean woman in her 40s in a cardigan turns the handle of the gas valve on the pipe beside the stove with one hand, in a bright apartment kitchen on a weekday morning with the window beside her."
+      }
+    },
+    {
+      "id": 5,
+      "role": "대피",
+      "narration": "내 위치에서 사고 발생 지역 쪽으로 바람이 불 때는 바람이 불어오는 방향으로 대피합니다.",
+      "tts_text": "내 위치에서 사고 발생 지역 쪽으로 바람이 불 때는 바람이 불어오는 방향으로 대피합니다.",
+      "subtitle": [
+        "사고 지역 쪽으로 바람이 불면",
+        "바람이 불어오는 방향으로"
+      ],
+      "labels_3d": [
+        "바람 방향",
+        "대피"
+      ],
+      "source_quote": [
+        "내 위치를 중심으로 사고발생지역쪽으로 바람이 불 때는 바람이 불어오는 방향으로 대피합니다."
+      ],
+      "media": "video",
+      "camera": "eye",
+      "cutaway": false,
+      "shots": [
+        {
+          "seconds": 4,
+          "camera": "eye",
+          "prompt": "Korean residents of different ages in light autumn jackets hurry toward the camera away from an apartment block, walking into a steady wind that blows their jackets back toward the block, on a clear morning."
+        },
+        {
+          "seconds": 4,
+          "camera": "eye",
+          "prompt": "Korean residents hurry onto a wide open grass playground at a school, gathering together in a safe open space far from the apartment block, on a clear morning with soft light."
+        }
+      ],
+      "video_prompt": {
+        "3d_real": "Korean residents of different ages in light autumn jackets hurry toward a wide open playground, moving into a steady wind away from an apartment block, on a clear autumn morning with soft light."
+      }
+    },
+    {
+      "id": 6,
+      "media": "card",
+      "narration": "정리합니다. 밸브를 잠그고 환기하며 전기는 만지지 않습니다. 그래서 이 사실을 꼭 알아야 합니다.",
+      "tts_text": "정리합니다. 밸브를 잠그고 환기하며 전기는 만지지 않습니다. 그래서 이 사실을 꼭 알아야 합니다.",
+      "subtitle": [],
+      "labels_3d": [],
+      "source_quote": [],
+      "video_prompt": {
+        "3d_real": "(정리 카드)"
+      },
+      "card": {
+        "title": "오늘의 핵심",
+        "items": [
+          "밸브부터 잠그기",
+          "창문 열어 환기하기",
+          "전기기구 만지지 않기"
+        ]
+      },
+      "cutaway": false,
+      "camera": "eye"
+    }
+  ],
+  "sources": [
+    "국민안전24 국민행동요령 — 전기·가스 사고 (source.md)"
+  ],
+  "upload": {
+    "description_notes": "출처: 행정안전부 국민안전24 국민행동요령(전기·가스 사고) / 배경 영상은 AI로 생성한 3D 재현 영상입니다.",
+    "contains_synthetic_media": true,
+    "tags": [
+      "가스 냄새",
+      "가스 누출",
+      "가스 냄새 대처",
+      "가스 누출 대처법",
+      "LPG 도시가스",
+      "가스 밸브 잠그기",
+      "가스 안전",
+      "재난 대응",
+      "세명대학교",
+      "재난안전학과",
+      "쇼츠"
+    ]
+  }
+}

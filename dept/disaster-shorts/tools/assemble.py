@@ -360,6 +360,8 @@ def spans(subs, total):
 def hook_lines(sc):
     """첫 2.6초 화면 훅(2줄 이내). script.hook_text(문자열·목록) 없으면 제목의 '|' 앞부분."""
     h = sc.get("hook_text")
+    if isinstance(h, str) and "\n" in h:   # 대본이 줄바꿈 문자열로 주는 경우(2026-11-16 실패 사례)
+        h = h.split("\n")
     if isinstance(h, list):
         return [clean(x) for x in h if clean(x)][:2]
     t = clean(h or (sc.get("title") or "").split("|")[0]).strip()
