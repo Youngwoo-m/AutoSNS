@@ -165,6 +165,9 @@ def main():
     no = a.tistory_url.rstrip("/").split("/")[-1]
     workdir = os.path.join(HERE, "logs", f"blogger_cross_{no}")
     import geoai_blogger as gb
+    if gb.crosspost_paused():
+        print(json.dumps({"status": "skipped", "url": "", "message": gb.CROSSPOST_PAUSED_MSG}, ensure_ascii=False))
+        return 0
     try:
         if a.go:
             if gb.gcfg().get("enabled") is False:

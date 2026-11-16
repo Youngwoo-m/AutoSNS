@@ -42,6 +42,9 @@ def main():
 
     import geoai_blogger as gb
     from shared.axlock import Timeout, hold, stopped
+    if gb.crosspost_paused():
+        print(json.dumps({"status": "skipped", "url": "", "message": gb.CROSSPOST_PAUSED_MSG}, ensure_ascii=False))
+        return 0
     if not a.go:
         r = gb.publish(a.title, body, labels, dry_run=True)
         return out("dry", message=f"라벨: {', '.join(r.get('labels', []))}")

@@ -58,6 +58,18 @@ def service():
     return build("blogger", "v3", credentials=creds(), cache_discovery=False)
 
 
+def crosspost_paused(cfg=None):
+    """티스토리·네이버에 올리는 글을 개인 Blogger 에 똑같이 올리는 교차 게시를 멈췄는가.
+
+    2026-11-16 애드센스 거절(복제 콘텐츠 추정)로 껐다가 2026-11-17 사용자가 다시 켰다.
+    끄려면 config.json geoai.blogger_crosspost 를 false 로(값이 없으면 켜진 것으로 본다)."""
+    return not bool(gcfg(cfg).get("blogger_crosspost", True))
+
+
+CROSSPOST_PAUSED_MSG = ("개인 Blogger 교차 게시 꺼짐(config.json geoai.blogger_crosspost: false) "
+                        "— 실패가 아니므로 다시 올리지 않는다")
+
+
 def blog_id(cfg=None):
     bid = str(gcfg(cfg).get("blog_id", "")).strip()
     if not bid:

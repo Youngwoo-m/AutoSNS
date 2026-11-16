@@ -117,6 +117,9 @@ def main():
     sys.path.insert(0, str(LEAF))
     import geoai_blogger as gb
     from shared.axlock import hold, stopped
+    if gb.crosspost_paused():
+        print(json.dumps({"status": "skipped", "url": "", "message": gb.CROSSPOST_PAUSED_MSG}, ensure_ascii=False))
+        return 0
     os.environ["TZ"] = "Asia/Seoul"
     if hasattr(time, "tzset"):
         time.tzset()
