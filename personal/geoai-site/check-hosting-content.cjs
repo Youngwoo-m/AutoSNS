@@ -24,5 +24,17 @@ if(fs.existsSync(course)){
   for(const m of content.matchAll(/(?:src|poster)="(\.\.\/videos28\/[^"?]+)"/g))if(!fs.existsSync(path.resolve(path.dirname(game),m[1])))errors.push('Missing game asset: '+m[1]);
  }
 }
+
+// This course is published with static examples only, per the user's removal request.
+function checkStaticCourse(dir){
+ for(const ent of fs.readdirSync(dir,{withFileTypes:true})){
+  const file=path.join(dir,ent.name);
+  if(ent.isDirectory())checkStaticCourse(file);
+  else if(/\.(mp4|webm|mov|m4v)$/i.test(ent.name))errors.push('Video publication disabled: '+path.relative(root,file));
+  else if(ent.name.endsWith('.html')&&/<video\b|data-play=|\.mp4["']/i.test(fs.readFileSync(file,'utf8')))errors.push('Unexpected video player or URL: '+path.relative(root,file));
+ }
+}
+if(fs.existsSync(path.join(root,'ai-education')))checkStaticCourse(path.join(root,'ai-education'));
+
 if(errors.length){console.error('Hosting publication stopped: required content is incomplete.\n'+errors.join('\n'));process.exitCode=1;}
 else console.log('Hosting content check passed: required pages, 14 prompts and referenced demonstration assets are present.');
