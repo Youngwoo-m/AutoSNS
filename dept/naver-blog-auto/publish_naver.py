@@ -222,9 +222,22 @@ def set_clipboard_image(image_path):
         f"$img=[System.Drawing.Image]::FromFile('{image_path}');"
         "[System.Windows.Forms.Clipboard]::SetImage($img);"
     )
+    # 창 없이 띄운다 — PowerShell 콘솔이 잠깐 뜨며 크롬 창의 포커스를 가져가면 에디터가 키 입력을 받지 않았다(2026-11-17)
     r = subprocess.run(["powershell", "-sta", "-NoProfile", "-Command", ps],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     return r.returncode == 0
+
+
+def _keep_focus(driver):
+    """크롬 창이 OS 포커스를 잃어도 페이지는 포커스를 가진 것처럼 둔다(CDP).
+
+    2026-11-12·11-14·11-17: 상단 배너를 클립보드로 붙여넣은 뒤 키 입력이 에디터에 닿지 않아
+    요약·인사·첫 블록이 빠지고 발행이 멈췄다. 클립보드용 PowerShell 이 창 포커스를 가져간 탓으로 본다."""
+    for cmd, arg in (("Emulation.setFocusEmulationEnabled", {"enabled": True}), ("Page.bringToFront", {})):
+        try:
+            driver.execute_cdp_cmd(cmd, arg)
+        except Exception:
+            pass
 
 
 def insert_sources_links(driver, sources):
@@ -376,6 +389,7 @@ def _wait_typable(driver, limit=40):
             return True
         ActionChains(driver).send_keys(Keys.ESCAPE).perform()   # 사진 편집·라이브러리 같은 층이 키를 가로채면 닫는다
         time.sleep(2)
+        _keep_focus(driver)
         _focus_end(driver)
     log(f"⚠ {limit}초 동안 에디터가 키 입력을 받지 않음 — 그대로 진행")
     return False
@@ -454,6 +468,7 @@ def type_structured_post(driver, data):
     body_el = WebDriverWait(driver, 15).until(
         EC.presence_of_element_located(
             (By.CSS_SELECTOR, ".se-component.se-text .se-text-paragraph")))
+    _keep_focus(driver)
     ActionChains(driver).move_to_element(body_el).click().perform()
     time.sleep(0.4)
     # 상단 배너가 들어갔으면 첫 문단은 배너 위의 빈 줄일 수 있고, 붙여넣기 뒤 포커스가
@@ -533,6 +548,7 @@ def insert_image_top(driver, image_path):
     """
     if not image_path or not os.path.exists(image_path):
         return False
+    _keep_focus(driver)
     # 본문 첫 단락에 커서 두기
     try:
         body = driver.find_element(
