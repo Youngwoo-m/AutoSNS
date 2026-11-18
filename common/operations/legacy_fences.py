@@ -87,6 +87,9 @@ _register('dept', 'claude', 'dept-crosspost', ('claude.dept-crosspost',), source
           unregistered=True, reason='학과 교차 발행 클로드 작업(Windows dept/run_dept.py)')
 _register('dept', 'blogger', 'dept-blogger-post-cli', ('claude.dept-crosspost',), source='launchd',
           unregistered=True, reason='학과 교차 발행 — 관리 OAuth 발행 범위 미개방')
+# 2026-11-18 영어 블로그(geoai-safety) GeoAI 시리즈 하루 1편(personal/naver-blog-auto/english_series.py).
+_register('personal', 'blogger', 'english.daily', ('english.daily',), source='launchd', unregistered=True,
+          reason='영어 블로그 단일 발행(Windows run_personal.py english-daily)')
 # 2026-11-07 기출 비축 작성(claude.<종목>-stock). 발행 없음 — 발행 채널 경로(_CLAUDE_KEYS)에는 넣지 않는다.
 for _key in ('civil-stock', 'building-stock', 'safety-stock', 'survey-stock'):
     _register('personal', 'claude', _key, ('claude.' + _key,), source='launchd', unregistered=True,

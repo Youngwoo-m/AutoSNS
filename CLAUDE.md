@@ -75,6 +75,14 @@ GeoAI 개념 시리즈(`personal/naver-blog-auto/geoai_series.py` — 따라하�
 크레딧 절약 배분(2026-11-15): `client(cfg, task=…)` 로 부른다 — `polish`(윤문)·`keywords`(자료사진 검색어, `blog_photo.py`)·`classify`(채용공고 선별, `jobs_work24.py` `pick()` — 절반 못 고르면 주 모형으로 다시)·`summary`(채용공고·공고문 요약 — 형식·길이·원문에 없는 숫자 검사에 걸린 건만 주 모형으로 다시)는
 Ollama 먼저, `caption`(틱톡 캡션)은 OpenRouter 무료 먼저. 공개 글 본문·대본·사실 확인은 task 없이 주 모형(claude CLI)이 쓴다.
 
+## 영어 블로그 (2026-11-18 사용자 지정)
+
+해외 이용자용 영어 블로그 GeoAI for Disaster Safety(`https://geoai-safety.blogspot.com/`, blog ID 3154612862980198700,
+개인 GeoAI 블로거와 같은 구글 계정·토큰)에 `personal/naver-blog-auto/english_series.py` 가 하루 1편(12:30, `run_personal.py english-daily`)을 올린다.
+주제 목록(TOPICS)은 순서대로 나가며, 본문은 공개 글이라 주 모형(claude CLI)이 쓴다. 발행 전 검사: <h2> 4개 이상, 800~1800단어,
+허용 도메인 밖 링크 제거, 통계·출처 불명 연구처럼 보이는 문장이 있으면 다시 쓰기(3회 실패 시 발행 안 함). 하루에 이미 글이 있으면 건너뛴다.
+시험: `--dry`(english/drafts/ 에 저장), 목록: `--plan`. 한국어 윤문 단계는 영어 글에 적용하지 않는다. 홈페이지 영어판은 `personal/geoai-site/en/`.
+
 ## 발행
 
 글·영상 발행 절차는 `.claude/skills/sns-publish-post` 를 따른다.
