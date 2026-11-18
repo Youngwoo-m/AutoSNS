@@ -81,6 +81,8 @@ Ollama 먼저, `caption`(틱톡 캡션)은 OpenRouter 무료 먼저. 공개 글 
 개인 GeoAI 블로거와 같은 구글 계정·토큰)에 `personal/naver-blog-auto/english_series.py` 가 하루 1편(12:30, `run_personal.py english-daily`)을 올린다.
 주제 목록(TOPICS)은 순서대로 나가며, 본문은 공개 글이라 주 모형(claude CLI)이 쓴다. 발행 전 검사: <h2> 4개 이상, 800~1800단어,
 허용 도메인 밖 링크 제거, 통계·출처 불명 연구처럼 보이는 문장이 있으면 다시 쓰기(3회 실패 시 발행 안 함). 하루에 이미 글이 있으면 건너뛴다.
+같은 블로그에는 다른 작업이 올린 번역 글 44편(2026-11-15)과 매일 "Whitebox QGIS Practice"가 있어, 주제는 이들과 겹치지 않는 것만 두고
+하루 1편 검사도 이 시리즈 글(english_state.json)만 센다. 주제를 더할 때는 블로그 제목과 먼저 대조한다.
 시험: `--dry`(english/drafts/ 에 저장), 목록: `--plan`. 한국어 윤문 단계는 영어 글에 적용하지 않는다. 홈페이지 영어판은 `personal/geoai-site/en/`.
 
 ## 발행

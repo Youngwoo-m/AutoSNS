@@ -24,65 +24,63 @@ SITE_EN = "https://geoai-na.web.app/en/"
 
 # (slug, title, angle, labels). Titles start with the words people search for.
 TOPICS = [
+    # 2026-11-18: the blog already had 44 translated GeoAI posts (2026-11-15) plus a daily Whitebox practice post
+    # from another job. Topics that overlapped them (CRS, QGIS start, GeoPandas, Earth Engine, flood/landslide/
+    # wildfire maps, shelters, DEM, open data, drones, generative AI coding, heat island) were removed.
+    # Check the blog's titles before adding a topic here.
     ("what-is-geoai", "What Is GeoAI, and How Does It Help Disaster Safety?",
      "Already published by hand on 2026-11-15.", ["GeoAI basics"]),
     ("gis-vs-geoai", "GIS vs GeoAI: What Changes When Maps Start Learning",
      "Rule-based GIS analysis vs learned models; what each is good at; how they are combined in practice.",
      ["GeoAI basics", "GIS"]),
-    ("crs-basics", "Coordinate Reference Systems Explained: Why Your Layers Don't Line Up",
-     "Geographic vs projected CRS, EPSG codes, symptoms of a CRS mismatch, a step-by-step fix in QGIS.",
-     ["GIS", "QGIS"]),
-    ("satellite-basics", "Satellite Imagery Basics: Resolution, Bands, Optical vs SAR",
-     "Spatial, temporal and spectral resolution; optical vs radar (clouds, night); which to use in a disaster.",
-     ["Remote sensing", "Disaster safety"]),
-    ("ndvi-ndwi", "NDVI and NDWI: What Spectral Indices Actually Show",
-     "Reflectance idea behind indices; NDVI, NDWI, NBR; reading burn scars, drought and flooding; common mistakes.",
+    ("risk-equation", "Hazard, Exposure and Vulnerability: The Risk Equation Behind Disaster Maps",
+     "What each term means, how each becomes a map layer, why a hazard map alone is not a risk map, simple overlay logic.",
+     ["Disaster safety", "GeoAI basics"]),
+    ("satellite-basics", "Satellite Imagery Basics: Resolution, Bands and Revisit Time",
+     "Spatial, temporal and spectral resolution; how to read a band list; matching image choice to the question. Do not go deep into SAR flood mapping (covered elsewhere).",
      ["Remote sensing", "GeoAI basics"]),
-    ("qgis-first-day", "QGIS for Beginners: Your First Hour With a Free GIS",
-     "Install, layers, attribute table, CRS; a first exercise with OpenStreetMap roads and an elevation layer.",
-     ["QGIS", "GIS"]),
-    ("flood-mapping", "Flood Mapping With Free Satellite Data: A Beginner's Workflow",
-     "Before/after images, water detection with SAR or NDWI, overlay with roads and buildings, checking the result.",
-     ["Floods", "Remote sensing"]),
-    ("landslide-susceptibility", "Landslide Susceptibility Maps: How They Are Built and How to Read Them",
-     "Factors (slope, soil, land cover, rainfall), weighting vs machine learning, validation with past events, limits.",
-     ["Landslides", "GeoAI basics"]),
-    ("wildfire-burn-scars", "Mapping Wildfire Burn Scars With dNBR",
-     "What dNBR measures, choosing image dates, thresholds as a starting point, field checks, recovery monitoring.",
-     ["Wildfires", "Remote sensing"]),
-    ("heat-vulnerability", "Heat Wave Vulnerability Maps: Combining Temperature and People",
-     "Land surface temperature vs air temperature, who is vulnerable, overlaying population data, planning cooling centers.",
-     ["Heat waves", "Disaster safety"]),
-    ("geopandas-start", "Spatial Analysis in Python: Getting Started With GeoPandas",
-     "GeoDataFrame idea, reading files, reprojecting, spatial joins, with short code snippets; when code beats clicking.",
-     ["Python", "GIS"]),
-    ("earth-engine", "Google Earth Engine for Beginners: Satellite Analysis Without Downloads",
-     "Collections, filters and reducers as a way of thinking; what Earth Engine is good at; access and terms of use.",
-     ["Remote sensing", "Tools"]),
+    ("ndvi-ndwi", "NDVI and NDWI: What Spectral Indices Actually Show",
+     "Reflectance idea behind indices; NDVI and NDWI; reading vegetation stress and surface water; common mistakes. Mention dNBR only in one line (covered elsewhere).",
+     ["Remote sensing", "GeoAI basics"]),
     ("training-data", "Training Data for GeoAI: Labeling Imagery Without Fooling Yourself",
-     "Points vs polygons vs masks, class imbalance, regional bias, spatial leakage between train and test.",
+     "Points vs polygons vs masks, class imbalance, regional bias, label noise, documenting how labels were made.",
      ["GeoAI basics", "Machine learning"]),
     ("spatial-validation", "Spatial Cross-Validation: Why Random Splits Overstate Accuracy",
-     "Spatial autocorrelation, block or region splits, honest error reporting for maps used in decisions.",
+     "Nearby samples leak information, block or region splits, honest error reporting for maps used in decisions. Do not re-explain the confusion matrix (covered elsewhere).",
      ["Machine learning", "GeoAI basics"]),
-    ("evacuation-access", "Shelter Accessibility Analysis: Who Can Reach Safety in Time?",
-     "Network analysis on roads, walking time catchments, people with limited mobility, flooded road scenarios.",
-     ["Disaster safety", "GIS"]),
-    ("open-data-sources", "Free Geospatial Data Sources for Disaster Risk Work",
-     "Types of open data (imagery, elevation, OpenStreetMap, population grids, hazard catalogs) and how to check license and date.",
-     ["Open data", "Tools"]),
-    ("dem-basics", "Elevation Models (DEM) Explained: Slope, Flow and Low-Lying Areas",
-     "DSM vs DTM, resolution effects, deriving slope and flow accumulation, typical errors near buildings and water.",
-     ["GIS", "Floods"]),
-    ("genai-for-gis", "Using Generative AI for GIS Work: Helpful Uses and Hard Limits",
-     "Writing scripts and explaining errors with AI, checking every result, never trusting AI-made coordinates or facts.",
-     ["Generative AI", "Tools"]),
-    ("maps-that-communicate", "Making Risk Maps People Can Read in an Emergency",
-     "Clear legends, colorblind-safe palettes, data date and limits on the map, one message per map.",
+    ("map-uncertainty", "Showing Uncertainty on Risk Maps: What We Don't Know Matters",
+     "Sources of uncertainty (data, model, scale), ways to show it (classes, hatching, confidence layers, notes), how readers misread precise-looking maps.",
      ["Cartography", "Disaster safety"]),
-    ("drone-mapping", "Drones in Disaster Mapping: What They Add and What to Watch",
-     "Orthomosaics and 3D models after events, ground control, privacy and flight rules, combining with satellite data.",
-     ["Drones", "Disaster safety"]),
+    ("maps-that-communicate", "Making Risk Maps People Can Read in an Emergency",
+     "Clear legends, colorblind-safe palettes, data date and limits on the map, one message per map, print and phone checks.",
+     ["Cartography", "Disaster safety"]),
+    ("building-footprints", "Building Footprints From Imagery: How AI Maps Exposure",
+     "Why building outlines matter for exposure, segmentation idea in plain words, open footprint datasets in general terms, checking errors in dense or rural areas.",
+     ["GeoAI basics", "Exposure data"]),
+    ("critical-infrastructure", "Mapping Critical Infrastructure: Hospitals, Power and Water in a Disaster",
+     "Which facilities count, dependencies between networks, mapping service areas, keeping sensitive locations appropriately general.",
+     ["Disaster safety", "GIS"]),
+    ("tsunami-maps", "Tsunami Inundation Maps: How Coastal Hazard Zones Are Drawn",
+     "Scenario-based modeling in plain words, run-up vs inundation, evacuation zones and signs, limits of a single scenario.",
+     ["Tsunamis", "Disaster safety"]),
+    ("storm-surge", "Storm Surge Explained: How Typhoon Winds Push Water Ashore",
+     "Surge vs tide vs waves, coastal shape and elevation, how surge maps are read, combining with evacuation planning. Avoid repeating typhoon damage prediction (covered elsewhere).",
+     ["Typhoons", "Floods"]),
+    ("drought-from-space", "Drought Monitoring From Space: Soil Moisture and Vegetation Signals",
+     "Types of drought, satellite soil moisture and vegetation anomalies, comparing with a long-term baseline, why one image is not enough.",
+     ["Drought", "Remote sensing"]),
+    ("sea-level-scenarios", "Sea-Level Rise Maps: How to Read the Scenarios Without Panic",
+     "What a scenario is, bathtub maps vs modeled maps, elevation accuracy limits, using these maps for long-term planning only.",
+     ["Climate", "Floods"]),
+    ("volcanic-hazards", "Volcanic Hazard Maps: Lava, Ash and Evacuation Zones",
+     "Different volcanic hazards and their reach, zone maps, ash fall and wind, monitoring with satellites in general terms.",
+     ["Volcanoes", "Disaster safety"]),
+    ("crowdsourced-reports", "Crowdsourced Disaster Reports: Turning Public Posts Into Map Points",
+     "Volunteer reports and social posts as data, location errors, verification steps, privacy and consent, never mapping individuals.",
+     ["Disaster safety", "Open data"]),
+    ("early-warning", "Early Warning Systems: From Sensor Reading to Public Alert",
+     "Monitor, decide, warn, respond; where maps fit in each step; false alarms vs missed events; testing the chain with drills.",
+     ["Disaster safety", "GeoAI basics"]),
 ]
 
 ALLOWED_LINK_DOMAINS = (
@@ -122,7 +120,7 @@ USER = """Write post {n} of the series.
 Title (already set, do not repeat it in the body): {title}
 Angle and must-cover points: {angle}
 
-Recent posts in the series (link ideas, avoid repeating them):
+Posts already on the blog (do not re-explain these topics; a one-line mention is fine):
 {recent}
 
 Next post in the series (if you mention what comes next, use only this): {next_title}"""
@@ -206,7 +204,7 @@ def generate(idx, topic, cfg, recent=()):
     slug, title, angle, labels = topic
     client = _client(cfg)
     user = USER.format(n=idx, title=title, angle=angle,
-                       recent="\n".join(f"- {t}" for t in list(recent)[-10:]) or "(none)",
+                       recent="\n".join(f"- {t}" for t in list(recent)[-60:]) or "(none)",
                        next_title=TOPICS[idx][1] if idx < len(TOPICS) else "(not decided yet - do not announce a topic)")
     feedback = ""
     for attempt in range(1, 4):
@@ -240,10 +238,11 @@ def run(go=False, cfg=None):
     svc = service() if go else None
     have = set()
     if go:
-        from geoai_blogger import posts_today
-        today = posts_today(svc, BLOG_ID)
-        if today:
-            log(f"English blog already has a post today ({today[0]}), skipping.")
+        # Only this series counts: another job posts a daily "Whitebox QGIS Practice" to the same blog.
+        today = f"{datetime.now():%Y-%m-%d}"
+        mine = [v["title"] for v in state().get("posted", {}).values() if v.get("date") == today]
+        if mine:
+            log(f"English series already posted today ({mine[0]}), skipping.")
             return {"status": "skipped", "reason": "already posted today"}
         have = blog_titles(svc)
     idx, topic = next_topic(have)
@@ -251,7 +250,7 @@ def run(go=False, cfg=None):
         log("English series: no topics left (add more to TOPICS).")
         return {"status": "exhausted"}
     log(f"English series {idx}/{len(TOPICS)}: {topic[1]}")
-    recent = [t[1] for t in TOPICS[:idx - 1]]
+    recent = [t[1] for t in TOPICS[:idx - 1]] + sorted(t for t in have if "Whitebox" not in t and t not in {x[1] for x in TOPICS})
     data = generate(idx, topic, cfg, recent)
     html = build_html(data)
     if not go:
