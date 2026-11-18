@@ -182,7 +182,19 @@ def _file_inputs(driver, video=False):
     return [x[2] for x in sorted(out, key=lambda t: (t[0], t[1]))]
 
 
+def _keep_focus(driver):
+    """크롬 창이 OS 포커스를 잃어도 페이지는 포커스를 가진 것처럼 둔다(CDP).
+    2026-11-18: 포커스가 없으면 인스타가 넣은 영상을 처리하지 않고 '끌어다 놓으세요'에 머물렀다
+    (11-14·11-18 릴 실패, 사진은 정상). 켜면 VP9·H.264 모두 바로 '자르기'로 넘어갔다."""
+    for cmd, arg in (("Emulation.setFocusEmulationEnabled", {"enabled": True}), ("Page.bringToFront", {})):
+        try:
+            driver.execute_cdp_cmd(cmd, arg)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def _find_file_input(driver, timeout=8, video=False):
+    _keep_focus(driver)   # 파일을 넣기 직전에 포커스 유지(위 설명)
     end = time.time() + timeout
     while time.time() < end:
         got = _file_inputs(driver, video=video)
