@@ -85,6 +85,7 @@ def main(check=False):
     step("대본", [PY, "write_script.py", e["date"]])
     sc = json.load(open(os.path.join(ep_dir, "script.json"), encoding="utf-8"))
     procs = []
+    todo = []      # (도구, 인자, 초) — 먼저 모은 뒤 게이트웨이/로컬 Wan 을 고른다(2026-11-21)
     for s in sc["scenes"]:
         if s.get("media") == "card":            # 정리 카드는 조립 때 이 맥에서 그린다(무료)
             continue
@@ -101,7 +102,7 @@ def main(check=False):
                     log(f"계기판 만들기 실패(계기판 없이 계속): {str(ge)[:200]}")
             fname = f"scene{s['id']}_3d_real_{sc.get('clip_seconds', 8)}s_diorama.mp4"
             if not os.path.exists(os.path.join(ep_dir, "clips", fname)):
-                procs.append(subprocess.Popen([PY, "veo_scene.py", ep, str(s["id"])], cwd=HERE)); time.sleep(3)
+                todo.append(("veo_scene.py", [ep, str(s["id"])], sc.get("clip_seconds", 8)))
             continue
         if s.get("media") == "model":           # anatomy 모형 영상은 미리 만들어 anatomy/models/<날짜>.mp4 에 둔다
             src = os.path.join(ROOT, "anatomy", "models", f"{e['date']}.mp4")
@@ -111,14 +112,20 @@ def main(check=False):
             if os.path.exists(dst):
                 continue
             kakao(f"[재난 대응 숏츠] {e['date']} 모형 영상이 없어 장면 {s['id']}을 AI 영상으로 대신 만듭니다.")
-        jobs = ([(f"scene{s['id']}_3d_real_{sh.get('seconds', 4)}s_shot{k}.mp4", ["--shot", str(k)])
+        jobs = ([(f"scene{s['id']}_3d_real_{sh.get('seconds', 4)}s_shot{k}.mp4", ["--shot", str(k)], sh.get("seconds", 4))
                  for k, sh in enumerate(s["shots"])] if s.get("shots")
-                else [(f"scene{s['id']}_3d_real_{sc.get('clip_seconds', 8)}s.mp4", [])])
-        for fname, extra in jobs:
+                else [(f"scene{s['id']}_3d_real_{sc.get('clip_seconds', 8)}s.mp4", [], sc.get("clip_seconds", 8))])
+        for fname, extra, secs in jobs:
             if not os.path.exists(os.path.join(ep_dir, "clips", fname)):
                 tool = "image_scene.py" if (sc.get("visual_mode") == "image" or s.get("media") == "image") else "veo_scene.py"
-                procs.append(subprocess.Popen([PY, tool, ep, str(s["id"])] + extra, cwd=HERE))
-                time.sleep(3)
+                todo.append((tool, [ep, str(s["id"])] + extra, secs))
+    # 게이트웨이 월 할당이 모두 만들 만큼 남았으면 게이트웨이, 아니면 로컬 Wan(무료). 매월 1일 할당이 다시 생기면 자동으로 돌아간다.
+    import video_backend
+    backend, why = video_backend.choose([t[2] for t in todo], CFG)
+    log(f"장면 영상 {len(todo)}개: {'게이트웨이' if backend == 'gateway' else '로컬 Wan 2.2'} — {why}")
+    if backend == "gateway":
+        for tool, args, _ in todo:
+            procs.append(subprocess.Popen([PY, tool] + args, cwd=HERE)); time.sleep(3)
     if CFG.get("voice_backend", "voicebox") != "edge":     # edge-tts 는 Voicebox 를 켜지 않는다(맥 부하)
         ensure_voicebox()
     step("나레이션(" + ("edge-tts" if CFG.get("voice_backend") == "edge" else "내 목소리") + ")",
@@ -126,6 +133,16 @@ def main(check=False):
     for p in procs:
         if p.wait() != 0:
             raise RuntimeError("Veo 영상 생성 실패(크레딧 부족 또는 게이트웨이 오류)")
+    if backend == "wan" and todo:
+        # Voicebox 와 Wan 이 그래픽카드를 함께 쓰면 멈춘 적이 있어(11-16) 나레이션을 끝내고 Voicebox 를 내린 뒤 하나씩 만든다
+        if sys.platform == "win32":
+            subprocess.run([sys.executable, _AXROOT + "/common/shared/voicebox_win.py", "down", "disastershorts.weekly"])
+        for i, (_, args, _) in enumerate(todo):     # 그림을 먼저 몰아서(FLUX 를 한 번만 불러옴) — 그림이 질감·구도를 잡는다
+            step(f"장면 그림(로컬 FLUX) {i + 1}/{len(todo)}",
+                 [PY, "wan_scene.py"] + args + ["--still-only"] + ([] if i == len(todo) - 1 else ["--keep-vram"]))
+        for i, (_, args, _) in enumerate(todo):
+            step(f"장면 영상(로컬 Wan) {i + 1}/{len(todo)}",
+                 [PY, "wan_scene.py"] + args + ([] if i == len(todo) - 1 else ["--keep-vram"]))
     step("조립", [PY, "assemble.py", ep])
     step("예약 업로드", [PY, "publish.py", ep])
     up = json.load(open(os.path.join(ep_dir, "upload.json")))
