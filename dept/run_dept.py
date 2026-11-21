@@ -23,6 +23,12 @@ import tempfile
 DEPT = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(DEPT)
 PY = sys.executable
+try:   # 2026-11-19: 창 없이 돌 때 하위 프로그램(python·tesseract·ffmpeg 등)이 CMD 창을 띄우지 않게
+    import importlib.util as _iu
+    _s = _iu.spec_from_file_location("nowindow", os.path.join(ROOT, "common", "shared", "nowindow.py"))
+    _m = _iu.module_from_spec(_s); _s.loader.exec_module(_m); _m.apply()
+except Exception:  # noqa: BLE001
+    pass
 TASK_PREFIX = "AutoSNS\\dept."
 YT, NB, IG = (os.path.join(DEPT, d) for d in ("youtube-shorts-auto", "naver-blog-auto", "insta-cardnews"))
 DS = os.path.join(DEPT, "disaster-shorts", "tools")

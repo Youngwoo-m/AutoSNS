@@ -44,6 +44,12 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
+try:   # 2026-11-19: 창 없이 돌 때 하위 프로그램(python·tesseract·ffmpeg 등)이 CMD 창을 띄우지 않게
+    import importlib.util as _iu
+    _s = _iu.spec_from_file_location("nowindow", os.path.join(os.path.dirname(os.path.realpath(__file__)), "nowindow.py"))
+    _m = _iu.module_from_spec(_s); _s.loader.exec_module(_m); _m.apply()
+except Exception:  # noqa: BLE001
+    pass
 from dataclasses import dataclass
 from pathlib import Path
 
