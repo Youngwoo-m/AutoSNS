@@ -282,6 +282,9 @@ def _caption_box(driver):
 def post_carousel(data, dry_run=None):
     cfg = load_config()
     ig = cfg.get("instagram", {})
+    if ig.get("paused"):   # 2026-11-19 사용자 지시: 학과 계정 보안 확인 중 — 로그인 시도 없이 바로 끝낸다
+        log("instagram.paused=true → 인스타 게시 일시 중단, 건너뜁니다.")
+        return {"status": "paused"}
     if dry_run is None:
         dry_run = ig.get("dry_run", True)
     headless = ig.get("headless", False)
@@ -884,6 +887,9 @@ def post_reel(data, dry_run=None):
     """
     cfg = load_config()
     ig = cfg.get("instagram", {})
+    if ig.get("paused"):   # 2026-11-19 사용자 지시: 학과 계정 보안 확인 중 — 로그인 시도 없이 바로 끝낸다
+        log("instagram.paused=true → 인스타 게시 일시 중단, 건너뜁니다.")
+        return {"status": "paused"}
     if dry_run is None:
         dry_run = ig.get("dry_run", True)
     headless = ig.get("headless", False)

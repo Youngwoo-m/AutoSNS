@@ -22,6 +22,12 @@ AN = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(AN))
 DEPT = os.path.join(ROOT, "dept")
 PY = sys.executable
+try:   # 2026-11-19: 창 없이 돌 때 하위 프로그램(python·tesseract·ffmpeg 등)이 CMD 창을 띄우지 않게
+    import importlib.util as _iu
+    _s = _iu.spec_from_file_location("nowindow", os.path.join(ROOT, "common", "shared", "nowindow.py"))
+    _m = _iu.module_from_spec(_s); _s.loader.exec_module(_m); _m.apply()
+except Exception:  # noqa: BLE001
+    pass
 TASK_PREFIX = "AutoSNS\\common."
 SINCE = "2026-03-01"
 HWPX_SKILL = os.path.join(os.path.expanduser("~"), ".claude", "skills", "hwpx", "scripts", "md2hwpx.py")
@@ -100,6 +106,15 @@ def wait_network(limit=300):
     return False
 
 
+def _insta_paused():
+    try:
+        import json
+        cfg = json.load(open(os.path.join(ROOT, "dept", "insta-cardnews", "config.json"), encoding="utf-8"))
+        return bool(cfg.get("instagram", {}).get("paused"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def collect(weekly=False):
     say("== 수집 시작 ==")
     run(YT_PY, "collect_youtube.py", what="유튜브 수집")
@@ -107,8 +122,11 @@ def collect(weekly=False):
     run(A_PY, "collect_blogger.py", SINCE, what="블로거 수집")
     run(A_PY, "collect_x.py", SINCE, what="엑스 수집")
     run(NB_PY, "collect_naver_stats.py", what="네이버 블로그 조회수 수집", lock="profile:naver")
-    run(IG_PY, "collect_threads.py", SINCE, what="스레드 수집", lock="profile:insta")
-    run(IG_PY, "collect_instagram.py", SINCE, what="인스타 수집", lock="profile:insta")
+    if _insta_paused():   # 2026-11-19 사용자 지시: 학과 인스타 보안 확인 중 — 로그인 시도를 하지 않는다
+        say("인스타·스레드 수집 건너뜀(insta-cardnews config instagram.paused)")
+    else:
+        run(IG_PY, "collect_threads.py", SINCE, what="스레드 수집", lock="profile:insta")
+        run(IG_PY, "collect_instagram.py", SINCE, what="인스타 수집", lock="profile:insta")
     if weekly:
         run(NB_PY, "collect_searchconsole.py", what="서치콘솔 수집")
 

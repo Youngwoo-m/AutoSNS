@@ -89,6 +89,9 @@ def _post_button(driver):
 def post(text=None, data=None, dry_run=None, image=None):
     cfg = load_config()
     tcfg = cfg.get("threads", {})
+    if cfg.get("instagram", {}).get("paused"):   # 2026-11-19: 스레드도 같은 인스타 계정이라 함께 멈춘다
+        log("instagram.paused=true → 쓰레드 게시 일시 중단, 건너뜁니다.")
+        return {"status": "paused"}
     if dry_run is None:
         dry_run = tcfg.get("dry_run", True)
     if not dry_run and not tcfg.get("enabled", False):

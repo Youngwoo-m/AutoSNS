@@ -155,8 +155,12 @@ def run(ep, dry=False):
                                                          "tags": [t.lstrip("#").replace(" ", "") for t in ((sc.get("hashtags") or {}).get("naver") or [])][:10]}),
         "threads": lambda: _cli(IG_DIR, "threads_cli.py", {"text": threads, "dry": dry}),
     }
+    paused = set(CFG.get("crosspost_paused", []))   # 2026-11-19 사용자 지시: 학과 인스타 계정 보안 확인 중 — 인스타·스레드 잠시 중단
     for name, fn in jobs.items():
         if rec.get(name) in ("published", "shared_unconfirmed"):
+            continue
+        if name in paused:
+            log(f"{name}: 일시 중단(config crosspost_paused) — 건너뜀, 기록하지 않음")
             continue
         st = fn(); log(f"{name}: {st}")
         if not dry:
