@@ -33,7 +33,26 @@ def binary(account):
     if account not in ("dept", "personal"):
         return None
     p = os.environ.get(f"AX_CHROME_{account.upper()}") or _DEFAULTS.get(account)
+    if p:
+        _refresh_copy(p)
     return p if p and os.path.exists(p) else None
+
+
+def _refresh_copy(p):
+    """chrome-dept.exe·chrome-na.exe 는 chrome.exe 복사본이다. Chromium 이 자동 업데이트하면 옛 버전 폴더가
+    지워져 복사본이 켜지자마자 꺼진다(0xC0000034, 2026-11-21 157→158 때 틱톡 디버깅 포트 실패).
+    같은 폴더 chrome.exe 와 크기·수정 시각이 다르면 다시 복사한다. 실행 중이라 못 덮으면 그대로 둔다."""
+    src = os.path.join(os.path.dirname(p), "chrome.exe")
+    if os.path.normcase(src) == os.path.normcase(p) or not os.path.exists(src):
+        return
+    try:
+        a, b = os.stat(src), (os.stat(p) if os.path.exists(p) else None)
+        if b and a.st_size == b.st_size and int(a.st_mtime) == int(b.st_mtime):
+            return
+        import shutil
+        shutil.copy2(src, p)
+    except OSError:
+        pass
 
 
 def default_chrome():
