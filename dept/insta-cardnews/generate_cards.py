@@ -179,6 +179,18 @@ def generate():
     if not (title and len(cards) >= 3):
         raise RuntimeError("카드 생성 형식 파싱 실패(3회). 잠시 후 다시 시도하세요.")
 
+    # 다 쓴 카드 문구·캡션을 사람이 쓴 것처럼 한 번 더 다듬는다(2026-11-19 사용자 지정 — shared/humanize.py).
+    # 카드는 그림 칸에 들어가므로 길이를 원문의 85~105% 로 묶는다. 실패하거나 어긋난 조각은 원문 그대로 둔다.
+    try:
+        from shared.humanize import polish_segments
+        new = polish_segments(cards, genre="인스타 카드뉴스", cfg=cfg, log=log, length=(0.85, 1.05),
+                              note="카드 한 장에 들어가는 짧은 문구다. 줄바꿈 위치와 문장 수를 그대로 둔다.")
+        # 로컬 모델이 줄바꿈을 합치면 카드 배치가 바뀌므로 줄 수가 달라진 카드는 원문으로 둔다.
+        cards = [n if n.count("\n") == c.count("\n") else c for c, n in zip(cards, new)]
+        caption = polish_segments([caption], genre="인스타 캡션", cfg=cfg, log=log)[0]
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀: {type(e).__name__}")
+
     # 해시태그 정리: 지역 브랜딩 태그(local_tags)는 반드시 포함하고, 나머지는 주제 태그로 채워
     # 총 max_hashtags(기본 15)개로 제한한다. 태그가 너무 많으면(20+) 스팸처럼 보여 도달이 준다.
     # local_tags 는 에디션(토요일 GeoAI판 등)이 hashtags 를 덮어써도 항상 유지된다

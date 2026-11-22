@@ -101,5 +101,16 @@ def draft_caption(image_paths, hint=""):
     text = "".join(b.text for b in msg.content if b.type == "text").strip()
     if not text:
         raise RuntimeError("빈 응답을 받았습니다. 다시 시도해 주세요.")
+    # 초안을 사람이 쓴 것처럼 한 번 더 다듬는다(2026-11-19 사용자 지정 — shared/humanize.py).
+    # 숫자·링크·해시태그가 달라지거나 많이 바뀐 문단은 원문으로 둔다. 실패해도 초안은 그대로 돌려준다.
+    try:
+        import sys
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if root not in sys.path:
+            sys.path.insert(0, root)
+        from shared.humanize import polish
+        text = polish(text, genre="인스타 캡션", cfg=cfg, log=log)
+    except Exception as e:  # noqa: BLE001
+        log(f"윤문 건너뜀: {type(e).__name__}")
     log("AI 캡션 초안 완료.")
     return text
