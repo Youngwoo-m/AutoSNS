@@ -22,6 +22,7 @@ sys.path.insert(0, BASE_DIR)
 import veo_clips as V  # noqa: E402
 from common import load_config  # noqa: E402
 from diorama_image import CAMERA, NO_TEXT, OCR, text_in  # noqa: E402
+import diorama_forms as F  # noqa: E402
 
 V.MODEL = os.environ.get("VIDEO_MODEL", "google/gemini-omni-flash/v1.1")   # 10/15 게이트웨이에서 Veo 가 빠짐
 
@@ -68,8 +69,16 @@ def main():
     ap.add_argument("--move", choices=sorted(MOVE), default="dolly_in", help="카메라 움직임 한 가지")
     ap.add_argument("--camera", action="append", choices=sorted(CAMERA), default=[], help="룩·구도(diorama_image 와 같음)")
     ap.add_argument("--dry-run", action="store_true", help="프롬프트와 예상 크레딧만 보여 준다")
+    ap.add_argument("--form", default="auto", choices=["auto", "scene", "prop", "classic"],
+                    help="장면형·소품형(diorama_forms, 2026-11-19 사실감 있게) — classic 은 예전 장난감 질감")
     a = ap.parse_args()
-    prompt = STYLE + a.scene + " " + MOVE[a.move] + "".join(" " + CAMERA[c] for c in a.camera)
+    shot = a.scene + " " + MOVE[a.move] + "".join(" " + CAMERA[c] for c in a.camera)
+    if a.form == "classic":
+        form, prompt = "classic", STYLE + shot
+    else:
+        form = F.pick(a.scene, a.form)
+        prompt = "Scene: " + shot + " Single continuous shot, no cuts. " + F.style(form)
+    print(f"디오라마 형식: {F.LABEL.get(form, form)}", file=sys.stderr)
     need = a.seconds / 4 * 200
     if a.dry_run:
         return out("ok", prompt=prompt, credits=need, message="요청하지 않음")
@@ -77,6 +86,19 @@ def main():
     keys = [g["api_key"]] + list(g.get("extra_keys", []))
     jobs_p = a.out + ".job.json"
     job = json.load(open(jobs_p)) if os.path.exists(jobs_p) else None
+    # 2026-11-23: 월 할당이 남았으면 게이트웨이, 없으면 로컬 Wan 2.2(12/1 할당이 다시 생기면 저절로 게이트웨이)
+    if not job:
+        import diorama_backend as B
+        ki, why = B.key_for(need, V.MIN_MONTHLY)
+        print(f"클립 생성 경로: {why}", file=sys.stderr)
+        if ki is None:
+            try:
+                B.local_clip(prompt, a.seconds, a.out)
+                found = frames_text(a.out, a.seconds)
+            except BaseException as e:  # noqa: BLE001 — wan_scene 은 SystemExit 로 실패를 알린다
+                return out("error", message=f"로컬 Wan 실패: {type(e).__name__}: {str(e)[:200]}")
+            return out("ok", out=a.out, seconds=a.seconds, credits=0, text_found=found, backend="local-wan",
+                       message="로컬 Wan 2.2 로 만든 AI 생성 영상(448x800) — 게이트웨이 월 할당 부족")
     try:
         if not job:
             errs = []
