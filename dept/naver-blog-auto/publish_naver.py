@@ -902,6 +902,24 @@ def publish(data, dry_run=None):
             pass
         shot(driver, "top_preview")
 
+        # 4-0) 제목이 비었으면 다시 넣는다 — 2026-11-23: 늦게 뜬 '작성 중인 글' 처리 뒤 제목만 지워진 채
+        # 발행 버튼이 눌려 '발행 완료(추정)'만 남고 글은 올라가지 않았다(두 번 연속).
+        if not paste:
+            try:
+                tel = driver.find_element(By.CSS_SELECTOR, ".se-section-documentTitle .se-text-paragraph")
+                if data["title"][:8] not in (tel.text or ""):
+                    log("제목칸이 비어 있어 다시 입력합니다")
+                    type_contenteditable(driver, tel, data["title"])
+                    time.sleep(0.5)
+                    tel = driver.find_element(By.CSS_SELECTOR, ".se-section-documentTitle .se-text-paragraph")
+                    if data["title"][:8] not in (tel.text or ""):
+                        shot(driver, "no_title")
+                        raise RuntimeError("제목이 들어가지 않아 발행을 멈춥니다")
+            except RuntimeError:
+                raise
+            except Exception as e:  # noqa: BLE001
+                log(f"제목 확인 건너뜀: {type(e).__name__}")
+
         # 4-1) 업로드 실패 모달이 떠 있으면 닫는다(발행 버튼을 가림)
         dismiss_upload_error(driver)
 

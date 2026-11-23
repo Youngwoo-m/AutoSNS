@@ -104,7 +104,14 @@ def upload_at(d, path, *, managed=False):
     t0, new = time.time(), None
     while time.time() - t0 < 180:
         time.sleep(1.5)
-        c = d.execute_script(get)
+        try:
+            c = d.execute_script(get)
+        except Exception as e:  # noqa: BLE001
+            # 업로드 중에는 편집기가 '이미지 업로드가 완료된 후 시도해 주세요' 를 던진다(2026-11-23) — 끝날 때까지 다시 읽는다
+            if "업로드가 완료된 후" in str(e):
+                c = ""
+                continue
+            raise
         new = [t for t in RAW_TOKEN.findall(c) if t not in old_raw]
         if new:
             break
