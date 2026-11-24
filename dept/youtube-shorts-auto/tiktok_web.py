@@ -31,6 +31,7 @@ from common import BASE_DIR, LOGS_DIR, POSTS_DIR, load_config, log
 
 PROFILE_DIR = os.path.join(BASE_DIR, "chrome-profile-tiktok")
 STATE_PATH = os.path.join(BASE_DIR, "tiktok_web_state.json")
+ACCOUNT_TAG = "dept"   # 게시 기록의 계정 표시 — 개인 틱톡(tiktok_personal.py)은 "personal" 로 바꾼다
 UPLOAD_URL = "https://www.tiktok.com/tiktokstudio/upload?from=webapp"
 
 # 한국어/영어 UI 를 모두 받는다(틱톡은 계정 언어에 따라 바뀐다).
@@ -161,16 +162,19 @@ def _mark(video):
     # 파일 이름만 적으면 재난 숏츠처럼 편마다 이름이 같은(final.mp4) 영상이 '이미 올림'으로
     # 막힌다 — 전체 경로(path)도 함께 적고, 비교는 경로가 있으면 경로로 한다.
     s["posted"].append({"video": os.path.basename(video), "path": os.path.abspath(video),
-                        "at": datetime.now().isoformat(timespec="seconds")})
+                        "account": ACCOUNT_TAG, "at": datetime.now().isoformat(timespec="seconds")})
     with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
 
 
 def already_posted(video):
+    """이 계정(ACCOUNT_TAG)에 이미 올렸는지. 개인 틱톡 기록 파일이 학과 기록을 가리키는 링크라 두 계정 기록이
+    한 파일에 섞인다 — 다른 계정 기록은 세지 않는다(2026-11-24: 개인에 먼저 올라간 영상이 학과에서 막혔다).
+    계정 표시가 없는 옛 기록은 어느 계정인지 몰라 그대로 '올림'으로 센다."""
     norm = lambda p: os.path.normcase(os.path.abspath(p))   # Windows: 슬래시·대소문자 차이로 놓치지 않게(2026-11-07)
     full = norm(video)
     return any((norm(x["path"]) == full) if x.get("path") else (x["video"] == os.path.basename(video))
-               for x in _state()["posted"])
+               for x in _state()["posted"] if x.get("account", ACCOUNT_TAG) == ACCOUNT_TAG)
 
 
 def logged_in(d):
