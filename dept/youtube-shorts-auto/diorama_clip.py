@@ -42,7 +42,8 @@ MOVE = {
 
 
 def out(status, **kw):
-    print(json.dumps({"status": status, **kw}, ensure_ascii=False))
+    # 2026-11-24: Windows 콘솔(cp949)에서 '—' 같은 글자가 있으면 print 가 실패해 결과 JSON 이 사라졌다
+    print(json.dumps({"status": status, **kw}, ensure_ascii=True))
     return 0 if status == "ok" else 1
 
 
