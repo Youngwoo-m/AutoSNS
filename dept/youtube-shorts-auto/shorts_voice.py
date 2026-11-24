@@ -119,11 +119,39 @@ def _voicebox_lock(job):
         return contextlib.nullcontext()
 
 
+def free_gpu():
+    """음성 합성 전에 같은 GPU(12GB)를 쓰는 ComfyUI·Ollama 모델을 내린다(2026-11-24).
+    그날 FLUX(ComfyUI)·Ollama 9B 가 메모리를 잡은 채라 Voicebox 가 시드 3개 모두 멈췄다.
+    ComfyUI /free 는 진행 중인 작업이 끝난 뒤 내리고, Ollama keep_alive 0 도 요청이 끝난 뒤 내린다. 실패해도 넘어간다."""
+    done = []
+    try:
+        urllib.request.urlopen(urllib.request.Request(
+            "http://127.0.0.1:8188/free", data=b'{"unload_models": true, "free_memory": true}',
+            headers={"Content-Type": "application/json"}), timeout=10).read()
+        done.append("comfyui")
+    except OSError:
+        pass
+    try:
+        ps = json.loads(urllib.request.urlopen("http://127.0.0.1:11434/api/ps", timeout=5).read())
+        for m in ps.get("models", []):
+            urllib.request.urlopen(urllib.request.Request(
+                "http://127.0.0.1:11434/api/generate", data=json.dumps({"model": m["name"], "keep_alive": 0}).encode(),
+                headers={"Content-Type": "application/json"}), timeout=30).read()
+            done.append("ollama:" + m["name"])
+    except (OSError, ValueError, KeyError):
+        pass
+    if done:
+        time.sleep(3)
+        print("GPU 비움: " + ", ".join(done), file=sys.stderr)
+    return done
+
+
 def generate_safely(text, seed, job):
     """멈추거나 실패하면 Voicebox 를 다시 켜고 다른 시드로 다시(최대 3번, 2026-11-08). 모두 실패하면 예외를 올린다.
     잠금을 잡은 채 다시 켜므로 다른 작업의 생성을 끊지 않는다(그 작업은 잠금을 기다리는 중)."""
     # 2026-11-08 실측: 같은 문장도 시드에 따라 멈추거나(문장 A) 두 시드 모두 멈춘다(문장 B) → 다른 시드로 최대 2번 더
     with _voicebox_lock(job):
+        free_gpu()
         fails = []
         for k in range(3):
             if k:
