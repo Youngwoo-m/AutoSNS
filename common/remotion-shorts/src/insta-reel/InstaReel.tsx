@@ -32,7 +32,7 @@ export const defaultReelProps: InstaReelProps = {
   bg: "",
   audio: "",
   endText: "재난안전 소식\n팔로우하고 받아보세요",
-  account: "@smu_ds_official",
+  account: "@smu.safety",
   disclosure: "AI 생성 그림",
   secondsPerCard: 3.5,
   hookSeconds: 2.4,

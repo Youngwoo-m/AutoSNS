@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(ROOT, "channels", "insta-cardnews"))
 from analytics.common import log, save_part      # noqa: E402
 from post_instagram import build_driver          # noqa: E402
 
-USER = "smu_ds_official"
+USER = "smu.safety"
 APP_ID = "936619743392459"
 ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 

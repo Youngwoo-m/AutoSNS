@@ -83,7 +83,7 @@ def _refresh(tok):
     return tok
 
 
-GENERIC_LINKS = ("https://blog.naver.com", "https://instagram.com/smu_ds_official",
+GENERIC_LINKS = ("https://blog.naver.com", "https://www.instagram.com/smu.safety",
                  "https://www.youtube.com/@smu_ds_official")
 
 

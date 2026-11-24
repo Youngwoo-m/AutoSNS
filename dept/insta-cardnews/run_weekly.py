@@ -68,7 +68,7 @@ def _notify(text):
     """카카오톡 알림. 실패해도 발행 흐름에는 영향 없다."""
     try:
         from kakao_notify import notify
-        notify(text, "https://instagram.com/smu_ds_official")
+        notify(text, "https://www.instagram.com/smu.safety")
     except Exception as e:
         log(f"카톡 알림 건너뜀: {type(e).__name__}")
 
@@ -110,7 +110,7 @@ def main():
 
         # 3) 게시: reel.enabled 면 배경음악 릴, 아니면 이미지 캐러셀
         ig = cfg.get("instagram", {})
-        emailing = ig.get("paused") and ig.get("email_to")   # 2026-11-23: 계정 삭제 → 게시 대신 메일로
+        emailing = ig.get("paused") and ig.get("email_to")   # 2026-11-24: 게시하지 않고 조교에게 메일 → 조교가 @smu.safety 에 올림
         if cfg.get("reel", {}).get("enabled"):
             from make_reel import make_reel
             make_reel(data)                              # 카드+음악 → 세로 영상

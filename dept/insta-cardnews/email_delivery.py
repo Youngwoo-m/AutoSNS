@@ -1,4 +1,4 @@
-"""인스타 계정을 쓸 수 없을 때(2026-11-23 사용자 지시: 학과 계정 삭제) 게시 대신 완성 콘텐츠를 이메일로 보낸다.
+"""자동 게시 대신 완성 콘텐츠를 조교에게 이메일로 보낸다 — 조교가 @smu.safety 에 직접 올린다(2026-11-24 사용자 지정).
 
 config.json 의 instagram.paused=true 이고 instagram.email_to 에 받는 사람이 있으면 run_weekly.py 가 이것을 부른다.
 먼저 backup/emailed/<날짜_제목>/ 에 캡션·첫 댓글·카드·릴을 모아 두고(메일이 실패해도 콘텐츠가 남는다), 그 폴더를 보낸다.
@@ -95,7 +95,7 @@ def send_folder(d, to=None, dry_run=False):
     first = open(fp, encoding="utf-8").read().strip() if os.path.exists(fp) else ""
     take, left = _attachments(d, meta)
     pre = lambda s: f'<pre style="white-space:pre-wrap;font-family:inherit">{html.escape(s)}</pre>'
-    body = (f"<p>학과 인스타그램 계정을 쓸 수 없어, 이번 회차 콘텐츠를 게시하지 않고 메일로 보내 드립니다.</p>"
+    body = (f"<p>이번 회차 학과 인스타그램(@smu.safety) 콘텐츠입니다. 첨부한 릴 영상·카드 이미지와 아래 캡션으로 올려 주세요.</p>"
             f"<h2>{html.escape(meta['title'])}</h2>"
             f"<h3>캡션</h3>{pre(caption)}"
             + (f"<h3>첫 댓글</h3>{pre(first)}" if first else "")

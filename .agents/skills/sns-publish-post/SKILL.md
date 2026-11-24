@@ -10,7 +10,7 @@ description: AutoSNS 에서 주제·링크를 받아 학과 채널(네이버 블
 - **블로거** = 학과 Blogger smuds2026 — `post_blogger.py`. 그림은 `geoai_assets.upload` 로 CDN 에 올려 `<img>`, 영상은 `<iframe>`. CTA 는 `post_blogger.build_html({"intro": ""}, cfg)`.
 - **GeoAI 블로그** = geoaina.blogspot.com, **티스토리** = na-geoai.tistory.com(요약 + 원문 '전체 글 보기' 링크만, `tistory_crosspost.summary_html`).
 - **유튜브** = 학과 @smds2023(token.json), 개인 GeoAI @geoai-safety(token_youtube_geoai.json, `SMUDS_EDITION=geoai`).
-- **인스타·스레드·X** = 학과 계정(@smu_ds_official, @smuds_official) 뿐이다.
+- **인스타·스레드·X** = 학과 계정(@smu.safety, @smuds_official) 뿐이다.
 
 채널이 모호하면(블로그/블로거/GeoAI) 먼저 묻는다.
 
