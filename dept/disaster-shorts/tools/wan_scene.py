@@ -196,12 +196,15 @@ if __name__ == "__main__":
     ap.add_argument("--out", help="결과 파일(기본: 편 clips 폴더의 veo_scene.py 와 같은 이름)")
     ap.add_argument("--keep-vram", action="store_true", help="끝나도 모델을 내리지 않음(장면을 이어서 만들 때)")
     ap.add_argument("--still-only", action="store_true", help="그림만 만든다(여러 장면 그림을 FLUX 한 번 불러 몰아서 그릴 때)")
+    ap.add_argument("--extra", default="", help="프롬프트 끝에 덧붙일 문장(예: 글자 없는 배경 지시)")
     ap.add_argument("--text-only", action="store_true", help="그림 없이 글만으로 만든다(예전 방식)")
     a = ap.parse_args()
     sc = json.load(open(f"{ROOT}/{a.ep}/script.json", encoding="utf-8"))
     s = next(x for x in sc["scenes"] if x["id"] == a.scene)
     style = a.style or sc.get("style", "3d_real")
     prompt, secs, suffix = build_prompt(sc, s, a.shot, 2 if a.smoke else a.seconds, style)
+    if a.extra:
+        prompt += " " + a.extra
     out_dir = f"{ROOT}/{a.ep}/clips"; os.makedirs(out_dir, exist_ok=True)
     out = a.out or f"{out_dir}/scene{a.scene}_{style}_{a.seconds or (sc.get('clip_seconds', 8) if a.shot is None else s['shots'][a.shot].get('seconds', 4))}s{suffix}.mp4"
     if a.smoke and not a.out:
