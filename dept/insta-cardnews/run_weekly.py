@@ -38,7 +38,7 @@ def _make_cards(data):
 
 # 오늘 이미 게시했는지 기록(같은 날 재실행·kickstart 로 같은 글이 두 번 올라가는 것을 막는다).
 RUN_STATE = os.path.join(BASE_DIR, "run_weekly_state.json")
-DONE_STATUSES = ("published", "shared_unconfirmed")  # 미확인도 올라갔을 수 있어 재게시하지 않는다
+DONE_STATUSES = ("published", "shared_unconfirmed", "emailed")  # 미확인도 올라갔을 수 있어 재게시하지 않는다
 
 
 def _today():
@@ -109,18 +109,24 @@ def main():
         _make_cards(data)           # 2) 카드 PNG 생성(data['images'] 채워짐)
 
         # 3) 게시: reel.enabled 면 배경음악 릴, 아니면 이미지 캐러셀
+        ig = cfg.get("instagram", {})
+        emailing = ig.get("paused") and ig.get("email_to")   # 2026-11-23: 계정 삭제 → 게시 대신 메일로
         if cfg.get("reel", {}).get("enabled"):
             from make_reel import make_reel
             make_reel(data)                              # 카드+음악 → 세로 영상
             _make_reel_cover(data)                       # 표지 카드로 릴 커버(2026-11-06 '썸네일이 잘 보이게')
-            result = post_reel(data, dry_run=False)      # 릴 게시
-        else:
+            if not emailing:
+                result = post_reel(data, dry_run=False)  # 릴 게시
+        elif not emailing:
             result = post_carousel(data, dry_run=False)  # 캐러셀 게시
+        if emailing:
+            from email_delivery import deliver
+            result = deliver(data, cfg)
         log(f"===== 종료: {result.get('status')} (카드 {result.get('images')}장) =====")
         _record_run(result.get("status"), data.get("title", ""))
         fmt = "릴" if cfg.get("reel", {}).get("enabled") else "카드뉴스"
-        _notify(f"[SMUDS 발행완료] 인스타 {fmt}\n{data.get('title','재난안전 카드뉴스')}\n"
-                f"상태: {result.get('status')}")
+        how = f"메일 발송 → {', '.join(result.get('to') or [])}" if emailing else f"상태: {result.get('status')}"
+        _notify(f"[SMUDS 발행완료] 인스타 {fmt}\n{data.get('title','재난안전 카드뉴스')}\n{how}")
     except Exception as e:
         log(f"===== 실패: {e} =====")
         _notify(f"[SMUDS 발행실패] 인스타 주간 카드뉴스\n{type(e).__name__}: {str(e)[:150]}\n"

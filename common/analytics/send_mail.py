@@ -44,7 +44,8 @@ def load_config():
         cfg = json.load(f)
     # 앱 비밀번호는 암호화 저장소에 있다(2026-10-17). 파일에는 보내는 계정·받는 사람만.
     from shared.secret_get import get
-    cfg["app_password"] = get("MAIL_APP_PASSWORD") or cfg.get("app_password", "")
+    # password_secret: 보내는 계정에 맞는 앱 비밀번호 이름(2026-11-24 학과 계정이 막혀 개인 계정으로 보냄 — mail_config.json)
+    cfg["app_password"] = get(cfg.get("password_secret") or "MAIL_APP_PASSWORD") or cfg.get("app_password", "")
     for k in ("sender", "app_password", "to"):
         if not cfg.get(k):
             raise SystemExit(f"mail_config.json 에 {k} 값이 비어 있습니다.")
@@ -92,6 +93,36 @@ def build_message(html_path, subject, cfg, attachments=None):
     return msg, files
 
 
+GMAIL_TOKEN = "token_gmail_dept.json"   # 암호화 저장소 TOKEN_TOKEN_GMAIL_DEPT (semyungds, gmail.send 만)
+
+
+def _send_gmail_api(msg):
+    """Gmail API 토큰이 있으면 그것으로 보낸다 → 보냈으면 True, 토큰이 없으면 False(SMTP 로 넘어감)."""
+    import base64
+    import urllib.request
+    from shared import token_store
+    if not token_store.exists(GMAIL_TOKEN):
+        return False
+    creds = token_store.load_google(GMAIL_TOKEN, ["https://www.googleapis.com/auth/gmail.send"])
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    req = urllib.request.Request(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        data=json.dumps({"raw": raw}).encode(), method="POST",
+        headers={"Authorization": f"Bearer {creds.token}", "Content-Type": "application/json"})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                json.load(r)
+            return True
+        except urllib.error.HTTPError as e:
+            raise RuntimeError(f"Gmail API {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+        except Exception as e:  # noqa: BLE001  네트워크가 덜 올라온 때
+            if attempt == 2:
+                raise
+            log(f"Gmail API 발송 실패({type(e).__name__}) — 60초 뒤 다시 시도한다")
+            time.sleep(60)
+
+
 def send(html_path, subject, cfg=None, attachments=None, tries=3):
     """attachments: 첨부할 파일 경로 목록(없는 파일은 건너뛴다).
 
@@ -99,6 +130,11 @@ def send(html_path, subject, cfg=None, attachments=None, tries=3):
     인증 오류(앱 비밀번호 문제)는 다시 걸어도 소용없으므로 바로 올린다."""
     cfg = cfg or load_config()
     msg, files = build_message(html_path, subject, cfg, attachments)
+    # smtp_only: Gmail API 토큰은 학과(semyungds) 것이라, 다른 계정으로 보낼 때는 SMTP 만 쓴다(2026-11-24 인스타 메일)
+    if not cfg.get("smtp_only") and _send_gmail_api(msg):     # 2026-11-23: 앱 비밀번호가 거부(535)·재발급도 본인 인증에 막혀 Gmail API(gmail.send)를 먼저 쓴다
+        log(f"메일 발송(Gmail API): {cfg['sender']} → {', '.join(cfg['to'])} / {subject}"
+            + (f" (첨부 {len(files)}개)" if files else ""))
+        return {"status": "sent", "to": cfg["to"], "from": cfg["sender"], "attachments": len(files), "via": "gmail_api"}
     for attempt in range(1, tries + 1):
         try:
             with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as s:
