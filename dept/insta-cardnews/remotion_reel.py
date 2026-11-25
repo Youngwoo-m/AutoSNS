@@ -32,7 +32,7 @@ def _dioramas(rcfg, work):
     made = []
     for i, scene in enumerate(d["scenes"][:3], 1):
         o = os.path.join(work, f"diorama{i}.png")
-        r = subprocess.run([sys.executable, gen, "--scene", scene, "--out", o], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, gen, "--scene", scene, "--out", o], capture_output=True, text=True, encoding="utf-8", errors="replace")
         if r.returncode == 0 and os.path.isfile(o):
             made.append(o)
         else:
@@ -79,7 +79,7 @@ def render_reel(data, images, audio, out, rcfg, title=None):
         json.dump(props, open(pj, "w", encoding="utf-8"), ensure_ascii=False)
         r = subprocess.run([shutil.which("npx") or "npx", "remotion", "render", "src/insta-reel/index.ts", "InstaReel", out,
                             f"--props={pj}", f"--public-dir={pub}", "--log=error"],
-                           cwd=SHORTS, capture_output=True, text=True)
+                           cwd=SHORTS, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0 or not os.path.isfile(out):
         raise RuntimeError(f"Remotion 렌더 실패: {(r.stderr or r.stdout).strip()[-400:]}")
     return out

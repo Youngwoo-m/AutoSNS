@@ -149,7 +149,7 @@ def make_reel(data, audio_path=None):
     log(f"릴 영상 합성 중... (카드 {len(images)}장 × {secs}s"
         + (f" + 사이 영상 {gap}s × {len(images) - 1}" if stock else "")
         + f" = {dur}s, 음악 {os.path.basename(audio)})")
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode != 0 or not os.path.exists(out):
         raise RuntimeError(f"ffmpeg 실패:\n{r.stderr[-1500:]}")
 

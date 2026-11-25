@@ -45,12 +45,21 @@ def package(data, cfg):
         if data.get("cover") and os.path.exists(data["cover"]):
             files.append(data["cover"])
     files += [p for p in (data.get("images") or []) if os.path.exists(p)]
-    names = []
+    names, links = [], {}
     for i, p in enumerate(files):
         n = os.path.basename(p)
         if n in names:
             n = f"{i:02d}_{n}"
-        shutil.copy2(p, os.path.join(d, n))
+        dst = os.path.join(d, n)
+        shutil.copy2(p, dst)
+        if p.lower().endswith(".mp4"):
+            # 릴은 줄이지 않고 구글 드라이브에 올려 링크로 보낸다(2026-11-25 사용자 지시). 실패하면 첨부로 넘긴다.
+            try:
+                from drive_link import upload
+                links[n], _ = upload(dst, f"{datetime.now():%Y-%m-%d} {title}.mp4", ig.get("email_to") or ())
+                continue
+            except Exception as e:  # noqa: BLE001
+                log(f"드라이브 업로드 실패 → 첨부로: {type(e).__name__}: {str(e)[:120]}")
         names.append(n)
     caption = _build_caption(data, cfg)
     first = _first_comment_text(data, cfg) if ig.get("first_comment") else ""
@@ -60,31 +69,37 @@ def package(data, cfg):
         with open(os.path.join(d, "첫댓글.txt"), "w", encoding="utf-8") as f:
             f.write(first + "\n")
     meta = {"title": title, "made_at": datetime.now().isoformat(timespec="seconds"),
-            "files": names, "to": ig.get("email_to"), "sent": False}
+            "files": names, "drive_links": links, "to": ig.get("email_to"), "sent": False}
     with open(os.path.join(d, "delivery.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
     log(f"이메일 묶음 준비: {d} (파일 {len(names)}개)")
     return d
 
 
-def _attachments(d, meta):
-    """용량 안에서 첨부할 파일 목록과, 빠진 파일 목록."""
-    take, left, total = [], [], 0
-    order = ["캡션.txt", "첫댓글.txt"] + list(meta.get("files") or [])
+def _attachments(d, meta, only=None):
+    """첨부를 메일 한 통 용량(MAX_ATTACH) 안으로 나눈다 → (묶음 목록, 한 통에도 안 들어가는 파일).
+    릴과 카드를 합치면 한도를 넘어 릴이 빠졌다(2026-11-25) — 넘치면 다음 메일로 나눠 보낸다."""
+    groups, left, cur, total = [], [], [], 0
+    order = only or (["캡션.txt", "첫댓글.txt"] + list(meta.get("files") or []))
     for n in order:
         p = os.path.join(d, n)
         if not os.path.exists(p):
             continue
         sz = os.path.getsize(p)
-        if total + sz > MAX_ATTACH:
+        if sz > MAX_ATTACH:
             left.append(n)
             continue
-        take.append(p)
+        if cur and total + sz > MAX_ATTACH:
+            groups.append(cur)
+            cur, total = [], 0
+        cur.append(p)
         total += sz
-    return take, left
+    if cur:
+        groups.append(cur)
+    return groups, left
 
 
-def send_folder(d, to=None, dry_run=False):
+def send_folder(d, to=None, dry_run=False, only=None):
     with open(os.path.join(d, "delivery.json"), encoding="utf-8") as f:
         meta = json.load(f)
     to = to or meta.get("to")
@@ -93,22 +108,38 @@ def send_folder(d, to=None, dry_run=False):
     caption = open(os.path.join(d, "캡션.txt"), encoding="utf-8").read().strip()
     fp = os.path.join(d, "첫댓글.txt")
     first = open(fp, encoding="utf-8").read().strip() if os.path.exists(fp) else ""
-    take, left = _attachments(d, meta)
+    groups, left = _attachments(d, meta, only)
+    n_all = sum(len(g) for g in groups)
     pre = lambda s: f'<pre style="white-space:pre-wrap;font-family:inherit">{html.escape(s)}</pre>'
-    body = (f"<p>이번 회차 학과 인스타그램(@smu.safety) 콘텐츠입니다. 첨부한 릴 영상·카드 이미지와 아래 캡션으로 올려 주세요.</p>"
-            f"<h2>{html.escape(meta['title'])}</h2>"
-            f"<h3>캡션</h3>{pre(caption)}"
-            + (f"<h3>첫 댓글</h3>{pre(first)}" if first else "")
-            + f"<p>첨부: {len(take)}개 (릴 영상·카드 이미지·캡션 파일)</p>"
-            + (f"<p>용량 한도로 빠진 파일: {html.escape(', '.join(left))} — 학과 PC {html.escape(d)} 에 있습니다.</p>" if left else "")
-            + "<p>세명대 재난안전학과 자동 발행 시스템</p>")
-    subject = f"[재난안전학과 인스타 콘텐츠] {meta['title']}"
-    hp = os.path.join(d, "mail.html")
-    with open(hp, "w", encoding="utf-8") as f:
-        f.write(body)
+    base = f"[재난안전학과 인스타 콘텐츠] {meta['title']}"
+    mails = []
+    for i, g in enumerate(groups or [[]]):
+        part = f" ({i + 1}/{len(groups)})" if len(groups) > 1 else ""
+        names = ", ".join(os.path.basename(p) for p in g)
+        if i == 0 and not only:
+            body = (f"<p>이번 회차 학과 인스타그램(@smu.safety) 콘텐츠입니다. 첨부한 릴 영상·카드 이미지와 아래 캡션으로 올려 주세요.</p>"
+                    f"<h2>{html.escape(meta['title'])}</h2>"
+                    f"<h3>캡션</h3>{pre(caption)}"
+                    + (f"<h3>첫 댓글</h3>{pre(first)}" if first else "")
+                    + "".join(f'<p>릴 영상(원본, 구글 드라이브): <a href="{html.escape(u)}">{html.escape(u)}</a></p>'
+                              for u in (meta.get("drive_links") or {}).values())
+                    + f"<p>첨부: 모두 {n_all}개(카드 이미지·캡션 파일)" + (f", 메일 {len(groups)}통에 나눠 보냅니다" if len(groups) > 1 else "")
+                    + f". 이 메일: {html.escape(names)}</p>")
+        else:
+            body = (f"<p>「{html.escape(meta['title'])}」 이어서 보내는 첨부입니다{part}. 캡션은 첫 메일에 있습니다.</p>"
+                    f"<p>이 메일: {html.escape(names)}</p>")
+        if left and i == len(groups) - 1:
+            body += f"<p>너무 커서 못 보낸 파일: {html.escape(', '.join(left))} — 학과 PC {html.escape(d)} 에 있습니다.</p>"
+        body += "<p>세명대 재난안전학과 자동 발행 시스템</p>"
+        hp = os.path.join(d, f"mail{i + 1}.html")
+        with open(hp, "w", encoding="utf-8") as f:
+            f.write(body)
+        mails.append((hp, base + part, g))
     if dry_run:
-        log(f"(dry-run) {subject} → {to} / 첨부 {[os.path.basename(p) for p in take]} / 빠짐 {left}")
-        return {"status": "dry_run", "attachments": len(take)}
+        for hp, subj, g in mails:
+            log(f"(dry-run) {subj} → {to} / 첨부 {[os.path.basename(p) for p in g]}")
+        log(f"(dry-run) 빠짐 {left}")
+        return {"status": "dry_run", "mails": len(mails), "attachments": n_all}
     sm = _mailer()
     mcfg = sm.load_config()
     mcfg["to"] = list(to) if isinstance(to, (list, tuple)) else [to]
@@ -119,11 +150,15 @@ def send_folder(d, to=None, dry_run=False):
         if not pw:
             raise RuntimeError(f"{sender} 앱 비밀번호가 없습니다 — python set_mail_sender.py 로 입력하세요")
         mcfg.update(sender=sender, app_password=pw, smtp_only=True)
-    r = sm.send(hp, subject, cfg=mcfg, attachments=take)
-    meta.update(sent=True, sent_at=datetime.now().isoformat(timespec="seconds"), sent_to=mcfg["to"])
+    sent = 0
+    for hp, subj, g in mails:
+        sent += sm.send(hp, subj, cfg=mcfg, attachments=g).get("attachments") or 0
+    meta.update(sent=True, sent_at=datetime.now().isoformat(timespec="seconds"), sent_to=mcfg["to"],
+                mails=len(mails), not_sent=left)
     with open(os.path.join(d, "delivery.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
-    return {"status": "emailed", "images": len(meta.get("files") or []), "to": mcfg["to"], "attachments": r.get("attachments")}
+    return {"status": "emailed", "images": len(meta.get("files") or []), "to": mcfg["to"],
+            "attachments": sent, "mails": len(mails)}
 
 
 def deliver(data, cfg):
@@ -140,5 +175,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--resend", required=True)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--only", nargs="+", help="이 파일만 보낸다(빠졌던 릴만 다시 보낼 때)")
     a = ap.parse_args()
-    print(send_folder(os.path.abspath(a.resend), dry_run=a.dry_run))
+    print(send_folder(os.path.abspath(a.resend), dry_run=a.dry_run, only=a.only))
