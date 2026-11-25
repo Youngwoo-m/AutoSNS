@@ -85,6 +85,50 @@ def log(msg):
         f.write(line + "\n")
 
 
+def kill_stale_headless(profile_dir):
+    """이 프로필을 붙잡고 남은 '창 없는(headless)' 크롬만 끈다. 끈 개수를 돌려준다.
+
+    2026-11-15 19:07 이웃새글 수집용 headless 크롬이 멈춘 채 driver.quit() 마저 시간 초과로 남아
+    프로필을 잠그는 바람에 19:36 발행용 크롬이 3번 모두 'Chrome failed to start: crashed' 로 실패했다.
+    사람이 보는 창(headless 아님)은 건드리지 않는다. 윈도우 전용."""
+    if os.name != "nt" or not profile_dir:
+        return 0
+    import subprocess
+    want = os.path.normcase(os.path.realpath(profile_dir)).rstrip("\\")
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name like 'chrome%.exe'\" | "
+          "Where-Object { $_.CommandLine -and $_.CommandLine -notmatch '--type=' -and $_.CommandLine -match '--headless' } | "
+          "ForEach-Object { \"$($_.ProcessId)`t$($_.CommandLine)\" }")
+    try:
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True,
+                             encoding="utf-8", errors="replace", timeout=60,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).stdout
+    except Exception as e:
+        log(f"남은 headless 크롬 확인 실패: {type(e).__name__}")
+        return 0
+    n = 0
+    for line in out.splitlines():
+        pid, _, cmd = line.partition("\t")
+        m = cmd.split("--user-data-dir=", 1)
+        if len(m) < 2 or not pid.strip().isdigit():
+            continue
+        prof = m[1].strip()
+        if m[0].endswith('"'):  # "--user-data-dir=C:\a b" 처럼 인수 전체가 따옴표
+            prof = prof.split('"', 1)[0]
+        elif prof.startswith('"'):  # --user-data-dir="C:\a b"
+            prof = prof[1:].split('"', 1)[0]
+        else:
+            prof = prof.split()[0]
+        if os.path.normcase(os.path.realpath(prof)).rstrip("\\") != want:
+            continue
+        subprocess.run(["taskkill", "/PID", pid.strip(), "/T", "/F"], capture_output=True,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        log(f"프로필을 잡고 남은 headless 크롬(PID {pid.strip()})을 정리했습니다.")
+        n += 1
+    if n:
+        time.sleep(3)
+    return n
+
+
 def start_chrome(options, tries=3, wait=90):
     """크롬을 띄운다. 드라이버 짝이 안 맞으면 기다렸다 다시 시도한다.
 
@@ -125,6 +169,22 @@ def start_chrome(options, tries=3, wait=90):
             return d
     except Exception as e:
         log(f"콘솔 브라우저 연결 실패 — 예전 방식으로 띄웁니다: {type(e).__name__}: {str(e)[:150]}")
+    # 같은 프로필을 잡고 남은 headless 크롬이 있으면 먼저 정리한다(2026-11-15 발행 실패 원인)
+    _ud = None
+    try:
+        _ud = next((a.split("=", 1)[1].strip('"') for a in options.arguments if a.startswith("--user-data-dir=")), None)
+        kill_stale_headless(_ud)
+    except Exception as e:
+        log(f"남은 headless 크롬 정리 건너뜀: {type(e).__name__}")
+    # 크롬 창이 도중에 사라지는 일('no such window', 2026-11-15~25 티스토리·네이버, 원인 미확인)의 단서를 남긴다.
+    # 프로필마다 logs/chrome_<프로필>.log — 크롬이 뜰 때마다 새로 쓴다(마지막 실행분만 남음).
+    try:
+        if _ud and "--enable-logging" not in options.arguments:
+            os.makedirs(LOGS_DIR, exist_ok=True)
+            os.environ["CHROME_LOG_FILE"] = os.path.join(LOGS_DIR, f"chrome_{os.path.basename(os.path.normpath(_ud))}.log")
+            options.add_argument("--enable-logging")
+    except Exception as e:  # noqa: BLE001
+        log(f"크롬 로그 설정 건너뜀: {type(e).__name__}")
     last = None
     for n in range(1, tries + 1):
         try:

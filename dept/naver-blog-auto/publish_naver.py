@@ -61,6 +61,12 @@ def build_driver(headless):
         "Page.addScriptToEvaluateOnNewDocument",
         {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"},
     )
+    # 창 없는 크롬은 페이지가 포커스를 못 받을 때가 있어(다른 크롬·창이 떠 있을 때) 에디터 입력 iframe 이
+    # 포커스를 못 잡고 제목·붙여넣기 키가 버려졌다(2026-11-25 시험: 5번 중 4번 실패 → 이 설정 뒤 6번 모두 성공).
+    try:
+        driver.execute_cdp_cmd("Emulation.setFocusEmulationEnabled", {"enabled": True})
+    except Exception as e:  # noqa: BLE001
+        log(f"포커스 에뮬레이션 설정 실패(계속 진행): {e}")
     return driver
 
 

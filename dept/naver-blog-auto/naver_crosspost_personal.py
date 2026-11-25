@@ -143,15 +143,29 @@ def main():
     from shared.axlock import Timeout, hold, stopped
     if args.go and stopped():
         return out("error", message="비상 정지 중이라 발행하지 않았습니다")
-    try:
-        with hold(["profile:safeworking"], job=f"{args.job}:naver_personal", wait=2400):
-            os.environ["AX_LOCKED"] = "1"
-            import publish_naver
-            publish_naver.publish(data, dry_run=not args.go)
-    except Timeout:
-        return out("error", message="40분 기다려도 safeworking 크롬 프로필이 비지 않았습니다")
-    except Exception as e:
-        return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
+    for attempt in (1, 2):
+        try:
+            with hold(["profile:safeworking"], job=f"{args.job}:naver_personal", wait=2400):
+                os.environ["AX_LOCKED"] = "1"
+                import publish_naver
+                publish_naver.publish(data, dry_run=not args.go)
+            break
+        except Timeout:
+            return out("error", message="40분 기다려도 safeworking 크롬 프로필이 비지 않았습니다")
+        except Exception as e:
+            # 크롬 창이 도중에 사라지는 일(no such window·invalid session)이 가끔 있다(2026-11-15~25, 원인 미확인).
+            # 발행 전이면 한 번 더 한다. 발행 버튼을 누른 뒤 사라졌을 수 있으니 RSS 부터 본다.
+            gone = type(e).__name__ in ("NoSuchWindowException", "InvalidSessionIdException") or "no such window" in str(e)
+            if attempt == 1 and gone:
+                for _ in range(6 if args.go else 0):     # RSS 반영이 늦을 수 있어 30초 지켜본다(중복 발행 방지)
+                    time.sleep(5)
+                    u = rss_has(data["title"])
+                    if u:
+                        return out("published", u, "크롬 창이 닫혔지만 글은 올라가 있었습니다")
+                print(f"크롬 창이 도중에 닫힘({type(e).__name__}) — 한 번 더 합니다", file=sys.stderr)
+                time.sleep(5)
+                continue
+            return out("error", message=f"{type(e).__name__}: {str(e)[:300]}")
     if not args.go:
         return out("dry", message="발행 직전까지 채우고 멈췄습니다(logs/ 에 스크린샷)")
     for _ in range(6):

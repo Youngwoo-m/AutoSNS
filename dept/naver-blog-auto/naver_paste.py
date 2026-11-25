@@ -144,6 +144,16 @@ def _set_clipboard_html_windows(body):
         u32.CloseClipboard()
 
 
+SYNTHETIC_PASTE_JS = """
+var f=document.activeElement; if(!f||f.tagName!=='IFRAME') return 'no-iframe:'+(f?f.tagName:'');
+var doc=f.contentDocument; if(!doc) return 'no-doc';
+var tgt=doc.activeElement||doc.body;
+var dt=new DataTransfer(); dt.setData('text/html',arguments[0]);
+dt.setData('text/plain',arguments[0].replace(/<[^>]+>/g,''));
+var ev=new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true});
+return tgt.tagName+' handled='+(!tgt.dispatchEvent(ev));"""
+
+
 def _set_clipboard_html(body):
     if sys.platform == "win32":
         return _set_clipboard_html_windows(body)
@@ -202,16 +212,29 @@ def fill(driver, data):
     el = driver.find_elements(By.CSS_SELECTOR, ".se-content .se-component.se-text .se-text-paragraph")[-1]
     ActionChains(driver).move_to_element(el).click().perform()
     time.sleep(0.5)
-    _set_clipboard_html(pk["html"])
-    ActionChains(driver).key_down(MOD_KEY).send_keys("v").key_up(MOD_KEY).perform()
-    last, same = None, 0
-    for _ in range(40):                       # 구성요소 수가 3초 동안 그대로면 붙여넣기 끝
-        time.sleep(1)
-        now = _count(driver)
-        same = same + 1 if now == last else 0
-        last = now
-        if same >= 3 and now.get("text"):
-            break
+    before = _count(driver)
+
+    def _settle():
+        last, same = None, 0
+        for _ in range(40):                   # 구성요소 수가 3초 동안 그대로면 붙여넣기 끝
+            time.sleep(1)
+            now = _count(driver)
+            same = same + 1 if now == last else 0
+            last = now
+            if same >= 3 and now.get("text"):
+                break
+        return last
+
+    # 1) 시스템 클립보드를 거치지 않고 에디터 입력 iframe 에 paste 이벤트를 직접 보낸다(2026-11-25).
+    #    다른 작업·사용자가 클립보드를 동시에 쓰면 Ctrl+V 가 엉뚱한 내용을 붙이거나 빈손이 되던 문제를 없앤다.
+    how = driver.execute_script(SYNTHETIC_PASTE_JS, pk["html"])
+    last = _settle()
+    if last == before:
+        # 2) 안 들어갔으면 예전 방식(클립보드 + Ctrl+V)으로 한 번 더
+        log(f"직접 붙여넣기 반영 안 됨({how}) → 클립보드 붙여넣기")
+        _set_clipboard_html(pk["html"])
+        ActionChains(driver).key_down(MOD_KEY).send_keys("v").key_up(MOD_KEY).perform()
+        last = _settle()
     log(f"붙여넣기 뒤 구성요소: {last}")
     for i, path in enumerate(pk["images"]):
         if not _put_at_marker(driver, MARK.format("IMG", i), path, "image", "image"):
@@ -227,6 +250,7 @@ def fill(driver, data):
     txt = re.sub(r"\s+", " ", _doc_text(driver))
     missing += [f"소제목 '{h[:20]}'" for h in pk["headings"] if h[:25] not in txt]
     if "[[AX" in txt:
-        missing.append("자리표시 글자가 남음")
+        k = txt.find("[[AX")
+        missing.append(f"자리표시 글자가 남음('{txt[max(0, k - 30):k + 20]}')")
     if missing:
         raise RuntimeError("붙여넣은 본문이 원문과 달라 발행을 멈춥니다: " + " / ".join(missing[:6]))
